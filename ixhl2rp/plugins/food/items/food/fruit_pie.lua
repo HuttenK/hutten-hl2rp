@@ -1,0 +1,17 @@
+ITEM.name = "item.fruit_pie"
+ITEM.description = "item.fruit_pie.desc" 
+ITEM.model = "models/mosi/fallout4/props/food/preservedpie.mdl"
+ITEM.cost = 12
+ITEM.width = 1
+ITEM.height = 1
+ITEM.iconCam = {
+	pos = Vector(92.451309204102, 69.880996704102, 95.920028686523),
+	ang = Angle(39.238121032715, 217.07354736328, 0),
+	fov = 3.6597161861275,
+}
+
+ITEM.volume = 400
+ITEM.portion_amount = 80
+
+ITEM.stats.container = false
+ITEM.stats.hunger = 11

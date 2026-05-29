@@ -1,0 +1,9 @@
+ITEM.name = "Патроны .357 Магнум"
+ITEM.model = "models/items/synapse/357ammo.mdl"
+ITEM.base = "ammo"
+ITEM.ammo = "357" -- type of the ammo
+ITEM.ammoAmount = 12 -- amount of the ammo
+ITEM.description = "Коробка патронов калибра .357 Магнув. Используется большинством доступных в округе револьверов"
+ITEM.classes = {CLASS_EOW}
+ITEM.price = 10
+ITEM.flag = "V"

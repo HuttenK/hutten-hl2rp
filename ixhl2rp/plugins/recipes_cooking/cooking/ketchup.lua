@@ -1,0 +1,12 @@
+RECIPE.name = "recipe.cooking.ketchup"
+RECIPE.category = "recipe.category.cooking.products"
+RECIPE.requirements = {
+	tomato = 3,
+	cook_spices = 1,
+	empty_glass_bottle = 1
+}
+RECIPE.results = {
+	ketchup = 1
+}
+
+RECIPE.preview = "models/foodnhouseholditems/ketchup.mdl"

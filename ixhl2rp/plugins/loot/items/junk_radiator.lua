@@ -1,0 +1,11 @@
+ITEM.name = "item.junk_radiator"
+ITEM.description = "item.junk_radiator.desc"
+ITEM.category = "loot.categoryJunk"
+ITEM.model = "models/props_interiors/radiator01a.mdl"
+ITEM.width = 4
+ITEM.height = 4
+ITEM.iconCam = {
+	pos = Vector(173.67779541016, 55.833263397217, -1.8276251554489),
+	ang = Angle(0.32083171606064, -162.35293579102, 1.0471098423004),
+	fov = 16.399218996358,
+}

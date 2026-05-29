@@ -1,0 +1,19 @@
+ITEM.name = "item.tequilla"
+ITEM.description = "item.tequilla.desc"
+ITEM.cost = 10
+ITEM.model = "models/mark2580/gtav/barstuff/tequila_bottle.mdl"
+ITEM.width = 1
+ITEM.height = 2
+ITEM.volume = 750
+ITEM.sip_amount = 75
+ITEM.reagent_type = "tequila"
+ITEM.iconCam = {
+	pos = Vector(206.98663330078, 61.251880645752, 5.5202388763428),
+	ang = Angle(1.4649255275726, 196.48463439941, 0),
+	fov = 2.0555976422175,
+}
+
+ITEM.stats.container = true
+
+ITEM.rarity = 1
+ITEM.junk = "empty_glass_bottle"

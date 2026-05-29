@@ -1,0 +1,20 @@
+ITEM.name = "item.old_soda"
+ITEM.description = "item.old_soda.desc"
+ITEM.model = "models/props_junk/garbage_plasticbottle003a.mdl"
+ITEM.cost = 7
+ITEM.width = 1
+ITEM.height = 2
+ITEM.iconCam = {
+	pos = Vector(276.88119506836, 163.13172912598, 71.318901062012),
+	ang = Angle(12.494330406189, 210.50556945801, 0),
+	fov = 2.1844782952648,
+}
+
+ITEM.volume = 500
+ITEM.sip_amount = 100
+ITEM.reagent_type = "old_soda"
+
+ITEM.stats.container = true
+
+ITEM.rarity = 1
+ITEM.junk =  "empty_plastic_bottle"

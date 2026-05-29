@@ -1,0 +1,19 @@
+ITEM.name = "item.raw_headcrab"
+ITEM.description = "item.raw_headcrab.desc" 
+ITEM.model = "models/foodnhouseholditems/meat5.mdl"
+ITEM.cost = 12
+ITEM.width = 1
+ITEM.height = 1
+
+ITEM.iconCam = {
+	pos = Vector(217.7003326416, -2.3117251396179, 111.00476074219),
+	ang = Angle(26.963396072388, 179.4141998291, 0),
+	fov = 1.9677862961107,
+}
+
+ITEM.volume = 400
+ITEM.portion_amount = 80
+
+ITEM.stats.container = false
+ITEM.stats.hunger = 5
+ITEM.stats.expireTime = 43200 -- 12 hours

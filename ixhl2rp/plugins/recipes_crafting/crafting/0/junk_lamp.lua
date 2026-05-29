@@ -1,0 +1,13 @@
+RECIPE.isBreakdown = true
+
+RECIPE.name = "recipe.crafting.junk_lamp"
+RECIPE.category = "recipe.category.breakdown"
+RECIPE.requirements = "junk_lamp"
+RECIPE.results = {
+	mat_plastic = 1,
+	mat_resine = 1,
+	mat_cloth = 2,
+}
+RECIPE.skill = {"crafting", 0}
+RECIPE.station = "station_tokar"
+RECIPE.xp = 35

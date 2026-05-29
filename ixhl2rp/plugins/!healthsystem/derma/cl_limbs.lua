@@ -1,0 +1,98 @@
+-- schwarz kruppzo: очень старый код, необходимо в дальнейшем переработать под поддержку разных рас
+local PANEL = {}
+PANEL.colorBG = Color(255, 255, 255, 150)
+
+function PANEL:Init()
+	if IsValid(ix.gui.limbstatus) then
+		ix.gui.limbstatus:Remove()
+	end
+	
+	ix.gui.limbstatus = self
+
+	self:SetSize(120, 240)
+
+	self:BuildData()
+end
+
+local tex_body = Material("clockwork/limbs/body.png")
+function PANEL:BuildData()
+	local character = LocalPlayer():GetCharacter()
+
+	self.character = character
+	self.texBG = tex_body
+	self.tex = {}
+
+	local health = self.character:Health()
+	if (!health or !health.body or !health.body.parts) then return end
+
+	for k, limb in ipairs(health.body.parts) do
+		if limb.hidden then continue end
+
+		self.tex[#self.tex + 1] = {limb.name, limb.texture, limb.id, limb.health}
+	end
+
+	self:SetHelixTooltip(function(tooltip)
+		local title = tooltip:AddRow("name")
+		title:SetImportant()
+		title:SetText(L"limbStatus")
+		title:SizeToContents()
+		title:SetMaxWidth(math.max(title:GetMaxWidth(), ScrW() * 0.5))
+
+		if self.character then
+			local health = self.character:Health()
+			if (!health or !health.body or !health.body.parts) then return end
+
+			local lines = {}
+			for k, limb in ipairs(health.body.parts) do
+				if limb.hidden then continue end
+
+				lines[#lines + 1] = string.format("%s — %s/%s HP", limb.name, health:GetPartHealth(limb.id), limb.health)
+			end
+				  
+			local description = tooltip:AddRow("description")
+			description:SetText(table.concat(lines, "\n"))
+			description:SizeToContents()
+		end
+	end)
+end
+
+local colors = {
+	Color(166, 243, 76),
+	Color(233, 225, 94),
+	Color(233, 173, 94),
+	Color(222, 57, 57)
+}
+
+local function GetColor(health, max)
+	max = max or health
+	local percent = health / max 
+
+	if percent > 0.75 then
+		return colors[1]
+	elseif percent > 0.5 then
+		return colors[2]
+	elseif percent > 0.25 then
+		return colors[3]
+	else
+		return colors[4]
+	end
+end
+
+function PANEL:Paint(w, h)
+	if self.character then
+		surface.SetDrawColor(self.colorBG)
+		surface.SetMaterial(self.texBG)
+		surface.DrawTexturedRect(0, 0, w, h)
+
+		local health = self.character:Health()
+		for k, v in ipairs(self.tex) do
+			local limbColor = GetColor(health:GetPartHealth(v[3]), v[4])
+
+			surface.SetDrawColor(limbColor.r, limbColor.g, limbColor.b, 150)
+			surface.SetMaterial(v[2])
+			surface.DrawTexturedRect(0, 0, w, h)
+		end
+	end
+end
+
+vgui.Register("ixLimbStatus", PANEL, "EditablePanel")

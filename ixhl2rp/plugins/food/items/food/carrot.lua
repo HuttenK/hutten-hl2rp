@@ -1,0 +1,19 @@
+ITEM.name = "item.carrot"
+ITEM.description = "item.carrot.desc"
+ITEM.model = "models/foodnhouseholditems/carrot.mdl"
+ITEM.cost = 3
+ITEM.width = 1
+ITEM.height = 1
+ITEM.iconCam = {
+	pos = Vector(-225.80598449707, 121.37219238281, 177.04205322266),
+	ang = Angle(34.774875640869, 331.46170043945, 0),
+	fov = 2.0790910269746,
+}
+
+ITEM.volume = 75
+ITEM.portion_amount = 15
+
+ITEM.stats.container = false
+ITEM.stats.thirst = -1
+ITEM.stats.hunger = 4
+ITEM.stats.expireTime = 345600 -- 4 days

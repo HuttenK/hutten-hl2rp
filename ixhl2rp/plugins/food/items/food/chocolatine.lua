@@ -1,0 +1,17 @@
+ITEM.name = "item.chocolatine"
+ITEM.description = "item.chocolatine.desc"
+ITEM.model = "models/foodnhouseholditems/chocolatine.mdl"
+ITEM.cost = 6
+ITEM.width = 1
+ITEM.height = 1
+ITEM.iconCam = {
+	pos = Vector(190.96253967285, 84.808753967285, 182.82504272461),
+	ang = Angle(41.169532775879, 203.93360900879, 0),
+	fov = 0.94796481394977,
+}
+
+ITEM.volume = 80
+ITEM.portion_amount = 16
+
+ITEM.stats.container = false
+ITEM.stats.hunger = 5

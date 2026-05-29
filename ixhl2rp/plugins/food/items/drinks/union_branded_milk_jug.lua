@@ -1,0 +1,20 @@
+ITEM.name = "item.union_branded_milk_jug"
+ITEM.description = "item.union_branded_milk_jug.desc"
+ITEM.model = "models/props_junk/garbage_milkcarton001a.mdl"
+ITEM.cost = 17
+ITEM.width = 1
+ITEM.height = 2
+ITEM.iconCam = {
+	pos = Vector(209.1623840332, 118.4630355835, 37.389667510986),
+	ang = Angle(8.7041082382202, 209.49049377441, 0),
+	fov = 3.0966823956035,
+}
+
+ITEM.volume = 2000
+ITEM.sip_amount = 200
+ITEM.reagent_type = "milk"
+
+ITEM.stats.container = true
+
+ITEM.junk = "empty_jug"
+ITEM.rarity = 2

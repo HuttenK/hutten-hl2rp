@@ -1,0 +1,18 @@
+ITEM.name = "item.fried_egg"
+ITEM.description = "item.fried_egg.desc"
+ITEM.model = "models/foodnhouseholditems/egg.mdl"
+ITEM.cost = 12
+ITEM.width = 1
+ITEM.height = 1
+ITEM.iconCam = {
+	pos = Vector(148.92398071289, 90.375053405762, 186.24156188965),
+	ang = Angle(47.07763671875, 211.35285949707, 0),
+	fov = 1.6538446261531,
+}
+
+
+ITEM.volume = 60
+ITEM.portion_amount = 20
+
+ITEM.stats.container = false
+ITEM.stats.hunger = 7

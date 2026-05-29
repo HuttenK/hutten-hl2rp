@@ -1,0 +1,150 @@
+local icons = {
+	["item.category.tools"] = "wrench",
+	["item.category.clothing"] = "suit",
+	["item.category.clothing_mpf"] = "user_gray",
+	["item.category.clothing_armor"] = "user_green",
+	["item.category.clothing_ota"] = "user_red",
+	["categoryDrink"] = "drink",
+	["item.category.weapon"] = "gun",
+	["Other"] = "brick",
+	["item.category.raw"] = "cog",
+	["item.category.unique"] = "shield",
+	["categoryFood"] = "cake",
+	["item.category.cid"] = "vcard",
+	["item.category.ammo"] = "find",
+	["item.category.crafted"] = "cog_add",
+	["item.category.radiation"] = "error",
+	["item.category.comm"] = "feed",
+	["item.category.ration"] = "page",
+	["item.category.coupon"] = "coins",
+	["item.category.book"] = "book_addresses",
+	["item.category.skillbook"] = "book_open",
+	["item.category.cooking"] = "cup",
+	["loot.categoryJunk"] = "bin",
+	["item.category.weapon_parts"] = "text_list_bullets",
+	["item.category.craft_chemical"] = "asterisk_orange",
+	["item.category.filter"] = "help",
+	["item.category.medical"] = "pill",
+	["item.category.construction_containers"] = "box",
+	["item.category.armbands_mpf"] = "status_busy",
+	["item.category.armbands_citizen"] = "status_online",
+}
+
+spawnmenu.AddContentType("ixItem", function(container, data)
+	if (!data.name) then return end
+
+	local custom = data.checksum and true or false
+	local icon = vgui.Create("ContentIcon", container)
+
+	icon:SetContentType("ixItem")
+	icon:SetSpawnName(data.uniqueID)
+	icon:SetName(L(data.name))
+
+	local mdl = data.GetModel and data:GetModel() or data.model
+
+	if mdl then
+		icon.model = vgui.Create("ModelImage", icon)
+		icon.model:SetMouseInputEnabled(false)
+		icon.model:SetKeyboardInputEnabled(false)
+		icon.model:StretchToParent(16, 16, 16, 16)
+		icon.model:SetModel(mdl, data.GetSkin and data:GetSkin() or (data.skin or 0), "000000000")
+		icon.model:MoveToBefore(icon.Image)
+	end
+
+	function icon:DoClick()
+		net.Start("MenuItemSpawn")
+			net.WriteString(custom and data.checksum or data.uniqueID)
+			net.WriteBool(custom)
+		net.SendToServer()
+		
+		surface.PlaySound("ui/buttonclickrelease.wav")
+	end
+
+	function icon:OpenMenu()
+		local menu = DermaMenu()
+		menu:AddOption(L"spawn.ui.itemCopyID", function()
+			SetClipboardText(data.uniqueID)
+		end)
+
+		menu:AddOption(L"spawn.ui.itemGive", function()
+			net.Start("MenuItemGive")
+				net.WriteString(custom and data.checksum or data.uniqueID)
+				net.WriteBool(custom)
+			net.SendToServer()
+		end)
+
+		menu:Open()
+	end
+
+	if (IsValid(container)) then
+		container:Add(icon)
+	end
+end)
+
+local function CreateItemsPanel()
+	local base = vgui.Create("SpawnmenuContentPanel")
+	local tree = base.ContentNavBar.Tree
+	local categories = {}
+
+	vgui.Create("ui.item.searchbar", base.ContentNavBar)
+
+	local items = ix.Item:All()
+
+	for k, v in SortedPairsByMemberValue(items, "category") do
+		if !categories[v.category] and !string.match(v.name, "Base") then
+			categories[v.category] = true
+
+			local category = tree:AddNode(L(v.category), icons[v.category] and ("icon16/" .. icons[v.category] .. ".png") or "icon16/brick.png")
+
+			function category:DoPopulate()
+				if self.Container then return end
+
+				self.Container = vgui.Create("ContentContainer", base)
+				self.Container:SetVisible(false)
+				self.Container:SetTriggerSpawnlistChange(false)
+
+				for uniqueID, itemTable in SortedPairsByMemberValue(items, "name") do
+					if itemTable.category == v.category and not string.match(itemTable.name, "Base") then
+						spawnmenu.CreateContentIcon("ixItem", self.Container, itemTable)
+					end
+				end
+			end
+
+			function category:DoClick()
+				self:DoPopulate()
+				base:SwitchPanel(self.Container)
+			end
+		end
+	end
+
+	local category = tree:AddNode(L"spawn.ui.itemCustomItems", "icon16/heart.png")
+	function category:DoPopulate()
+		if self.Container then return end
+
+		self.Container = vgui.Create("ContentContainer", base)
+		self.Container:SetVisible(false)
+		self.Container:SetTriggerSpawnlistChange(false)
+
+
+		for checksum, itemTable in SortedPairsByMemberValue(ix.CustomItem.stored, "name") do
+			spawnmenu.CreateContentIcon("ixItem", self.Container, itemTable, true)
+		end
+	end
+
+	function category:DoClick()
+		self:DoPopulate()
+		base:SwitchPanel(self.Container)
+	end
+
+	local FirstNode = tree:Root():GetChildNode(0)
+
+	if IsValid(FirstNode) then
+		FirstNode:InternalDoClick()
+	end
+
+	ix.UI:PopulateSearchContent(base, tree)
+
+	return base
+end
+
+spawnmenu.AddCreationTab("Items", CreateItemsPanel, "icon16/script_key.png")

@@ -1,0 +1,21 @@
+ITEM.name = "item.canned_crisp"
+ITEM.description = "item.canned_crisp.desc"
+ITEM.model = "models/mosi/fallout4/props/food/potatocrisps.mdl"
+ITEM.cost = 12
+ITEM.width = 1
+ITEM.height = 1
+ITEM.iconCam = {
+	pos = Vector(121.39208984375, 62.867095947266, 39.534378051758),
+	ang = Angle(14.423858642578, 207.37893676758, 0),
+	fov = 4.6194545584825,
+}
+
+ITEM.volume = 150
+ITEM.portion_amount = 30
+
+ITEM.stats.container = true
+ITEM.stats.thirst = -4
+ITEM.stats.hunger = 6
+ITEM.stats.noExpire = true
+
+ITEM.junk =  "empty_tin_can"

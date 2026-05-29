@@ -1,0 +1,22 @@
+ITEM.name = "item.prewar_canned_food"
+ITEM.description = "item.prewar_canned_food.desc"
+ITEM.model = "models/props_junk/garbage_metalcan001a.mdl"
+ITEM.cost = 25
+ITEM.width = 1
+ITEM.height = 1
+ITEM.iconCam = {
+	pos = Vector(93.199859619141, 73.029067993164, 11.020442962646),
+	ang = Angle(5.3645567893982, 218.11532592773, 0),
+	fov = 4.0772532361063,
+}
+
+ITEM.volume = 400
+ITEM.portion_amount = 80
+
+ITEM.stats.container = true
+ITEM.stats.thirst = 4
+ITEM.stats.hunger = 14
+ITEM.stats.expireTime = 172800 -- 2 days
+
+ITEM.rarity = 2
+ITEM.junk =  "empty_tin_can"

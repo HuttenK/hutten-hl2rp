@@ -1,0 +1,18 @@
+ITEM.name = "item.souffle"
+ITEM.description = "item.souffle.desc"
+ITEM.model = "models/mosi/fallout4/props/food/deathclawsouffle.mdl"
+ITEM.cost = 25
+ITEM.width = 1
+ITEM.height = 1
+
+ITEM.iconCam = {
+	pos = Vector(65.20622253418, 55.706031799316, 22.906232833862),
+	ang = Angle(13.315582275391, 220.5205078125, 0),
+	fov = 4.7040374842704,
+}
+
+ITEM.volume = 250
+ITEM.portion_amount = 50
+
+ITEM.stats.container = false
+ITEM.stats.hunger = 11

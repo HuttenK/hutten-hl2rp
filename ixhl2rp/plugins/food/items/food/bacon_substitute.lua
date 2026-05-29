@@ -1,0 +1,18 @@
+ITEM.name = "item.bacon_substitute"
+ITEM.description = "item.bacon_substitute.desc"
+ITEM.model = "models/foodnhouseholditems/bacon.mdl"
+ITEM.cost = 11
+ITEM.width = 1
+ITEM.height = 1
+ITEM.iconCam = {
+	pos = Vector(-92.453048706055, 156.74842834473, 176.15258789063),
+	ang = Angle(44.080673217773, 300.51376342773, 0),
+	fov = 2.4763492178443,
+}
+
+ITEM.volume = 250
+ITEM.portion_amount = 50
+
+ITEM.stats.container = false
+ITEM.stats.thirst = -4
+ITEM.stats.hunger = 14

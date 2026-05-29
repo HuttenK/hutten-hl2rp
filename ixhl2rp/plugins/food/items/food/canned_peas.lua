@@ -1,0 +1,20 @@
+ITEM.name = "item.canned_peas"
+ITEM.description = "item.canned_peas.desc"
+ITEM.model = "models/crunchy/props/eft_props/peas.mdl"
+ITEM.cost = 12
+ITEM.width = 1
+ITEM.height = 1
+ITEM.iconCam = {
+	pos = Vector(94.448196411133, 17.812322616577, 19.957509994507),
+	ang = Angle(9.9643497467041, 190.56834411621, 0),
+	fov = 4.4819556064387,
+}
+
+ITEM.volume = 240
+ITEM.portion_amount = 80
+
+ITEM.stats.container = true
+ITEM.stats.hunger = 7
+ITEM.stats.expireTime = 172800 -- 2 days
+
+ITEM.junk =  "empty_tin_can"

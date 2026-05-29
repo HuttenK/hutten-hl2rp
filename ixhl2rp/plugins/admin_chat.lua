@@ -1,0 +1,140 @@
+PLUGIN.name = "Admin Chat"
+PLUGIN.author = ""
+PLUGIN.description = ""
+
+ix.lang.AddTable("ru", {
+	["adminchat.prefix"] = "[А] ",
+	["adminchat.notAdmin"] = "Вы не администратор. Используйте '@сообщение' для создания тикета.",
+	cmdDiscordDesc = "Ссылка на дискорд сервера.",
+	cmdContentDesc = "Ссылка на контент сервера.",
+	cmdGuideDesc = "Ссылка на гайд сервера.",
+	cmdRulesDesc = "Ссылка на правила сервера.",
+	cmdVideoDesc = "Ссылка на видео-гайд сервера.",
+})
+ix.lang.AddTable("en", {
+	["adminchat.prefix"] = "[A] ",
+	["adminchat.notAdmin"] = "You aren't an admin. Use '@messagehere' to create a ticket.",
+	cmdDiscordDesc = "Link to server Discord.",
+	cmdContentDesc = "Link to server content.",
+	cmdGuideDesc = "Link to server guide.",
+	cmdRulesDesc = "Link to server rules.",
+	cmdVideoDesc = "Link to server video guide.",
+})
+ix.lang.AddTable("fr", {
+	["adminchat.prefix"] = "[A] ",
+	["adminchat.notAdmin"] = "Vous n'êtes pas admin. Utilisez '@message' pour créer un ticket.",
+	cmdDiscordDesc = "Lien vers le Discord du serveur.",
+	cmdContentDesc = "Lien vers le contenu du serveur.",
+	cmdGuideDesc = "Lien vers le guide du serveur.",
+	cmdRulesDesc = "Lien vers les règles du serveur.",
+	cmdVideoDesc = "Lien vers la vidéo guide du serveur.",
+})
+ix.lang.AddTable("es-es", {
+	["adminchat.prefix"] = "[A] ",
+	["adminchat.notAdmin"] = "No eres admin. Usa '@mensaje' para crear un ticket.",
+	cmdDiscordDesc = "Enlace al Discord del servidor.",
+	cmdContentDesc = "Enlace al contenido del servidor.",
+	cmdGuideDesc = "Enlace a la guía del servidor.",
+	cmdRulesDesc = "Enlace a las reglas del servidor.",
+	cmdVideoDesc = "Enlace al vídeo guía del servidor.",
+})
+
+if SERVER then
+	util.AddNetworkString("ixOpenURL")
+else
+	local urls = {
+		[0] = "https://discord.gg/yySMv9ZMRU",
+		[1] = "https://steamcommunity.com/sharedfiles/filedetails/?id=2425908945",
+		[2] = "https://docs.google.com/document/d/1J34cFyrmMnBwXt3WyMWTB1Jmi5KHU0imTK_tlSErw6k",
+		[3] = "https://docs.google.com/document/d/1kXwYo3sBgtdsuVu1y8ucaJvTJu2PRtKsmhL2FGdziBo",
+		[4] = "https://www.youtube.com/watch?v=FwuQILSwWXE",
+	}
+
+	net.Receive("ixOpenURL", function(len)
+	    gui.OpenURL(urls[net.ReadUInt(3)])
+	end)
+end
+
+CAMI.RegisterPrivilege({
+	Name = "Helix - Admin Chat",
+	MinAccess = "admin"
+})
+
+ix.chat.Register("adminchat", {
+	format = "whocares",
+	OnGetColor = function(self, speaker, text)
+		return Color(0, 196, 255)
+	end,
+	OnCanHear = function(self, speaker, listener)
+		if (CAMI.PlayerHasAccess(listener, "Helix - Admin Chat", nil)) then
+			return true
+		end
+
+		return false
+	end,
+	OnCanSay = function(self, speaker, text)
+		if (CAMI.PlayerHasAccess(speaker, "Helix - Admin Chat", nil)) then
+			speaker:Notify(L("adminchat.notAdmin"))
+
+			return false
+		end
+
+		return true
+	end,
+	OnChatAdd = function(self, speaker, text)
+		local icon = serverguard.ranks:GetRank(serverguard.player:GetRank(speaker)).texture or "icon16/user.png"
+
+		icon = Material(hook.Run("GetPlayerIcon", speaker) or icon)
+
+		if (CAMI.PlayerHasAccess(LocalPlayer(), "Helix - Admin Chat", nil) and CAMI.PlayerHasAccess(speaker, "Helix - Admin Chat", nil)) then
+			chat.AddText(icon, Color(255, 215, 0), L("adminchat.prefix"), Color(128, 0, 255, 255), (speaker:AnonSteamName() and "("..speaker:AnonSteamName()..") " or "")..speaker:Name(), ": ", Color(255, 255, 255), text)
+		end
+	end,
+	prefix = "/a"
+})
+
+ix.command.Add("Discord", {
+	description = "@cmdDiscordDesc",
+	OnRun = function(self, client)
+		net.Start("ixOpenURL")
+			net.WriteUInt(0, 3)
+		net.Send(client)
+	end,
+	bNoIndicator = true
+})
+
+ix.command.Add("Content", {
+	description = "@cmdContentDesc",
+	OnRun = function(self, client)
+		net.Start("ixOpenURL")
+			net.WriteUInt(1, 3)
+		net.Send(client)
+	end
+})
+
+ix.command.Add("Guide", {
+	description = "@cmdGuideDesc",
+	OnRun = function(self, client)
+		net.Start("ixOpenURL")
+			net.WriteUInt(2, 3)
+		net.Send(client)
+	end
+})
+
+ix.command.Add("Rules", {
+	description = "@cmdRulesDesc",
+	OnRun = function(self, client)
+		net.Start("ixOpenURL")
+			net.WriteUInt(3, 3)
+		net.Send(client)
+	end
+})
+
+ix.command.Add("Video", {
+	description = "@cmdVideoDesc",
+	OnRun = function(self, client)
+		net.Start("ixOpenURL")
+			net.WriteUInt(4, 3)
+		net.Send(client)
+	end
+})

@@ -1,0 +1,19 @@
+ITEM.name = "item.energy_drink"
+ITEM.description = "item.energy_drink.desc"
+ITEM.model = "models/foodnhouseholditems/sodacanb01.mdl"
+ITEM.cost = 36
+ITEM.width = 1
+ITEM.height = 1
+ITEM.iconCam = {
+	pos = Vector(251.18753051758, 106.37750244141, 54.674312591553),
+	ang = Angle(11.35116481781, 202.97729492188, 0),
+	fov = 2.1232804725038,
+}
+
+ITEM.volume = 330
+ITEM.sip_amount = 66
+ITEM.reagent_type = "energy_drink"
+
+ITEM.stats.container = true
+
+ITEM.rarity = 4

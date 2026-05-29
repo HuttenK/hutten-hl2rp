@@ -1,0 +1,20 @@
+ITEM.name = "item.canned_beef"
+ITEM.description = "item.canned_beef.desc"
+ITEM.model = "models/crunchy/props/eft_props/beefstew2.mdl"
+ITEM.cost = 12
+ITEM.width = 1
+ITEM.height = 1
+ITEM.iconCam = {
+	pos = Vector(100.68323516846, 34.123859405518, 56.536716461182),
+	ang = Angle(27.128786087036, 198.68937683105, 0),
+	fov = 4.0788186793622,
+}
+
+ITEM.volume = 340
+ITEM.portion_amount = 85
+
+ITEM.stats.container = true
+ITEM.stats.hunger = 10
+ITEM.stats.expireTime = 172800 -- 2 days
+
+ITEM.junk =  "empty_tin_can"

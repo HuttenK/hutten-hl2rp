@@ -1,0 +1,17 @@
+ITEM.name = "item.fresh_bread_half"
+ITEM.description = "item.fresh_bread_half.desc"
+ITEM.model = "models/foodnhouseholditems/bread_half.mdl"
+ITEM.cost = 12
+ITEM.width = 1
+ITEM.height = 1
+ITEM.iconCam = {
+	pos = Vector(175.81381225586, 67.953842163086, 155.06872558594),
+	ang = Angle(39.290641784668, 200.89213562012, 0),
+	fov = 2.3358700750901,
+}
+
+ITEM.volume = 250
+ITEM.portion_amount = 125
+
+ITEM.stats.container = false
+ITEM.stats.hunger = 7
