@@ -235,3 +235,61 @@ do
 end
 
 CharGen:SetModelClass("models/autonomous/base_male.mdl", "male")
+
+-- ──────────────────────────────────────────────────────────────────────────
+-- Hair Variant Groups
+-- Maps a base model path to an array of {name, model} variants.
+-- The base model is always variants[1].
+-- Non-base variants are stored as false so IsHairVariant() can detect them.
+-- ──────────────────────────────────────────────────────────────────────────
+CharGen.HairGroups = {}
+
+function CharGen:RegisterHairGroup(baseModel, variants)
+	local base = baseModel:lower()
+	self.HairGroups[base] = variants
+	for _, v in ipairs(variants) do
+		local vm = v.model:lower()
+		if vm ~= base then
+			-- Mark non-base variants so they can be excluded from the scroller
+			if not self.HairGroups[vm] then
+				self.HairGroups[vm] = false
+			end
+		end
+	end
+end
+
+function CharGen:GetHairGroup(modelPath)
+	local v = self.HairGroups[modelPath:lower()]
+	return (v and v ~= false) and v or nil
+end
+
+-- Returns true if the model is a non-base hair variant (hide from scroller)
+function CharGen:IsHairVariant(modelPath)
+	return self.HairGroups[modelPath:lower()] == false
+end
+
+-- ──────────────────────────────────────────────────────────────────────────
+-- Citizen hair group registrations (autonomous/africa models)
+-- ──────────────────────────────────────────────────────────────────────────
+local function R(base, ...)
+	local variants = {{name = "Причёска 1", model = "models/autonomous/africa/" .. base .. "_hair1.mdl"}}
+	local names = {"Причёска 2", "Причёска 3", "Причёска 4"}
+	local i = 0
+	for _, n in ipairs({...}) do
+		i = i + 1
+		variants[#variants + 1] = {name = names[i], model = "models/autonomous/africa/" .. n .. ".mdl"}
+	end
+	CharGen:RegisterHairGroup("models/autonomous/africa/" .. base .. "_hair1.mdl", variants)
+end
+
+R("male_01", "male_01_hair2", "male_01_hair3")
+R("male_02", "male_02_hair2", "male_02_hair3")
+R("male_03", "male_03_hair2", "male_03_hair3")
+R("male_04", "male_04_hair2", "male_04_hair3", "male_04_hair4")
+R("male_05", "male_05_hair2", "male_05_hair3", "male_05_hair4")
+R("male_06", "male_06_hair2", "male_06_hair3")
+R("male_07", "male_07_hair2", "male_07_hair3", "male_07_hair4")
+R("male_08", "male_08_hair2", "male_08_hair3")
+R("male_09", "male_09_hair2", "male_09_hair3")
+R("male_10", "male_10_hair2", "male_10_hair3")
+

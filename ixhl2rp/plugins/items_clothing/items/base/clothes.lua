@@ -6,6 +6,31 @@ implements("ItemEquipable", "ItemCloth")
 ItemCloth = ix.meta.ItemCloth
 ItemCloth.category = 'Clothes'
 
+-- Maps equip_inv slot names to ix.Appearance.Slot values.
+-- Custom values (>=10) are used for slots not in the default Appearance.Slot table.
+--
+-- NOTE: torso and legs intentionally use custom slots 13/14 instead of the
+-- standard Appearance.Slot.Torso (2) / Appearance.Slot.Legs (3).
+-- The framework's default SlotEffects for slots 2 and 3 attach bodyMasks
+-- ("Torso" and "Legs") that force extra bodygroups on the player model —
+-- e.g. "Legs" sets [3]=1 and [5]=1, which visibly changes the Neck and Torso
+-- bodygroups on civilian models even when only pants are equipped.
+-- Using slots 13/14 avoids those SlotEffects while preserving per-slot
+-- collision detection (one item per slot number).
+local EQUIP_INV_TO_APPEARANCE_SLOT = {
+	head      = 1,  -- ix.Appearance.Slot.Head  (no SlotEffect)
+	torso     = 13, -- custom: avoids Torso SlotEffect bodyMask
+	legs      = 14, -- custom: avoids Legs  SlotEffect bodyMask
+	boots     = 4,  -- ix.Appearance.Slot.Boots    (no SlotEffect)
+	socks     = 5,  -- ix.Appearance.Slot.Socks    (no SlotEffect)
+	backpack  = 6,  -- ix.Appearance.Slot.Backpack (no SlotEffect)
+	suit      = 7,  -- ix.Appearance.Slot.Suit     (SlotEffect intentional here)
+	mask      = 10, -- custom: face masks / gasmasks / glasses
+	hands     = 11, -- equip_inv 'hands' (gloves)
+	gloves    = 11, -- alias
+	belt      = 12, -- custom: belts
+}
+
 function ItemCloth:Init()
 	ix.meta.ItemEquipable.Init(self)
 
@@ -14,6 +39,58 @@ function ItemCloth:Init()
 	self:AddData("filter", {
 		Transmit = ix.transmit.none,
 	})
+
+	-- Fix: the base equipable.lua OnRun ignores the return value of Transfer.
+	-- When the target equip slot is already occupied, CanTransfer returns false
+	-- and Transfer returns (false, "notAllowed"), but the base code still calls
+	-- SendDeltaTransfer unconditionally.  That net message tells the client the
+	-- item was moved from the main inventory to the equip inventory; the client
+	-- removes it from the main grid but cannot place it in the occupied slot, so
+	-- the item appears to "disappear".
+	-- Override here to call SendDeltaTransfer only when Transfer succeeds.
+	local itemSelf = self
+	self.functions.equip.OnRun = function(item)
+		local inventory = item.player:GetInventory(itemSelf.equip_inv)
+		if not inventory then return end
+
+		local x, y
+		if itemSelf.equip_slot then
+			x = 1
+			y = itemSelf:GetEquipmentSlot(itemSelf.equip_slot)
+		end
+
+		if IsValid(item.entity) then
+			-- Item is a world entity being picked up directly into equip slot.
+			local bSuccess, err = inventory:AddItem(item, x, y)
+			if bSuccess then
+				item.entity:Delete()
+				inventory:SendDeltaAdd(item.id)
+				item:Equip(item.player, bSuccess)
+			else
+				item.player:NotifyLocalized(err or "unknownError")
+			end
+			return bSuccess
+		else
+			if not itemSelf:IsEquipped() then
+				local old_inventory = ix.Inventory:Get(item.inventory_id)
+				if not old_inventory then return end
+
+				local old_x, old_y = item.x, item.y
+				local old_w, old_h = old_inventory:GetItemSize(item)
+
+				local bSuccess, reason = old_inventory:Transfer(item.id, inventory, x, y, false)
+				if bSuccess then
+					-- Only notify the client that the item moved when it actually did.
+					inventory:SendDeltaTransfer(item.id, old_inventory, old_x, old_y, old_w, old_h)
+				else
+					-- Transfer failed (slot occupied or other reason).
+					-- Do NOT call SendDeltaTransfer — client inventory state is still
+					-- correct and the item remains visible in the main inventory.
+					old_inventory:SyncTo(item.player)
+				end
+			end
+		end
+	end
 end
 
 function ItemCloth:OnEquipped(client)
@@ -80,6 +157,18 @@ function ItemCloth:OnRegistered()
 		ix.outfits[id] = self:GetOutfitData()
 
 		self.outfit_id = id
+	end
+
+	-- Auto-register with ix.Appearance system for items that have bodyGroups
+	-- but were not manually given a displayID. This allows Outfit:Update() to
+	-- apply the bodygroup changes through the new appearance pipeline.
+	if not self.displayID and self.bodyGroups and next(self.bodyGroups) then
+		local slot = EQUIP_INV_TO_APPEARANCE_SLOT[self.equip_inv] or ix.Appearance.Slot.Torso
+		self.displayID = ix.Appearance:New(self.uniqueID, {
+			slot       = slot,
+			bodyGroups = self.bodyGroups,
+			layer      = ix.Appearance.Layer.Main,
+		})
 	end
 end
 

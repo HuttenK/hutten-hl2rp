@@ -1615,12 +1615,9 @@ function PANEL:CreateVisualStage(container)
 		scroller:SetOverlap(-4)
 		scroller:DockMargin(0, 0, 0, Scale(18))
 		
+		-- Face selector removed: these models do not use the CharGen RT facemap system.
+		-- Only hair variant selection is shown.
 		local faceClr = Color(225, 64, 64)
-		local face = container:Add("ui.character.selector")
-		face:SetTitle(L("chargen.faceLabel"))
-		face:SetValue(1)
-		face:SetValueColor(faceClr)
-
 		local hair = container:Add("ui.character.selector")
 		hair:SetTitle(L("chargen.hairLabel"))
 		hair:SetValue(1)
@@ -1632,51 +1629,41 @@ function PANEL:CreateVisualStage(container)
 			local models = faction:GetModels(LocalPlayer(), gender)
 
 			for k, v in SortedPairs(models) do
+				-- Skip hair variant models — they are selected via the hair picker, not the scroller
+				local _mp = isstring(v) and v or v[1]
+				if ix.CharGen and ix.CharGen:IsHairVariant(_mp) then continue end
+
 				local icon = scroller:Add("SpawnIcon")
 				icon:SetSize(64, 64)
 				icon:InvalidateLayout(true)
 				icon.DoClick = function(this)
-					local faceInfo = AutonomousFaceList and AutonomousFaceList[v] or nil
+					local modelPath = isstring(v) and v or v[1]
+					local hairGroup = ix.CharGen and ix.CharGen:GetHairGroup(modelPath)
 
-					if faceInfo then
-						local faceType, hairType = faceInfo[1], faceInfo[2]
-						local faceMapCount = (AutonomousTextureMaps and AutonomousTextureMaps[faceType]) and #AutonomousTextureMaps[faceType] or -1
-						local hairMapCount = (AutonomousTextureMaps and AutonomousTextureMaps[hairType]) and #AutonomousTextureMaps[hairType] or -1
-
-						face.CreateMenu = function(this, menu)
-							for i = 1, faceMapCount do
-								menu:AddOption(tostring(i), function()
-									this:SetValue(i)
-
-									if self.view.Entity.MorphData then
-										self.view.Entity.MorphData.face = i
-									end
-
-									local customize = ix.CharacterPayload:Get("face")
-									customize[1] = i
-									ix.CharacterPayload:Set("face", customize)
-								end)
-							end
-						end
-
+					if hairGroup then
+						hair:SetDisabled(false)
 						hair.CreateMenu = function(this, menu)
-							for i = 1, hairMapCount do
-								menu:AddOption(tostring(i), function()
+							for i, var in ipairs(hairGroup) do
+								menu:AddOption(var.name, function()
 									this:SetValue(i)
-
-									if self.view.Entity.MorphData then
-										self.view.Entity.MorphData.hair = i
+									self:SetModel(var.model)
+									-- Update payload.model to the variant's index in faction models
+									local factionModels = faction:GetModels(LocalPlayer(), gender)
+									for idx, m in pairs(factionModels) do
+										local mp = isstring(m) and m or m[1]
+										if mp:lower() == var.model:lower() then
+											ix.CharacterPayload:Set("model", idx)
+											break
+										end
 									end
-
-									local customize = ix.CharacterPayload:Get("face")
-									customize[2] = i
-									ix.CharacterPayload:Set("face", customize)
 								end)
 							end
 						end
+					else
+						hair:SetDisabled(true)
+						hair.CreateMenu = nil
 					end
 
-					face:SetValue(1)
 					hair:SetValue(1)
 					ix.CharacterPayload:Set("face", {1, 1})
 					ix.CharacterPayload:Set("model", k)

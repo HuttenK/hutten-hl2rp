@@ -17,6 +17,7 @@ function PANEL:LoadPage(id)
 end
 
 function PANEL:SetFont(font)
+	if not font then return end
 	self.font = font
 
 	self.text:SetFont(self.font.."Preview")
@@ -38,6 +39,7 @@ function PANEL:Init()
 	self:SetTitle(L"book.gui.editTitle")
 
 	self.currentPage = 1
+	self.data = {}
 	self.font = "BookAlegreya"
 
 	self.close = self:Add("DButton")
@@ -49,7 +51,7 @@ function PANEL:Init()
 		local font = self.font
 		
 		Derma_StringRequest(L"book.gui.saveTitle", L"book.gui.saveDesc", L"book.gui.untitled", function(text)
-			express.Send("book.write", {text, data, font})
+			netstream.Start("book.write", {text, data, font})
 		end)
 
 		self:Close()
@@ -60,7 +62,7 @@ function PANEL:Init()
 	self.save:DockMargin(0, 45, 0, 0)
 	self.save:SetText(L"book.gui.save")
 	self.save.DoClick = function()
-		express.Send("book.save", {self.font, self.data})
+		netstream.Start("book.save", {self.font, self.data})
 
 		self:Close()
 	end

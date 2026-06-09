@@ -1,8 +1,8 @@
 ITEM.name = "item.mpf_support_ofc"
 ITEM.description = "item.mpf_support_ofc.desc"
 ITEM.genderReplacement = {
-	[GENDER_MALE] = "models/cellar/characters/metropolice/male.mdl",
-	[GENDER_FEMALE] = "models/cellar/characters/metropolice/female.mdl"
+	[GENDER_MALE] = "models/autonomous/eurasia_nemanus/metropolice/male.mdl",
+	[GENDER_FEMALE] = "models/autonomous/eurasia_nemanus/metropolice/female.mdl"
 }
 ITEM.uniform = 2
 ITEM.primaryVisor = Vector(0.1, 0.5, 0.1)

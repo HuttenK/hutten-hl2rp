@@ -251,7 +251,8 @@ if SERVER then
 	end
 
 	function Outfit:Update()
-		local charGen = self.character:CharGen()
+		-- CharGen() may not be implemented; guard against nil to prevent crash.
+		local charGen = self.character and self.character.CharGen and self.character:CharGen()
 		local fallbackModel = self.model
 
 		self.modelClass = Appearance:GetModelClass(fallbackModel)

@@ -13,12 +13,10 @@ do
 				args[k] = L(v:sub(2))
 			end
 
-			if self == LocalPlayer() then
-				emoteType = "l"..emoteType
-				ix.chat.Send(self, chatType, L(emoteType, unpack(args)))
-			else
-				ix.chat.Send(self, chatType, L(emoteType, self:Name(), unpack(args)))
-			end
+			-- Always use the "l" (local) variant without %s — the chat class
+			-- adds the character name itself, so passing self:Name() here
+			-- would cause the name to appear twice.
+			ix.chat.Send(self, chatType, L("l"..emoteType, unpack(args)))
 		end
 	end
 end

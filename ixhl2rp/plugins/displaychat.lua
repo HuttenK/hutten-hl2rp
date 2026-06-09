@@ -42,6 +42,17 @@ function PLUGIN:MessageReceived(client, messageInfo)
 	if IsValid(client) and client != LocalPlayer() and ix.option.Get("chatDisplayEnabled", false) then
 		if hook.Run("ShouldChatMessageDisplay2", client, messageInfo) != false then
 			local class = ix.chat.classes[messageInfo.chatType]
+
+			-- If this chat class belongs to a language the local player doesn't
+			-- understand, don't show the real text overhead — it would bypass
+			-- the gibberish that the chatbox correctly shows instead.
+			if class and class.langID then
+				local language = ix.languages and ix.languages:FindByID(class.langID)
+				if language and not language:PlayerCanSpeakLanguage(LocalPlayer()) then
+					return
+				end
+			end
+
 			local maxLen = ix.option.Get("chatDisplayLength")
 			local text = messageInfo.text
 			local textLen = string.utf8len(text)

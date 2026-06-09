@@ -48,7 +48,9 @@ function PANEL:CacheRecipeNeeds(stationID, stationInventory)
 					for uniqueID, amount in pairs(recipe.requirements or {}) do
 						local count = 0
 						local stored = ix.Item:Get(uniqueID)
-						
+
+						if not stored then continue end -- item not registered on client yet
+
 						if stored.stackable_legacy then
 							for k, v in ipairs(client:GetInventory("main"):GetItems()) do
 								if v.uniqueID == uniqueID then

@@ -723,6 +723,8 @@ ix.anim.SetModelClass("models/cellar/characters/oldsuits/female_zoey.mdl", "cell
 
 ix.anim.SetModelClass("models/cellar/characters/metropolice/male.mdl", "cellarMaleMPF")
 ix.anim.SetModelClass("models/cellar/characters/metropolice/female.mdl", "cellarFemaleMPF")
+ix.anim.SetModelClass("models/autonomous/eurasia_nemanus/metropolice/male.mdl", "cellarMaleMPF")
+ix.anim.SetModelClass("models/autonomous/eurasia_nemanus/metropolice/female.mdl", "cellarFemaleMPF")
 ix.anim.SetModelClass("models/cellar/characters/metropolice/male_rebel.mdl", "cellarMaleMPF")
 ix.anim.SetModelClass("models/cellar/characters/metropolice/female_rebel.mdl", "cellarFemaleMPF")
 ix.anim.SetModelClass("models/cellar/characters/gurlukovich.mdl", "cellarMale")

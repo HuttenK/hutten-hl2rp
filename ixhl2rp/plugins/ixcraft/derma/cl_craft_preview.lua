@@ -82,7 +82,8 @@ end
 function PANEL:Rebuild(itemID, slotSize, customModel)
 	self.item_data = ix.Item.stored[itemID]
 
-	
+	if not self.item_data then return end -- item not registered on client yet
+
 	if !self:IsRotated() then
 		self:SetSize((slotSize + 1) * self.item_data.width - 1, (slotSize + 1) * self.item_data.height - 1)
 	else

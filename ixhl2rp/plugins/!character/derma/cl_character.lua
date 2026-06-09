@@ -520,7 +520,7 @@ function PANEL:Paint(width, height)
 	if (!ix.option.Get("cheapBlur", false)) then
 		surface.SetDrawColor(0, 0, 0, 150)
 		surface.DrawTexturedRect(0, 0, width, height)
-		ix.util.DrawBlur(self, Lerp((self.currentAlpha - 200) / 255, 0, 10))
+		ix.util.DrawBlur(self, Lerp(((self.currentAlpha or 255) - 200) / 255, 0, 10))
 	end
 end
 
@@ -857,7 +857,7 @@ if BRANCH == "x86-64" then
 		if (!ix.option.Get("cheapBlur", false)) then
 			surface.SetDrawColor(0, 0, 0, 150)
 			surface.DrawTexturedRect(0, 0, width, height)
-			ix.util.DrawBlur(self, Lerp((self.currentAlpha - 200) / 255, 0, 10))
+			ix.util.DrawBlur(self, Lerp(((self.currentAlpha or 255) - 200) / 255, 0, 10))
 		end
 	end
 

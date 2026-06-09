@@ -152,4 +152,39 @@ function Schema:InitializedChatClasses()
 		OnChatAdd = OnChatAddIt
 	})
 
+	-- Dispatch broadcast
+	ix.chat.Register("dispatch", {
+		color = Color(200, 75, 75),
+		format = "chat.dispatch.format",
+		CanSay = function(class, speaker, text)
+			if (!speaker:IsDispatch() and !speaker:IsAdmin()) then
+				speaker:NotifyLocalized("notAllowed")
+				return false
+			end
+		end,
+		OnChatAdd = function(class, speaker, text)
+			chat.AddText(class.color, ix.util.GetMaterial("cellar/chat/dispatch.png"), L(class.format, text))
+		end
+	})
+
+	-- Dispatch radio (слышат только Combine)
+	ix.chat.Register("dispatch_radio", {
+		color = Color(200, 0, 0),
+		format = "chat.dispatch_radio.format",
+		bReceiveVoices = true,
+		CanSay = function(class, speaker, text)
+			if (!speaker:IsDispatch() and !speaker:IsAdmin()) then
+				speaker:NotifyLocalized("notAllowed")
+				return false
+			end
+		end,
+		CanHear = function(class, speaker, listener)
+			return listener:IsCombine()
+		end,
+		OnChatAdd = function(class, speaker, text)
+			chat.AddText(class.color, L(class.format, text))
+			surface.PlaySound("npc/overwatch/radiovoice/on3.wav")
+		end
+	})
+
 end

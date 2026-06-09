@@ -115,7 +115,7 @@ if CLIENT then
 		end
 	end)
 
-	express.Receive("book.send", function(data)
+	netstream.Hook("book.send", function(data)
 		local checksum = data.checksum
 		local font = data.font
 		local pages = data.pages
@@ -154,6 +154,6 @@ else
 			title = item:GetTitle()
 		}
 
-		express.Send("book.send", data, client)
+		netstream.Start(client, "book.send", data)
 	end)
 end

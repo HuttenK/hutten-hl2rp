@@ -57,7 +57,7 @@ do
 	}
 
 	function COMMAND:OnCheckAccess(client)
-		return client:IsDispatch()
+		return client:IsDispatch() or client:IsAdmin()
 	end
 
 	function COMMAND:OnRun(client, message)

@@ -19,20 +19,14 @@ function Item:Init()
 		name = "use.bookwrite",
 		OnRun = function(item)
 			local data = item:GetData("T") or {}
+			local client = item.player
 
-			if !table.IsEmpty(data) then
-				local client = item.player
+			-- Send existing page data (or nil for a blank book).
+			-- express is not installed; netstream handles large payloads fine.
+			netstream.Start(client, "book.edit", (table.IsEmpty(data) or not isstring(data[1])) and nil or data)
 
-				express.Send("book.edit", data, client, function()
-					item.isEditing = true
-					client.book_edit = item
-				end)
-			else
-				netstream.Start(item.player, "book.edit")
-
-				item.isEditing = true
-				item.player.book_edit = item
-			end
+			item.isEditing = true
+			client.book_edit = item
 		end,
 
 		OnCanRun = function(item)
@@ -46,19 +40,19 @@ function Item:Init()
 end
 
 if CLIENT then
-	express.Receive("book.edit", function(data)
-		local ui = vgui.Create("cellar.book.write")
-		ui:SetFont(data[1])
-		ui.data = table.Copy(data[2])
-		ui:LoadPage(1)
-	end)
-
+	-- Receive existing page data (non-empty book) or nil (blank book).
+	-- Both cases now use the same netstream hook.
 	netstream.Hook("book.edit", function(data)
 		local ui = vgui.Create("cellar.book.write")
+		if data then
+			ui:SetFont(data[1])
+			ui.data = table.Copy(data[2])
+		end
 		ui:LoadPage(1)
 	end)
 else
-	express.Receive("book.save", function(client, data)
+	-- Player saved a draft (keeps item, stores pages for later editing).
+	netstream.Hook("book.save", function(client, data)
 		local item = client.book_edit
 
 		if item then
@@ -71,7 +65,8 @@ else
 		end
 	end)
 
-	express.Receive("book.write", function(client, data)
+	-- Player finalized the book (consumes item, creates a permanent book).
+	netstream.Hook("book.write", function(client, data)
 		local title = data[1]
 		local pages = data[2]
 		local font = data[3]

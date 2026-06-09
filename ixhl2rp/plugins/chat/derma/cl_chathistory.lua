@@ -47,7 +47,7 @@ function PANEL:AddLine(elements, bShouldScroll, class)
 			text = text .. string.format("<color=%d,%d,%d>", v.r, v.g, v.b)
 		elseif (type(v) == "Player" and IsValid(v)) then
 			local color = team.GetColor(v:Team())
-			text = text .. string.format("<color=%d,%d,%d>%s</color>", color.r, color.g, color.b, v:GetName():gsub("<\", \"&lt;\"):gsub(\">\", \"&gt;\"))
+			text = text .. string.format("<color=%d,%d,%d>%s</color>", color.r, color.g, color.b, v:GetName():gsub("<", "&lt;"):gsub(">", "&gt;"))
 		elseif (type(v) == "userdata") then
 			-- type() returns "userdata" for IMaterial, never "IMaterial"
 			if not tostring(v):find("^bad") then

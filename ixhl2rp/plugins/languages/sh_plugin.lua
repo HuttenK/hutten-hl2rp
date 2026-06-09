@@ -4,6 +4,13 @@ PLUGIN.name = "Languages"
 PLUGIN.author = ""
 PLUGIN.description = ""
 
+-- ix.util.IncludeDir loads libs/sh_languages.lua on the server, but on the client
+-- file.Find for subdirectories of gamemode plugins is unreliable — the client's
+-- LUA virtual filesystem may not expose the libs/ folder entries, so IncludeDir
+-- silently skips the file.  Explicitly including it here with a relative path
+-- guarantees it runs on both realms before any ix.languages:New() calls below.
+ix.util.Include("libs/sh_languages.lua", "shared")
+
 ix.util.Include("cl_hooks.lua", "client")
 ix.util.Include("sv_hooks.lua", "server")
 --[[
@@ -601,6 +608,9 @@ end
 
 
 function PLUGIN:InitializedPlugins()
+	-- l() is server-only; L() is the client equivalent (no client param on clientside).
+	local phrase = SERVER and l or L
+
 	for _, v in pairs(ix.languages.stored) do
 		if v.uniqueID != "xen" and v.uniqueID != "imp" and v.uniqueID != "vort" then
 			for i = 1, 5 do
@@ -609,14 +619,16 @@ function PLUGIN:InitializedPlugins()
 
 				ITEM.langID = v.uniqueID
 				ITEM.part = i
-				ITEM.name = "langbook.name"
+				ITEM.name = phrase("langbook.nameFormat", phrase("language.name."..v.uniqueID), i)
 				ITEM.description = "langbook.desc"
-				ITEM.category = "langbook.category"
+				ITEM.category = phrase("langbook.categoryFormat", i)
 				function ITEM:GetName()
-					return L("langbook.nameFormat", L("language.name."..self.langID), self.part)
+					local ph = SERVER and l or L
+					return ph("langbook.nameFormat", ph("language.name."..self.langID), self.part)
 				end
 				function ITEM:GetCategory()
-					return L("langbook.categoryFormat", self.part)
+					local ph = SERVER and l or L
+					return ph("langbook.categoryFormat", self.part)
 				end
 				ITEM.model = "models/n_models/n_book.mdl"
 				ITEM.skin = 5

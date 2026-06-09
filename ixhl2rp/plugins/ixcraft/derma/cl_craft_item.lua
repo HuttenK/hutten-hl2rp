@@ -105,6 +105,7 @@ end
 function PANEL:SetupCraft()
 	ix.gui.currentCraft = self.recipe.uniqueID
 	local parent = ix.gui.craftFrame
+	if not parent or not IsValid(parent.itemIcon) then return end -- craftFrame not ready
 
 	local title = string.utf8upper(self.recipe:GetName())
 	parent.craftTitle:SetText((self.recipe.isBreakdown and L("craftDisassemblePrefix") or "") .. title)
