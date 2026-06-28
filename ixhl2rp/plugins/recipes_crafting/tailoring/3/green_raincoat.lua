@@ -1,11 +1,11 @@
-RECIPE.name = "recipe.tailoring.green_raincoat"
+RECIPE.name = "Пальто с белым пиджаком"
 RECIPE.category = "recipe.category.body"
 RECIPE.requirements = {
 	mat_cloth_reclaimed = 3,
 	mat_resine = 1
 }
 RECIPE.results = {
-	torso_cloth2 = 1
+	coat_black_white = 1
 }
 RECIPE.skill = {"tailoring", 3}
 RECIPE.tools = {"tool_scissors"}

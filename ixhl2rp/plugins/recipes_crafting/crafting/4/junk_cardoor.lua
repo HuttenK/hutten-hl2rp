@@ -9,5 +9,5 @@ RECIPE.results = {
 }
 RECIPE.skill = {"crafting", 4}
 RECIPE.station = "station_tokar"
-RECIPE.tools = {"tool_screw", "tool_hacksaw"}
+RECIPE.tools = {"wm_screwdriver", "tool_hacksaw"}
 RECIPE.xp = 50

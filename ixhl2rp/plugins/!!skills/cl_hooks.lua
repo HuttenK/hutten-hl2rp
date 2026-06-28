@@ -12,6 +12,28 @@ function PLUGIN:LoadFonts(font, genericFont)
 		extended = true,
 		weight = 200
 	})
+
+	-- autonomous.hint.* fonts used in special/skill tooltips (autonomous-extra.ttf)
+	surface.CreateFont("autonomous.hint.small", {
+		font = "autonomous-extra",
+		size = 13,
+		extended = true,
+		weight = 400
+	})
+
+	surface.CreateFont("autonomous.hint.info", {
+		font = "autonomous-extra",
+		size = 15,
+		extended = true,
+		weight = 400
+	})
+
+	surface.CreateFont("autonomous.hint.infobig", {
+		font = "autonomous-extra",
+		size = 18,
+		extended = true,
+		weight = 400
+	})
 end
 
 function PLUGIN:CanCreateCharacterInfo(suppress)

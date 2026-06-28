@@ -1,5 +1,5 @@
-RECIPE.name = "recipe.tailoring.shirt2_ingotext13"
-RECIPE.category = "recipe.category.expensive_body"
+RECIPE.name = "Милитари рубашка"
+RECIPE.category = "recipe.category.body"
 RECIPE.requirements = {
 	mat_cloth_reclaimed = 5,
 	mat_leather = 2,
@@ -7,7 +7,7 @@ RECIPE.requirements = {
 	box_of_needles = 1,
 }
 RECIPE.results = {
-	torso_shirt2_ingotex13 = 1
+	shirt_military = 1
 }
 RECIPE.skill = {"tailoring", 7}
 RECIPE.tools = {"tool_scissors"}

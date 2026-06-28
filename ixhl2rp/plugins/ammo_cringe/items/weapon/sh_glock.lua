@@ -1,6 +1,6 @@
 ITEM.name = "Пистолет Glock-17"
 ITEM.description = "Австрийский пистолет, разработанный фирмой Glock для нужд Вооружённых сил Австрии. В настоящий момент этот пистолет является одним из самых распространенных в мире. Поставляется в самые крупные армии мира. Некоторое время стоял на вооружении армии Надзора и Патруля Альянса. Существует модификация под импульсный боеприпас."
-ITEM.model = "models/weapons/arccw/c_ud_glock.mdl"
+ITEM.model = "models/flaymi/anomaly/weapons/w_models/wpn_glock_w.mdl"
 ITEM.class = "arccw_ud_glock"
 ITEM.weaponCategory = "sidearm"
 ITEM.flag = "Z"
@@ -12,7 +12,7 @@ ITEM.noBusiness = true
 ITEM.iconCam = {
 	pos = Vector(-2.5, 248.36601257324, 3.4),
 	ang = Angle(0, 270, 0),
-	fov = 3.9411764705882,
+	fov = 3.9411764705882,qй
 }
 ITEM.cpArmory = true
 ITEM.pacData = {

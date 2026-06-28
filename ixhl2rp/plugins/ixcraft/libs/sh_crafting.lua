@@ -96,14 +96,30 @@ if SERVER then
 			end
 		end
 
+		if recipe.blueprint then
+			local learned = character:GetData("craftLearned", {})
+
+			if !learned[recipe.uniqueID] then
+				return false, "craftNeedBlueprint"
+			end
+		end
+
 		if recipe.station then
 			local hasStation
+			local current = IsValid(client.ixStation) and client.ixStation:GetStationTable()
+
+			-- The Combine fabrication terminal is a master station: it satisfies any recipe's station requirement.
+			if current and current.uniqueID == "station_combine" then
+				hasStation = true
+			end
 
 			if istable(recipe.station) then
-				for k, v in ipairs(recipe.station) do
-					if IsValid(client.ixStation) and client.ixStation:GetStationTable().uniqueID == v then
-						hasStation = true
-						break
+				if !hasStation then
+					for k, v in ipairs(recipe.station) do
+						if current and current.uniqueID == v then
+							hasStation = true
+							break
+						end
 					end
 				end
 
@@ -111,14 +127,13 @@ if SERVER then
 					return false, "craftNeedWorkstation"
 				end
 			else
-				local stationInfo = self.stations[recipe.station]
-				
-				if IsValid(client.ixStation) and client.ixStation:GetStationTable().uniqueID == recipe.station then
+				if !hasStation and current and current.uniqueID == recipe.station then
 					hasStation = true
 				end
 
 				if !hasStation then
-					return false, "craftNeedStation", L(stationInfo.name)
+					local stationInfo = self.stations[recipe.station]
+					return false, "craftNeedStation", L(stationInfo.name, client)
 				end
 			end
 		end

@@ -770,6 +770,8 @@ function GM:PlayerCanPickupWeapon(client, weapon)
 end
 
 function GM:OnPhysgunFreeze(weapon, physObj, entity, client)
+	-- Guard against NULL physics objects (e.g. prop_dynamic with no physics).
+	if (!IsValid(physObj)) then return false end
 	-- Object is already frozen (!?)
 	if (!physObj:IsMoveable()) then return false end
 	if (entity:GetUnFreezable()) then return false end

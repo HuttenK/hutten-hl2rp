@@ -77,7 +77,7 @@ if SERVER then
 				end
 			end
 		else
-			ix.chat.Send(client, "it", L("lootNothingFound"), false, {client})
+			ix.chat.Send(client, "it", L("lootNothingFound", client), false, {client})
 		end
 
 		hook.Run("OnPlayerClearGarbage", client, character)

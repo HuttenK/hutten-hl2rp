@@ -470,4 +470,41 @@ netstream.Hook("PlayerFinishChat", function(client)
 	end
 end)
 
+-- ============================================================
+-- Руки игрока по фракции (viewmodel c_arms)
+-- PlayerSetHandsModel в Helix не существует, поэтому переопределяем
+-- модель сущности рук серверно в PostPlayerLoadout (после SetupHands).
+-- Модель сетевая — клиент увидит её в первом лице.
+-- ============================================================
+local function GetFactionHands(team)
+	-- МПФ / ОТА / ОТА-Элита — стандартные руки Альянса c_arms_combine.
+	if FACTION_MPF and team == FACTION_MPF then
+		return { model = "models/weapons/c_arms_combine.mdl", skin = 0, body = "00000000" }
+	elseif (FACTION_OTA and team == FACTION_OTA) or (FACTION_EOW and team == FACTION_EOW) then
+		return { model = "models/weapons/c_arms_combine.mdl", skin = 1, body = "00000000" }
+	end
+end
+
+local function ApplyFactionHands(client)
+	if not IsValid(client) then return end
+
+	local data = GetFactionHands(client:Team())
+	if not data then return end
+
+	local hands = client:GetHands()
+	if not IsValid(hands) then return end
+
+	hands:SetModel(data.model)
+	hands:SetSkin(data.skin)
+	hands:SetBodyGroups(data.body)
+end
+
+hook.Add("PostPlayerLoadout", "ixFactionHands", function(client)
+	ApplyFactionHands(client)
+end)
+
+-- /charsetmodel и прочие пересборки рук — обновляем и здесь.
+hook.Add("PlayerModelChanged", "ixFactionHands", function(client)
+	timer.Simple(0, function() ApplyFactionHands(client) end)
+end)
 

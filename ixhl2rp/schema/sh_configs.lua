@@ -9,11 +9,7 @@ ix.config.Add("rationInterval", 300, "How long a person needs to wait in seconds
 	category = "economy"
 })
 
-ix.option.Add("ColorModify", ix.type.bool, true, {
-    category = "general"
-})
-
-ix.option.Add("ColorSaturation", ix.type.number, 0, {
-	category = "general",
-	min = -3, max = 3, decimals = 2
-})
+-- ColorModify / ColorSaturation были удалены: их обработчик в
+-- Schema:RenderScreenspaceEffects отключён (ранний return), поэтому опции в меню
+-- настроек ничего не делали. Если захотите цветокоррекцию — снова добавьте опции
+-- и уберите ранний return в cl_hooks.lua.

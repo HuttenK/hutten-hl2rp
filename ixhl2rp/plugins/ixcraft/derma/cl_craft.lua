@@ -14,7 +14,8 @@ function PANEL:CacheRecipeNeeds(stationID, stationInventory)
 		for _, recipe in pairs(ix.Craft.recipes) do
 			local canCraft = true
 
-			if recipe.station then
+			-- The Combine fabrication terminal is a master station: it can craft anything.
+			if recipe.station and stationID != "station_combine" then
 				if istable(recipe.station) then
 					canCraft = false
 
@@ -271,15 +272,53 @@ function PANEL:Setup()
 	container:Setup(self.isMini, self.inventoryID)
 
 	self:BuildCraftPanel()
+
+	if !self.isMini then
+		local close = self:Add("DButton")
+		close:SetText("")
+		close:SetSize(scale(36), scale(36))
+		close:SetPos(ScrW() - scale(54), scale(18))
+		close:MoveToFront()
+		close.Paint = function(btn, w, h)
+			local hovered = btn:IsHovered()
+			local clr = hovered and Color(255, 80, 80) or Color(0, 225, 255)
+
+			surface.SetDrawColor(16, 32, 48, 230)
+			surface.DrawRect(0, 0, w, h)
+			surface.SetDrawColor(clr.r, clr.g, clr.b, 255)
+			surface.DrawOutlinedRect(0, 0, w, h)
+
+			surface.DrawLine(w * 0.3, h * 0.3, w * 0.7, h * 0.7)
+			surface.DrawLine(w * 0.7, h * 0.3, w * 0.3, h * 0.7)
+		end
+		close.DoClick = function()
+			surface.PlaySound("buttons/button14.wav")
+			self:Close()
+		end
+
+		self.closeButton = close
+
+		local hint = self:Add("DLabel")
+		hint:SetFont("craft.item.key")
+		hint:SetText(L("craftCloseHint"))
+		hint:SetTextColor(Color(0, 225, 255, 200))
+		hint:SizeToContents()
+		hint:SetPos(ScrW() - scale(54) - hint:GetWide() - scale(10), scale(18) + (scale(36) - hint:GetTall()) * 0.5)
+		hint:MoveToFront()
+	end
+end
+
+function PANEL:Close()
+	if self.OnClose then
+		self:OnClose()
+	end
+
+	self:Remove()
 end
 
 function PANEL:OnKeyCodePressed(key)
 	if key == KEY_TAB then
-		if self.OnClose then
-			self:OnClose()
-		end
-		
-		self:Remove()
+		self:Close()
 	end
 end
 

@@ -13,6 +13,6 @@ RECIPE.results = {
 }
 RECIPE.skill = {"crafting", 10}
 RECIPE.station = "station_tokar"
-RECIPE.tools = {"tool_screw", "tool_welding"}
+RECIPE.tools = {"wm_screwdriver", "tool_welding"}
 RECIPE.xp = 0
 RECIPE.preview = "models/props_mining/elevator_winch_empty.mdl"

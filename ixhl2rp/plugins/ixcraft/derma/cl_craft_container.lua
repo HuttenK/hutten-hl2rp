@@ -64,6 +64,7 @@ end
 
 function PANEL:Setup(isMini, inventoryID)
 	local parent = self:GetParent()
+	local stationID = parent.station and parent.station.uniqueID or nil
 	local oneSize = parent:GetWide() / (isMini and 2 or 3)
 	local margin = scale(20)
 
@@ -107,7 +108,37 @@ function PANEL:Setup(isMini, inventoryID)
 				continue
 			end
 		end
-		
+
+		if recipe.blueprint then
+			local learned = LocalPlayer():GetCharacter():GetData("craftLearned", {})
+
+			if !learned[recipe.uniqueID] then
+				continue
+			end
+		end
+
+		-- Station filter (additive): the combine terminal is a master station and
+		-- shows everything. Station-less recipes (basics) show everywhere — at any
+		-- bench and in the F1 menu. Bench-bound recipes only show at their bench.
+		if stationID != "station_combine" and recipe.station then
+			local match = false
+
+			if istable(recipe.station) then
+				for _, v in ipairs(recipe.station) do
+					if v == stationID then
+						match = true
+						break
+					end
+				end
+			else
+				match = recipe.station == stationID
+			end
+
+			if !match then
+				continue
+			end
+		end
+
 		if recipe.mainCategory then
 			local list = recipesList[recipe.mainCategory] or {recipes = {}, subcategories = {}, noSkill = true}
 

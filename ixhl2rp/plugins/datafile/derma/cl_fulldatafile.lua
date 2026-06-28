@@ -8,6 +8,31 @@ local colours = {
 	yellow = Color(231, 180, 60, 255),
 };
 
+-- ===== Стиль терминалов Гражданской Обороны (тёмный + циан) =====
+local DF_BG    = Color(8, 12, 15, 252)
+local DF_PANEL = Color(14, 20, 24, 255)
+local DF_DEEP  = Color(20, 27, 32, 255)
+local DF_LINE  = Color(0, 170, 210)
+local DF_LINED = Color(0, 90, 115)
+local DF_TEXT  = Color(196, 214, 220)
+local DF_DIM   = Color(110, 140, 150)
+local DF_RED   = Color(210, 60, 50)
+local DF_AMBER = Color(235, 170, 50)
+
+surface.CreateFont("ixDfHeader", { font = "Blender Pro Medium", size = 28, weight = 600, extended = true, antialias = true })
+surface.CreateFont("ixDfName",   { font = "Blender Pro Medium", size = 34, weight = 700, extended = true, antialias = true })
+surface.CreateFont("ixDfLabel",  { font = "Blender Pro Book",   size = 18, weight = 500, extended = true, antialias = true })
+surface.CreateFont("ixDfText",   { font = "Consolas",           size = 15, weight = 500, antialias = true })
+surface.CreateFont("ixDfSmall",  { font = "Consolas",           size = 13, weight = 500, antialias = true })
+
+local function DfBrackets(x, y, w, h, len, col)
+	surface.SetDrawColor(col)
+	surface.DrawRect(x, y, len, 2)             surface.DrawRect(x, y, 2, len)
+	surface.DrawRect(x + w - len, y, len, 2)   surface.DrawRect(x + w - 2, y, 2, len)
+	surface.DrawRect(x, y + h - 2, len, 2)     surface.DrawRect(x, y + h - len, 2, len)
+	surface.DrawRect(x + w - len, y + h - 2, len, 2) surface.DrawRect(x + w - 2, y + h - len, 2, len)
+end
+
 
 -- Main datafile panel.
 local PANEL = {};
@@ -27,10 +52,10 @@ function PANEL:Init()
 
 	-- TODO: Add the CID here!
 	self.NameLabel = vgui.Create("DLabel", self.TopPanel);
-	self.NameLabel:SetTextColor(Color(255, 255, 255));
-	self.NameLabel:SetFont("DermaLarge");
+	self.NameLabel:SetTextColor(DF_TEXT);
+	self.NameLabel:SetFont("ixDfName");
 	self.NameLabel:Dock(TOP);
-	self.NameLabel:DockMargin(5, 5, 0, 0);
+	self.NameLabel:DockMargin(8, 6, 0, 0);
 	self.NameLabel:SizeToContents(true);
 
 	self.InfoPanel = vgui.Create("cwDfInfoPanel", self.TopPanel);
@@ -237,24 +262,34 @@ function PANEL:PopulateGenericData()
 end;
 
 function PANEL:Paint(w, h)
-	local sineToColor = math.abs(math.sin(RealTime() * 1.5) * 255);
-	local color;
+	-- фон + сканлайны
+	surface.SetDrawColor(DF_BG)
+	surface.DrawRect(0, 0, w, h)
+	surface.SetDrawColor(0, 0, 0, 26)
+	for y = 0, h, 3 do surface.DrawRect(0, y, w, 1) end
 
-	if (self.Status == "yellow") then
-		color = Color(sineToColor, sineToColor, 0, 200);
-	elseif (self.Status == "red") then
-		color = Color(sineToColor, 0, 0, 200);
-	elseif (self.Status == "blue") then
-		color = Color(0, 100, 200, 200);
+	-- статус-акцент (ориентировка/анти-гражданин) — тонкая мигающая полоса сверху
+	local accent = DF_LINE
+	if (self.Status == "red") then accent = DF_RED
+	elseif (self.Status == "yellow") then accent = DF_AMBER end
+
+	-- рамка + углы
+	surface.SetDrawColor(DF_LINED)
+	surface.DrawOutlinedRect(0, 0, w, h)
+	DfBrackets(0, 0, w, h, 16, accent)
+
+	-- шапка
+	surface.SetDrawColor(DF_PANEL)
+	surface.DrawRect(2, 2, w - 4, 40)
+	if (self.Status == "red" or self.Status == "yellow") then
+		local pulse = 0.4 + 0.6 * math.abs(math.sin(RealTime() * 3))
+		surface.SetDrawColor(accent.r, accent.g, accent.b, 255 * pulse)
 	else
-		color = Color(170, 170, 170, 255);
-	end;
+		surface.SetDrawColor(accent)
+	end
+	surface.DrawRect(2, 42, w - 4, 2)
 
-	surface.SetDrawColor(color);
-	surface.DrawRect(0, 0, w, h);
-
-	surface.SetDrawColor(Color(40, 40, 40, 150));
-	surface.DrawRect(0, 0, w, h);
+	draw.SimpleText("ГРАЖДАНСКАЯ ОБОРОНА · ДОСЬЕ", "ixDfHeader", 14, 8, DF_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 end;
 
 vgui.Register("cwFullDatafile", PANEL, "DFrame");
@@ -269,7 +304,7 @@ function PANEL:Init()
 end;
 
 function PANEL:Paint(w, h)
-	surface.SetDrawColor(Color(40, 40, 40, 255));
+	surface.SetDrawColor(DF_PANEL);
 	surface.DrawRect(0, 0, w, h);
 end;
 
@@ -324,7 +359,7 @@ function PANEL:MakeRestricted(bRestrict)
 end;
 
 function PANEL:Paint(w, h)
-	surface.SetDrawColor(Color(40, 40, 40, 255));
+	surface.SetDrawColor(DF_PANEL);
 	surface.DrawRect(0, 0, w, h);
 end;
 
@@ -357,7 +392,7 @@ function PANEL:MakeRestricted(bRestrict)
 end;
 
 function PANEL:Paint(w, h)
-	surface.SetDrawColor(Color(40, 40, 40, 255));
+	surface.SetDrawColor(DF_PANEL);
 	surface.DrawRect(0, 0, w, h);
 end;
 
@@ -399,13 +434,14 @@ vgui.Register("cwDfScrollPanel", PANEL, "DScrollPanel");
 PANEL = {};
 
 function PANEL:Init()
-	self:SetTextColor(Color(180, 180, 180, 255));
+	self:SetTextColor(DF_TEXT);
+	self:SetFont("ixDfLabel");
 	self:SetWide(225);
 	self:DockMargin(5, 2.5, 5, 2.5);
 
 	-- Reason why I'm doing the colours this way is because I don't want any filthy logic in my Paint function.
 	self.MetroColor = colours.white;
-	self.ButtonColor = Color(47, 47, 47, 255);
+	self.ButtonColor = DF_PANEL;
 end;
 
 function PANEL:SetMetroColor(color)
@@ -421,11 +457,11 @@ function PANEL:Paint(w, h)
 end;
 
 function PANEL:OnCursorEntered(w, h)
-	self.ButtonColor = Color(38, 38, 38, 255);
+	self.ButtonColor = Color(26, 38, 46, 255);
 end;
 
 function PANEL:OnCursorExited(w, h)
-	self.ButtonColor = Color(47, 47, 47, 255);
+	self.ButtonColor = DF_PANEL;
 end;
 
 vgui.Register("cwDfButton", PANEL, "DButton");
@@ -442,26 +478,29 @@ function PANEL:Init()
 	self.PosterColor = Color(180, 180, 180, 255);
 
 	self.Text = vgui.Create("DLabel", self);
-	self.Text:SetTextColor(Color(220, 220, 220, 255))
+	self.Text:SetTextColor(DF_TEXT)
+	self.Text:SetFont("ixDfText");
 	self.Text:SetText("");
 	self.Text:SetWrap(true);
 	self.Text:Dock(FILL);
-	self.Text:DockMargin(5, 0, 0, 0);
+	self.Text:DockMargin(8, 0, 4, 0);
 	self.Text:SetContentAlignment(5);
 
 	self.Date = vgui.Create("DLabel", self);
-	self.Date:SetTextColor(Color(150, 150, 150));
+	self.Date:SetTextColor(DF_DIM);
+	self.Date:SetFont("ixDfSmall");
 	self.Date:SetText("");
 	self.Date:SetWrap(true);
 	self.Date:Dock(TOP);
-	self.Date:DockMargin(5, 5, 0, 0);
+	self.Date:DockMargin(8, 5, 0, 0);
 	self.Date:SetContentAlignment(7);
 
 	self.Poster = vgui.Create("DLabel", self);
 	self.Poster:SetWrap(true);
+	self.Poster:SetFont("ixDfSmall");
 	self.Poster:SetTextColor(self.PosterColor);
 	self.Poster:Dock(BOTTOM);
-	self.Poster:DockMargin(5, 0, 0, 5);
+	self.Poster:DockMargin(8, 0, 0, 5);
 	self.Poster:SetContentAlignment(1);
 
 	self.Points = vgui.Create("DLabel", self.Date);
@@ -473,11 +512,13 @@ function PANEL:Init()
 end;
 
 function PANEL:Paint(w, h)
-	surface.SetDrawColor(Color(47, 47, 47, 255));
+	surface.SetDrawColor(DF_DEEP);
 	surface.DrawRect(0, 0, w, h);
 
+	-- левый цветной акцент (как в терминальном досье) + нижняя линия
 	surface.SetDrawColor(self.PosterColor);
-	surface.DrawRect(0, h - 2, w, 2);
+	surface.DrawRect(0, 0, 3, h);
+	surface.DrawRect(0, h - 1, w, 1);
 end;
 
 function PANEL:SetEntryText(noteText, dateText, posterText, pointsText, posterColor)

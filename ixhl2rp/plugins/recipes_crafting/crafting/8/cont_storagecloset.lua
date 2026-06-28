@@ -12,6 +12,6 @@ RECIPE.results = {
 }
 RECIPE.skill = {"crafting", 8}
 RECIPE.station = "station_tokar"
-RECIPE.tools = {"tool_wrench", "tool_welding"}
+RECIPE.tools = {"wm_wrench", "tool_welding"}
 RECIPE.xp = 500
 RECIPE.preview = "models/props_wasteland/controlroom_storagecloset001a.mdl"

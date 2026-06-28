@@ -56,9 +56,14 @@ if SERVER then
 		self.dispenser:Activate()
 		self:DeleteOnRemove(self.dispenser)
 
+		-- prop_dynamic has no physics object; guard before calling physics methods.
+		-- Also block phys-gun interaction so OnPhysgunFreeze never receives a NULL physObj.
+		self.dispenser.PhysgunDisable = true
 		local physics = self.dispenser:GetPhysicsObject()
-		physics:EnableMotion(false)
-		physics:Sleep()
+		if IsValid(physics) then
+			physics:EnableMotion(false)
+			physics:Sleep()
+		end
 
 		self.canUse = true
 		self.nextUseTime = CurTime()
@@ -363,6 +368,26 @@ else
 			render.PopFilterMag()
 		cam.End3D2D()*/
 	end
+
+	-- The visual model is a prop_dynamic child entity. When the player presses E,
+	-- Helix traces and hits the prop_dynamic which has no GetEntityMenu.
+	-- We inject GetEntityMenu onto the prop_dynamic as soon as it's created so that
+	-- Helix's native KeyRelease handler finds it and opens the menu normally.
+	hook.Add("OnEntityCreated", "ix_rationdispenser_menu_forward", function(ent)
+		timer.Simple(0, function()
+			if !IsValid(ent) or ent:GetClass() != "prop_dynamic" then return end
+			local parent = ent:GetParent()
+			if !IsValid(parent) or parent:GetClass() != "ix_rationdispenser" then return end
+			-- Forward GetEntityMenu to the real ix_rationdispenser entity.
+			local dispenser = parent
+			ent.GetEntityMenu = function(_, client)
+				if IsValid(dispenser) then
+					return dispenser:GetEntityMenu(client)
+				end
+				return {}
+			end
+		end)
+	end)
 end
 
 function ENT:GetEntityMenu(client)

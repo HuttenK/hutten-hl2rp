@@ -11,6 +11,6 @@ RECIPE.results = {
 }
 RECIPE.skill = {"crafting", 4}
 RECIPE.station = "station_tokar"
-RECIPE.tools = {"tool_screw", "tool_hammer"}
+RECIPE.tools = {"wm_screwdriver", "wm_hammer"}
 RECIPE.xp = 325
 RECIPE.preview = "models/props_c17/furnituredrawer003a.mdl"

@@ -1,7 +1,7 @@
 local PLUGIN = PLUGIN
 
 PLUGIN.name        = "TV Screen"
-PLUGIN.author      = "Blaze Project"
+PLUGIN.author      = "Hutten"
 PLUGIN.description = "Displays a synchronized material on all TV props in the map."
 
 -- List of TV models and their screen positioning config.

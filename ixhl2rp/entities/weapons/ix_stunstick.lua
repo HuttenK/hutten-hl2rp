@@ -57,6 +57,45 @@ function SWEP:Initialize()
 	self:SetHoldType(self.HoldType)
 end
 
+-- Состояние ALT синхронизируем с клиента, потому что ALT у игрока может быть НЕ
+-- привязан к +walk (IN_WALK), и сервер тогда вообще не видит нажатие. Читаем
+-- физическую клавишу через input.IsKeyDown и шлём флаг на сервер.
+if (SERVER) then
+	util.AddNetworkString("ixStunstickAlt")
+
+	net.Receive("ixStunstickAlt", function(_, client)
+		local wep = client:GetActiveWeapon()
+
+		if (IsValid(wep) and wep:GetClass() == "ix_stunstick") then
+			wep.ixAltHeld = net.ReadBool()
+		end
+	end)
+end
+
+-- ALT нажат? На клиенте читаем клавиатуру напрямую, на сервере — синхронизированный флаг.
+function SWEP:IsAltHeld()
+	if (CLIENT) then
+		return input.IsKeyDown(KEY_LALT) or input.IsKeyDown(KEY_RALT)
+	end
+
+	return self.ixAltHeld == true
+end
+
+function SWEP:Think()
+	if (CLIENT and IsValid(self.Owner) and self.Owner == LocalPlayer()) then
+		local alt = self:IsAltHeld()
+
+		-- шлём только при изменении состояния (по фронту), без спама
+		if (alt != self.ixAltSent) then
+			self.ixAltSent = alt
+
+			net.Start("ixStunstickAlt")
+			net.WriteBool(alt)
+			net.SendToServer()
+		end
+	end
+end
+
 function SWEP:OnRaised()
 	self.lastRaiseTime = CurTime()
 end
@@ -147,11 +186,10 @@ end
 function SWEP:PrimaryAttack()
 	self:SetNextPrimaryFire(CurTime() + self.Primary.Delay)
 
-	if (!self.Owner:IsWepRaised()) then
-		return
-	end
-
-	if (self.Owner:KeyDown(IN_WALK)) then
+	-- ALT + ЛКМ: вкл/выкл электрошок. ALT читаем напрямую (см. IsAltHeld) — он может
+	-- быть не привязан к +walk. Проверяем ПЕРЕД IsWepRaised, иначе с опущенным
+	-- оружием переключение никогда не срабатывало.
+	if (self:IsAltHeld()) then
 		if (SERVER) then
 			self:SetActivated(!self:GetActivated())
 
@@ -160,7 +198,7 @@ function SWEP:PrimaryAttack()
 			if (state) then
 				self.Owner:EmitSound("Weapon_StunStick.Activate")
 
-				if (CurTime() < self.lastRaiseTime + 1.5) then
+				if (self.lastRaiseTime and CurTime() < self.lastRaiseTime + 1.5) then
 					self.Owner:AddCombineDisplayMessage("@cCivilJudgement")
 				end
 			else
@@ -174,6 +212,10 @@ function SWEP:PrimaryAttack()
 			end
 		end
 
+		return
+	end
+
+	if (!self.Owner:IsWepRaised()) then
 		return
 	end
 

@@ -1,3 +1,5 @@
+RECIPE.disabled = true -- отключено по запросу
+
 RECIPE.name = "recipe.crafting.explosive_claymore"
 RECIPE.category = "recipe.category.explosives"
 RECIPE.requirements = {
@@ -9,6 +11,6 @@ RECIPE.results = {
 	claymore_mine = 1
 }
 RECIPE.skill = {"crafting", 8}
-RECIPE.tools = {"tool_welding", "tool_screw"}
+RECIPE.tools = {"tool_welding", "wm_screwdriver"}
 RECIPE.station = "station_guns"
 RECIPE.xp = 350

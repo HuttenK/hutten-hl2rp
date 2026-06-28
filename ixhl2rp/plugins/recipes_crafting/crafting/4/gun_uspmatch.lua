@@ -6,7 +6,7 @@ RECIPE.requirements = {
 	gun_pistol_receiver = 1,
 }
 RECIPE.results = {
-	uspmatch = 1
+	sidearm = 1
 }
 RECIPE.skill = {"crafting", 4}
 RECIPE.station = "station_guns"

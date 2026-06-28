@@ -1,6 +1,32 @@
 local PLUGIN = PLUGIN
 PLUGIN.stored = PLUGIN.stored or {}
 
+-- Обновляет stored из item-инстансов и бэкфиллит NULL-cid в БД
+local function BackfillCIDFromItems(stored)
+	for _, item in pairs(ix.Item.instances) do
+		if !item.GetData then continue end
+		local dID = tonumber(item:GetData("datafileID"))
+		if !dID or dID == 0 then continue end
+		local cid = item:GetData("cid", "")
+		if cid == "" then continue end
+		if !stored[dID] then stored[dID] = {} end
+		local entry = stored[dID]
+		entry[1] = item:GetData("name",   entry[1] or "")
+		entry[2] = cid
+		entry[3] = item:GetData("number", entry[3] or "")
+		entry[6] = item:GetData("access", entry[6] or {})
+		-- Бэкфилл в БД (только один раз за сессию)
+		if entry._cidFixed then continue end
+		entry._cidFixed = true
+		local q = mysql:Update("ix_datafiles")
+		q:Update("character_name", entry[1])
+		q:Update("cid",            cid)
+		q:Update("regid",          entry[3] or "")
+		q:Where("datafile_id",     dID)
+		q:Execute()
+	end
+end
+
 function PLUGIN:LoadData()
 	local query = mysql:Create("ix_datafiles")
 		query:Create("datafile_id", "INT(11) UNSIGNED NOT NULL AUTO_INCREMENT")
@@ -39,6 +65,43 @@ function PLUGIN:LoadData()
 					}
 				end
 			end
+			-- Бэкфилл из инстансов (для уже загруженных карточек)
+			BackfillCIDFromItems(self.stored)
+			-- Основной бэкфилл: читаем CID напрямую из ix_items (покрывает оффлайн-игроков)
+			timer.Simple(1, function()
+				local q = mysql:Select("ix_items")
+				q:Select("data")
+				q:Callback(function(rows)
+					if !istable(rows) then return end
+					for _, row in ipairs(rows) do
+						local raw = row.data
+						if !raw or !raw:find("datafileID", 1, true) then continue end
+						local d = util.JSONToTable(raw)
+						if !d then continue end
+						local dID = tonumber(d.datafileID)
+						local cid  = d.cid
+						if !dID or dID == 0 or !isstring(cid) or cid == "" then continue end
+						if !PLUGIN.stored[dID] then PLUGIN.stored[dID] = {} end
+						local entry = PLUGIN.stored[dID]
+						if !entry[2] or entry[2] == "" then
+							entry[1] = d.name   or entry[1] or ""
+							entry[2] = cid
+							entry[3] = d.number or entry[3] or ""
+							-- Заодно исправляем в ix_datafiles
+							if !entry._cidFixed then
+								entry._cidFixed = true
+								local upd = mysql:Update("ix_datafiles")
+								upd:Update("character_name", entry[1])
+								upd:Update("cid",            cid)
+								upd:Update("regid",          entry[3])
+								upd:Where("datafile_id",     dID)
+								upd:Execute()
+							end
+						end
+					end
+				end)
+				q:Execute()
+			end)
 		end)
 	query:Execute()
 end
@@ -139,6 +202,15 @@ function PLUGIN:OnIDCardInstanced(item)
 			item:SetData("datafileID", id)
 		end)
 	else
+		-- Синхронизируем stored с item-данными (cid мог быть NULL в старых записях БД)
+		local id = tonumber(item:GetData("datafileID", 0))
+		if id and id > 0 then
+			if !self.stored[id] then self.stored[id] = {} end
+			self.stored[id][1] = item:GetData("name", "")
+			self.stored[id][2] = item:GetData("cid", "")
+			self.stored[id][3] = item:GetData("number", "")
+			self.stored[id][6] = item:GetData("access", {})
+		end
 		print("Datafile loaded for ", item)
 	end
 end
@@ -165,11 +237,29 @@ end
 
 function PLUGIN:HandleDatafile(player, target)
 	if istable(target) then
+		-- Поиск в памяти (stored)
 		for id, v in pairs(self.stored) do
-			if (target[1] and v[2] == target[1]) then
-				if (target[2] and v[3] == target[2] or true) then
-					target = id
-					break
+			if target[1] and v[2] == target[1] then
+				target = id
+				break
+			end
+		end
+
+		-- Fallback: сканируем все item-инстансы (карточки в хранилищах, на полу и т.д.)
+		if istable(target) then
+			for _, item in pairs(ix.Item.instances) do
+				if !item.GetData then continue end
+				if item:GetData("cid", "") == target[1] then
+					local dID = tonumber(item:GetData("datafileID"))
+					if dID and dID > 0 then
+						-- Заодно бэкфиллим память
+						if !self.stored[dID] then self.stored[dID] = {} end
+						self.stored[dID][2] = target[1]
+						self.stored[dID][1] = item:GetData("name", "")
+						self.stored[dID][3] = item:GetData("number", "")
+						target = dID
+						break
+					end
 				end
 			end
 		end
@@ -179,15 +269,44 @@ function PLUGIN:HandleDatafile(player, target)
 	local targetValue
 	player.lastDatafile = nil
 
+	-- Если playerValue=0 (нет флага в данных карты) — проверяем шаблон предмета напрямую
+	if playerValue == 0 then
+		local card = player:GetIDCard()
+		if card then
+			local tmpl = ix.Item.stored[card.uniqueID]
+			if tmpl and istable(tmpl.access) then
+				local ta = tmpl.access
+				if     ta["DATAFILE_ELEVATED"] then playerValue = 4
+				elseif ta["DATAFILE_FULL"]     then playerValue = 3
+				elseif ta["DATAFILE_MEDIUM"]   then playerValue = 2
+				elseif ta["DATAFILE_MINOR"]    then playerValue = 1
+				end
+			end
+		else
+			ix.util.DatafileDebug("HandleDatafile: у игрока %s НЕТ экипированной CID-карты (GetIDCard=nil) -> playerValue=0",
+				IsValid(player) and player:Name() or "?")
+		end
+	end
+
+	ix.util.DatafileDebug("HandleDatafile: target=%s (%s) playerValue=%s",
+		tostring(target), type(target), tostring(playerValue))
+
 	if isstring(target) or isnumber(target) then
 		targetValue = self:ReturnPermissionByID(target)
+		ix.util.DatafileDebug("HandleDatafile: targetValue(уровень защиты)=%s", tostring(targetValue))
 
 		if playerValue >= targetValue then
 			if playerValue == 0 then
+				ix.util.DatafileDebug("ОТКАЗ: playerValue=0 (нет прав на просмотр досье)")
+				if IsValid(player) then player:Notify("У вас нет доступа к датафайлам (карта без флага доступа).") end
 				return false
 			end
-			
+
 			local dID, datafile, genericdata = self:ReturnDatafileByID(target)
+			-- Защита от NULL в БД
+			genericdata = istable(genericdata) and genericdata or {}
+			datafile    = istable(datafile)    and datafile    or {}
+
 			local bTargetIsRestricted, restrictedText = self:IsRestricted(genericdata)
 			local data = {}
 			local db = self.stored[tonumber(dID)]
@@ -197,8 +316,8 @@ function PLUGIN:HandleDatafile(player, target)
 
 			if playerValue == 1 then
 				if bTargetIsRestricted then
-					--Clockwork.player:Notify(player, "This datafile has been restricted; access denied. REASON: " .. restrictedText)
-
+					ix.util.DatafileDebug("ОТКАЗ: досье ограничено, а у игрока MINOR(1)")
+					if IsValid(player) then player:Notify("Это досье ограничено — доступ только для старших званий.") end
 					return false
 				end
 
@@ -209,8 +328,10 @@ function PLUGIN:HandleDatafile(player, target)
 					end
 				end
 
+				ix.util.DatafileDebug("ОТПРАВКА: CreateRestrictedDatafile dID=%s", tostring(dID))
 				netstream.Start(player, "CreateRestrictedDatafile", target, genericdata, restrictedDatafile, data)
 			else
+				ix.util.DatafileDebug("ОТПРАВКА: CreateFullDatafile dID=%s записей=%d", tostring(dID), table.Count(datafile))
 				netstream.Start(player, "CreateFullDatafile", target, genericdata, datafile, data)
 				net.Start("PopulateDatafilePoints")
 					net.WriteInt(genericdata.points or 0, 16)
@@ -218,11 +339,16 @@ function PLUGIN:HandleDatafile(player, target)
 			end
 
 			player.lastDatafile = tonumber(dID)
+			return true
 		elseif playerValue < targetValue then
+			ix.util.DatafileDebug("ОТКАЗ: playerValue(%s) < targetValue(%s)", tostring(playerValue), tostring(targetValue))
+			if IsValid(player) then player:Notify("Недостаточно прав: уровень защиты этого досье выше вашего доступа.") end
 			return false
 		end
 	else
+		if !IsValid(target) then return false end
 		local targetCharacter = target:GetCharacter()
+		if !targetCharacter then return false end
 
 		targetValue = targetCharacter:ReturnDatafilePermission()
 
@@ -264,6 +390,7 @@ function PLUGIN:HandleDatafile(player, target)
 			end
 
 			player.lastDatafile = tonumber(dID)
+			return true
 		elseif playerValue < targetValue then
 			--Clockwork.player:Notify(player, "You are not authorized to access this datafile.")
 

@@ -1,11 +1,11 @@
-RECIPE.name = "recipe.tailoring.gray_beanie"
+RECIPE.name = "Кепка"
 RECIPE.category = "recipe.category.head"
 RECIPE.requirements = {
 	mat_cloth = 3,
 	box_of_needles = 1
 }
 RECIPE.results = {
-	grey_beanie = 1
+	cap_baseball = 1
 }
 RECIPE.skill = {"tailoring", 1}
 RECIPE.tools = {"tool_scissors"}

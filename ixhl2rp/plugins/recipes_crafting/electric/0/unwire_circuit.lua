@@ -8,5 +8,5 @@ RECIPE.results = {
 	mat_resine = 2,
 }
 RECIPE.skill = {"electric", 0}
-RECIPE.tools = {"tool_screw"}
+RECIPE.tools = {"wm_screwdriver"}
 RECIPE.xp = 15

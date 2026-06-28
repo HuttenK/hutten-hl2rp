@@ -200,7 +200,10 @@ function PANEL:SetupCraft()
 			end
 		else
 			name = L(info.name)
-			clr = (self.recipe.station == (parent.station or {}).uniqueID) and Color(255, 255, 255, 255) or Color(255, 72, 72, 255)
+			local atStation = (parent.station or {}).uniqueID
+			-- The Combine fabrication terminal is a master station: it satisfies any requirement.
+			local satisfied = atStation == "station_combine" or self.recipe.station == atStation
+			clr = satisfied and Color(255, 255, 255, 255) or Color(255, 72, 72, 255)
 		end
 
 		parent.stationsPanel:SetVisible(true)

@@ -53,6 +53,74 @@ do
 			instance:SetupCharacter(self)
 
 			client:AddItem(instance, "cid")
+
+			-- Авто-регистрация при первом спавне: уникальный CID + впечатывание
+			-- персонажа в карту (раньше это делалось вручную через /CardImprint).
+			Schema:ImprintCard(instance, self)
 		end
 	end
 end
+
+-- =====================================================================
+-- Привязка ("впечатывание") персонажа в CID-карту.
+-- Снимок на карту: datafileID(связь), name, charModel, charSkin, charGeneticRaw.
+-- Очки лояльности/статус НЕ пишем на карту — они берутся из досье по datafileID.
+-- Текст физописания строит клиент-владелец (L() работает только на клиенте).
+-- =====================================================================
+util.AddNetworkString("ixCardImprintDescReq")
+util.AddNetworkString("ixCardImprintDescResp")
+
+function Schema:ImprintCard(item, character)
+	if !item or !item.SetData or !character then return false end
+
+	-- Уникальный CID — выдаём, только если его ещё нет (не затираем выданный
+	-- терминалом/админом). Детерминирован от ID персонажа => уникален и стабилен.
+	local curCID = tostring(item:GetData("cid", "") or "")
+	if curCID == "" or curCID == "000-00" or curCID == "0000" then
+		local n = Schema:ZeroNumber(character:GetID() % 100000, 5)
+		item:SetData("cid", string.format("%s-%s", n:sub(1, 3), n:sub(4, 5)))
+	end
+
+	-- Связь карта <-> персонаж
+	item:SetData("datafileID", character:GetID())
+
+	-- Идентичность (снимок)
+	item:SetData("name",      character:GetName())
+	item:SetData("charModel", character:GetModel() or "")
+	item:SetData("charSkin",  character:GetData("skin", 0))
+
+	-- Сырая генетика (4 числа: shape, height, age, eyeColor) — текст соберёт клиент
+	local g = character.Genetic and character:Genetic()
+	if g and g.ToSaveable then
+		item:SetData("charGeneticRaw", g:ToSaveable())
+	end
+
+	-- Просим клиента-владельца собрать текст физописания и вернуть его
+	local ply = character:GetPlayer()
+	if IsValid(ply) then
+		net.Start("ixCardImprintDescReq")
+			net.WriteUInt(item:GetID(), 32)
+		net.Send(ply)
+	end
+
+	-- Синхронизируем досье/stored (имя, доступ, очки — по datafileID)
+	hook.Run("OnIDCardUpdated", item)
+
+	return true
+end
+
+-- Клиент-владелец вернул собранный текст физописания -> кладём на карту
+net.Receive("ixCardImprintDescResp", function(len, ply)
+	local itemID = net.ReadUInt(32)
+	local desc   = net.ReadString()
+
+	local item = ix.Item.instances[itemID]
+	if !item or !item.GetData then return end
+
+	-- Защита: отвечающий должен быть владельцем персонажа этой карты
+	local char = ply:GetCharacter()
+	if !char then return end
+	if tonumber(item:GetData("datafileID")) != char:GetID() then return end
+
+	item:SetData("charGenetic", string.sub(tostring(desc or ""), 1, 255))
+end)

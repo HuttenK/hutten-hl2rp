@@ -1,0 +1,9 @@
+ITEM.name        = "ЭМИ-инструмент"
+ITEM.description  = "Самодельный ЭМИ-резак. Наведите на цель и активируйте (ЛКМ), чтобы вскрыть комбайновский замок, перегрузить силовое поле, отключить сканер контрабанды или обезвредить мину. Эффект временный."
+ITEM.model        = "models/weapons/w_emptool.mdl"
+ITEM.class        = "weapon_ix_emp"
+ITEM.weaponCategory = "secondary"
+ITEM.width        = 2
+ITEM.height       = 1
+ITEM.bDropOnDeath = true
+ITEM.noBusiness   = true

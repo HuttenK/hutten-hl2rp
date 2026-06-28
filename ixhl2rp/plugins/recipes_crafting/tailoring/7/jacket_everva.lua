@@ -1,5 +1,5 @@
-RECIPE.name = "recipe.tailoring.jacket_everva"
-RECIPE.category = "recipe.category.expensive_body"
+RECIPE.name = "Куртка рабочая жёлтая"
+RECIPE.category = "recipe.category.body"
 RECIPE.requirements = {
 	mat_cloth_reclaimed = 5,
 	mat_leather = 3,
@@ -7,7 +7,7 @@ RECIPE.requirements = {
 	box_of_needles = 1,
 }
 RECIPE.results = {
-	torso_loyaljacket_everva = 1
+	jacket_citizen_yellow = 1
 }
 RECIPE.skill = {"tailoring", 7}
 RECIPE.tools = {"tool_scissors"}

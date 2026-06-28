@@ -1,6 +1,6 @@
 ITEM.name = "Пистолет-пулемет MP5"
 ITEM.description = "Семейство пистолетов-пулемётов , разработанных немецкой фирмой Heckler & Koch в 1960-х годах на основе винтовки HK G3. Это одно из самых широко используемых пистолетов-пулемётов в мире, применяемое спецподразделениями, полицией и в других структурах. Популярен среди членов сопротивления за свою неприхотливость и распространенный боеприпас."
-ITEM.model = "models/weapons/arccw/c_ur_mp5.mdl"
+ITEM.model = "models/flaymi/anomaly/weapons/w_models/wpn_mp5_w.mdl"
 ITEM.class = "arccw_ur_mp5"
 ITEM.weaponCategory = "primary"
 ITEM.flag = "Z"

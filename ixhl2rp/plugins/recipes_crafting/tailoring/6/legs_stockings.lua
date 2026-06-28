@@ -1,4 +1,4 @@
-RECIPE.name = "recipe.tailoring.legs_stockings"
+RECIPE.name = "Брюки белые"
 RECIPE.category = "recipe.category.legs"
 RECIPE.requirements = {
 	mat_cloth_reclaimed = 2,
@@ -7,7 +7,7 @@ RECIPE.requirements = {
 	box_of_needles = 1,
 }
 RECIPE.results = {
-	legs_blue_stockings = 1
+	trousers_white = 1
 }
 RECIPE.skill = {"tailoring", 6}
 RECIPE.tools = {"tool_scissors"}

@@ -56,7 +56,12 @@ if SERVER then
 		if IsValid(phys) then
 			phys:EnableMotion(false)
 		end
-		
+
+		-- WM-фреймворк наносит урон не-NPC сущностям только при Health() > 0.
+		-- Даём большой запас «здоровья», чтобы срабатывал OnTakeDamage (древесину считаем сами).
+		self:SetMaxHealth(1000000)
+		self:SetHealth(1000000)
+
 		self.hitPoint = 1
 		self.oreValue = 100
 		self.depletedType = 1
@@ -141,10 +146,11 @@ if SERVER then
 		if IsValid(client) and client:IsPlayer() then
 			local activeWeapon = tostring(client:GetActiveWeapon())
 
-			if string.find(activeWeapon, "tfa_nmrih_hatchet") or string.find(activeWeapon, "tfa_nmrih_machete") then
+			if string.find(activeWeapon, "tfa_nmrih_hatchet") or string.find(activeWeapon, "tfa_nmrih_machete") or string.find(activeWeapon, "wm_axe") or string.find(activeWeapon, "wm_fireaxe") then
 				local activeWeapon = client:GetActiveWeapon()
 				local dmg = damageInfo:GetDamage()
-				local isPower = dmg >= activeWeapon.Secondary.Damage
+				local secDmg = (activeWeapon.Secondary and activeWeapon.Secondary.Damage) or math.huge
+				local isPower = dmg >= secDmg
 
 				self:EmitSound(self.BreakSounds[math.random(1, #self.BreakSounds)])
 

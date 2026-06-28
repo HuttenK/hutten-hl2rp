@@ -179,3 +179,64 @@ ix.command.Add("AmmoDebug", {
 		print(msg)
 	end
 })
+
+-- ============================================================
+-- Бутылка ближнего боя: SWEP wm_bottle при удаче ломается и сам меняется на
+-- wm_bottle_broken (логика внутри SWEP-а, функция brokebottle). Синхронизируем
+-- предмет в инвентаре по weapon.ixItem: источник (empty_glass_bottle или
+-- wm_bottle) -> wm_bottle_broken, либо удаляем, если бутылка разлетелась
+-- полностью. Это единственный способ получить "розочку".
+-- ============================================================
+if SERVER then
+	local function HandleBottleGone(owner, item)
+		if not IsValid(owner) or not owner:IsPlayer() or not owner:Alive() then return end
+
+		-- Намеренное снятие и смерть выставляют equip=false — тогда ничего не делаем.
+		if not item or not item.GetData or item:GetData("equip") ~= true then return end
+
+		item:SetData("equip", false)
+		item:Remove()
+
+		-- Полное разбитие (без розочки) — бутылки просто больше нет.
+		if not owner:HasWeapon("wm_bottle_broken") then return end
+
+		-- Разбилась в розочку: выдаём соответствующий предмет, уже "в руках".
+		local brokenWep = owner:GetWeapon("wm_bottle_broken")
+		local instance = ix.Item:Instance("wm_bottle_broken")
+
+		if not instance then return end
+
+		if not owner:AddItem(instance) then
+			ix.Item:Spawn(owner, nil, instance)
+		end
+
+		instance:SetData("equip", true)
+
+		if IsValid(brokenWep) then
+			brokenWep.ixItem = instance
+			owner.carryWeapons = owner.carryWeapons or {}
+			owner.carryWeapons[instance.weaponCategory or "melee"] = brokenWep
+		end
+	end
+
+	hook.Add("WeaponEquip", "ixBottleBreakSync", function(weapon)
+		if not IsValid(weapon) or weapon:GetClass() ~= "wm_bottle" then return end
+
+		-- Ждём кадр, чтобы владелец и weapon.ixItem успели проставиться.
+		timer.Simple(0, function()
+			if not IsValid(weapon) then return end
+
+			local owner = weapon:GetOwner()
+			if not IsValid(owner) or not owner:IsPlayer() then return end
+
+			weapon:CallOnRemove("ixBottleBreakSync", function(wep)
+				local item = wep.ixItem
+
+				-- Ждём, пока SWEP закончит ломаться (выдаст/не выдаст wm_bottle_broken).
+				timer.Simple(0, function()
+					HandleBottleGone(owner, item)
+				end)
+			end)
+		end)
+	end)
+end

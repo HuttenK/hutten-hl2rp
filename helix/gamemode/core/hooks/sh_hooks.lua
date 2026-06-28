@@ -167,7 +167,12 @@ function GM:DoAnimationEvent(client, event, data)
 				end
 			end
 
-			local animation = client.ixAnimTable
+			-- ixAnimTable can be nil when the active weapon uses a holdtype the
+			-- player model's anim class doesn't define (e.g. some Woowz Melee
+			-- weapons / dynamic holdtype swaps). Fall back to an empty table so the
+			-- attack/reload gesture lookups below use their defaults instead of
+			-- erroring on a nil index.
+			local animation = client.ixAnimTable or {}
 
 			if (event == PLAYERANIMEVENT_ATTACK_PRIMARY) then
 				client:AnimRestartGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, animation.attack or ACT_GESTURE_RANGE_ATTACK_SMG1, true)

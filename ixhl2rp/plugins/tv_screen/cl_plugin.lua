@@ -96,10 +96,21 @@ local function LoadURLContent(url)
 		return
 	end
 
+	-- Classify by extension. Strip query/fragment and lowercase first, otherwise
+	-- "clip.MP4" or "host/file.webm?token=..." get misdetected and fall through to
+	-- the <img> branch (which shows nothing for a video). Anything that isn't a
+	-- known IMAGE type is treated as video — for a TV, extensionless/stream links
+	-- (CDN redirects, etc.) are far more likely to be video than image.
+	-- NOTE: GMod's Chromium has NO H.264 codec, so .mp4 will load but render black.
+	-- Use .webm (VP8/VP9) or .ogg/.ogv for direct video.
+	local clean = (url:lower():match("^[^?#]+")) or url:lower()
+	local isImage = clean:match("%.png$") or clean:match("%.jpe?g$") or clean:match("%.gif$")
+		or clean:match("%.webp$") or clean:match("%.bmp$") or clean:match("%.svg$")
+
 	-- Direct video: muted (3D audio via CreateTVChannel), plays ONCE (no loop).
 	-- onended: clears screen and tells Lua to stop 3D audio channels.
 	local body
-	if url:match("%.mp4") or url:match("%.webm") or url:match("%.ogg") or url:match("%.m3u8") then
+	if not isImage then
 		-- Video starts muted for autoplay policy compliance.
 		-- The ix_tv_html_volume Think hook immediately adjusts volume via RunJavascript.
 		body = '<video id="v" src="' .. url .. '" autoplay playsinline muted '

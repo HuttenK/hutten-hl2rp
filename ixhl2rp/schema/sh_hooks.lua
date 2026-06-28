@@ -152,6 +152,7 @@ function Schema:InitializedChatClasses()
 		OnChatAdd = OnChatAddIt
 	})
 
+
 	-- Dispatch broadcast
 	ix.chat.Register("dispatch", {
 		color = Color(200, 75, 75),

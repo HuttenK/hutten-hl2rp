@@ -5,7 +5,7 @@ RECIPE.requirements = {
 	mat_resine = 2,
 }
 RECIPE.results = {
-	tool_screw = 1
+	wm_screwdriver = 1
 }
 RECIPE.skill = {"crafting", 1}
 RECIPE.station = "station_tokar"

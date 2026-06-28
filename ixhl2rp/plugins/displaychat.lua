@@ -43,11 +43,18 @@ function PLUGIN:MessageReceived(client, messageInfo)
 		if hook.Run("ShouldChatMessageDisplay2", client, messageInfo) != false then
 			local class = ix.chat.classes[messageInfo.chatType]
 
-			-- If this chat class belongs to a language the local player doesn't
-			-- understand, don't show the real text overhead — it would bypass
-			-- the gibberish that the chatbox correctly shows instead.
-			if class and class.langID then
-				local language = ix.languages and ix.languages:FindByID(class.langID)
+			-- Не показываем НАД ГОЛОВОЙ настоящий текст, если фраза сказана на
+			-- языке, которого локальный игрок не понимает (в чатбоксе она и так
+			-- выводится «тарабарщиной»). Важно: messageInfo.text здесь — СЫРОЙ,
+			-- неискажённый текст (ic/y/w делают chat.AddText сами и ничего не
+			-- возвращают), поэтому оверхед раньше «протекал». Язык сообщения лежит
+			-- в data.lang — ровно то, по чему чатбокс решает искажать ли речь
+			-- (см. schema/sh_hooks.lua). class.langID покрывает выделенные
+			-- языковые классы (напр. вортшаут).
+			local langID = (messageInfo.data and messageInfo.data.lang) or (class and class.langID)
+
+			if langID and ix.languages then
+				local language = ix.languages:FindByID(langID)
 				if language and not language:PlayerCanSpeakLanguage(LocalPlayer()) then
 					return
 				end

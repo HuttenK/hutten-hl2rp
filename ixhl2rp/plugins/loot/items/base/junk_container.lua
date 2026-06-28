@@ -15,6 +15,15 @@ function ItemJunkContainer:Init()
 		Transmit = ix.transmit.owner,
 	})
 
+	-- Equip flag for containers that can be wielded as a melee weapon (e.g.
+	-- empty_glass_bottle). Registered in the shared base Init so the data var is
+	-- deterministic across realms for every container, even those that never use it.
+	self:AddData("equip", {
+		Transmit = ix.transmit.owner,
+		Write = function(item, value) net.WriteBool(value) end,
+		Read = function(item) return net.ReadBool() end,
+	})
+
 	self.functions.use = {
 		name = "loot.useSip",
 		OnRun = function(item)

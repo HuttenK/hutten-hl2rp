@@ -1,6 +1,6 @@
 ITEM.name           = "Дробовик Ремингтон-870"
 ITEM.description    = "Американское помповое ружьё, впервые представленное в 1950 году компанией Remington Arms. Самая настоящая классика в оружейном мире. Сочетает в себе высокую убойную силу, неплохую эргономику и надёжность. Стоит на вооружении некоторых подразделений армии Надзора."
-ITEM.model          = "models/weapons/arccw/c_ud_870.mdl"
+ITEM.model          = "models/flaymi/anomaly/weapons/w_models/wpn_mp133_w.mdl"
 ITEM.class          = "arccw_ud_870"
 ITEM.weaponCategory = "primary"
 ITEM.flag           = "Z"

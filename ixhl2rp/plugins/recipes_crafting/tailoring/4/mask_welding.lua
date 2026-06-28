@@ -1,4 +1,4 @@
-RECIPE.name = "recipe.tailoring.mask_welding"
+RECIPE.name = "Респиратор"
 RECIPE.category = "recipe.category.face"
 RECIPE.requirements = {
 	metal_scrap = 2,
@@ -6,9 +6,9 @@ RECIPE.requirements = {
 	mat_glass = 1,
 }
 RECIPE.results = {
-	weldingmask = 1
+	respirator_af = 1
 }
 RECIPE.skill = {"tailoring", 4}
-RECIPE.tools = {"tool_hammer"}
+RECIPE.tools = {"wm_hammer"}
 RECIPE.station = "station_tailor"
 RECIPE.xp = 75

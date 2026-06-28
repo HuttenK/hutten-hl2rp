@@ -1,11 +1,11 @@
-RECIPE.name = "recipe.tailoring.gloves_full"
+RECIPE.name = "Перчатки"
 RECIPE.category = "recipe.category.hands"
 RECIPE.requirements = {
 	mat_cloth = 2,
 	box_of_needles = 1
 }
 RECIPE.results = {
-	gloves_full = 1
+	gloves_af = 1
 }
 RECIPE.skill = {"tailoring", 1}
 RECIPE.tools = {"tool_scissors"}

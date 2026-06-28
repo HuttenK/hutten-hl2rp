@@ -1,0 +1,9 @@
+ITEM.name        = "Транквилизатор"
+ITEM.description  = "Самодельный одноразовый дротомёт. Один выстрел дротиком с нейротоксином из Зен-флоры: цель падает и около 2 минут не может двигаться, оставаясь в сознании и всё видя. После выстрела устройство разряжается и приходит в негодность."
+ITEM.model        = "models/weapons/w_crossbow.mdl"
+ITEM.class        = "weapon_ix_transvil"
+ITEM.weaponCategory = "primary"
+ITEM.width        = 3
+ITEM.height       = 2
+ITEM.bDropOnDeath = true
+ITEM.noBusiness   = true

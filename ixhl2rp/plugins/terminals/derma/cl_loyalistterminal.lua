@@ -395,6 +395,19 @@ function PANEL:Error(message)
 	end
 end
 
+-- Цвета уровней лояльности (по порядку из sh_loyalty.define.lua)
+local loyaltyLevelColors = {
+	[1] = Color(180, 50,  50),    -- Анти-социальный (уровень G)
+	[2] = Color(155, 135, 70),    -- Низший класс (уровень D)
+	[3] = Color(185, 200, 210),   -- Обычные граждане (уровень 0)
+	[4] = Color(255, 70,  70),    -- Сторонник 1-го уровня (крас��ый)
+	[5] = Color(230, 210, 55),    -- Сторонник 2-го уровня (жёлтый)
+	[6] = Color(70,  130, 255),   -- Лоялист 1-го уровня (син��й)
+	[7] = Color(80,  210, 100),   -- Лоя��ист 2-го уровня (зелёный)
+	[8] = Color(255, 220, 30),    -- Почетный лоялист (белый/золотой)
+	[9] = Color(210, 185, 255),   -- Высший лоялист (фиолетовый)
+}
+
 function PANEL:ShowInfoPanel(loadTime)
 	if (IsValid(self.spinner)) then
 		self.spinner:Remove()
@@ -409,10 +422,6 @@ function PANEL:ShowInfoPanel(loadTime)
 	self.loading = false
 
 	if (loadTime) then
-		if (self.spinner) then
-			self.spinner:Remove()
-		end
-
 		self.loading = true
 		self.spinner = self:AddComponent("ixLoyalistTerminalSpinner")
 		self.spinner:SetSize(spinnerSize, spinnerSize)
@@ -422,37 +431,186 @@ function PANEL:ShowInfoPanel(loadTime)
 		self.spinner:SetPaintedManually(true)
 
 		timer.Simple(loadTime, function()
-			if (!IsValid(self)) then
-				return
-			end
-
+			if (!IsValid(self)) then return end
 			self.name = self:CalcName(PLUGIN.nName:upper(), self:GetWide() - 165)
-
 			self:ShowInfoPanel()
 		end)
 
 		return
 	end
 
+	-- ── Заранее вычисляем данные (не в Paint, чтобы не тратить каждый кадр) ──
+
+	-- Физическое описание: берём с сервера (данные владельца карточки)
+	local geneticDesc = PLUGIN.geneticDesc or ""
+	local descParts = string.Explode(" | ", geneticDesc)
+	local descLine1 = table.concat(descParts, " | ", 1, math.min(2, #descParts))
+	local descLine2 = #descParts > 2 and table.concat(descParts, " | ", 3, #descParts) or nil
+
+	-- Уровень лояльности
+	local civilIdx     = PLUGIN.civilStatus or 1
+	local loyaltyInfo  = ix.Loyalty:Get(civilIdx) or {}
+	local nextLoyalty  = ix.Loyalty:Get(civilIdx + 1)
+	local levelColor   = loyaltyLevelColors[civilIdx] or semiBlue
+	local loyaltyName  = (loyaltyInfo.name or PLUGIN.status):upper()
+
+	-- CID-номер
+	local cidCard = LocalPlayer():GetIDCard()
+	local cidNum  = cidCard and cidCard:GetData("cid") or "---"
+
+	-- ── Геометрия ──
+	local W, H     = self:GetWide(), self:GetTall()
+	local photoX, photoY = inset, 35
+	local photoW,  photoH = 220, 340
+	local textX    = photoX + photoW + 18
+	local textW    = W - textX - inset
+
+	-- ── Создаём панель ──
 	self.infoPanel = self:AddComponent("Panel")
 	self.infoPanel:SetAlpha(0)
 	self.infoPanel:Dock(FILL)
 	self.infoPanel.Paint = function(s, w, h)
-		draw.SimpleText(self.name or LocalPlayer():Name(), "TerminalSubTitleLight", 80, 25, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 
+		-- ── ФОТО (левая колонка) ──────────────────────────────────────────
+		if PLUGIN.photoReady then
+			surface.SetMaterial(PLUGIN.photoMat)
+			surface.SetDrawColor(200, 220, 235, 255)
+			surface.DrawTexturedRect(photoX, photoY, photoW, photoH)
+
+			-- Движущаяся сканирующая полоска поверх фото
+			surface.SetDrawColor(0, 200, 255, 18)
+			local scanPos = (CurTime() * 160) % (photoH + 80)
+			surface.DrawRect(photoX, photoY + scanPos - 80, photoW, 80)
+		else
+			-- Плейсхолдер пока фото рендерится
+			surface.SetDrawColor(18, 42, 55, 255)
+			surface.DrawRect(photoX, photoY, photoW, photoH)
+			surface.SetDrawColor(0, 170, 210, 28)
+			local scanPos = (CurTime() * 110) % (photoH + 50)
+			surface.DrawRect(photoX, photoY + scanPos - 50, photoW, 50)
+			draw.SimpleText("СКАНИРОВАНИЕ...", "TerminalClock",
+				photoX + photoW * 0.5, photoY + photoH * 0.5,
+				semiBlue, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		end
+
+		-- Рамка вокруг фото
 		surface.SetDrawColor(semiBlue)
-		surface.DrawRect(80, 80, w - 80 * 2, 2)
-		surface.DrawRect(80, 85, w - 80 * 2, 2)
+		surface.DrawOutlinedRect(photoX, photoY, photoW, photoH)
 
-		draw.SimpleText(L("terminalStatusLabel", PLUGIN.status), "TerminalTextSmall3", 80, 90, semiBlue, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-		draw.SimpleText(L("terminalRegisteredLabel", PLUGIN.aparts), "TerminalTextSmall4", 80, 112, semiBlue, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+		-- Подпись «ФОТО» снизу под рамкой
+		draw.SimpleText("ФОТО · ДОСЬЕ", "TerminalTextSmall4",
+			photoX + photoW * 0.5, photoY + photoH + 6,
+			Color(semiBlue.r, semiBlue.g, semiBlue.b, 160),
+			TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
 
-		draw.SimpleText(L("terminalYouHave"), "TerminalTextPointsBig", w * 0.5, h * 0.35, semiBlue, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-		draw.SimpleText(PLUGIN.points, "TerminalLargePointsLarge", w * 0.5, h * 0.5, pointColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-		draw.SimpleText(L("terminalLoyaltyPoints"), "TerminalTextPointsSmalll", w * 0.5, h * 0.65, semiBlue, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		-- ── ИНФОРМАЦИЯ (правая колонка) ───────────────────────────────────
+		local cy = photoY
+
+		-- Имя персонажа
+		draw.SimpleText(self.name or PLUGIN.nName:upper(), "TerminalSubTitleLight",
+			textX, cy, offWhite, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+		cy = cy + 62
+
+		-- Номер гражданина
+		draw.SimpleText("ГР. #" .. cidNum, "TerminalClock",
+			textX, cy, Color(140, 185, 210), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+		cy = cy + 30
+
+		-- Разделитель ──────────────────────
+		surface.SetDrawColor(semiBlue)
+		surface.DrawRect(textX, cy, textW, 2)
+		cy = cy + 10
+
+		-- Физическое описание
+		if descLine1 != "" then
+			draw.SimpleText(descLine1, "TerminalClock",
+				textX, cy, Color(170, 195, 212), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+			cy = cy + 26
+		end
+		if descLine2 then
+			draw.SimpleText(descLine2, "TerminalClock",
+				textX, cy, Color(170, 195, 212), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+			cy = cy + 26
+		end
+		cy = cy + 6
+
+		-- Разделитель ──────────────────────
+		surface.SetDrawColor(semiBlue)
+		surface.DrawRect(textX, cy, textW, 2)
+		cy = cy + 10
+
+		-- Уровень лояльности
+		draw.SimpleText("УРОВЕНЬ ЛОЯЛЬНОСТИ", "TerminalTextSmall4",
+			textX, cy, semiBlue, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+		cy = cy + 23
+
+		draw.SimpleText(loyaltyName, "TerminalTextSmall3",
+			textX, cy, levelColor, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+		cy = cy + 34
+
+		-- Разделитель ──────────────────────
+		surface.SetDrawColor(semiBlue)
+		surface.DrawRect(textX, cy, textW, 2)
+		cy = cy + 10
+
+		-- Социальные кредиты
+		draw.SimpleText("СОЦИАЛЬНЫЕ КРЕДИТЫ", "TerminalTextSmall4",
+			textX, cy, semiBlue, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+		cy = cy + 23
+
+		draw.SimpleText(tostring(PLUGIN.points), "TerminalTextLight",
+			textX, cy, pointColor, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+		cy = cy + 52
+
+		-- Прогресс-бар до следующего уровня
+		if nextLoyalty and nextLoyalty.cost and nextLoyalty.cost > 0 then
+			local barH   = 10
+			local barW   = textW
+			local minVal = loyaltyInfo.demoteThreshold or 0
+			local maxVal = nextLoyalty.cost
+			local val    = PLUGIN.points
+
+			-- Положение нуля на баре
+			local zeroFrac = (minVal != 0)
+				and (math.abs(minVal) / (math.abs(minVal) + maxVal))
+				or 0
+
+			-- Прогресс от нуля до maxVal
+			local fillFrac = math.Clamp(val / maxVal, 0, 1)
+
+			-- Фон бара
+			surface.SetDrawColor(15, 35, 48, 220)
+			surface.DrawRect(textX, cy, barW, barH)
+
+			-- Красная зона (ниже нуля)
+			if zeroFrac > 0 then
+				surface.SetDrawColor(140, 25, 25, 180)
+				surface.DrawRect(textX, cy, barW * zeroFrac, barH)
+			end
+
+			-- Заполнение прогресса (цвет текущего уровня)
+			if fillFrac > 0 then
+				surface.SetDrawColor(levelColor.r, levelColor.g, levelColor.b, 210)
+				surface.DrawRect(textX + barW * zeroFrac, cy,
+					barW * (1 - zeroFrac) * fillFrac, barH)
+			end
+
+			-- Рамка бара
+			surface.SetDrawColor(semiBlue)
+			surface.DrawOutlinedRect(textX, cy, barW, barH)
+
+			cy = cy + barH + 5
+
+			-- Подписи: мин и макс
+			draw.SimpleText(tostring(minVal), "TerminalTextSmall4",
+				textX, cy, Color(200, 80, 80), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+			draw.SimpleText(tostring(maxVal), "TerminalTextSmall4",
+				textX + barW, cy, levelColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
+		end
 	end
 
-	local buttonWide, buttonTall = self:GetWide() / 2.8, 60
+	-- ── Кнопка «Вызвать офицера» ──────────────────────────────────────────
+	local buttonWide, buttonTall = self:GetWide() / 2.8, 55
 	self.requestButton = self:AddComponent("ixLoyalistTerminalButton", self.infoPanel)
 	self.requestButton:SetSize(buttonWide, buttonTall)
 	self.requestButton:SetFont("TerminalButtonText")
@@ -463,7 +621,7 @@ function PANEL:ShowInfoPanel(loadTime)
 	self.requestButton:SetPaintedManually(true)
 	self.requestButton:SetText(L("terminalCallOfficer"))
 	self.requestButton:SetMouseInputEnabled(true)
-	self.requestButton:SetPos(self:GetWide() * 0.5 - buttonWide * 0.5, self:GetTall() - buttonTall - 60)
+	self.requestButton:SetPos(self:GetWide() * 0.5 - buttonWide * 0.5, self:GetTall() - buttonTall - 25)
 	self.requestButton.DoClick = function(button)
 		if (CurTime() < (button.nextClick or 0)) then return end
 		if (CurTime() < (self.grace or 0)) then return end
@@ -474,15 +632,14 @@ function PANEL:ShowInfoPanel(loadTime)
 		surface.PlaySound("terminals/click.wav")
 
 		if (CurTime() < (LocalPlayer().nextRequest or 0)) then
-			self:Error(L("terminalWaitBeforeRequest", math.floor(LocalPlayer().nextRequest - CurTime())))
-
+			self:Error(L("terminalWaitBeforeRequest",
+				math.floor(LocalPlayer().nextRequest - CurTime())))
 			return
 		end
 
 		LocalPlayer().nextRequest = CurTime() + 300
-
 		LocalPlayer():NotifyLocalized("terminal.callSent")
-		
+
 		net.Start("ixTerminalRequest")
 		net.SendToServer()
 	end
@@ -493,7 +650,8 @@ function PANEL:ShowInfoPanel(loadTime)
 	self.infoPanel:AlphaTo(255, 0.2, 0)
 	self.requestButton:AlphaTo(255, 0.2, 0)
 
-	timer.Simple(10, function() if (IsValid(self)) then self:ShowMainMenu() end end)
+	-- Автовозврат на главный экран через 15 секунд
+	timer.Simple(15, function() if (IsValid(self)) then self:ShowMainMenu() end end)
 end
 
 function PANEL:ShowMainMenu(loadTime)

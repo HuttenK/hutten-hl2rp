@@ -1,5 +1,5 @@
-RECIPE.name = "recipe.tailoring.legs2_ingotex13"
-RECIPE.category = "recipe.category.expensive_legs"
+RECIPE.name = "Штаны красные"
+RECIPE.category = "recipe.category.legs"
 RECIPE.requirements = {
 	mat_cloth_reclaimed = 2,
 	mat_leather = 1,
@@ -7,7 +7,7 @@ RECIPE.requirements = {
 	box_of_needles = 1,
 }
 RECIPE.results = {
-	legs_black_ingotex13 = 1
+	pants_red = 1
 }
 RECIPE.skill = {"tailoring", 7}
 RECIPE.tools = {"tool_scissors"}

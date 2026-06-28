@@ -22,7 +22,13 @@ function Item:Init()
 				data.endpos = data.start + client:GetAimVector() * 96
 				data.filter = client
 			local target = util.TraceLine(data).Entity
-			
+			-- Resolve prop_dynamic (visual model) to the real ix_rationdispenser parent
+			if IsValid(target) and target:GetClass() == "prop_dynamic" then
+				local parent = target:GetParent()
+				if IsValid(parent) and parent:GetClass() == "ix_rationdispenser" then
+					target = parent
+				end
+			end
 
 			if IsValid(target) and target.IsRationDispenser then
 				local display = target:GetDisplay()
@@ -44,6 +50,13 @@ function Item:Init()
 
 			if IsValid(client) then
 				local target = client:GetEyeTrace().Entity
+				-- Resolve prop_dynamic (visual model) to the real ix_rationdispenser parent
+				if IsValid(target) and target:GetClass() == "prop_dynamic" then
+					local parent = target:GetParent()
+					if IsValid(parent) and parent:GetClass() == "ix_rationdispenser" then
+						target = parent
+					end
+				end
 
 				if target and target.IsRationDispenser then
 					entity = target

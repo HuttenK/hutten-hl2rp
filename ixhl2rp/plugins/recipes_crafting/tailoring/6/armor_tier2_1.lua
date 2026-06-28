@@ -1,3 +1,5 @@
+RECIPE.disabled = true -- отключено по запросу
+
 RECIPE.name = "recipe.tailoring.armor_tier2_1"
 RECIPE.category = "recipe.category.armor_body"
 RECIPE.requirements = {

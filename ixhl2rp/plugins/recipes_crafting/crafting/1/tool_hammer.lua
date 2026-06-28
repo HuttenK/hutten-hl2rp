@@ -5,7 +5,7 @@ RECIPE.requirements = {
 	mat_wood = 2,
 }
 RECIPE.results = {
-	tool_hammer = 1
+	wm_hammer = 1
 }
 RECIPE.skill = {"crafting", 1}
 RECIPE.station = "station_tokar"

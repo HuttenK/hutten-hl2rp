@@ -10,6 +10,6 @@ RECIPE.results = {
 	gun_pistol_receiver = 1
 }
 RECIPE.skill = {"crafting", 4}
-RECIPE.tools = {"tool_hacksaw", "tool_hammer"}
+RECIPE.tools = {"tool_hacksaw", "wm_hammer"}
 RECIPE.station = "station_guns"
 RECIPE.xp = 80

@@ -10,6 +10,6 @@ RECIPE.results = {
 	repair_kit = 1
 }
 RECIPE.skill = {"crafting", 4}
-RECIPE.tools = {"tool_hammer", "tool_welding"}
+RECIPE.tools = {"wm_hammer", "tool_welding"}
 RECIPE.station = "station_guns"
 RECIPE.xp = 90

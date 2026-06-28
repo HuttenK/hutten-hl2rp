@@ -89,6 +89,13 @@ surface.CreateFont("cmb.terminal.medium16z", {
 	weight = 400
 })
 
+surface.CreateFont("cmb.terminal.light22", {
+	font = "Blender Pro Book",
+	extended = true,
+	size = 22,
+	weight = 400
+})
+
 // rework
 
 surface.CreateFont("cmb.test.1", {

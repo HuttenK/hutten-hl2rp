@@ -73,6 +73,7 @@ cLosingContact 				= "Загрузка информации потерянног
 cLostContact 				= "ВНИМАНИЕ! Потерян радиоконтакт сотрудника, местоположение неизвестно..."
 
 voices 						= "Голоса"
+activities					= "Занятия"
 
 cmdMeC 						= "Выполнить физическое действие в близком радиусе."
 cmdMeL 						= "Выполнить физическое действие в большом радиусе."
@@ -334,6 +335,7 @@ craft.station.chem                 = "Химический стол"
 craft.station.guns                 = "Оружейный стол"
 craft.station.tailor               = "Швейный стол"
 craft.station.tokar                 = "Токарный стол"
+craft.station.combine               = "Производственный терминал Альянса"
 craftCreate                        = "Создать"
 craftStationTitle                  = "Рабочее место"
 craftDisassemblePrefix             = "РАЗОБРАТЬ: "
@@ -343,6 +345,7 @@ craftComponents                    = "Компоненты: "
 craftStationKey                    = "Рабочее место: "
 craftToolsKey                      = "Инструменты: "
 craftComponentsKey                 = "Компоненты:"
+craftCloseHint                     = "Закрыть (TAB)"
 
 -- Factory recycler
 factoryRecyclerName                = "Переработчик"
@@ -399,6 +402,9 @@ weaponConditionBroken              = "сломано"
 weaponStatDamage                   = "УРОН: %i"
 weaponStatRPM                      = "ВЫСТРЕЛОВ В МИНУТУ: %i"
 weaponStatAttackSpeed              = "СКОРОСТЬ АТАКИ: %s"
+weaponStatDamageType               = "ТИП УРОНА: %s"
+weaponDamageTypeSlash              = "Режущий (кровотечение)"
+weaponDamageTypeClub               = "Дробящий (ушибы)"
 weaponArmorPenetrationHeader       = "БРОНЕПРОБИВАЕМОСТЬ:"
 weaponArmorClassLine               = "КЛАСС БРОНИ %s: %s%%"
 

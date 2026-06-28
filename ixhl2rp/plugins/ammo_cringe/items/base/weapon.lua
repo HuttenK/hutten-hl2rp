@@ -4,9 +4,36 @@ Item.stackable = false
 Item.isWeapon = true
 Item.useSound = 'items/ammo_pickup.wav'
 Item.contraband = true
+Item.canRename = true
+Item.renameField = "customName"
+
+-- Показываем пользовательское имя, если задано
+function Item:GetName()
+	local custom = self:GetData("customName", "")
+	if custom and custom != "" then return custom end
+	-- На сервере L() требует игрока (для логов небезопасно) — используем серверобезопасную l()
+	return CLIENT and self:GetPrintName() or l(self.name)
+end
+
+-- Тултип/инвентарь показывают имя через GetPrintName, поэтому переопределяем именно его
+function Item:GetPrintName()
+	local custom = self:GetData("customName", "")
+	if custom and custom != "" then return custom end
+
+	if CLIENT then
+		local ok, result = pcall(L, tostring(self.name or "unknown"))
+		return ok and result or self.name
+	end
+
+	return self.name
+end
 
 function Item:IsEquipped()
-	return self.inventory_type == 'main' and (self:GetData('equip') == true)
+	-- equip-данные — достоверный признак экипировки (синхронизируются owner-transmit).
+	-- Раньше тут была привязка к self.inventory_type == 'main', но это поле на клиенте
+	-- не выставляется приёмником item.sync для предметов в инвентаре, поэтому после
+	-- ресинка (например при экипировке второго оружия) кнопка не переключалась на Unequip.
+	return self:GetData('equip') == true
 end
 
 local function Write_Equip(item, value)
@@ -150,6 +177,28 @@ function Item:Init()
 		end
 	}
 
+	-- Гарантируем флаги на самом инстансе (база — класс, наследование полей ненадёжно)
+	self.canRename = true
+	self.renameField = "customName"
+
+	self.functions.rename = {
+		name = "Переименовать",
+		icon = "icon16/textfield_rename.png",
+		OnClick = function(item)
+			Derma_StringRequest("Переименование оружия", "Введите название:", item:GetData("customName", ""),
+				function(text)
+					netstream.Start("ixItemRename", item.id, text)
+				end)
+			return false
+		end,
+		OnRun = function(item) return false end,
+		OnCanRun = function(item)
+			-- Переименование оружия — только администрация (пункт скрыт у остальных).
+			local ply = item.player or (CLIENT and LocalPlayer())
+			return !IsValid(item.entity) and IsValid(ply) and ply:IsAdmin()
+		end
+	}
+
 	self:AddData("equip", {
 		Transmit = ix.transmit.owner,
 		Write = Write_Equip,
@@ -166,6 +215,12 @@ function Item:Init()
 		Transmit = ix.transmit.none,
 	})
 
+	self:AddData("customName", {
+		Transmit = ix.transmit.all,
+		Write = function(item, value) net.WriteString(value or "") end,
+		Read = function(item) return net.ReadString() end,
+	})
+
 	self:AddData("locked", {
 		Transmit = ix.transmit.none,
 	})
@@ -178,6 +233,20 @@ function Item:Init()
 		Transmit = ix.transmit.all,
 		Write = Write_Durability,
 		Read = Read_Durability
+	})
+
+	-- ArcCW per-item attachment storage (used by the arccw_item_atts plugin).
+	-- MUST be registered here in the shared base Init, not in a server-only
+	-- plugin file. AddData mutates var_max/var_max_bits and the index->key map;
+	-- if the server and client disagree on the var count, the per-key item.data
+	-- sync misreads the var index and silently drops pushes (e.g. equip),
+	-- AND a server-only registration that races item loading can leave some
+	-- weapon prototypes without the var, so SetData("arccw_atts") early-returns
+	-- and attachments never persist. Registering in the base guarantees an
+	-- identical, deterministic var on both realms for every weapon.
+	self:AddData("arccw_atts", {
+		Transmit = ix.transmit.none, -- server-only state, no net sync needed
+		-- persisted to DB (NoSave defaults to false)
 	})
 end
 
@@ -575,8 +644,20 @@ if CLIENT then
 			if weapon.Primary.NumShots then
 				damage = damage * weapon.Primary.NumShots
 			end
-			
-			StatRow("base", L("weaponStatDamage", damage), color_white, tooltip, true)
+
+			-- Melee weapons store their schema-controlled damage in Info.Damage
+			-- (the SWEP's own Primary.Damage is 0), so show that range instead.
+			if istable(self.Info) and istable(self.Info.Damage) then
+				StatRow("base", L("weaponStatDamage", self.Info.Damage[1]) .. " – " .. (self.Info.Damage[2] or self.Info.Damage[1]), color_white, tooltip, true)
+			else
+				StatRow("base", L("weaponStatDamage", damage), color_white, tooltip, true)
+			end
+
+			-- Melee weapons: show the real damage type (slash bleeds, club bruises).
+			if istable(self.Info) and self.Info.Class then
+				local typeText = (self.Info.Class == "club") and L("weaponDamageTypeClub") or L("weaponDamageTypeSlash")
+				StatRow("dmgtype", L("weaponStatDamageType", typeText), color_white, tooltip, true)
+			end
 
 			if weapon.Primary.RPM and !isMelee then
 				StatRow("rpm", L("weaponStatRPM", weapon.Primary.RPM), color_white, tooltip, true)

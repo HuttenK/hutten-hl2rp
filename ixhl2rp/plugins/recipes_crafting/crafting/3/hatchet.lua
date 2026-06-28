@@ -1,3 +1,5 @@
+RECIPE.disabled = true -- отключено по запросу
+
 RECIPE.name = "recipe.crafting.hatchet"
 RECIPE.category = "recipe.category.melee"
 RECIPE.requirements = {
@@ -5,8 +7,8 @@ RECIPE.requirements = {
 	mat_wood = 1,
 }
 RECIPE.results = {
-	hatchet = 1
+	wm_axe = 1
 }
 RECIPE.skill = {"crafting", 3}
-RECIPE.tools = {"tool_hammer"}
+RECIPE.tools = {"wm_hammer"}
 RECIPE.xp = 75

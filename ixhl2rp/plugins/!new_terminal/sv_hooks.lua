@@ -1,6 +1,7 @@
 local PLUGIN = PLUGIN
 
 util.AddNetworkString("civil.terminal.login")
+util.AddNetworkString("civil.terminal.show")
 
 net.Receive("civil.terminal.login", function(_, client)
 	local character = client:GetCharacter()
@@ -8,6 +9,12 @@ net.Receive("civil.terminal.login", function(_, client)
 
 	if !character or !IsValid(terminal) then return end
 	if client:GetEyeTraceNoCursor().Entity != terminal then return end
+
+	-- Доступ к терминалу только с экипированной CID-картой
+	if !client:GetIDCard() then
+		client:Notify("Требуется CID-карта для авторизации в терминале.")
+		return
+	end
 
 	if character.noDatafile then
 		ix.Datafile:Create(character, {}, function(datafile)
@@ -56,3 +63,28 @@ netstream.Hook("civil.terminal.messages", function(client, targetPage)
 
 	PLUGIN:TerminalFetchMessages(client, id, targetPage)
 end)
+
+-- Сохранение/загрузка размещённых терминалов между рестартами карты
+function PLUGIN:SaveData()
+	local data = {}
+	for _, v in ipairs(ents.FindByClass("ix_civil_terminal")) do
+		data[#data + 1] = { v:GetPos(), v:GetAngles() }
+	end
+	self:SetData(data)
+end
+
+function PLUGIN:LoadData()
+	local data = self:GetData()
+	if !istable(data) then return end
+
+	for _, v in ipairs(data) do
+		local ent = ents.Create("ix_civil_terminal")
+		if !IsValid(ent) then continue end
+		ent:SetPos(v[1])
+		ent:SetAngles(v[2])
+		ent:Spawn()
+
+		local phys = ent:GetPhysicsObject()
+		if IsValid(phys) then phys:EnableMotion(false) end
+	end
+end

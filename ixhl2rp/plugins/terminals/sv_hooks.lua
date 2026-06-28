@@ -4,22 +4,49 @@ util.AddNetworkString("ixTerminalResponse")
 util.AddNetworkString("ixTerminalRetrieveInfo")
 util.AddNetworkString("ixTerminalRequest")
 
-net.Receive("ixTerminalRetrieveInfo", function(len, player)
-	if !player:Alive() then return end
+local function UpdateCardAppearance(character)
+	local charID = character:GetID()
+	local model  = character:GetModel() or ""
+	local skin   = character:GetData("skin", 0)
+
+	for _, item in pairs(ix.Item.instances) do
+		if item.GetData and tonumber(item:GetData("datafileID")) == charID then
+			item:SetData("charModel", model)
+			item:SetData("charSkin",  skin)
+		end
+	end
+end
+
+function PLUGIN:PlayerLoadedCharacter(client, character)
+	timer.Simple(0.5, function()
+		if IsValid(client) and client:GetCharacter() == character then
+			UpdateCardAppearance(character)
+		end
+	end)
+end
+
+function PLUGIN:CharacterVarChanged(character, key, oldVar, value)
+	if key == "model" then
+		UpdateCardAppearance(character)
+	end
+end
+
+net.Receive("ixTerminalRetrieveInfo", function(len, ply)
+	if !ply:Alive() then return end
 
 	local terminal
-	for k, v in pairs(ents.FindInSphere(player:GetPos(), 80)) do
+	for k, v in pairs(ents.FindInSphere(ply:GetPos(), 80)) do
 		if v:GetClass() == "ix_loyalist_terminal" then
 			terminal = v
 			break
 		end
 	end
 
-	if !IsValid(terminal) then 
+	if !IsValid(terminal) then
 		return
 	end
-	
-	local item = player:GetIDCard()
+
+	local item = ply:GetIDCard()
 
 	if item then
 		local dID, datafile, genericdata = Schema:GetDatafile(item:GetData("cid") or "", item:GetData("number") or "")
@@ -37,12 +64,77 @@ net.Receive("ixTerminalRetrieveInfo", function(len, player)
 				end
 			end
 
+			-- Уровень лояльности: приоритет - строка из OLD датафайла (set admins),
+			-- fallback - новая система, default - CITIZEN (3).
+			local civilStatus = 3
+
+			if genericdata.status and ix.Loyalty then
+				for i = 1, #ix.Loyalty.levels do
+					local level = ix.Loyalty.levels[i]
+					if level and level.name == genericdata.status then
+						civilStatus = i
+						break
+					end
+				end
+			end
+
+			if civilStatus == 3 then
+				local character = ply:GetCharacter()
+				if character and character.datafile then
+					civilStatus = character.datafile:GetCivilStatus() or 3
+				end
+			end
+
+			-- Модель владельца карточки (не того, кто стоит у терминала).
+			-- Ищем среди всех онлайн-игроков по character:GetID().
+			local ownerModel = ""
+			local ownerSkin  = 0
+			local datafileID = tonumber(item:GetData("datafileID"))
+
+			local geneticDesc = ""
+
+			if datafileID then
+				local ownerPly = nil
+				for _, ply in ipairs(player.GetAll()) do
+					local plyChar = ply:GetCharacter()
+					if plyChar and plyChar:GetID() == datafileID then
+						ownerPly = ply
+						break
+					end
+				end
+
+				if IsValid(ownerPly) then
+					-- Берём ОРИГИНАЛЬНУЮ модель персонажа, а не текущую: форма/аутфит
+					-- через client:SetModel подменяют модель ИГРОКА (но не модель
+					-- персонажа). Авторитетный источник базовой модели — char_outfit.model.
+					local ownerChar = ownerPly:GetCharacter()
+					ownerModel = (ownerPly.char_outfit and ownerPly.char_outfit.model)
+						or (ownerChar and ownerChar:GetModel())
+						or ownerPly:GetModel() or ""
+					-- Скин формы тоже подменяется -> берём скин персонажа
+					ownerSkin  = (ownerChar and ownerChar:GetData("skin", 0)) or 0
+					item:SetData("charModel", ownerModel)
+					item:SetData("charSkin",  ownerSkin)
+
+					-- Описание строится на клиенте (L() на сервере требует client-контекст)
+				else
+					-- Владелец оффлайн: кэш с карточки
+					ownerModel  = item:GetData("charModel")   or ""
+					ownerSkin   = item:GetData("charSkin")    or 0
+					geneticDesc = item:GetData("charGenetic") or ""
+				end
+			end
+
 			net.Start("ixTerminalResponse")
 				net.WriteString(item:GetData("name") or "N/A")
 				net.WriteString(genericdata.aparts or "N/A")
 				net.WriteString(genericdata.status or "N/A")
 				net.WriteInt(genericdata.points or 0, 16)
-			net.Send(player)
+				net.WriteUInt(math.Clamp(civilStatus, 1, 255), 8)
+				net.WriteString(ownerModel)
+				net.WriteUInt(math.Clamp(ownerSkin, 0, 255), 8)
+				net.WriteString(geneticDesc)
+			net.Send(ply)
 		end
 	end
 end)
@@ -58,10 +150,10 @@ net.Receive("ixTerminalRequest", function(len, player)
 		end
 	end
 
-	if !IsValid(terminal) then 
-		return 
+	if !IsValid(terminal) then
+		return
 	end
-	
+
 	if CurTime() < (player.nextTerminalRequest or 0) then return; end
 
 	local b = player:GetIDCard()
@@ -69,11 +161,11 @@ net.Receive("ixTerminalRequest", function(len, player)
 
 	local waypoint = {
 		pos = terminal:GetPos() + terminal:GetUp() * 20 + terminal:GetForward() * 10,
-		text = L("terminalWaypointCall", b:GetData("name", "UNKNOWN"), b:GetData("cid", 0)),
+		text = L("terminalWaypointCall", player, b:GetData("name", "UNKNOWN"), b:GetData("cid", 0)),
 		color = Color(255, 180, 0),
 		addedBy = player,
 		time = CurTime() + 300
-    }
+	}
 
 	ix.plugin.list["waypoints"]:AddWaypoint(waypoint)
 
@@ -81,7 +173,7 @@ net.Receive("ixTerminalRequest", function(len, player)
 end)
 
 function PLUGIN:LoadData()
-    self:LoadLoyalistTerminals()
+	self:LoadLoyalistTerminals()
 end
 
 function PLUGIN:SaveData()

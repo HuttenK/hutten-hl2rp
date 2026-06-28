@@ -5,9 +5,9 @@ RECIPE.requirements = {
 	metal_armature = 1,
 }
 RECIPE.results = {
-	crowbar = 1
+	wm_crowbar = 1
 }
 RECIPE.skill = {"crafting", 3}
 RECIPE.station = "station_tokar"
-RECIPE.tools = {"tool_hammer"}
+RECIPE.tools = {"wm_hammer"}
 RECIPE.xp = 125

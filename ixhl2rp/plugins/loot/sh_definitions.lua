@@ -22,6 +22,7 @@ ix.LootContainer:Add("garbage", { -- garbage tier 0
 
 	LootGroup = {
 		garbage = {
+			{ id = "resin", weight = 20 },
 			{ id = "junk_paintcan", weight = 5 },
 			{ id = "junk_shoe", weight = 20 },
 			{ id = "junk_bombastick", weight = 8 },
@@ -95,6 +96,7 @@ ix.LootContainer:Add("trash_cluster", {  -- garbage tier 1
 
 	LootGroup = {
 		small = {
+			{ id = "resin", weight = 20 },
 			{ id = "junk_shoe", weight = 60 },
 			{ id = "junk_vcr", weight = 10 },
 			{ id = "junk_doll", weight = 50 },
@@ -103,7 +105,7 @@ ix.LootContainer:Add("trash_cluster", {  -- garbage tier 1
 			{ id = "junk_rolex", weight = 50 },
 			{ id = "junk_drawerchunk", weight = 60 },
 			{ id = "junk_calculator", weight = 50 },
-			{ id = "junk_keyboard", weight = 40 },
+			{ id = "wm_keyboard", weight = 40 },
 			{ id = "junk_lantern", weight = 10 },
 			{ id = "junk_clock", weight = 50 },
 			{ id = "junk_deskfan", weight = 50 },
@@ -124,7 +126,7 @@ ix.LootContainer:Add("trash_cluster", {  -- garbage tier 1
 			{ id = "dirty_water", weight = 35 },
 			{ id = "mat_wood", weight = 50, min = 2, max = 3 },
 			{ id = "mat_charcoal", weight = 50 },
-			{ id = "junk_pipe", weight = 50 },
+			{ id = "wm_pipe", weight = 50 },
 			{ id = "junk_metalbucket", weight = 50 },
 			{ id = "junk_metalpot", weight = 50 },
 			{ id = "junk_briefcase", weight = 50 },
@@ -167,6 +169,7 @@ ix.LootContainer:Add("dumpster", { -- garbage tier 2
 
 	LootGroup = {
 		big = {
+			{ id = "resin", weight = 20 },
 			{ id = "junk_axel", weight = 2 },
 			{ id = "junk_muffler", weight = 2 },
 			{ id = "junk_carbattery", weight = 5 },
@@ -183,13 +186,14 @@ ix.LootContainer:Add("dumpster", { -- garbage tier 2
 			{ id = "junk_harddrive", weight = 5 },
 			{ id = "junk_citizenradio", weight = 5 },
 			{ id = "junk_tv", weight = 5 },
-			{ id = "junk_pipe", weight = 5 },
+			{ id = "wm_pipe", weight = 5 },
 			{ id = "junk_chair", weight = 5 },
 			{ id = "junk_lamp", weight = 5 },
 			{ id = "junk_drawerchunk", weight = 5 },
 			{ id = "junk_bicycle", weight = 1 }
 		},
 		small = {
+			{ id = "resin", weight = 20 },
 			{ id = "junk_tire", weight = 50 },
 			{ id = "junk_clothes", weight = 70, min = 1, max = 2 },
 			{ id = "junk_gloves", weight = 70, min = 1, max = 2 },
@@ -255,11 +259,12 @@ ix.LootContainer:Add("crate", { -- rnp - utility
 	Locked = true,
 	Hide = false,
 	Respawn = 3600,
-	Tool = "crowbar",
+	Tool = "wm_crowbar",
 	ToolDamage = 20,
 
 	LootGroup = {
 		crate = {
+			{ id = "resin", weight = 20 },
 			{ id = "mat_cloth", weight = 50 },
 			{ id = "mat_plastic", weight = 30 },
 			{ id = "mat_wood", weight = 70, min = 2, max = 4 },
@@ -299,8 +304,8 @@ ix.LootContainer:Add("crate", { -- rnp - utility
 			{ id = "junk_monitor", weight = 5 },
 			{ id = "junk_tv", weight = 5 },
 			{ id = "tool_scissors", weight = 2 },
-			{ id = "tool_screw", weight = 2 },
-			{ id = "tool_hammer", weight = 2 }
+			{ id = "wm_screwdriver", weight = 2 },
+			{ id = "wm_hammer", weight = 2 }
 		}
 	},
 	Loot = {
@@ -323,6 +328,7 @@ ix.LootContainer:Add("food_box", { -- rnp - food package
 
 	LootGroup = {
 		crate = {
+			{ id = "resin", weight = 20 },
 			{ id = "prewar_canned_food", weight = 50 },
 			{ id = "baked_beans", weight = 50 },
 			{ id = "union_branded_instant_potatoes", weight = 50 },
@@ -395,6 +401,7 @@ ix.LootContainer:Add("medical_box", { -- rnp - medical package
 
 	LootGroup = {
 		item1 = {
+			{ id = "resin", weight = 20 },
 			{ id = "box_of_needles", weight = 60 },
 			{ id = "empty_syringe", weight = 50 },
 			{ id = "bottle_of_alcohol", weight = 60 },
@@ -439,11 +446,12 @@ ix.LootContainer:Add("supply_crate", { -- resource crate
 	Locked = true,
 	Hide = false,
 	Respawn = 3600,
-	Tool = "crowbar",
+	Tool = "wm_crowbar",
 	ToolDamage = 20,
 
 	LootGroup = {
 		regular = {
+			{ id = "resin", weight = 20 },
 			{ id = "junk_clothes", weight = 50 },
 			{ id = "ration_tier_1", weight = 50 },
 			{ id = "metal_scrap", weight = 50, min = 1, max = 2 },
@@ -509,23 +517,25 @@ ix.LootContainer:Add("military_crate", { -- military tier 0
 	Locked = true,
 	Hide = false,
 	Respawn = 3600,
-	Tool = "crowbar",
+	Tool = "wm_crowbar",
 	ToolDamage = 30,
 
 	LootGroup = {
 		raw = {
+			{ id = "resin", weight = 20 },
 			{ id = "box_of_gunpowder", weight = 70, min = 1, max = 2 },
 			{ id = "box_of_casings", weight = 30 },
-			{ id = "flash_grenade", weight = 5 },
-			{ id = "m18_grenade", weight = 5 },
-			{ id = "m67_grenade", weight = 5 },
-			{ id = "bullets_357", weight = 5 },
-			{ id = "bullets_smg", weight = 5 },
-			{ id = "bullets_9mm", weight = 5 },
-			{ id = "bullets_buckshot", weight = 5 },
+			{ id = "grenade", weight = 5 },
+			{ id = "gasgrenade", weight = 5 },
+			{ id = "smg1grenade", weight = 5 },
+			{ id = "357ammo", weight = 5 },
+			{ id = "smg1ammo", weight = 5 },
+			{ id = "pistolammo", weight = 5 },
+			{ id = "shotgunammo", weight = 5 },
 			{ id = "mat_armor_plate", weight = 5 },
 		},
 		medicine = {
+			{ id = "resin", weight = 20 },
 			{ id = "bandage", weight = 70 },
 			{ id = "painkiller", weight = 50 },
 			{ id = "healthvial", weight = 30 },
@@ -536,15 +546,17 @@ ix.LootContainer:Add("military_crate", { -- military tier 0
 			{ id = "chem_medpile", weight = 10 },
 		},
 		mil = {
+			{ id = "resin", weight = 20 },
 			{ id = "broken_armor_light", weight = 65, min = 1, max = 2 },
 			{ id = "broken_pistol", weight = 65 },
 			{ id = "broken_mp7", weight = 40 },
 			{ id = "broken_shotgun", weight = 30 },
-			{ id = "head_helmet_tier2", weight = 15 },
+			{ id = "head_helmet_tier4", weight = 15 },
 			{ id = "broken_ar2", weight = 5 },
-			{ id = "crowbar", weight = 8 },
+			{ id = "wm_crowbar", weight = 8 },
 		},
 		regular = {
+			{ id = "resin", weight = 20 },
 			{ id = "mat_kevlar", weight = 14, min = 1, max = 2 },
 			{ id = "junk_clothes", weight = 11 },
 			{ id = "surgerymask", weight = 5 },
@@ -561,7 +573,7 @@ ix.LootContainer:Add("military_crate", { -- military tier 0
 			{ id = "junk_shoe", weight = 3 },
 			{ id = "junk_metalgascan", weight = 5 },
 			{ id = "junk_citizenradio", weight = 10 },
-			{ id = "knife", weight = 10 },
+			{ id = "wm_combat_knife", weight = 10 },
 			{ id = "hatchet", weight = 10 },
 			{ id = "gun_smg_receiver", weight = 10 },
 			{ id = "gun_shotgun_grip", weight = 10 },
@@ -595,11 +607,12 @@ ix.LootContainer:Add("infection_crate", {  -- infestation control 1
     Locked = true,
 	Hide = false,
 	Respawn = 3600,
-	Tool = "crowbar",
+	Tool = "wm_crowbar",
 	ToolDamage = 30,
 
 	LootGroup = {
 		raw = {
+			{ id = "resin", weight = 20 },
 			{ id = "mat_acid", weight = 65 },
 			{ id = "chem_mutroot", weight = 65 },
 			{ id = "chem_detoxic", weight = 60 },
@@ -640,9 +653,11 @@ ix.LootContainer:Add("development", { -- military tier 0
 
 	LootGroup = {
 		raw = {
+			{ id = "resin", weight = 20 },
 			{ id = "box_of_casings", weight = 100 }
 		},
 		medicine = {
+			{ id = "resin", weight = 20 },
 			{ id = "junk_cardoor", weight = 100 }
 		}
 	},

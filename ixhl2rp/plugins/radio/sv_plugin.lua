@@ -93,8 +93,8 @@ function ix.radio:ResetTransmitChannel(player)
 
 	if !channel then
 		for chnlID, v in pairs(player.globalChannels) do
-			local chnl = self:FindByID(chnl)
-			if (chnl and (!channel) or channel.defaultPriority < chnl.defaultPriority) then
+			local chnl = self:FindByID(chnlID)
+			if chnl and (!channel or channel.defaultPriority < chnl.defaultPriority) then
 				channel = chnl
 			end
 		end

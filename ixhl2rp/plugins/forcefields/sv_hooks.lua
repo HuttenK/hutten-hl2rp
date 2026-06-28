@@ -5,10 +5,10 @@ function PLUGIN:SaveData()
 
 	for _, v in ipairs(ents.FindByClass("ix_forcefield")) do
 		data[#data + 1] = {
-			pos = v:GetPos(), 
-			ang = v:GetAngles(), 
+			pos = v:GetPos(),
+			ang = v:GetAngles(),
 			mode = v.mode or 1,
-			fencepos = v.post:GetPos()
+			fencepos = (IsValid(v.post) and v.post:GetPos()) or v:GetPos()
 		}
 	end
 

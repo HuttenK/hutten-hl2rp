@@ -1,10 +1,10 @@
-RECIPE.name = "recipe.tailoring.pants_boots"
+RECIPE.name = "Джинсы с сапогами"
 RECIPE.category = "recipe.category.legs"
 RECIPE.requirements = {
 	mat_cloth_reclaimed = 2
 }
 RECIPE.results = {
-	pants_boots = 1
+	jeans_boots = 1
 }
 RECIPE.skill = {"tailoring", 3}
 RECIPE.tools = {"tool_scissors"}

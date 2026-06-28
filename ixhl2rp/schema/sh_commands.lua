@@ -16,6 +16,7 @@ end
 do
 	local COMMAND = {}
 	COMMAND.arguments = ix.type.text
+	COMMAND.superAdminOnly = true
 
 	function COMMAND:OnRun(client, message)
 		if (!client:IsRestricted()) then
@@ -139,7 +140,7 @@ ix.command.Add("CharFallOver", {
 			return "@notNow"
 		end
 
-		time = math.Clamp(time, 60, 120)
+		time = math.Clamp(time, 5, 120)
 
 		if (!IsValid(client.ixRagdoll)) then
 			client:SetRagdolled(true, time)

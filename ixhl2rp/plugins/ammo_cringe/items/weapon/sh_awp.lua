@@ -1,6 +1,6 @@
 ITEM.name = "Снайперская Виновка L96"
 ITEM.description = "Армейская модификация Британской снайперской винтовки L96 с наименованием L96A1. Версия под патрон калибра .338 lapua magnum. Имеет замечательные показатели при стрельбе на средние и дальние дистанции, являясь одной из самых точных винтовок в мире."
-ITEM.model = "models/weapons/arccw/c_ur_aw.mdl"
+ITEM.model = "models/weapons/w_snip_awp.mdl"
 ITEM.class = "arccw_ur_aw"
 ITEM.weaponCategory = "primary"
 ITEM.width = 4
@@ -71,9 +71,9 @@ ITEM.pacData = {
 
 
 ITEM.iconCam = {
-	pos = Vector(-2, 200, 0),
+	pos = Vector(-2, 700, 5),
 	ang = Angle(0, 270, 0),
-	fov = 14.705882352941,
+	fov = 5,
 }
 
 ITEM.Info = {

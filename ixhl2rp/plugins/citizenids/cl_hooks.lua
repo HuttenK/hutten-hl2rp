@@ -26,3 +26,22 @@ netstream.Hook("ixCitizenIDEdit", function(id, data)
 	ix.gui.idEditorItem = data
 	ix.gui.idEditor = vgui.Create("ixIDEditor")
 end)
+
+-- Сервер просит собрать текст физописания (L() доступна только на клиенте) и вернуть
+net.Receive("ixCardImprintDescReq", function(len)
+	local itemID = net.ReadUInt(32)
+	local char   = LocalPlayer():GetCharacter()
+	if !char then return end
+
+	local desc = ""
+	local ok, res = pcall(function()
+		local g = char:Genetic()
+		return g and g.GetDesc and g:GetDesc() or ""
+	end)
+	if ok and isstring(res) then desc = res end
+
+	net.Start("ixCardImprintDescResp")
+		net.WriteUInt(itemID, 32)
+		net.WriteString(desc)
+	net.SendToServer()
+end)

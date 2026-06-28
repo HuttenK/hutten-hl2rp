@@ -1,4 +1,4 @@
-RECIPE.name = "recipe.tailoring.brown_coat"
+RECIPE.name = "Пиджак коричневый"
 RECIPE.category = "recipe.category.body"
 RECIPE.requirements = {
 	mat_cloth = 5,
@@ -6,7 +6,7 @@ RECIPE.requirements = {
 	box_of_needles = 1
 }
 RECIPE.results = {
-	torso_cloth9 = 1
+	suit_jacket_brown = 1
 }
 RECIPE.skill = {"tailoring", 2}
 RECIPE.tools = {"tool_scissors"}

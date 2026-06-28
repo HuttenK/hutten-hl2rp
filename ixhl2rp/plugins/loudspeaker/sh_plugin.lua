@@ -1,7 +1,7 @@
 local PLUGIN = PLUGIN
 
 PLUGIN.name        = "Loudspeaker"
-PLUGIN.author      = "Blaze Project"
+PLUGIN.author      = "Hutten"
 PLUGIN.description = "Plays a synchronized sound from all speaker props on the map."
 
 PLUGIN.speakerModel   = "models/props_wasteland/speakercluster01a.mdl"

@@ -186,7 +186,7 @@ if SERVER then
 
 	function PLUGIN:DoorSetAccess(client, door, access, notBuy)
 		if door.ixParent then
-			self:DoorSetAccess(client, door, access, notBuy)
+			self:DoorSetAccess(client, door.ixParent, access, notBuy)
 
 			return
 		end
@@ -210,7 +210,7 @@ if SERVER then
 
 	function PLUGIN:DoorRemoveAccess(client, door)
 		if door.ixParent then
-			self:DoorRemoveAccess(client, door)
+			self:DoorRemoveAccess(client, door.ixParent)
 
 			return
 		end

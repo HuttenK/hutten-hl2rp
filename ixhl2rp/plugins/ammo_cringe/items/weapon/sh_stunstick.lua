@@ -6,7 +6,7 @@ ITEM.weaponCategory = "melee"
 ITEM.width = 1
 ITEM.height = 2
 ITEM.base = "weapon"
-ITEM.category = "melee"
+ITEM.category = "Melee"
 ITEM.noBusiness = true
 
 ITEM.iconCam = {

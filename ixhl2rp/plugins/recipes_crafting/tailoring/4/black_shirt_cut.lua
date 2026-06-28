@@ -1,11 +1,11 @@
-RECIPE.name = "recipe.tailoring.black_shirt_cut"
+RECIPE.name = "Гавайская рубашка"
 RECIPE.category = "recipe.category.body"
 RECIPE.requirements = {
 	mat_cloth_reclaimed = 1,
 	mat_leather = 2
 }
 RECIPE.results = {
-	torso_cloth8 = 1
+	shirt_hawaii = 1
 }
 RECIPE.skill = {"tailoring", 4}
 RECIPE.tools = {"tool_scissors"}

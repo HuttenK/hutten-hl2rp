@@ -10,6 +10,18 @@ ix.util.Include("cl_hooks.lua")
 ix.util.Include("sv_plugin.lua")
 ix.util.Include("sv_hooks.lua")
 
+-- Включить подробный лог /datafile в серверную консоль (true/false).
+PLUGIN.Debug = false
+
+-- Безопасный лог: печатает только при PLUGIN.Debug, нигде не падает.
+function ix.util.DatafileDebug(fmt, ...)
+	if !ix.plugin or !ix.plugin.list then return end
+	local p = ix.plugin.list["datafile"]
+	if !p or !p.Debug then return end
+	local ok, msg = pcall(string.format, fmt, ...)
+	MsgN("[DATAFILE] " .. (ok and msg or tostring(fmt)))
+end
+
 do
 	local COMMAND = {}
 	COMMAND.description = "View the datafile of someone."
@@ -19,9 +31,96 @@ do
 	}
 	COMMAND.argumentNames = {"CitizenID", "RegID (optional)"}
 
-	function COMMAND:OnRun(client, citizenid, regid)
-		return PLUGIN:HandleDatafile(client, {citizenid, regid})
+	-- Нормализация: убираем дефисы/пробелы для сравнения CID
+	local function normCID(cid)
+		return tostring(cid or ""):gsub("[%- ]", ""):lower()
 	end
+
+	-- query: строка поиска. Ищем сначала по CID, потом по имени.
+	-- Возвращает: found(bool), opened(bool) — opened=true если HandleDatafile реально отправил досье.
+	local function findAndOpen(client, query, queryNorm)
+		-- 1. Память — по CID
+		for id, v in pairs(PLUGIN.stored) do
+			if isstring(v[2]) and v[2] != "" and v[2] != "000-00"
+				and normCID(v[2]) == queryNorm then
+				ix.util.DatafileDebug("findAndOpen: совпадение по CID id=%s cid=%s", id, tostring(v[2]))
+				local opened = PLUGIN:HandleDatafile(client, id)
+				return true, opened
+			end
+		end
+		-- 2. Память — по имени
+		local queryLow = query:lower()
+		for id, v in pairs(PLUGIN.stored) do
+			if isstring(v[1]) and v[1]:lower() == queryLow then
+				ix.util.DatafileDebug("findAndOpen: совпадение по имени id=%s name=%s", id, tostring(v[1]))
+				local opened = PLUGIN:HandleDatafile(client, id)
+				return true, opened
+			end
+		end
+		return false, false
+	end
+
+	function COMMAND:OnRun(client, citizenid, regid)
+		local query     = citizenid .. (isstring(regid) and (" " .. regid) or "")
+		local queryNorm = normCID(query)
+
+		ix.util.DatafileDebug("/datafile запущена игроком %s | query=%q norm=%q | stored=%d записей",
+			IsValid(client) and client:Name() or "?", query, queryNorm, table.Count(PLUGIN.stored))
+
+		-- Быстрый путь: ищем в памяти
+		local found, opened = findAndOpen(client, query, queryNorm)
+		if found then
+			-- Нашли запись, но HandleDatafile отказал (нет прав / ограничено) — сообщаем, не молчим.
+			if !opened and IsValid(client) then
+				client:Notify("Досье найдено, но доступ к нему запрещён (нет прав или файл ограничен): " .. query)
+			end
+			return
+		end
+
+		-- Медленный путь: запрашиваем ix_items напрямую (оффлайн-карточки)
+		local q = mysql:Select("ix_items")
+		q:Select("data")
+		q:Callback(function(rows)
+			if !IsValid(client) then return end
+			if !istable(rows) then
+				client:Notify("Досье не найдено: " .. query)
+				return
+			end
+			local queryLow = query:lower()
+			for _, row in ipairs(rows) do
+				local raw = row.data
+				if !raw or !raw:find("datafileID", 1, true) then continue end
+				local d = util.JSONToTable(raw)
+				if !d then continue end
+				local dID = tonumber(d.datafileID)
+				if !dID or dID == 0 then continue end
+				local itemCID  = tostring(d.cid  or "")
+				local itemName = tostring(d.name or "")
+				-- совпадение по CID (не заглушка) или по имени
+				local cidMatch  = itemCID != "" and itemCID != "000-00"
+					and normCID(itemCID) == queryNorm
+				local nameMatch = itemName:lower() == queryLow
+				if !cidMatch and !nameMatch then continue end
+				-- бэкфилл памяти
+				if !PLUGIN.stored[dID] then PLUGIN.stored[dID] = {} end
+				local entry = PLUGIN.stored[dID]
+				entry[1] = itemName ~= "" and itemName or (entry[1] or "")
+				entry[2] = itemCID  ~= "" and itemCID  or (entry[2] or "")
+				entry[3] = tostring(d.number or entry[3] or "")
+				ix.util.DatafileDebug("slow-path: найдено в ix_items dID=%s cid=%s", tostring(dID), itemCID)
+				local opened = PLUGIN:HandleDatafile(client, dID)
+				if !opened and IsValid(client) then
+					client:Notify("Досье найдено, но доступ запрещён (нет прав или файл ограничен): " .. query)
+				end
+				return
+			end
+			ix.util.DatafileDebug("slow-path: совпадений в ix_items нет для %q", query)
+			client:Notify("Досье не найдено: " .. query)
+		end)
+		q:Execute()
+	end
+
+
 
 	ix.command.Add("Datafile", COMMAND)
 
@@ -199,3 +298,34 @@ PLUGIN.Default = {
 		poster_steam = 0
 	},
 }
+
+-- Переопределяем ReturnDatafilePermission в shared-файле чтобы гарантированно загружалось.
+-- Если в данных карточки нет флага доступа — берём из шаблона предмета (ix.Item.stored).
+-- Это покрывает старые карточки, выданные до прописания флагов в ITEM.access.
+if SERVER then
+	local CHAR = ix.meta.character
+
+	function CHAR:ReturnDatafilePermission()
+		local cid = self:GetPlayer():GetIDCard()
+		if !cid then return 0 end
+
+		local accesses = cid:GetData("access", {})
+		local hasFlag = accesses["DATAFILE_ELEVATED"] or accesses["DATAFILE_FULL"]
+			or accesses["DATAFILE_MEDIUM"] or accesses["DATAFILE_MINOR"]
+
+		if !hasFlag then
+			local template = ix.Item.stored[cid.uniqueID]
+			if template and istable(template.access) then
+				accesses = template.access
+			end
+		end
+
+		if accesses["DATAFILE_ELEVATED"] then return 4
+		elseif accesses["DATAFILE_FULL"] then return 3
+		elseif accesses["DATAFILE_MEDIUM"] then return 2
+		elseif accesses["DATAFILE_MINOR"] then return 1
+		end
+
+		return 0
+	end
+end

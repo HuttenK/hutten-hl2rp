@@ -11,7 +11,7 @@ DEFINE_BASECLASS("DButton")
 AccessorFunc(PANEL, "borderSize", "BorderSize", FORCE_NUMBER)
 
 function PANEL:Init()
-	self:SetFont(Monolith.Fonts.TerminalLight22)
+	self:SetFont("cmb.terminal.light22")
 
 	self.hoverClr = ix.Palette.combineblue:Alpha(0)
 	self.hoverClr2 = ix.Palette.combineblue:Alpha(0)

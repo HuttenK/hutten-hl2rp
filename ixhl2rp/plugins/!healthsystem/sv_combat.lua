@@ -533,7 +533,46 @@ local mul_npc = {
 	["npc_antlionguardian"] = 5,
 }
 
+-- Build/cache a map of weapon class -> schema-controlled melee damage, read
+-- from each melee item's Info.Damage / Info.Class. Lets melee damage be tuned
+-- per weapon in the item lua files, just like the firearms.
+function PLUGIN:GetMeleeDamageDef(class)
+	if not self.ixMeleeDamage then
+		self.ixMeleeDamage = {}
+
+		for _, item in pairs(ix.Item.stored or {}) do
+			local info = item.Info
+
+			if item.class and istable(info) and istable(info.Damage) and info.Damage[1] then
+				self.ixMeleeDamage[item.class] = {
+					min = info.Damage[1],
+					max = info.Damage[2] or info.Damage[1],
+					dmgType = (info.Class == "club") and DMG_CLUB or DMG_SLASH,
+				}
+			end
+		end
+	end
+
+	return self.ixMeleeDamage[class]
+end
+
 function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
+	-- Woowz Melee SWEPs deal too-high native damage. Replace it with the value
+	-- defined in the ixhl2rp item (Info.Damage) and tag the proper melee damage
+	-- type so the wound system treats it as a slash (bleed) or club (bruise) hit.
+	if target:IsPlayer() or target:IsNPC() then
+		local mInflictor = dmg:GetInflictor()
+
+		if IsValid(mInflictor) then
+			local def = self:GetMeleeDamageDef(mInflictor:GetClass())
+
+			if def then
+				dmg:SetDamage(math.random(def.min, def.max))
+				dmg:SetDamageType(def.dmgType)
+			end
+		end
+	end
+
 	if IsValid(target.ixPlayer) then
 		if IsValid(target.ixHeldOwner) then
 			dmg:SetDamage(0)
