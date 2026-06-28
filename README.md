@@ -1,3 +1,7 @@
+DESCRIPTION - WIP
+Numerous features/plugins/changes and addon dependencies haven't been listed/described/explained yet
+
+
 A modified version of autonomous hl2rpg (https://github.com/SchwarzKruppzo/autonomous-hl2rpg) created by Schwarz Kruppzo
 
 Most of the changes were made using AI code and intended for personal use
