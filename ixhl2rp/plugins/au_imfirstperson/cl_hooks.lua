@@ -11,6 +11,15 @@ function PLUGIN:CalcView(client, origin, angles, fov)
 		return
 	end
 
+	-- Пока игрок в рэгдолле (нокдаун/усыпление/крит-удар) не трогаем вид: им займётся
+	-- ядро (GM:CalcView следит за глазами рэгдолла). Иначе мы вернули бы вид без origin,
+	-- и камера осталась бы там, где персонаж стоял, пока тело уже лежит на земле.
+	local ragdoll = Entity(client:GetLocalVar("ragdoll", 0))
+
+	if (IsValid(ragdoll) and ragdoll:IsRagdoll()) then
+		return
+	end
+
 	-- Don't override the view if third person is active
 	if (client.CanOverrideView and client:CanOverrideView()) then
 		return

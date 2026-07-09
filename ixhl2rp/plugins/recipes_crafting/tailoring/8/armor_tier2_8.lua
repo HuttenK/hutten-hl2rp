@@ -8,9 +8,10 @@ RECIPE.requirements = {
 	mat_cloth_reclaimed = 2,
 }
 RECIPE.results = {
-	torso_nato_tier2 = 1
+	torso_cp_tier4 = 1
 }
 RECIPE.skill = {"tailoring", 8}
 RECIPE.tools = {"tool_welding", "tool_scissors"}
 RECIPE.station = "station_tailor"
 RECIPE.xp = 230
+RECIPE.preview = "models/autonomous/africa/items/prop_armor_medium.mdl"

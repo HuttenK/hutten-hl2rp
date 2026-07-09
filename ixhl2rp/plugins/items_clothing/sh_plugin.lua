@@ -4,6 +4,93 @@ PLUGIN.name = "Clothing Items"
 PLUGIN.author = "Schwarz Kruppzo"
 PLUGIN.description = "Adds a clothing items from HL2TS2."
 
+-- Дополнительные слоты экипировки: бронежилет ('vest') и защита ног
+-- ('legprotection'). Раньше броня занимала слоты 'torso' и 'legs' и вытесняла
+-- обычную одежду; теперь броня носится поверх неё.
+ix.lang.AddTable("ru", {
+	["equip.vest"] = "БРОНЕЖИЛЕТ",
+	["equip.legprotection"] = "ЗАЩИТА НОГ",
+})
+ix.lang.AddTable("en", {
+	["equip.vest"] = "VEST",
+	["equip.legprotection"] = "LEG PROTECTION",
+})
+ix.lang.AddTable("fr", {
+	["equip.vest"] = "GILET",
+	["equip.legprotection"] = "PROTECTION DES JAMBES",
+})
+ix.lang.AddTable("es-es", {
+	["equip.vest"] = "CHALECO",
+	["equip.legprotection"] = "PROTECCIÓN DE PIERNAS",
+})
+
+ix.lang.AddTable("ru", {
+	["vest.blockedByOutfit"] = "Бронежилет нельзя надеть поверх этого костюма.",
+	["outfit.blockedByVest"] = "Сначала снимите бронежилет.",
+})
+ix.lang.AddTable("en", {
+	["vest.blockedByOutfit"] = "A vest cannot be worn over this uniform.",
+	["outfit.blockedByVest"] = "Take off the vest first.",
+})
+ix.lang.AddTable("fr", {
+	["vest.blockedByOutfit"] = "Un gilet ne peut pas être porté sur cet uniforme.",
+	["outfit.blockedByVest"] = "Retirez d'abord le gilet.",
+})
+ix.lang.AddTable("es-es", {
+	["vest.blockedByOutfit"] = "No se puede llevar un chaleco sobre este uniforme.",
+	["outfit.blockedByVest"] = "Quítese primero el chaleco.",
+})
+
+-- Форма ГО/OTA (ItemClothMPF.isMPF) и костюмы химзащиты (ITEM.blocksVest)
+-- заменяют модель персонажа целиком, поэтому бронежилет с ними несовместим.
+local function BlocksVest(item)
+	return item and (item.isMPF or item.blocksVest) or false
+end
+
+local function GetSlotItem(client, slotType)
+	if !IsValid(client) then return end
+
+	local inventory = client:GetInventory(slotType)
+	if !inventory then return end
+
+	return inventory:GetItems()[1]
+end
+
+-- Обе стороны запрета: нельзя надеть жилет поверх формы и нельзя надеть форму
+-- поверх жилета — иначе правило обходится порядком экипировки.
+function PLUGIN:CanTransferItem(item, newInventory, x, y, oldInventory)
+	if !newInventory or !newInventory.isEquipment then return end
+
+	local client = newInventory:GetOwner()
+	if !IsValid(client) then return end
+
+	if newInventory.type == "vest" then
+		if BlocksVest(GetSlotItem(client, "torso")) then
+			return false, "vest.blockedByOutfit"
+		end
+	elseif newInventory.type == "torso" and BlocksVest(item) then
+		if GetSlotItem(client, "vest") then
+			return false, "outfit.blockedByVest"
+		end
+	end
+end
+
+-- Хук вызывается из PLAYER:CreateInventories до того, как ядро добавит свои
+-- слоты, и получает ту же таблицу inventories — дописываем в неё свои.
+function PLUGIN:CreatePlayerInventories(client, inventories)
+	if !inventories then return end
+
+	for _, slotType in ipairs({"vest", "legprotection"}) do
+		local slot = ix.meta.Inventory:New()
+		slot.type = slotType
+		slot.multislot = false
+		slot:SetSize(1, 1)
+		slot.isEquipment = true
+
+		inventories[slot.type] = slot
+	end
+end
+
 ix.Net:AddPlayerVar("custom_outfit", false, nil, ix.Net.Type.Table, function(entIndex, outfits, lastOutfits)
 	local client = Entity(entIndex)
 

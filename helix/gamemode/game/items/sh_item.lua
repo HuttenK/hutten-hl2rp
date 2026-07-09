@@ -184,10 +184,22 @@ if SERVER then
 	function Item:SaveData()
 		local count = 0
 		for itemID, _ in pairs(self.items_to_savedata) do
-			if self.instances[itemID] then
-				self.instances[itemID]:SaveData()
+			local instance = self.instances[itemID]
+
+			if instance then
+				-- pcall each item: instance:SaveData() calls error() on any SQL/callback
+				-- failure, and because this loop runs inside a coroutine (Async_SaveData),
+				-- an unhandled error is swallowed by coroutine.resume and aborts the whole
+				-- batch — every item queued after the failing one (arbitrary pairs order)
+				-- silently never gets written. Isolating each item prevents one bad item
+				-- from dropping everyone else's data.
+				local ok, err = pcall(instance.SaveData, instance)
+
+				if not ok then
+					ErrorNoHalt(string.format("[ix] item %s SaveData failed: %s\n", tostring(itemID), tostring(err)))
+				end
 			end
-			
+
 			count = count + 1
 		end
 

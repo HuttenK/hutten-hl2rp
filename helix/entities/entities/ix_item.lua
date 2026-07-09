@@ -150,6 +150,7 @@ if SERVER then
 
 		if !item then
 			self:Remove()
+			return true
 		end
 
 		if item.Think then

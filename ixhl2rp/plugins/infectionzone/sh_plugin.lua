@@ -93,6 +93,9 @@ function PLUGIN:SetupAreaProperties()
 	ix.area.AddProperty("floraMax", ix.type.number, PLUGIN.defaults.floraMax)
 	ix.area.AddProperty("floraInterval", ix.type.number, PLUGIN.defaults.floraInterval)
 	ix.area.AddProperty("infestationTotal", ix.type.number, PLUGIN.defaults.infestationTotal)
+	-- Неразрушимая зона: если включено, зону НЕЛЬЗЯ зачистить сбором флоры —
+	-- сколько бы её ни собрали, зона остаётся и продолжает зарастать.
+	ix.area.AddProperty("indestructible", ix.type.bool, false)
 end
 
 -- Регистрируем тип сразу при загрузке файла — на случай lua_reload,

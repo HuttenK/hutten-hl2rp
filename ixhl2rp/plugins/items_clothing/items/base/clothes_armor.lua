@@ -79,7 +79,9 @@ function ItemArmor:OnEquipped(client)
 		client:ChatNotifyLocalized("armor.notEnoughStrength")
 	end
 
-	if self.equip_inv == 'torso' then
+	-- Бронежилеты переехали из слота 'torso' в 'vest', но замедление вешает
+	-- только нагрудная броня — оба имени слота оставлены для совместимости.
+	if self.equip_inv == 'vest' or self.equip_inv == 'torso' then
 		if self.armor then
 			if self.armor.class == 2 then
 				client:SetNWFloat("speed_debuff", 0.85)
@@ -97,7 +99,7 @@ function ItemArmor:OnUnequipped(client)
 		client.char_outfit.armor[self] = nil
 	end
 	
-	if self.equip_inv == 'torso' then
+	if self.equip_inv == 'vest' or self.equip_inv == 'torso' then
 		if self.armor then
 			client:SetNWFloat("speed_debuff", 1)
 		end

@@ -1,13 +1,19 @@
-ITEM.name = "item.legs_nato_tier2"
+ITEM.name = "Штаны с бронепластинами"
 ITEM.model = "models/cellar/prop_legs_nato.mdl"
 ITEM.width = 2
 ITEM.height = 2
-ITEM.description = "item.legs_nato_tier2.desc"
-ITEM.equip_inv = 'legs'
+ITEM.description = "Обычные армейские штаны с бронепластинами, обеспечивающие слабую защиту ногам."
+ITEM.equip_inv = 'legprotection'
 ITEM.equip_slot = nil
---ITEM.bodyGroups = {
---	[2] = 7,
---}
+ITEM.bodyGroups = {
+	[9] = 1,
+}
+-- Bodygroups used when the wearer has an MPF uniform on (metropolice model,
+-- different bodygroup layout than citizen models). 0 hides the uniform's boots
+-- bodygroup so the armored legs show instead.
+ITEM.bodyGroupsMPF = {
+	[5] = 0,
+}
 ITEM.rarity = 1
 ITEM.iconCam = {
 	pos = Vector(-3.2253472805023, -271.79052734375, 326.21942138672),
@@ -47,6 +53,10 @@ ITEM.armor = {
 }
 ITEM.contraband = true
 
+-- Overlay disabled: leg armor is now shown via the citizen model's built-in
+-- bodygroup (ITEM.bodyGroups above -> clean Main-layer auto-appearance).
+-- Re-enable this block to restore the separate nato legs prop.
+--[[
 ITEM.displayID = ix.Appearance:New("nato_legs", {
 	slot = ix.Appearance.Slot.Legs,
 	layer = ix.Appearance.Layer.Bottom,
@@ -59,3 +69,4 @@ ITEM.displayID = ix.Appearance:New("nato_legs", {
 		},
 	}
 })
+]]

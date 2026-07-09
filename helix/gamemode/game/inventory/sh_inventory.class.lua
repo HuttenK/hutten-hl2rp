@@ -1736,6 +1736,9 @@ else
 		["ears"] = true,
 		["arm"] = true,
 		["backpack"] = true,
+		-- added by the ixhl2rp items_clothing plugin (body armour / leg armour)
+		["vest"] = true,
+		["legprotection"] = true,
 	}
 
 	local Inventory = ix.Inventory

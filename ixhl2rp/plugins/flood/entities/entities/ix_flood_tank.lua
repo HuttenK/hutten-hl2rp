@@ -3,7 +3,7 @@ ENT.PrintName  = "Накопительный бак"
 ENT.Category   = "HL2 RP"
 ENT.Spawnable  = true
 ENT.AdminOnly  = true
-ENT.Model      = Model("models/props_borealis/bluebarrel001.mdl")
+ENT.Model      = Model("models/props_c3/barrels/barrel_a.mdl")
 ENT.bNoPersist = true
 ENT.Holdable   = true -- можно носить руками (ix_hands)
 

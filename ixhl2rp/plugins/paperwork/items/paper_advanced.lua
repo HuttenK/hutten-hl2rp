@@ -1,12 +1,14 @@
 local PLUGIN = PLUGIN
 
-ITEM.name = "Персональный компьютер"
-ITEM.model = "models/nirrti/tablet/tablet_sfm.mdl"
+-- Настоящая бумага. Функционально идентична paper_advanced (тот стал КПК):
+-- владелец, заголовок, текст, окно записи/чтения через netstream "ixOpenPaper".
+ITEM.name = "Лист бумаги"
+ITEM.model = "models/props_lab/clipboard.mdl"
 ITEM.stackable = true
 ITEM.max_stack = 5
 ITEM.width = 1
 ITEM.height = 1
-ITEM.description = "Стандартный КПК. Можно использовать вместо мобильного телефона."
+ITEM.description = "Чистый лист бумаги. На нём можно что-нибудь написать."
 ITEM.isPaper = true
 ITEM.bAllowMultiCharacterInteraction = true
 
@@ -70,7 +72,7 @@ ITEM.functions.Write = {
 }
 
 function ITEM:GetDescription()
-	return self:GetData("O", 0) == 0 and L("Стандартный КПК. Можно использовать вместо телефона") or L("Стандартный КПК. Можно использовать вместо телефона")
+	return self.description
 end
 
 function ITEM:GetTitle()
@@ -91,7 +93,7 @@ else
 		end
 
 		text = tostring(text):sub(1, PLUGIN.maxLength)
-		
+
 		self:SetData("T", text, false, false, true)
 
 		if character then

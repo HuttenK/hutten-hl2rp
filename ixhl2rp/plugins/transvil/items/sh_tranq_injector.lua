@@ -1,6 +1,6 @@
 ITEM.name        = "Транквилизаторный инъектор"
 ITEM.description  = "Одноразовый автоинъектор с нейротоксином Зен-флоры. Применяется вплотную: прижмите к цели и удерживайте несколько секунд — жертва падает и около 2 минут не может двигаться, оставаясь в сознании. Тихая альтернатива дротомёту для ближнего боя."
-ITEM.model        = "models/healthvial.mdl"
+ITEM.model        = "models/crunchy/props/random_props/prop_morphine.mdl"
 ITEM.width        = 1
 ITEM.height       = 1
 ITEM.category     = "Снаряжение"

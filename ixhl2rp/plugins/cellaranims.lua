@@ -1983,3 +1983,17 @@ ix.anim.SetModelClass("models/jq/hlvr/characters/combine_soldier/combine_soldier
 ix.anim.SetModelClass("models/jq/hlvr/characters/combine_soldier/combine_soldier_new_content_super_npc.mdl", "cellarOTA")
 ix.anim.SetModelClass("models/jq/hlvr/characters/combine_soldier/combine_soldier_new_content_super_ragdoll.mdl", "cellarOTA")
 
+-- ФИКС T-позы для holdtype "knife" (отвёртка, нож, вилка, шило, разбитая бутылка, вилы).
+-- Модели этого сервера (cellar* и т.п.) НЕ содержат последовательностей *_knife
+-- (idle_knife, walk_knife, run_knife, cidle_knife, cwalk_knife ...), на которые
+-- ссылаются таблицы `knife` выше, поэтому при поднятом оружии игрок вставал в
+-- T-позу. В Sandbox всё работает, так как там движок использует стандартные
+-- player-анимации, а не наш ix.anim. Melee-анимации на этих моделях есть и
+-- работают, поэтому направляем holdtype "knife" в таблицу "melee".
+-- HOLDTYPE_TRANSLATOR читается только в player-анимациях (helix core sh_hooks.lua:237),
+-- так что вид от первого лица и NPC не затрагиваются. Ставим в самом конце,
+-- после того как helix core успел создать таблицу.
+if HOLDTYPE_TRANSLATOR then
+	HOLDTYPE_TRANSLATOR["knife"] = "melee"
+end
+

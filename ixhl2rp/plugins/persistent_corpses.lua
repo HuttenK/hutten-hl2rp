@@ -105,6 +105,21 @@ if (SERVER) then
 		end
 
 		local entity = IsValid(client.ixRagdoll) and client.ixRagdoll or client:CreateServerRagdoll()
+
+		-- Гарантия «одно тело на смерть». Обычно даунед-рэгдолл переиспользуется как
+		-- труп (строка выше), но при гонках (авто-подъём по таймеру SetRagdolled,
+		-- сон от транквилизатора, порядок хуков смерти) client.ixRagdoll может уже не
+		-- указывать на ещё живой на карте даунед-рэгдолл — тогда создаётся ВТОРОЙ труп,
+		-- и на карте оказывается два тела. Убираем все прочие prop_ragdoll этого игрока
+		-- (у них ixPlayer == client; у трупов ixPlayer уже nil — их не трогаем),
+		-- кроме выбранного entity. Снимаем "fixer", чтобы не сработал «подъём».
+		for _, doll in ipairs(ents.FindByClass("prop_ragdoll")) do
+			if doll != entity and doll.ixPlayer == client then
+				doll:RemoveCallOnRemove("fixer")
+				doll:Remove()
+			end
+		end
+
 		local decayTime = ix.config.Get("corpseDecayTime", 60)
 		local uniqueID = "ixCorpseDecay" .. entity:EntIndex()
 

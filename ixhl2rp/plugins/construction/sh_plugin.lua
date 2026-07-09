@@ -30,7 +30,9 @@ if SERVER then
 			data[#data + 1] = {
 				v:GetClass(),
 				v:GetPos(),
-				v:GetAngles()
+				v:GetAngles(),
+				v:GetModel(),            -- нужно для prop_physics (мебель)
+				v:GetNetVar("owner")     -- владелец (charID)
 			}
 		end
 
@@ -46,10 +48,15 @@ if SERVER then
 				local entity = ents.Create(class)
 
 				if IsValid(entity) then
+					-- Мебель = prop_physics: обязательно ставим модель ДО Spawn.
+					if class == "prop_physics" and v[4] then
+						entity:SetModel(v[4])
+					end
+
 					entity:SetPos(v[2])
 					entity:SetAngles(v[3])
 					entity:Spawn()
-					
+
 					if class != "combine_mine" and (not entity:IsNPC()) then
 						local phys = entity:GetPhysicsObject()
 
@@ -58,6 +65,10 @@ if SERVER then
 						end
 					else
 						entity:SetKeyValue("spawnflags", 8192)
+					end
+
+					if v[5] then
+						entity:SetNetVar("owner", v[5])
 					end
 
 					self:AddConstructionToSave(entity)

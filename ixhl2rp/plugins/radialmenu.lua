@@ -42,6 +42,38 @@ local function NormDiff(a, b)
 	return d
 end
 
+-- UTF-8-безопасный перенос по словам (только по пробелам). Штатный ix.util.WrapText
+-- при длинном слове режет его «посимвольно» через байтовую индексацию word[i]
+-- (sh_util.lua), что рвёт многобайтовую кириллицу и рисует «?». Здесь слова не
+-- разбиваем — длинное слово просто остаётся целой строкой.
+local function WrapTextSafe(text, maxW, font)
+	surface.SetFont(font)
+
+	if (surface.GetTextSize(text) <= maxW) then
+		return {text}
+	end
+
+	local lines = {}
+	local line = ""
+
+	for _, word in ipairs(string.Explode(" ", text)) do
+		local try = (line == "") and word or (line .. " " .. word)
+
+		if (line != "" and surface.GetTextSize(try) > maxW) then
+			lines[#lines + 1] = line
+			line = word
+		else
+			line = try
+		end
+	end
+
+	if (line != "") then
+		lines[#lines + 1] = line
+	end
+
+	return lines
+end
+
 -- Повтор стандартного потока «запомнить» (recognition.lua), но нацеленный
 -- на конкретного игрока, а не на тех, на кого смотрит прицел.
 local function DoRecognize(target)
@@ -90,33 +122,127 @@ local function DoGiveMoney(target)
 	end)
 end
 
--- Строит список опций для радиального меню по цели.
-local function BuildOptions(target)
+-- Запуск функции предмета на клиенте через штатное сетевое сообщение инвентаря
+-- Helix (item.action). Сервер сам выполнит OnRun: каст-бар (SetAction), модификатор
+-- навыка медицины и расход использований. У функции inject цель определяется по
+-- прицелу (трасса 96 ед.); курсор меню не меняет угол обзора, поэтому персонаж,
+-- на которого смотрит игрок, остаётся под прицелом.
+local function RunItemFunction(item, key)
+	local func = item and item.functions and item.functions[key]
+	if (!func or func.index == nil or !item.id) then return end
+
+	net.Start("item.action")
+		net.WriteUInt(item.id, 32)
+		net.WriteUInt(item.inventory_id or 0, 32)
+		net.WriteUInt(func.index, item.functions_bits)
+		net.WriteTable({})
+		net.WriteBool(false) -- без разбиения стака
+	net.SendToServer()
+end
+
+-- Подменю медикаментов: по одной опции на КАЖДЫЙ вид носимого медицинского
+-- предмета (бинт, аптечка, пакет крови и т.п.). Радиальное меню открывается
+-- только при взгляде на другого персонажа, поэтому применение всегда идёт на
+-- цель — через функцию inject базового предмета medical.
+local function BuildMedicalOptions(target)
+	local client = LocalPlayer()
+	if (!client.GetItems) then return {} end
+
+	local groups = {}
+	local order = {}
+
+	-- Признак «медицинский предмет» — наличие функции inject (её определяет
+	-- только база medical: bandage/bloodbag/healthkit и т.п.). Поле .base тут
+	-- ненадёжно — предметы используют кастомный фреймворк class("ItemMedical").
+	for _, item in ipairs(client:GetItems()) do
+		if (!istable(item) or !item.functions or !item.functions.inject) then continue end
+
+		local uid = item.uniqueID
+		local g = groups[uid]
+
+		if (g) then
+			g.count = g.count + 1
+		else
+			g = {
+				item = item,
+				count = 1,
+				name = (item.GetName and item:GetName()) or item.name or uid
+			}
+
+			groups[uid] = g
+			order[#order + 1] = g
+		end
+	end
+
+	table.sort(order, function(a, b) return a.name < b.name end)
+
 	local options = {}
 
-	options[#options + 1] = {
-		label = "Передать деньги",
-		icon = "icon16/money_add.png",
-		callback = function() DoGiveMoney(target) end
-	}
-	options[#options + 1] = {
-		label = "Обыскать",
-		icon = "icon16/magnifier.png",
-		callback = function() ix.command.Send("CharSearch") end
-	}
+	for _, g in ipairs(order) do
+		local item = g.item
+		local label = (g.count > 1) and string.format("%s (x%d)", g.name, g.count) or g.name
+
+		options[#options + 1] = {
+			label = label,
+			icon = "icon16/heart.png",
+			callback = function()
+				if (IsValid(target)) then
+					RunItemFunction(item, "inject")
+				end
+			end
+		}
+	end
+
+	return options
+end
+
+-- Строит список опций для радиального меню по цели.
+--  target     — игрок (для живого — он сам, для лежачего — владелец prop_ragdoll).
+--  menuEntity — сущность для контекстных опций и проверок валидности
+--               (живой игрок либо его prop_ragdoll).
+--  isRagdoll  — цель в нокдауне/лежачем состоянии (взаимодействие через рэгдолл).
+local function BuildOptions(target, menuEntity, isRagdoll)
+	local options = {}
+
+	if (!isRagdoll) then
+		options[#options + 1] = {
+			label = "Передать деньги",
+			icon = "icon16/money_add.png",
+			callback = function() DoGiveMoney(target) end
+		}
+		options[#options + 1] = {
+			label = "Обыскать",
+			icon = "icon16/magnifier.png",
+			callback = function() ix.command.Send("CharSearch") end
+		}
+	else
+		-- Лежачего обыскиваем через систему searchragdoll: серверный обработчик
+		-- rp.search.ragdoll трассирует прицел и открывает инвентарь рэгдолла.
+		options[#options + 1] = {
+			label = "Обыскать",
+			icon = "icon16/magnifier.png",
+			callback = function()
+				if (IsValid(menuEntity)) then
+					net.Start("rp.search.ragdoll")
+						net.WriteEntity(menuEntity)
+					net.SendToServer()
+				end
+			end
+		}
+	end
+
 	options[#options + 1] = {
 		label = "Запомнить",
 		icon = "icon16/user_comment.png",
 		callback = function() DoRecognize(target) end
 	}
 
-	-- Уколоть транквилизатором — только если он есть в инвентаре. Применение
-	-- (трасса + контактное удержание + эффект) делает серверный обработчик
-	-- OnPlayerOptionSelected в плагине transvil.
-	if (LocalPlayer():HasItem("tranq_injector")) then
+	-- Уколоть транквилизатором — только по стоящему игроку (инъектор не берёт
+	-- лежачего) и только если он есть в инвентаре. Применение делает серверный
+	-- обработчик OnPlayerOptionSelected в плагине transvil.
+	if (!isRagdoll and LocalPlayer():HasItem("tranq_injector")) then
 		options[#options + 1] = {
-			label = "Уколоть транквилизатором",
-			icon = "icon16/pill.png",
+			label = "Усыпить",
 			callback = function()
 				if (IsValid(target)) then
 					ix.menu.NetworkChoice(target, "TranqInject")
@@ -125,8 +251,20 @@ local function BuildOptions(target)
 		}
 	end
 
-	-- Контекстные опции, добавленные плагинами через GetPlayerEntityMenu.
-	local dynamic = target:GetEntityMenu(LocalPlayer())
+	-- Медикаменты — применить носимый медпрепарат на цель. Работает и по лежачему:
+	-- функция inject на сервере резолвит prop_ragdoll → игрока по прицелу.
+	local medical = BuildMedicalOptions(target)
+
+	if (#medical > 0) then
+		options[#options + 1] = {
+			label = "Лечить",
+			children = medical
+		}
+	end
+
+	-- Контекстные опции от плагинов: GetPlayerEntityMenu у живого игрока либо меню
+	-- рэгдолла. У prop_ragdoll метод может отсутствовать — поэтому проверяем.
+	local dynamic = isfunction(menuEntity.GetEntityMenu) and menuEntity:GetEntityMenu(LocalPlayer())
 
 	if (istable(dynamic)) then
 		for key, value in pairs(dynamic) do
@@ -151,8 +289,8 @@ local function BuildOptions(target)
 						status = value[2]()
 					end
 
-					if (status != false and IsValid(target)) then
-						ix.menu.NetworkChoice(target, key, status)
+					if (status != false and IsValid(menuEntity)) then
+						ix.menu.NetworkChoice(menuEntity, key, status)
 					end
 				end
 			}
@@ -174,6 +312,7 @@ function PANEL:Init()
 	self.openFrac = 0
 	self.bClosing = false
 	self.scales = {}
+	self.menuStack = {} -- для вложенных меню (Медикаменты → предметы)
 
 	self:SetMouseInputEnabled(true)
 	self:SetKeyboardInputEnabled(true)
@@ -184,9 +323,11 @@ function PANEL:Init()
 	end
 end
 
-function PANEL:SetTarget(target)
+function PANEL:SetTarget(target, menuEntity, isRagdoll)
 	self.target = target
-	self.options = BuildOptions(target)
+	self.menuEntity = menuEntity or target
+	self.isRagdoll = isRagdoll or false
+	self.options = BuildOptions(target, self.menuEntity, self.isRagdoll)
 
 	for i = 1, #self.options do
 		self.scales[i] = 1
@@ -195,8 +336,62 @@ function PANEL:SetTarget(target)
 	self.centerName = hook.Run("GetCharacterName", target, "ic") or "Цель"
 end
 
+-- Сброс состояния под новый набор опций + повтор анимации «выезда» кольца.
+function PANEL:ResetForLevel()
+	self.hovered = 0
+	self.scales = {}
+
+	for i = 1, #self.options do
+		self.scales[i] = 1
+	end
+
+	self.openFrac = 0
+
+	if (IsValid(LocalPlayer())) then
+		LocalPlayer():EmitSound("Helix.Rollover")
+	end
+end
+
+-- Открыть вложенное меню. Опция «Назад» добавляется автоматически.
+function PANEL:PushOptions(options, centerName)
+	self.menuStack[#self.menuStack + 1] = {
+		options = self.options,
+		centerName = self.centerName
+	}
+
+	local newOptions = {}
+
+	for _, opt in ipairs(options) do
+		newOptions[#newOptions + 1] = opt
+	end
+
+	newOptions[#newOptions + 1] = {
+		label = "Назад",
+		icon = "icon16/arrow_left.png",
+		isBack = true
+	}
+
+	self.options = newOptions
+	self.centerName = centerName or self.centerName
+	self:ResetForLevel()
+end
+
+-- Вернуться на уровень выше. Возвращает false, если мы уже в корне.
+function PANEL:PopOptions()
+	local entry = self.menuStack[#self.menuStack]
+	if (!entry) then return false end
+
+	self.menuStack[#self.menuStack] = nil
+	self.options = entry.options
+	self.centerName = entry.centerName
+	self:ResetForLevel()
+
+	return true
+end
+
 function PANEL:Think()
-	if (!IsValid(self.target)) then
+	-- Закрываемся, если цель пропала, либо лежачий встал/исчез его рэгдолл.
+	if (!IsValid(self.target) or (self.isRagdoll and !IsValid(self.menuEntity))) then
 		self:CloseMenu(true)
 		return
 	end
@@ -339,6 +534,12 @@ function PANEL:Paint(width, height)
 	end
 
 	-- Подписи (заглавными, шрифтом меню Helix — как в стандартном меню).
+	-- Длинные названия переносим по строкам, чтобы текст не вылезал за сектор.
+	local lblFont = "ixMenuButtonFontSmall"
+	surface.SetFont(lblFont)
+	local _, lblLineH = surface.GetTextSize("Ag")
+	local lblMaxW = outerR * 0.7
+
 	for i = 1, count do
 		local opt = self.options[i]
 		local centerAng = math.rad(-90 + (i - 1) * sweep)
@@ -347,13 +548,18 @@ function PANEL:Paint(width, height)
 		local lx = cx + math.cos(centerAng) * midR
 		local ly = cy + math.sin(centerAng) * midR
 		local bHover = (i == self.hovered)
+		local col = bHover and color_white or ColorAlpha(color_white, 200 * a)
 
-		draw.SimpleText(opt.label:utf8upper(), "ixMenuButtonFontSmall", lx, ly,
-			bHover and color_white or ColorAlpha(color_white, 200 * a),
-			TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		local lines = WrapTextSafe(opt.label:utf8upper(), lblMaxW, lblFont)
+		local ty = ly - (#lines - 1) * lblLineH * 0.5
 
-		draw.NoTexture()
+		for _, line in ipairs(lines) do
+			draw.SimpleText(line, lblFont, lx, ty, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+			ty = ty + lblLineH
+		end
 	end
+
+	draw.NoTexture()
 
 	-- Центральная ступица.
 	surface.SetDrawColor(0, 0, 0, 210 * a)
@@ -380,7 +586,7 @@ function PANEL:Paint(width, height)
 
 	surface.SetFont(titleFont)
 	local _, lineH = surface.GetTextSize("Ag")
-	local lines = ix.util.WrapText(title, maxW, titleFont)
+	local lines = WrapTextSafe(title, maxW, titleFont)
 
 	local gap = math.max(4, lineH * 0.3)
 	local totalH = (#lines + 1) * lineH + gap -- +1 строка под подсказку
@@ -394,7 +600,8 @@ function PANEL:Paint(width, height)
 	end
 
 	y = y + gap
-	draw.SimpleText("ЛКМ — ВЫБОР", titleFont, cx, y, ColorAlpha(color_white, 150 * a),
+	local hint = (#self.menuStack > 0) and "ПКМ — НАЗАД" or "ЛКМ — ВЫБОР"
+	draw.SimpleText(hint, titleFont, cx, y, ColorAlpha(color_white, 150 * a),
 		TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
 
@@ -402,16 +609,32 @@ function PANEL:OnMousePressed(code)
 	if (self.bClosing) then return end
 
 	if (code == MOUSE_LEFT) then
-		if (self.hovered > 0 and self.options[self.hovered]) then
+		local opt = self.hovered > 0 and self.options[self.hovered]
+
+		if (opt) then
 			if (IsValid(LocalPlayer())) then
 				LocalPlayer():EmitSound("Helix.Press")
 			end
-			self:CloseMenu(false, self.options[self.hovered].callback)
+
+			if (opt.isBack) then
+				self:PopOptions()
+			elseif (opt.children) then
+				self:PushOptions(opt.children, opt.label)
+			else
+				self:CloseMenu(false, opt.callback)
+			end
 		else
 			self:CloseMenu(true)
 		end
 	elseif (code == MOUSE_RIGHT) then
-		self:CloseMenu(true)
+		-- ПКМ — на уровень выше; в корне — закрыть меню.
+		if (self:PopOptions()) then
+			if (IsValid(LocalPlayer())) then
+				LocalPlayer():EmitSound("Helix.Press")
+			end
+		else
+			self:CloseMenu(true)
+		end
 	end
 end
 
@@ -434,20 +657,76 @@ end
 
 vgui.Register("ixCharRadialMenu", PANEL, "EditablePanel")
 
--- Перехват стандартного меню сущности: для живых персонажей открываем радиальное.
-function PLUGIN:ShowEntityMenu(entity)
-	if (!IsValid(entity) or !entity:IsPlayer()) then return end
-	if (entity == LocalPlayer()) then return end
-	if (!entity:GetCharacter()) then return end
+-- По сущности под прицелом возвращает (target, menuEntity, isRagdoll) либо nil.
+-- Живой игрок — он сам. prop_ragdoll лежачего/мертвого игрока — резолвим владельца
+-- по сетевой переменной "doll" (ставится в !healthsystem на нокдаун, networked всем).
+local function ResolveTarget(entity)
+	if (!IsValid(entity)) then return end
+
+	if (entity:IsPlayer()) then
+		if (entity == LocalPlayer() or !entity:GetCharacter()) then return end
+		return entity, entity, false
+	end
+
+	if (entity:GetClass() == "prop_ragdoll") then
+		local ply = IsValid(entity.ixPlayer) and entity.ixPlayer or nil
+
+		if (!IsValid(ply)) then
+			for _, p in ipairs(player.GetAll()) do
+				local doll = p:GetNetVar("doll")
+
+				if (doll and Entity(doll) == entity) then
+					ply = p
+					break
+				end
+			end
+		end
+
+		if (IsValid(ply) and ply != LocalPlayer() and ply:GetCharacter()) then
+			return ply, entity, true
+		end
+	end
+end
+
+-- Открыть радиальное меню по сущности (игрок или его рэгдолл). true — если открыли
+-- (либо меню уже открыто), чтобы подавить стандартный список опций Helix.
+function PLUGIN:OpenRadialOn(entity)
+	local target, menuEntity, isRagdoll = ResolveTarget(entity)
+	if (!target) then return end
 
 	if (IsValid(ix.gui.charRadial)) then
 		return true
 	end
 
 	local panel = vgui.Create("ixCharRadialMenu")
-	panel:SetTarget(entity)
+	panel:SetTarget(target, menuEntity, isRagdoll)
 
 	ix.gui.charRadial = panel
 
-	return true -- подавляем стандартный список опций
+	return true
 end
+
+-- Перехват стандартного меню сущности (живые персонажи + рэгдоллы, которым плагины
+-- выдали GetEntityMenu).
+function PLUGIN:ShowEntityMenu(entity)
+	return self:OpenRadialOn(entity)
+end
+
+-- Лежачие/мертвые игроки — это prop_ragdoll БЕЗ GetEntityMenu (рассылка меню в
+-- !healthsystem отключена), поэтому штатный E-поток (KeyRelease → ShowEntityMenu)
+-- их не ловит. Ловим E здесь сами и открываем радиальное меню по рэгдоллу.
+hook.Add("KeyRelease", "ixRadialRagdoll", function(client, key)
+	if (key != IN_USE or client != LocalPlayer()) then return end
+	if (ix.menu.IsOpen() or IsValid(ix.gui.charRadial)) then return end
+
+	local data = {}
+		data.start = client:GetShootPos()
+		data.endpos = data.start + client:GetAimVector() * 96
+		data.filter = client
+
+	local entity = util.TraceLine(data).Entity
+
+	if (IsValid(entity) and entity:GetClass() == "prop_ragdoll") then
+		PLUGIN:OpenRadialOn(entity)
+	end
+end)

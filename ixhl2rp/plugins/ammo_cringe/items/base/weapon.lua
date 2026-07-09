@@ -783,4 +783,48 @@ hook.Add("EntityRemoved", "ixRemoveGrenade", function(entity)
 	end
 end)
 
+-- ArcCW-гранаты не используют движковый weapon_frag/боезапас, поэтому хук выше их
+-- не ловит, и брошенный предмет оставался в инвентаре (можно было переэкипировать
+-- и бросить снова). Ловим САМ БРОСОК: ArcCW создаёт снаряд arccw_thr_* во владении
+-- метателя — при его появлении снимаем и удаляем экипированную предмет-гранату.
+-- Одна граната = один бросок.
+if (SERVER) then
+	hook.Add("OnEntityCreated", "ixArcGrenadeThrown", function(entity)
+		if (!IsValid(entity) or !string.StartWith(entity:GetClass() or "", "arccw_thr_")) then
+			return
+		end
+
+		-- Владелец проставляется ArcCW не в момент ents.Create, а чуть позже —
+		-- поэтому читаем его в конце кадра.
+		timer.Simple(0, function()
+			if (!IsValid(entity)) then return end
+
+			local client = (IsValid(entity.Owner) and entity.Owner) or entity:GetOwner()
+
+			if (!IsValid(client) or !client:IsPlayer() or !client:GetCharacter()) then
+				return
+			end
+
+			-- Сначала пробуем экипированное оружие-гранату игрока...
+			local weapon = client.carryWeapons and client.carryWeapons["grenade"]
+			local item = IsValid(weapon) and weapon.ixItem or nil
+
+			-- ...иначе ищем экипированную предмет-гранату среди вещей (на случай,
+			-- если ArcCW уже сняла само оружие к этому моменту).
+			if (!item) then
+				for _, v in pairs(client:GetItems()) do
+					if (v.isGrenade and v.GetData and v:GetData("equip")) then
+						item = v
+						break
+					end
+				end
+			end
+
+			if (item and item.isGrenade and item.Unequip) then
+				item:Unequip(client, false, true) -- снять оружие + удалить предмет
+			end
+		end)
+	end)
+end
+
 return Item

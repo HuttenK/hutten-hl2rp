@@ -123,11 +123,19 @@ if SERVER then
 			if character then
 				local hasTool, item
 				if self.info.Tool and self:GetLocked() then
-					for k, v in ipairs(client:FindItems(self.info.Tool)) do
-						if v:HasDurability() then
-							hasTool = true
-							item = v
-							break
+					local breach = (ix.loot and ix.loot.breachTools) or {}
+
+					for _, v in ipairs(client:GetItems()) do
+						-- Подходит канонический инструмент контейнера (лом) либо любое
+						-- тяжёлое ломающее оружие ближнего боя из ix.loot.breachTools.
+						if (v.uniqueID == self.info.Tool or breach[v.uniqueID]) then
+							-- Инструменты с прочностью (tools-база) не должны быть сломаны;
+							-- оружие (weapon-база) метода HasDurability не имеет — берём как есть.
+							if !v.HasDurability or v:HasDurability() then
+								hasTool = true
+								item = v
+								break
+							end
 						end
 					end
 					
@@ -155,7 +163,9 @@ if SERVER then
 						local locked = self:GetLocked()
 						
 						if locked then
-							item:TakeDurability(self.info.ToolDamage or 100, client)
+							if item and item.TakeDurability then
+								item:TakeDurability(self.info.ToolDamage or 100, client)
+							end
 
 							if self.info.CrackSound then
 								client:EmitSound(self.info.CrackSound)

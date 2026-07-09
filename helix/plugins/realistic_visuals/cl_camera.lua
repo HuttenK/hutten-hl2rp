@@ -54,6 +54,15 @@ function PLUGIN:CalcView(client, origin, angles, fov)
         return
     end
 
+    -- Пока игрок в рэгдолле (нокдаун/усыпление/крит) не трогаем вид: им займётся
+    -- ядро (GM:CalcView следит за глазами рэгдолла). Иначе мы вернули бы вид со
+    -- стоячим origin, и камера застряла бы там, где персонаж стоял.
+    local ragdoll = Entity(client:GetLocalVar("ragdoll", 0))
+
+    if (IsValid(ragdoll) and ragdoll:IsRagdoll()) then
+        return
+    end
+
     local curFrame = FrameNumber()
 
     -- Обновляем состояние только один раз за кадр, 

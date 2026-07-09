@@ -1,7 +1,7 @@
 -- Пустая кассета: игрок сам задаёт название и звуковой трек.
 ITEM.name        = "Пустая кассета"
 ITEM.description = "Компактный флеш-накопитель малого объема, произведенный еще в начале 21-го века. Раньше использовался для сохранения забавных картинок, а теперь с помощью него передают музыку. Легальную и запрещенную."
-ITEM.model       = "models/items/battery.mdl"
+ITEM.model       = "models/props_junk/wideognomes.mdl"
 ITEM.category    = "item.category.misc"
 ITEM.width       = 1
 ITEM.height      = 1

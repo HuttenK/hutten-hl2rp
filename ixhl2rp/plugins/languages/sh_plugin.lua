@@ -567,6 +567,18 @@ do
 end
 
 do
+	-- English (a learnable foreign language now that Russian is the native tongue)
+	local language = ix.languages:New()
+	language.uniqueID = "eng"
+	language.name = "language.name.eng"
+	language.chat = "language.chat.eng"
+	language.icon = "flags16/gb.png"
+	language.gibberish = {"the", "hello", "world", "friend", "please", "danger", "help", "water", "food", "bread", "house", "city", "street", "market", "school", "work", "office", "money", "book", "language", "who", "what", "when", "where", "why", "how", "morning", "evening", "night", "day", "week", "today", "tomorrow", "yesterday", "good", "bad", "small", "big", "far", "near", "beautiful", "ugly", "easy", "hard", "yes", "no", "thanks", "sorry", "please", "beer", "tea", "coffee", "apple", "meat", "egg", "weather", "car", "train", "phone", "computer", "brother", "sister", "mother", "father", "people", "green", "blue", "red", "black", "white", "one", "two", "three", "run", "walk", "come", "leave", "wait", "listen", "speak", "understand", "remember", "together", "again", "never", "always"}
+
+	language:Register()
+end
+
+do
 	-- Alien
 	local language = ix.languages:New()
 	language.uniqueID = "xen"

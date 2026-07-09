@@ -83,7 +83,33 @@ function PANEL:Setup(isMini, inventoryID)
 	firstTitle:SetTextColor(Color(0, 225, 255))
 	firstTitle:SetFont("craft.item.title")
 	firstTitle:SetText(L("craftRecipesTitle"))
-	
+
+	local search = first:Add("DTextEntry")
+	search:Dock(TOP)
+	search:DockMargin(scale(10), scale(8), scale(10), 0)
+	search:SetTall(scale(22))
+	search:SetFont("ui.craft.large")
+	search:SetUpdateOnType(true)
+	search:SetPaintBackground(false)
+	search.Paint = function(panel, w, h)
+		surface.SetDrawColor(8, 32, 48, 200)
+		surface.DrawRect(0, 0, w, h)
+		surface.SetDrawColor(0, 190, 255, 120)
+		surface.DrawOutlinedRect(0, 0, w, h)
+
+		panel:DrawTextEntryText(Color(0, 225, 255), Color(0, 120, 200), Color(0, 225, 255))
+
+		if panel:GetText() == "" and !panel:IsEditing() then
+			surface.SetFont("ui.craft.large")
+			surface.SetTextColor(0, 150, 190, 160)
+
+			local _, ty = surface.GetTextSize("A")
+
+			surface.SetTextPos(scale(4), h * 0.5 - ty * 0.5)
+			surface.DrawText(L("craftSearch"))
+		end
+	end
+
 	parent.first = first:Add("DScrollPanel")
 	parent.first:Dock(FILL)
 	parent.first:SetSize(first:GetWide(), first:GetTall())
@@ -96,6 +122,7 @@ function PANEL:Setup(isMini, inventoryID)
 
 	local categories = {}
 	local recipesList = {}
+	local flatRecipes = {} -- плоский список всех доступных здесь рецептов, для поиска
 
 	for _, recipe in pairs(ix.Craft.recipes) do
 		if recipe.skill then
@@ -140,6 +167,8 @@ function PANEL:Setup(isMini, inventoryID)
 		end
 
 		if recipe.mainCategory then
+			flatRecipes[#flatRecipes + 1] = recipe
+
 			local list = recipesList[recipe.mainCategory] or {recipes = {}, subcategories = {}, noSkill = true}
 
 			if recipe.category then
@@ -153,7 +182,9 @@ function PANEL:Setup(isMini, inventoryID)
 			recipesList[recipe.mainCategory] = list
 		else
 			if !recipe.skill then continue end
-			
+
+			flatRecipes[#flatRecipes + 1] = recipe
+
 			local list = recipesList[recipe.skill[1]] or {recipes = {}, subcategories = {}}
 
 			if recipe.category then
@@ -305,6 +336,67 @@ function PANEL:Setup(isMini, inventoryID)
 		end
 
 		collapsibleCategory:SetExpanded(ix.gui.craft_categories[v.category][1])
+	end
+
+	-- Результаты поиска: плоский список, подменяющий дерево категорий, пока в
+	-- строке поиска что-то есть. Скрытые Dock(FILL) панели пропускаются раскладкой,
+	-- поэтому активной всегда остаётся ровно одна из двух.
+	local searchResults = first:Add("DScrollPanel")
+	searchResults:Dock(FILL)
+	searchResults:DockMargin(margin * 0.5, margin, margin * 0.5, margin)
+	searchResults:SetVisible(false)
+
+	parent.searchResults = searchResults
+
+	local function RunSearch(query)
+		query = string.lower(string.Trim(query or ""))
+
+		if query == "" then
+			searchResults:SetVisible(false)
+			searchResults:Clear()
+			parent.first:SetVisible(true)
+			first:InvalidateLayout(true)
+
+			return
+		end
+
+		parent.first:SetVisible(false)
+		searchResults:SetVisible(true)
+		searchResults:Clear()
+
+		local matches = {}
+
+		for _, recipe in ipairs(flatRecipes) do
+			if string.find(string.lower(recipe:GetName() or ""), query, 1, true) then
+				matches[#matches + 1] = recipe
+			end
+		end
+
+		table.sort(matches, function(a, b)
+			return (a:GetName() or "") < (b:GetName() or "")
+		end)
+
+		if #matches == 0 then
+			local empty = searchResults:Add("DLabel")
+			empty:Dock(TOP)
+			empty:DockMargin(scale(10), scale(10), 0, 0)
+			empty:SetFont("ui.craft.large")
+			empty:SetTextColor(Color(255, 72, 72))
+			empty:SetText(L("craftSearchNoResults"))
+			empty:SizeToContents()
+		else
+			for _, recipe in ipairs(matches) do
+				parent.recipeData = {recipe = recipe}
+
+				searchResults:AddItem(vgui.Create("ui.craft.item", parent))
+			end
+		end
+
+		first:InvalidateLayout(true)
+	end
+
+	search.OnValueChange = function(panel, value)
+		RunSearch(value)
 	end
 
 	local second = parent:Add("Panel")

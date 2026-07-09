@@ -29,6 +29,11 @@ local EQUIP_INV_TO_APPEARANCE_SLOT = {
 	hands     = 11, -- equip_inv 'hands' (gloves)
 	gloves    = 11, -- alias
 	belt      = 12, -- custom: belts
+
+	-- Броня носится поверх одежды, поэтому у неё собственные слоты Appearance:
+	-- иначе бронежилет вытеснил бы рубашку (13), а поножи — штаны (14).
+	vest           = 15, -- equip_inv 'vest' (бронежилеты)
+	legprotection  = 16, -- equip_inv 'legprotection' (защита ног)
 }
 
 function ItemCloth:Init()
@@ -164,11 +169,24 @@ function ItemCloth:OnRegistered()
 	-- apply the bodygroup changes through the new appearance pipeline.
 	if not self.displayID and self.bodyGroups and next(self.bodyGroups) then
 		local slot = EQUIP_INV_TO_APPEARANCE_SLOT[self.equip_inv] or ix.Appearance.Slot.Torso
-		self.displayID = ix.Appearance:New(self.uniqueID, {
+		local info = {
 			slot       = slot,
 			bodyGroups = self.bodyGroups,
 			layer      = ix.Appearance.Layer.Main,
-		})
+		}
+
+		-- Characters wearing an MPF uniform use the metropolice model
+		-- (Appearance modelClass "mpf"), whose bodygroup layout differs from
+		-- citizen models. If the item defines bodyGroupsMPF, expose it as an
+		-- "mpf" variant so Outfit:Update applies those indices on a uniformed
+		-- character instead of the citizen bodygroups (and never clobbers them).
+		if self.bodyGroupsMPF and next(self.bodyGroupsMPF) then
+			info.variants = {
+				mpf = { bodyGroups = self.bodyGroupsMPF }
+			}
+		end
+
+		self.displayID = ix.Appearance:New(self.uniqueID, info)
 	end
 end
 

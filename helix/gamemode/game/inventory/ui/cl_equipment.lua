@@ -69,6 +69,20 @@ function PANEL:SetCharacter(client)
 	torso:MoveBelow(face, 16)
 	torso:SetTitle(L("equip.torso"))
 
+	-- vest/legprotection are provided by the items_clothing plugin, not by core,
+	-- so fall back to the previous layout when that plugin is absent.
+	local vestInventory = client:GetInventory("vest")
+	local vest
+
+	if vestInventory then
+		vest = vestInventory:CreatePanel(self)
+		vest:SetSlotSize(64)
+		vest:Rebuild()
+		vest:SizeToContents()
+		vest:MoveBelow(torso, 16)
+		vest:SetTitle(L("equip.vest"))
+	end
+
 	local cid = client:GetInventory("cid"):CreatePanel(self)
 	cid:SetSlotSize(64)
 	cid:Rebuild()
@@ -107,11 +121,24 @@ function PANEL:SetCharacter(client)
 	legs:AlignRight(0)
 	legs:SetTitle(L("equip.legs"))
 
+	local legProtectionInventory = client:GetInventory("legprotection")
+	local legprotection
+
+	if legProtectionInventory then
+		legprotection = legProtectionInventory:CreatePanel(self)
+		legprotection:SetSlotSize(64)
+		legprotection:Rebuild()
+		legprotection:SizeToContents()
+		legprotection:MoveBelow(legs, 16)
+		legprotection:AlignRight(0)
+		legprotection:SetTitle(L("equip.legprotection"))
+	end
+
 	local hands = client:GetInventory("hands"):CreatePanel(self)
 	hands:SetSlotSize(64)
 	hands:Rebuild()
 	hands:SizeToContents()
-	hands:MoveBelow(legs, 16)
+	hands:MoveBelow(legprotection or legs, 16)
 	hands:AlignRight(0)
 	hands:SetTitle(L("equip.hands"))
 

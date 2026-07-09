@@ -1,14 +1,9 @@
 ITEM.name = "item.syringe"
 ITEM.description = "item.syringe.desc"
 ITEM.category = "item.category.medical"
-ITEM.model = Model("models/autonomous/syringe.mdl")
+ITEM.model = Model("models/hls/alyxports/hla_stimdose.mdl")
 ITEM.width = 1
 ITEM.height = 1
-ITEM.iconCam = {
-	pos = Vector(1.0241856575012, 0, 82.435592651367),
-	ang = Angle(90, 0, 44.528659820557),
-	fov = 5,
-}
 ITEM.reagent_flags = bit.bor(ix.Reagents.holder.refillable, ix.Reagents.holder.drainable)
 ITEM.volume = 100
 ITEM.transfer_amount = 10

@@ -27,7 +27,7 @@ function PANEL:Init()
 				chatLanguages[#chatLanguages + 1] = {name = info.name, icon = info.icon, tag = id}
 			end
 
-			chatLanguages[#chatLanguages + 1] = {name = L("langDefault"), icon = "flags16/gb.png", tag = nil}
+			chatLanguages[#chatLanguages + 1] = {name = L("langDefault"), icon = "flags16/ru.png", tag = nil}
 
 			if !table.IsEmpty(chatLanguages) then
 				local menu = DermaMenu()
@@ -80,7 +80,7 @@ function PANEL:CorrectPosition(chatX, chatY, chatW, chatH)
 end
 
 function PANEL:ChangeFlagIcon(lang)
-	local icon = "flags16/gb.png"
+	local icon = "flags16/ru.png"
 
 	if lang then
 		local info = ix.languages:FindByID(lang)

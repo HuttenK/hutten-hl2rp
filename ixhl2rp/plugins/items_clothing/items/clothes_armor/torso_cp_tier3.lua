@@ -9,14 +9,14 @@ ITEM.iconCam = {
 }
 ITEM.rarity = 1
 ITEM.description = "Стандартный кевларовый жилет рядового сотрудника ГО"
-ITEM.equip_inv = 'torso'
+ITEM.equip_inv = 'vest'
 ITEM.equip_slot = nil
 ITEM.bodyGroups = {
-	[4] = 0
+	[7] = 1
 }
 ITEM.armor = {
 	class = 2,
-	max_durability = 650,
+	max_durability = 600,
 	density = 0.8,
 	coverage = {
 		[HITGROUP_CHEST] = 1,
@@ -50,6 +50,10 @@ ITEM.armor = {
 ITEM.contraband = true
 
 
+-- Overlay disabled: armor is now shown via the citizen model's built-in
+-- bodygroup (ITEM.bodyGroups above -> clean Main-layer auto-appearance).
+-- Re-enable this block to restore the separate nato prop + Torso_OnlyHands mask.
+--[[
 ITEM.displayID = ix.Appearance:New("nato_torso", {
 	slot = ix.Appearance.Slot.Torso,
 	layer = ix.Appearance.Layer.Top,
@@ -63,3 +67,4 @@ ITEM.displayID = ix.Appearance:New("nato_torso", {
         },
 	}
 })
+]]

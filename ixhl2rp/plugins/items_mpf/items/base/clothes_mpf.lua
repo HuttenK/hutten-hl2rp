@@ -145,15 +145,37 @@ function ItemClothMPF:OnEquipped(client)
 		if model and model != "" then
 			if client.char_outfit then
 				client.char_outfit.isModelChangedByOutfit = true
+				-- Держим модель метрополиции «текущей» для системы одежды, иначе
+				-- Outfit:Update откатит игрока на гражданскую модель при следующем
+				-- обновлении (напр. при надевании шлема/брони на ноги). Базовую
+				-- модель для снятия формы берём из char:GetModel() (см. OnUnequipped).
+				client.char_outfit.model = model
 			end
 			client:SetModel(model)
 		end
 
 		client:SetSkin(item.uniform or 0)
 
+		-- Метрополицейская модель имеет ненулевые дефолтные бодигруппы (напр. 3, 6, 7),
+		-- а SetModel сбрасывает их к этим дефолтам. Обнуляем ВСЕ, затем накладываем
+		-- только заданные формой — иначе форма даёт лишние бодигруппы поверх нужных.
+		for i = 0, client:GetNumBodyGroups() - 1 do
+			client:SetBodygroup(i, 0)
+		end
+
 		if item.bodyGroups then
 			for k, v in pairs(item.bodyGroups) do
 				client:SetBodygroup(k, v)
+			end
+		end
+
+		-- Броня, надетая поверх формы, использует иные бодигруппы (bodyGroupsMPF),
+		-- т.к. раскладка бодигрупп модели метрополиции отличается от гражданских.
+		for _, armor in pairs(client:GetItems()) do
+			if armor.bodyGroupsMPF and armor:IsEquipped() then
+				for k, v in pairs(armor.bodyGroupsMPF) do
+					client:SetBodygroup(k, v)
+				end
 			end
 		end
 	end)
@@ -164,10 +186,13 @@ function ItemClothMPF:OnUnequipped(client)
 
 	local char = client:GetCharacter()
 	if char then
-		local baseModel = (client.char_outfit and client.char_outfit.model) or char:GetModel()
+		-- Возвращаем базовую модель персонажа. char_outfit.model мог быть временно
+		-- выставлен в модель метрополиции на время ношения формы (см. OnEquipped).
+		local baseModel = char:GetModel()
 		if baseModel and baseModel != "" then
 			if client.char_outfit then
 				client.char_outfit.isModelChangedByOutfit = true
+				client.char_outfit.model = baseModel
 			end
 			client:SetModel(baseModel)
 		end
@@ -184,6 +209,13 @@ function ItemClothMPF:OnUnequipped(client)
 	client:SetNWInt("sg_armband", 0)
 	client:SetPrimaryVisorColor(vector_origin)
 	client:SetSecondaryVisorColor(vector_origin)
+
+	-- Модель сменилась обратно на гражданскую (SetModel сбросил бодигруппы к её
+	-- дефолтам). Обновляем одежду, чтобы всё ещё надетая броня пересчитала свои
+	-- гражданские бодигруппы на гражданской модели (иначе останутся MPF-значения).
+	if client.char_outfit then
+		client.char_outfit:Update()
+	end
 end
 
 local yellowClr = Color(255, 200, 50)

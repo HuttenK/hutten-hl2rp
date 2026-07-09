@@ -9,11 +9,7 @@ ITEM.primaryVisor = Vector(0, 1, 1)
 ITEM.secondaryVisor = Vector(0, 2, 2)
 ITEM.specialization = nil
 ITEM.bodyGroups = {
-	[1] = 0, -- coat
-	[2] = 0, -- neck
-	[3] = 0, -- mask
-	[4] = 0, -- vest
-	[5] = 0, -- boots
+	[5] = 1, -- boots
 }
 ITEM.armor = {
 	class = 1,

@@ -23,6 +23,7 @@ if CLIENT then
 		local origin
 		local trace
 		local data = {}
+		local placeAngle = Angle()    -- Итоговый угол, отправляемый на сервер
 
 		local validPlacement = false  -- Флаг для проверки, можно ли разместить
 
@@ -32,7 +33,58 @@ if CLIENT then
 
 			render.MaterialOverride(mat)
 
-			trace = LocalPlayer():GetEyeTraceNoCursor()
+			local eyeTrace = LocalPlayer():GetEyeTraceNoCursor()
+
+			-- Крепление на поверхность (стена/потолок/пол), к которой обращён прицел.
+			-- Предмет прижимается к поверхности и ориентируется по её нормали. Колёсико
+			-- вращает предмет в плоскости поверхности (удобно для картин, часов, досок).
+			if itemPlace and itemPlace.wallMount then
+				local normal = eyeTrace.HitNormal
+				origin = eyeTrace.HitPos
+
+				local ang = normal:Angle()
+
+				-- Опциональная поправка под конкретную модель (напр. развернуть лицом
+				-- от стены): ITEM.wallAngleOffset = Angle(pitch, yaw, roll) в локальных осях.
+				local o = itemPlace.wallAngleOffset
+				if o then
+					ang:RotateAroundAxis(ang:Right(), o.p)
+					ang:RotateAroundAxis(ang:Up(), o.y)
+					ang:RotateAroundAxis(ang:Forward(), o.r)
+				end
+
+				ang:RotateAroundAxis(normal, angle.y) -- прокрутка колёсиком
+
+				placeAngle = ang
+				mdl:SetAngles(ang)
+				mdl:SetPos(origin)
+				mdl.normal = normal
+
+				local customCheck
+				if itemPlace.CheckTrace then
+					customCheck = itemPlace:CheckTrace(eyeTrace)
+				end
+
+				if not eyeTrace.Hit or eyeTrace.HitSky then
+					render.SetColorModulation(1, 0, 0, 1)
+					validPlacement = false
+				else
+					render.SetColorModulation(0, 1, 0, 1)
+					validPlacement = true
+				end
+
+				if customCheck == true or customCheck == false then
+					render.SetColorModulation(customCheck and 0 or 1, customCheck and 1 or 0, 0, 1)
+					validPlacement = customCheck
+				end
+
+				render.SetBlend(0.2)
+				mdl:DrawModel()
+				render.MaterialOverride(nil)
+				return
+			end
+
+			trace = eyeTrace
 			mdl:SetAngles(angle)
 
 			local mins, maxs = mdl:GetModelBounds()
@@ -80,6 +132,7 @@ if CLIENT then
 			render.SetBlend(0.2)
 
 			origin = sitTrace.HitPos
+			placeAngle = angle
 			mdl:SetPos(sitTrace.HitPos)
 			mdl.normal = trace.Normal
 			mdl:DrawModel()
@@ -174,7 +227,7 @@ if CLIENT then
 
 			buildCallback = function()
 				net.Start("build.place")
-					net.WriteAngle(angle)
+					net.WriteAngle(placeAngle)
 					net.WriteVector(origin)
 				net.SendToServer()
 			end
@@ -312,7 +365,11 @@ function Item:OnPlace(client, pos, angle)
 			end
 
 			prop:SetNetVar("owner", client:GetCharacter():GetID())
-			prop:SetPersistent( true )
+
+			-- НЕ используем SetPersistent (сэндбокс-персист): он плодит дубликаты
+			-- пропов при каждом рестарте. Сохраняем через детерминированную
+			-- SaveData плагина construction (как контейнеры/турели) — 1:1, без дублей.
+			PLUGIN:AddConstructionToSave( prop )
 			--print("[Server] Проп успешно создан.")
 		end
 	end

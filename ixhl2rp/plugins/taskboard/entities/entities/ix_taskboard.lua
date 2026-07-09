@@ -59,6 +59,11 @@ else
 		if (bNear and !IsValid(self.panel)) then
 			self.panel = vgui.Create("ixTaskBoardScreen")
 			self.panel:ParentToHUD()
+			-- КРИТИЧНО: без этого HUD-панель рисует себя в 2D-слое (левый верхний угол
+			-- экрана) каждый кадр, пока существует — виден «призрак» экрана, когда игрок
+			-- в радиусе активации, но не смотрит на терминал (ENT:Draw не вызывается, а
+			-- авто-отрисовка HUD — вызывается). Ручная отрисовка оставляет только 3D2D.
+			self.panel:SetPaintedManually(true)
 			self.panel.entity = self
 
 			self.panel.Origin = self:GetPos()

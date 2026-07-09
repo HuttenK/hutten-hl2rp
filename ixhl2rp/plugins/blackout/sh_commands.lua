@@ -54,3 +54,21 @@ ix.command.Add("BlackoutList", {
 		return PLUGIN:ListZones(client)
 	end
 })
+
+ix.command.Add("BlackoutFusebox", {
+	description = "Place a repairable circuit box where you are looking (put it inside a blackout zone).",
+	privilege = "Manage Blackouts",
+	adminOnly = true,
+	OnRun = function(self, client)
+		return PLUGIN:PlaceFusebox(client)
+	end
+})
+
+ix.command.Add("BlackoutFuseboxRemove", {
+	description = "Remove the circuit box you are looking at.",
+	privilege = "Manage Blackouts",
+	adminOnly = true,
+	OnRun = function(self, client)
+		return PLUGIN:RemoveFusebox(client)
+	end
+})

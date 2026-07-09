@@ -92,9 +92,15 @@ end
 function FACTION:OnSpawn(client, firstTime)
 	if firstTime then
 		local character = client:GetCharacter()
-		
+
 		character:CreateIDCard("card")
 	end
+end
+
+-- Стартовый баланс гражданина. Вызывается ядром (GM:OnCharacterCreated ->
+-- faction:OnCharacterCreated) один раз при создании персонажа.
+function FACTION:OnCharacterCreated(client, character)
+	character:SetMoney(150)
 end
 
 function FACTION:GenerateName(gender)

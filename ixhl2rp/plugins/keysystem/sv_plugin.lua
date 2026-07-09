@@ -3,11 +3,26 @@ local PLUGIN = PLUGIN
 -- множество «ключевых» дверей: { [tostring(MapCreationID)] = true }
 PLUGIN.keyDoors = PLUGIN.keyDoors or {}
 
--- Сделать дверь «ключевой»: больше не покупается/не имеет владельца/фракции,
--- доступ только по физическому ключу. По умолчанию запирается.
-function PLUGIN:MakeKeyDoor(door)
-	local id = tostring(door:MapCreationID())
-	self.keyDoors[id] = true
+-- Немедленно и ИЗОЛИРОВАННО сохранить данные предмета в БД.
+-- ITEM:SetData ставит сохранение в пакетную очередь (ix.Item:Async_SaveData),
+-- которая выполняется внутри coroutine и ПРЕРЫВАЕТСЯ на первом же предмете, чьё
+-- SaveData бросает ошибку (sv_mysql RawQuery делает error() при сбое SQL/колбэка);
+-- ошибка глотается coroutine.resume, остаток пакета (в произвольном порядке pairs)
+-- не сохраняется, items_to_savedata не очищается. Из-за этого часть привязок
+-- ключей (data.doors) не доходила до sv.db и терялась после рестарта, хотя
+-- сторона двери (keyDoors, отдельная txt-запись) сохранялась всегда.
+-- Прямой вызов пишет ТОЛЬКО этот предмет и не зависит от чужих предметов.
+function PLUGIN:PersistItemNow(item)
+	if SERVER and item and item.SaveData then
+		item:SaveData()
+	end
+end
+
+-- Применить «ключевой» режим к двери: снять владельца/фракцию/класс, очистить
+-- доступ и запереть (вместе с партнёром). Не сохраняет данные — это делает
+-- вызывающий. Используется и при привязке, и при переприменении после рестарта.
+function PLUGIN:ApplyKeyDoor(door)
+	if !(IsValid(door) and door.IsDoor and door:IsDoor()) then return end
 
 	door:SetNetVar("ownable", nil)
 	door:SetNetVar("faction", nil)
@@ -18,8 +33,27 @@ function PLUGIN:MakeKeyDoor(door)
 	door:Fire("lock")
 	local partner = door.GetDoorPartner and door:GetDoorPartner()
 	if IsValid(partner) then partner:Fire("lock") end
+end
+
+-- Сделать дверь «ключевой»: больше не покупается/не имеет владельца/фракции,
+-- доступ только по физическому ключу. По умолчанию запирается.
+function PLUGIN:MakeKeyDoor(door)
+	local id = tostring(door:MapCreationID())
+	self.keyDoors[id] = true
+
+	self:ApplyKeyDoor(door)
 
 	self:SaveData()
+end
+
+-- Переприменить «ключевой» статус ко всем сохранённым дверям. Вызывается после
+-- полной загрузки данных сервера, поэтому переопределяет восстановление плагина
+-- дверей (которое возвращает дверям обычный режим).
+function PLUGIN:ReapplyKeyDoors()
+	for id in pairs(self.keyDoors) do
+		local door = ents.GetMapCreatedEntity(tonumber(id))
+		self:ApplyKeyDoor(door)
+	end
 end
 
 -- Вернуть дверь в обычный режим
@@ -38,7 +72,14 @@ function PLUGIN:SaveData()
 end
 
 function PLUGIN:LoadData()
-	self.keyDoors = self:GetData() or {}
+	-- Нормализуем ключи в строки: util.JSONToTable при загрузке из файла превращает
+	-- числовые строковые ключи ("3044") обратно в числа (3044), из-за чего IsKeyDoor
+	-- (поиск по tostring) переставал находить дверь после рестарта («keyDoors: нет»).
+	local raw = self:GetData() or {}
+	self.keyDoors = {}
+	for id, v in pairs(raw) do
+		if v then self.keyDoors[tostring(id)] = true end
+	end
 end
 
 -- Универсальное переименование предметов (ключи, оружие и т.п.).
@@ -77,18 +118,16 @@ netstream.Hook("ixItemRename", function(client, itemID, text)
 	text = utf8.sub(tostring(text or ""), 1, 32) or ""
 
 	item:SetData(field, text)
+	PLUGIN:PersistItemNow(item) -- гарантированная запись (обход сбойной пакетной очереди)
 	client:Notify("Предмет переименован: "..(text != "" and text or "(имя сброшено)"))
 end)
 
--- После загрузки карты — переприменяем «ключевой» статус (unownable + заперто)
-function PLUGIN:InitPostEntity()
-	timer.Simple(1, function()
-		for id in pairs(self.keyDoors) do
-			local door = ents.GetMapCreatedEntity(tonumber(id))
-			if IsValid(door) and door:IsDoor() then
-				door:SetNetVar("ownable", nil)
-				door:Fire("lock")
-			end
-		end
-	end)
+-- PostLoadData вызывается ПОСЛЕ LoadData всех плагинов (в т.ч. нашего LoadData,
+-- заполняющего self.keyDoors, и плагина дверей, восстанавливающего их обычное
+-- состояние). Здесь мы гарантированно имеем актуальный self.keyDoors и
+-- переопределяем восстановление дверей. Это заменяет ненадёжный таймер в
+-- InitPostEntity, который срабатывал раньше асинхронной загрузки данных (MySQL)
+-- и оставлял двери непривязанными после рестарта.
+function PLUGIN:PostLoadData()
+	self:ReapplyKeyDoors()
 end

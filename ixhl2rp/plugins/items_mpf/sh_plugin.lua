@@ -4,6 +4,16 @@ PLUGIN.name = "MPF Items"
 PLUGIN.author = "SchwarzKruppzo"
 PLUGIN.description = ""
 
+-- Tag the metropolice uniform models with an Appearance modelClass so armor
+-- items can expose a separate "mpf" bodygroup variant (their bodygroup layout
+-- differs from citizen models). See items_clothing base clothes.lua OnRegistered.
+if ix.Appearance then
+	ix.Appearance:SetModelClass("models/autonomous/eurasia_nemanus/metropolice/male.mdl", "mpf")
+	ix.Appearance:SetModelClass("models/autonomous/eurasia_nemanus/metropolice/female.mdl", "mpf")
+	ix.Appearance:SetModelClass("models/autonomous/eurasia_nemanus/metropolice/male_rebel.mdl", "mpf")
+	ix.Appearance:SetModelClass("models/autonomous/eurasia_nemanus/metropolice/female_rebel.mdl", "mpf")
+end
+
 if CLIENT then
 	local MPF_MODELS = {
 		["models/autonomous/eurasia_nemanus/metropolice/male.mdl"]         = true,
@@ -158,9 +168,27 @@ if SERVER then
 					client:SetPrimaryVisorColor(item.primaryVisor or Vector(0, 0, 0))
 					client:SetSecondaryVisorColor(item.secondaryVisor or Vector(0, 0, 0))
 					client:SetSkin(item.uniform or 0)
+					-- Обнуляем все дефолтные бодигруппы модели, затем накладываем
+					-- только заданные формой (см. clothes_mpf.lua OnEquipped).
+					for i = 0, client:GetNumBodyGroups() - 1 do
+						client:SetBodygroup(i, 0)
+					end
 					if item.bodyGroups then
 						for k, v in pairs(item.bodyGroups) do
 							client:SetBodygroup(k, v)
+						end
+					end
+
+					-- Держим модель метрополиции текущей для системы одежды и
+					-- накладываем MPF-бодигруппы надетой брони (шлем/ноги).
+					if client.char_outfit then
+						client.char_outfit.model = client:GetModel()
+					end
+					for _, armor in pairs(client:GetItems()) do
+						if armor.bodyGroupsMPF and armor:IsEquipped() then
+							for k, v in pairs(armor.bodyGroupsMPF) do
+								client:SetBodygroup(k, v)
+							end
 						end
 					end
 				end

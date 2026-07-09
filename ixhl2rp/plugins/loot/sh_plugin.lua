@@ -7,6 +7,21 @@ PLUGIN.description = "Adds a enhanced loot system."
 ix.util.Include("sv_loot.class.lua")
 ix.util.Include("sh_lootcontainer.class.lua")
 
+-- Melee weapons that can ALSO pry/smash open a locked loot container, in
+-- addition to each container's canonical Tool (the crowbar). Edit this set to
+-- add or remove breaching tools; keys are item uniqueIDs.
+ix.loot = ix.loot or {}
+ix.loot.breachTools = {
+	wm_crowbar = true, -- Монтировка (canonical)
+	wm_fubar   = true, -- Фубар (лом/топор/кувалда в одном)
+	wm_fireaxe = true, -- Пожарный топор
+	wm_axe     = true, -- Топор
+	wm_sledge  = true, -- Кувалда
+	wm_pickaxe = true, -- Кирка
+	wm_ice_axe = true, -- Ледоруб
+	wm_hammer  = true, -- Молоток
+}
+
 ix.util.Include("sh_definitions.lua")
 ix.util.Include("sv_hooks.lua")
 /*

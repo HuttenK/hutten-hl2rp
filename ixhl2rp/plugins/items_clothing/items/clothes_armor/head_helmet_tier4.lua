@@ -1,5 +1,5 @@
-ITEM.name = "Шлем армии Надзора"
-ITEM.model = "models/autonomous/africa/items/prop_army_helmet.mdl"
+ITEM.name = "Боевой шлем"
+ITEM.model = "models/cellar/prop_helmet_nato.mdl"
 ITEM.width = 2
 ITEM.height = 2
 ITEM.iconCam = {
@@ -7,12 +7,18 @@ ITEM.iconCam = {
 	ang = Angle(-11.637926101685, 178.93601989746, 0),
 	fov = 3.542275575055,
 }
-ITEM.description = "Стандартный шлем регулярной армии Надзора"
+ITEM.description = "Стандартный баллистический шлем"
 ITEM.equip_inv = 'head'
 ITEM.equip_slot = nil
---ITEM.bodyGroups = {
---	[4] = 0,
---}
+ITEM.bodyGroups = {
+	[1] = 16,
+}
+-- Bodygroups used when the wearer has an MPF uniform on (metropolice model,
+-- different bodygroup layout than citizen models).
+ITEM.bodyGroupsMPF = {
+	[6] = 1,
+	[7] = 2,
+}
 ITEM.noRepair = true
 ITEM.destroyable = true
 ITEM.armor = {
@@ -47,6 +53,10 @@ ITEM.armor = {
 }
 ITEM.contraband = true
 
+-- Overlay disabled: helmet is now shown via the citizen model's built-in
+-- bodygroup (ITEM.bodyGroups above -> clean Main-layer auto-appearance).
+-- Re-enable this block to restore the separate nato helmet prop.
+--[[
 ITEM.displayID = ix.Appearance:New("nato_helmet", {
 	slot = ix.Appearance.Slot.Head,
 	clientside = true,
@@ -59,3 +69,4 @@ ITEM.displayID = ix.Appearance:New("nato_helmet", {
         },
 	}
 })
+]]

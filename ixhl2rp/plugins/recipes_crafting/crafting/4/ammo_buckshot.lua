@@ -6,7 +6,7 @@ RECIPE.requirements = {
 	box_of_gunpowder = 2,
 }
 RECIPE.results = {
-	shotgunammo = 2
+	shotgunammo = 1
 }
 RECIPE.skill = {"crafting", 4}
 RECIPE.tools = {"wm_hammer"}

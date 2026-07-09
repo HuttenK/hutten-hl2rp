@@ -107,6 +107,11 @@ function PANEL:SetupCraft()
 	local parent = ix.gui.craftFrame
 	if not parent or not IsValid(parent.itemIcon) then return end -- craftFrame not ready
 
+	-- Замыкания ниже вешаются на долгоживущие панели (parent.itemIcon), а сама
+	-- строка рецепта может быть удалена (например, при фильтрации поиском).
+	-- Индексирование удалённой панели даёт nil, поэтому держим рецепт по значению.
+	local recipe = self.recipe
+
 	local title = string.utf8upper(self.recipe:GetName())
 	parent.craftTitle:SetText((self.recipe.isBreakdown and L("craftDisassemblePrefix") or "") .. title)
 	parent.craftTitle:SetVisible(true)
@@ -118,7 +123,7 @@ function PANEL:SetupCraft()
 		parent.itemIcon:Rebuild(self.recipe.requirements, 64)
 		parent.itemIcon.Think = function(_, w, h)
 			if ix.gui.can_craft then
-				_.hasItem = ix.gui.can_craft[self.recipe.uniqueID]
+				_.hasItem = ix.gui.can_craft[recipe.uniqueID]
 			end
 		end
 		parent.itemIcon.PaintOver = function(_, w, h)
@@ -146,13 +151,18 @@ function PANEL:SetupCraft()
 		parent.itemIcon.PaintOver = nil
 
 		for item, count in pairs(self.recipe.results) do
+			-- Количество результата может быть диапазоном {min, max} (см. OnCraft:
+			-- math.random(amount[1], amount[2])). GetTextSize/DrawText принимают только
+			-- строку, поэтому приводим к строке: диапазон -> "min-max", число -> tostring.
+			local countText = istable(count) and (count[1] .. "-" .. count[2]) or tostring(count)
+
 			parent.itemIcon:Rebuild(item, 64, self.recipe.preview)
 			parent.itemIcon.PaintOver = function(_, w, h)
 				surface.SetFont("craft.component.count")
-				local x, z = surface.GetTextSize(count)
+				local x, z = surface.GetTextSize(countText)
 				surface.SetTextColor(255, 255, 255, 255)
 				surface.SetTextPos(w - x - 2, h - z)
-				surface.DrawText(count)
+				surface.DrawText(countText)
 			end
 
 			break

@@ -22,12 +22,29 @@ function PANEL:SetVisible(bState)
 end
 
 function PANEL:ScrollToBottom()
-	timer.Simple(0.01, function()
-		if IsValid(self) then
-			local bar = self:GetVBar()
+	-- Прокрутка вниз должна срабатывать и когда чат ЗАКРЫТ. Закрытый чат — невидимая
+	-- панель, а невидимые панели НЕ проходят авто-лейаут, поэтому bar.CanvasSize
+	-- оставался старым (без только что добавленного сообщения), и SetScroll уводил не
+	-- в самый низ — новое сообщение оказывалось «за дном» и появлялось только после
+	-- открытия чата. Принудительно пересчитываем лейаут СИНХРОННО, затем скроллим вниз.
+	local function scroll()
+		if (!IsValid(self)) then return end
+
+		self:InvalidateLayout(true) -- форс-лейаут работает даже на скрытой панели
+
+		local canvas = self:GetCanvas()
+		if (IsValid(canvas)) then
+			canvas:InvalidateLayout(true)
+		end
+
+		local bar = self:GetVBar()
+		if (IsValid(bar)) then
 			bar:SetScroll(bar.CanvasSize)
 		end
-	end)
+	end
+
+	scroll()                   -- немедленно (важно для закрытого чата)
+	timer.Simple(0.01, scroll) -- и на след. кадре, если высота markup доуточнилась
 end
 
 function PANEL:AddLine(elements, bShouldScroll, class)

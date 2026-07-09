@@ -19,6 +19,26 @@ local function IsURL(path)
 	return isstring(path) and (path:find("^https?://") ~= nil)
 end
 
+-- ── Радиус слышимости 3D-звука ТВ (аудио-режим /tvsound) ─────────────────────
+-- ВАЖНО про BASS/IGModAudioChannel:Set3DFadeDistance(min, max): max — это НЕ точка,
+-- где звук замолкает, а расстояние, ДАЛЬШЕ которого звук перестаёт затухать и
+-- продолжает играть на громкости, достигнутой на max (~min/max). Поэтому звук с
+-- Set3DFadeDistance(80, 500) слышно по ВСЕЙ карте на ~16% громкости. Настоящий
+-- радиус задаём вручную: гасим громкость по дистанции до слушателя с жёстким нулём
+-- за TV_SND_SILENT. Меняйте эти два числа, чтобы регулировать дальность звука.
+local TV_SND_FULL   = 80    -- до этой дистанции (юниты) — полная громкость
+local TV_SND_SILENT = 500   -- на этой дистанции и дальше — полная тишина
+
+local function TVDistanceVolume(ent)
+	local ply = LocalPlayer()
+	if not IsValid(ply) or not IsValid(ent) then return 0 end
+
+	local d = ply:GetPos():Distance(ent:GetPos())
+	if d <= TV_SND_FULL then return 1 end
+	if d >= TV_SND_SILENT then return 0 end
+	return 1 - (d - TV_SND_FULL) / (TV_SND_SILENT - TV_SND_FULL)
+end
+
 local function RefreshTVCache()
 	local now = CurTime()
 	if now - PLUGIN.lastCacheAt < CACHE_INTERVAL then return end
@@ -156,10 +176,13 @@ local function CreateTVChannel(ent)
 		if offset > 0 then channel:SetTime(offset) end
 
 		channel:SetPos(ent:GetPos())
-		channel:Set3DFadeDistance(80, 500)
+		-- Отодвигаем собственное затухание BASS далеко за наш радиус, чтобы оно не
+		-- накладывалось на ручной конверт громкости (3D-панорама/направление при
+		-- этом сохраняется). Реальную дальность задаёт TVDistanceVolume ниже.
+		channel:Set3DFadeDistance(TV_SND_SILENT, TV_SND_SILENT * 4)
 
 		local isOn = ent:GetNWBool("tv_on", true)
-		channel:SetVolume(isOn and 1 or 0)
+		channel:SetVolume(isOn and TVDistanceVolume(ent) or 0)
 		channel:Play()
 
 		PLUGIN.tvSoundObjs[idx] = channel
@@ -234,11 +257,17 @@ PLUGIN.tvLastState = {}
 
 local lastSoundTick = 0
 hook.Add("Think", "ix_tv_sound_update", function()
-	-- Update 3D position every frame.
+	-- Update 3D position AND distance-based volume every frame. Volume must be
+	-- refreshed per-frame or the TV would stay at its start-time volume as the
+	-- listener walks away (the reason /tvsound was audible across the whole map).
 	for _, ent in ipairs(PLUGIN.cachedTVs) do
 		if not IsValid(ent) then continue end
 		local ch = PLUGIN.tvSoundObjs[ent:EntIndex()]
-		if IsValid(ch) then ch:SetPos(ent:GetPos()) end
+		if IsValid(ch) then
+			ch:SetPos(ent:GetPos())
+			local isOn = ent:GetNWBool("tv_on", true)
+			ch:SetVolume(isOn and TVDistanceVolume(ent) or 0)
+		end
 	end
 
 	-- (UpdateHTMLTexture is called in the render hook for better frame timing)

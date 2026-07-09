@@ -5,6 +5,6 @@ ITEM.description = "Коробка с патронами 12-ми калибра"
 ITEM.model       = "models/items/synapse/boxbuckshot.mdl"
 ITEM.base = "ammo"
 ITEM.ammo        = "buckshot"
-ITEM.ammoAmount  = 8
+ITEM.ammoAmount  = 16
 ITEM.flag        = "V"
 ITEM.contraband  = true

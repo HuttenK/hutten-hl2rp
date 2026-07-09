@@ -59,24 +59,26 @@ if (SERVER) then
 		local data = {}
 
 		for _, v in ipairs(ents.FindByClass("ix_container")) do
-			if hook.Run("CanSaveContainer", v, v:GetInventory()) != false then
-				local inventory = v:GetInventory()
+			local inventory = v:GetInventory()
 
-				for k, v in pairs(inventory:GetItems() or {}) do
-					v:Save()
+			-- Контейнер может существовать без готового инвентаря: он создаётся
+			-- асинхронно, а SaveContainer вызывается сразу (PlayerSpawnedProp ->
+			-- CreateInventory -> SaveContainer, ContainerRemoved и т.д.). Пропускаем
+			-- такие, иначе inventory:GetItems() падает с nil.
+			if inventory and hook.Run("CanSaveContainer", v, inventory) != false then
+				for _, item in pairs(inventory:GetItems() or {}) do
+					item:Save()
 				end
 
-				if inventory then
-					data[#data + 1] = {
-						v:GetPos(),
-						v:GetAngles(),
-						v:GetModel(),
-						v.password,
-						v:GetDisplayName(),
-						v:GetMoney(),
-						v:GetItems()
-					}
-				end
+				data[#data + 1] = {
+					v:GetPos(),
+					v:GetAngles(),
+					v:GetModel(),
+					v.password,
+					v:GetDisplayName(),
+					v:GetMoney(),
+					v:GetItems()
+				}
 			end
 		end
 

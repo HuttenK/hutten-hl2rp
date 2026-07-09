@@ -1180,6 +1180,34 @@ local buttons = {
 					legs:CenterHorizontal()
 					legs:SetTitle(L("tab_slot_legs"))
 
+					-- vest/legprotection come from the items_clothing plugin, not core;
+					-- they occupy the free row underneath the legs slot.
+					local vestInventory = client:GetInventory("vest")
+					local vest
+
+					if vestInventory then
+						vest = vestInventory:CreatePanel(parent)
+						vest:SetSlotSize(slot_size_small)
+						vest:Rebuild()
+						vest:SizeToContents()
+						vest:MoveBelow(legs, 16)
+						vest:CenterHorizontal()
+						vest:SetX(vest:GetX() - vest:GetWide() * 0.5 - 2.5)
+						vest:SetTitle(L("equip.vest"))
+					end
+
+					local legProtectionInventory = client:GetInventory("legprotection")
+
+					if legProtectionInventory and vest then
+						local legprotection = legProtectionInventory:CreatePanel(parent)
+						legprotection:SetSlotSize(slot_size_small)
+						legprotection:Rebuild()
+						legprotection:SizeToContents()
+						legprotection:SetY(vest:GetY())
+						legprotection:MoveRightOf(vest, 5)
+						legprotection:SetTitle(L("equip.legprotection"))
+					end
+
 					local face = client:GetInventory("mask"):CreatePanel(parent)
 					face:SetSlotSize(slot_size_small)
 					face:Rebuild()

@@ -15,6 +15,25 @@ ITEM:AddData("label", { Transmit = ix.transmit.owner })
 ITEM.canRename = true
 ITEM.renameField = "label"
 
+-- КЛЮЧЕВОЙ ФИКС ПЕРСИСТЕНТНОСТИ.
+-- Двери хранятся ключами вида tostring(MapCreationID) → строки ("3044"). Но при
+-- загрузке предмета из БД util.JSONToTable превращает числовые строковые ключи
+-- обратно в ЧИСЛА (3044). Из-за этого после рестарта doors["3044"] (строковый
+-- поиск во всём коде — findDoor, KeyUnbind) не находил число 3044, и ключ «не видел»
+-- свою дверь (при этом /KeyDebug показывал совпадающий MapID). Нормализуем ключи
+-- обратно в строки сразу после загрузки/создания — дальше tostring-поиск снова
+-- совпадает. OnInstanced вызывается и при загрузке из БД, и при создании предмета.
+function ITEM:OnInstanced()
+	local doors = self.data and self.data.doors
+	if istable(doors) then
+		local fixed = {}
+		for id, v in pairs(doors) do
+			if v then fixed[tostring(id)] = true end
+		end
+		self.data.doors = fixed
+	end
+end
+
 function ITEM:GetName()
 	local label = self:GetData("label", "")
 	return (label != "") and ("Ключ: " .. label) or self.name
@@ -36,16 +55,47 @@ if CLIENT then
 	end
 end
 
--- Ближайшая привязанная к ключу дверь в радиусе
-local function findNearestDoor(item)
+-- Подходит ли дверь под ключ. Сопоставляем и по MapCreationID самой двери, и по её
+-- партнёру: двустворчатые двери — это две отдельные сущности с РАЗНЫМИ ID, а привязка
+-- (/KeyBind) сохраняет только ту створку, на которую смотрел админ. Без проверки
+-- партнёра ключ «не видит» дверь, если подойти со стороны второй створки.
+local function doorMatches(item, ent)
+	if !(IsValid(ent) and ent.IsDoor and ent:IsDoor()) then return false end
+
+	local doors = item:GetData("doors", {})
+
+	-- Проверяем оба типа ключа (строку и число) на случай, если таблица не прошла
+	-- нормализацию в OnInstanced — см. комментарий к ITEM:OnInstanced.
+	local id = ent:MapCreationID()
+	if doors[tostring(id)] or doors[id] then return true end
+
+	local partner = ent.GetDoorPartner and ent:GetDoorPartner()
+	if IsValid(partner) then
+		local pid = partner:MapCreationID()
+		if doors[tostring(pid)] or doors[pid] then return true end
+	end
+
+	return false
+end
+
+-- Дверь, к которой относится действие ключа. Сначала — та, на которую игрок СМОТРИТ
+-- (как при привязке через /KeyBind: там дверь берётся из GetEyeTrace). Это устраняет
+-- главную причину «Рядом нет двери»: раньше поиск шёл только по сфере вокруг GetPos()
+-- игрока, а начало отсчёта у вращающейся двери — в петле, и центр двери мог не попасть
+-- в радиус. Если игрок не смотрит на подходящую дверь — берём ближайшую привязанную.
+local function findDoor(item)
 	local ply = item.player
 	if !IsValid(ply) then return end
 
-	local doors = item:GetData("doors", {})
-	local best, bestDist
+	local tr = ply:GetEyeTrace()
+	if IsValid(tr.Entity) and tr.HitPos:DistToSqr(ply:GetShootPos()) <= (150 * 150)
+	and doorMatches(item, tr.Entity) then
+		return tr.Entity
+	end
 
-	for _, ent in ipairs(ents.FindInSphere(ply:GetPos(), 130)) do
-		if ent.IsDoor and ent:IsDoor() and doors[tostring(ent:MapCreationID())] then
+	local best, bestDist
+	for _, ent in ipairs(ents.FindInSphere(ply:GetPos(), 150)) do
+		if doorMatches(item, ent) then
 			local d = ply:GetPos():DistToSqr(ent:GetPos())
 			if !bestDist or d < bestDist then
 				best, bestDist = ent, d
@@ -60,9 +110,9 @@ local function setLock(item, bLock)
 	local ply = item.player
 	if !IsValid(ply) then return end
 
-	local door = findNearestDoor(item)
+	local door = findDoor(item)
 	if !IsValid(door) then
-		ply:Notify("Рядом нет двери от этого ключа.")
+		ply:Notify("Рядом нет двери от этого ключа. Подойдите ближе и смотрите на дверь.")
 		return
 	end
 

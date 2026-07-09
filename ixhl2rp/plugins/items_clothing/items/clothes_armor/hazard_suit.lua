@@ -25,6 +25,9 @@ ITEM.genderReplacement = {
 -- (+10) и качественным фильтром (+89), потолок 99.
 ITEM.rad_resist = 80
 
+-- Герметичный костюм заменяет модель целиком — бронежилет поверх него не носится.
+ITEM.blocksVest = true
+
 function ITEM:OnEquipped(client)
 	ix.meta.ItemClothArmor.OnEquipped(self, client) -- база: учёт в char_outfit.armor (rad_resist) и т.п.
 
@@ -45,6 +48,11 @@ function ITEM:OnEquipped(client)
 			end
 
 			client:SetModel(model)
+
+			-- бодигруппы костюма (индекс-значение): 1->1, 2->1. Ставим ПОСЛЕ SetModel,
+			-- т.к. смена модели сбрасывает бодигруппы.
+			client:SetBodygroup(1, 1)
+			client:SetBodygroup(2, 1)
 		end
 	end)
 end

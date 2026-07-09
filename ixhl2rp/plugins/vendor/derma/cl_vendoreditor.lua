@@ -195,7 +195,7 @@ function PANEL:Init()
 				Derma_StringRequest(
 					itemTable.GetName and itemTable:GetName() or L(itemTable.name),
 					L"vendorPriceReq",
-					entity:GetPrice(uniqueID),
+					entity:GetPrice(uniqueID, false, true),
 					function(text)
 						text = tonumber(text)
 

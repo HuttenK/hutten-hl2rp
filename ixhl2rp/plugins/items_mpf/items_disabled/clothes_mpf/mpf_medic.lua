@@ -1,0 +1,51 @@
+ITEM.name = "item.mpf_medic"
+ITEM.description = "item.mpf_medic.desc"
+ITEM.genderReplacement = {
+	[GENDER_MALE] = "models/autonomous/eurasia_nemanus/metropolice/male.mdl",
+	[GENDER_FEMALE] = "models/autonomous/eurasia_nemanus/metropolice/female.mdl"
+}
+ITEM.uniform = 1
+ITEM.primaryVisor = Vector(1, 0.6, 0.1)
+ITEM.secondaryVisor = Vector(5, 0.8, 0.1)
+ITEM.specialization = "m"
+ITEM.bodyGroups = {
+	[1] = 0, -- coat
+	[2] = 0, -- neck
+	[3] = 0, -- mask
+	[4] = 0, -- vest
+	[5] = 0, -- boots
+}
+ITEM.armor = {
+	class = 1,
+	max_durability = 750,
+	density = 0.75,
+	coverage = {
+		[HITGROUP_HEAD] = 0.5,
+		[HITGROUP_CHEST] = 1,
+		[HITGROUP_STOMACH] = 0.5,
+		[HITGROUP_LEFTARM] = 0.5,
+		[HITGROUP_RIGHTARM] = 0.5,
+	},
+	penetration = {
+		bullet = 1,
+		impulse = 1,
+		buckshot = 1,
+		explosive = 1,
+		burn = 1,
+		poison = 0,
+		slash = 1,
+		club = 1,
+		fists = 0.1
+	},
+	damage = {
+		bullet = 0.75,
+		impulse = 1,
+		buckshot = 3,
+		explosive = 1,
+		burn = 1,
+		poison = 1,
+		slash = 2,
+		club = 5,
+		fists = 1
+	}
+}

@@ -3,7 +3,7 @@ ENT.PrintName   = "Водяной насос"
 ENT.Category    = "HL2 RP"
 ENT.Spawnable   = true
 ENT.AdminOnly   = true
-ENT.Model       = Model("models/props_combine/combine_generator01.mdl")
+ENT.Model       = Model("models/props_c3/00_jailbreak/machines/jailbreak_machinery_a.mdl")
 ENT.bNoPersist  = true
 ENT.Holdable    = true -- можно носить руками (ix_hands), как обычный физический предмет
 

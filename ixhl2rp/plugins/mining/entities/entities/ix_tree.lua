@@ -40,12 +40,12 @@ ENT.Points = {
 }
 
 ENT.DepletedTypes = {
-	"models/autonomous/tree_trunk.mdl"
+	"models/props_forest/log.mdl"
 }
 
 if SERVER then
 	function ENT:Initialize()
-		self:SetModel("models/autonomous/tree_trunk.mdl")
+		self:SetModel("models/props_forest/log.mdl")
 		self:SetMoveType(MOVETYPE_NONE)
 		self:PhysicsInit(SOLID_VPHYSICS)
 		self:SetUseType(SIMPLE_USE)

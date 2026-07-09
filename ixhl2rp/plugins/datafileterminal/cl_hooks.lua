@@ -553,6 +553,15 @@ local chatOpen = false
 hook.Add("StartChat",  "ixPdaChatGuard", function() chatOpen = true end)
 hook.Add("FinishChat", "ixPdaChatGuard", function() chatOpen = false end)
 
+-- Надёжная проверка открытого чата: hook.Run("StartChat") останавливается на первом
+-- хуке, вернувшем значение (чатбокс возвращает true), поэтому наш StartChat-guard может
+-- не сработать. Панель чата сама хранит флаг bActive — читаем его напрямую.
+local function IsChatOpen()
+	if (chatOpen) then return true end
+	local box = ix.gui and ix.gui.chat
+	return IsValid(box) and box.bActive == true
+end
+
 -- Надёжно отслеживаем открытый диалог ввода записи: оборачиваем Init классов, чтобы
 -- свежесозданный диалог САМ себя регистрировал (рекурсивный поиск по дереву иногда
 -- не находит попап -> он показывался отдельным окном). Запасной поиск — сканом.
@@ -596,7 +605,7 @@ end
 hook.Add("Think", "ixPdaToggleKey", function()
 	local down = input.IsKeyDown(KEY_G)
 
-	if down and !gWasDown and !chatOpen and !IsValid(FindRecordDialog()) then
+	if down and !gWasDown and !IsChatOpen() and !IsValid(FindRecordDialog()) then
 		local ply = LocalPlayer()
 		if IsValid(ply) and ply:Alive() and (ply.ixNextPdaG or 0) <= CurTime() then
 			ply.ixNextPdaG = CurTime() + 0.35
@@ -708,6 +717,39 @@ concommand.Add("ix_pda_pose", function(_, _, args)
 	print(string.format("[PDA] pose: fwd=%.1f right=%.1f up=%.1f pitch=%.1f yaw=%.1f roll=%.1f",
 		poseFwd, poseRight, poseUp, posePitch, poseYaw, poseRoll))
 end)
+
+-- ---------- Принудительный вид от первого лица ----------
+-- КПК рисуется на экране ВЬЮМОДЕЛИ (PreDrawViewModel), а вьюмодель видна только от
+-- первого лица. В третьем лице экран не отображается, но курсор всё равно
+-- блокируется -> игрок «залипал». Пока КПК поднят, принудительно держим вид от
+-- первого лица через детур CanOverrideView — это единая точка, которую читают все
+-- камеры (thirdperson, au_imfirstperson, realistic_visuals). После убирания КПК
+-- метод возвращает управление оригиналу, и прежний вид (в т.ч. третье лицо)
+-- восстанавливается сам.
+local function LocalPdaRaised()
+	local ply = LocalPlayer()
+	if (!IsValid(ply)) then return false end
+
+	local wep = ply:GetActiveWeapon()
+	return IsValid(wep) and wep:GetClass() == PDA_CLASS
+		and wep.GetPDAEquipped and wep:GetPDAEquipped() or false
+end
+
+do
+	local PLAYER = FindMetaTable("Player")
+	-- Захватываем оригинал один раз (переживает lua_reload без двойной обёртки).
+	ixPdaBaseCanOverrideView = ixPdaBaseCanOverrideView or PLAYER.CanOverrideView
+
+	function PLAYER:CanOverrideView()
+		if (self == LocalPlayer() and LocalPdaRaised()) then
+			return false
+		end
+
+		if (ixPdaBaseCanOverrideView) then
+			return ixPdaBaseCanOverrideView(self)
+		end
+	end
+end
 
 -- ---------- Логика КПК ----------
 -- Диалоги добавления записей выводим НА ЭКРАН устройства (а не отдельным окном).

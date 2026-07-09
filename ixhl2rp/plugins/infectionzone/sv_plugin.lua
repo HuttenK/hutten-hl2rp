@@ -300,8 +300,12 @@ function PLUGIN:CollectFlora(prop, client)
 		ix.Item:Spawn(pos + Vector(0, 0, 6), Angle(0, math.random(0, 360), 0), instance)
 	end
 
-	-- уменьшаем пул заражения
-	if (self.remaining[name]) then
+	-- Неразрушимую зону нельзя зачистить: пул не расходуется, счётчик не показываем.
+	local zoneArea = ix.area.stored[name]
+	local indestructible = zoneArea and zoneArea.properties and zoneArea.properties.indestructible
+
+	-- уменьшаем пул заражения (кроме неразрушимых зон)
+	if (not indestructible and self.remaining[name]) then
 		self.remaining[name] = math.max(0, self.remaining[name] - 1)
 	end
 
@@ -322,7 +326,7 @@ function PLUGIN:CollectFlora(prop, client)
 	end
 
 	-- сводный нотифай: сколько ещё собрать (только для зон) и заряды контейнера
-	local left = self.remaining[name]
+	local left = (not indestructible) and self.remaining[name] or nil
 	local msg = left and ("Флора собрана. Осталось очистить: " .. left) or "Флора собрана."
 
 	if (bagLeft and bagLeft <= 0) then
@@ -342,6 +346,11 @@ end
 function PLUGIN:CheckCleared(name)
 	local area = ix.area.stored[name]
 	if (!area or area.type != "infection") then return end
+
+	-- Неразрушимая зона (свойство indestructible в /AreaEdit): не удаляем её,
+	-- сколько бы флоры ни собрали.
+	if (area.properties and area.properties.indestructible) then return end
+
 	if ((self.remaining[name] or 0) > 0) then return end
 	if (countValid(self.flora[name]) > 0) then return end
 
@@ -557,9 +566,11 @@ function PLUGIN:InfectionTick()
 
 			-- флора разрастается, но не больше, чем осталось собрать (remaining):
 			-- по мере сбора пул сокращается, и в итоге зона зачищается полностью.
-			local floraCap = math.min(floraMax, remaining)
+			-- Неразрушимая зона игнорирует remaining и зарастает всегда (до floraMax).
+			local indestructible = props.indestructible
+			local floraCap = indestructible and floraMax or math.min(floraMax, remaining)
 
-			if (canGrow and remaining > 0 and now >= ns.flora and countValid(self.flora[name]) < floraCap) then
+			if (canGrow and (indestructible or remaining > 0) and now >= ns.flora and countValid(self.flora[name]) < floraCap) then
 				spawnFlora(name, area)
 				ns.flora = now + floraInterval
 			end

@@ -197,6 +197,68 @@ function ItemSkillBook:Init()
 	}*/
 end
 
+-- Called by the base read action once a book is fully read (SERVER).
+-- Grants skill XP equal to the XP required to progress across the book's
+-- level range, using the game's own skill curve. Reading all three tiers
+-- of a skill (0->2, 2->3, 3->4) lands the character at exactly level 4.
+function ItemSkillBook:OnRead(client)
+	if !SERVER then
+		return
+	end
+
+	local character = client:GetCharacter()
+
+	if !character then
+		return
+	end
+
+	local book = self.book
+
+	if !istable(book) or !isstring(book.skill) then
+		return
+	end
+
+	local skill = ix.skills.list[book.skill]
+
+	if !skill then
+		return
+	end
+
+	local skills = character:GetSkills()
+
+	-- Позиция уровня может быть ДРОБНОЙ (напр. 0.9 = «почти 1-й уровень»). Считаем
+	-- накопленный опыт до позиции p: целые уровни ниже + доля текущего уровня.
+	local function CumulativeXP(p)
+		p = math.max(p or 0, 0)
+
+		local whole = math.floor(p)
+		local frac = p - whole
+		local xp = ix.skills.CalculateTotalXP(book.skill, skills, 0, whole) or 0
+
+		if (frac > 0) then
+			xp = xp + frac * skill:GetRequiredXP(skills, whole)
+		end
+
+		return xp
+	end
+
+	local from = book.from or 0
+	local to = book.to or (from + 1)
+
+	-- Книга даёт РАЗНИЦУ накопленного опыта между from и to. Тома одного навыка
+	-- идут по цепочке (0->0.9, 0.9->2, 2->4): 1-й почти доводит до 1 уровня, 1+2 —
+	-- до 2-го, 1+2+3 — до 4-го.
+	local xp = math.floor(CumulativeXP(to) - CumulativeXP(from))
+
+	if (xp <= 0) then
+		return
+	end
+
+	character:UpdateSkillProgress(book.skill, xp)
+
+	client:NotifyLocalized("skillbook.learned", L(skill.name, client))
+end
+
 if CLIENT then
 	function ItemSkillBook:PopulateTooltip(tooltip)
 		local client = LocalPlayer()

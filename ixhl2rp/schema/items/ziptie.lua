@@ -1,6 +1,6 @@
 ITEM.name = "item.ziptie"
 ITEM.description = "item.ziptie.desc"
-ITEM.model = "models/bybig/stagy.mdl"
+ITEM.model = "models/mosi/fallout4/props/junk/handcuffs.mdl"
 ITEM.rarity = 1
 ITEM.max_stack = 8
 ITEM.stackable = true

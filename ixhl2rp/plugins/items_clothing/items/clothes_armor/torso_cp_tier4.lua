@@ -1,5 +1,5 @@
-ITEM.name = "Бронежилет офицера ГО"
-ITEM.model = "models/crunchy/props/contagion_props/armor/ar_thorcrv.mdl"
+ITEM.name = "Боевой бронежилет"
+ITEM.model = "models/autonomous/africa/items/prop_armor_medium.mdl"
 ITEM.width = 2
 ITEM.height = 2
 ITEM.iconCam = {
@@ -8,15 +8,15 @@ ITEM.iconCam = {
 	fov = 2.9430843245987,
 }
 ITEM.rarity = 1
-ITEM.description = "Стандартный бронежилет офицера ГО"
-ITEM.equip_inv = 'torso'
+ITEM.description = "Обычный полицейский бронежилет. Обеспечивает серьёзную защиту для тела"
+ITEM.equip_inv = 'vest'
 ITEM.equip_slot = nil
---ITEM.bodyGroups = {
---	[1] = 31
---}
+ITEM.bodyGroups = {
+	[7] = 2
+}
 ITEM.armor = {
 	class = 2,
-	max_durability = 850,
+	max_durability = 800,
 	density = 0.8,
 	coverage = {
 		[HITGROUP_CHEST] = 1,
@@ -50,6 +50,10 @@ ITEM.armor = {
 ITEM.contraband = true
 
 
+-- Overlay disabled: armor is now shown via the citizen model's built-in
+-- bodygroup (ITEM.bodyGroups above -> clean Main-layer auto-appearance).
+-- Re-enable this block to restore the separate nato prop + Torso_OnlyHands mask.
+--[[
 ITEM.displayID = ix.Appearance:New("nato_torso", {
 	slot = ix.Appearance.Slot.Torso,
 	layer = ix.Appearance.Layer.Top,
@@ -63,3 +67,4 @@ ITEM.displayID = ix.Appearance:New("nato_torso", {
         },
 	}
 })
+]]

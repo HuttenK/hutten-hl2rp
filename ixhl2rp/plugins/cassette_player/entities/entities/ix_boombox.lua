@@ -18,7 +18,7 @@ if SERVER then
 -- ix_boombox/init.lua  --  server-side entity code
 local PLUGIN = PLUGIN
 function ENT:Initialize()
-	self:SetModel("models/props_lab/citizenradio.mdl")
+	self:SetModel("models/props_generic/bm_batteryradio01.mdl")
 	self:PhysicsInit(SOLID_VPHYSICS)
 	self:SetMoveType(MOVETYPE_VPHYSICS)
 	self:SetSolid(SOLID_VPHYSICS)
@@ -118,11 +118,25 @@ end
 function ENT:OnSelectPickUp(client)
 	if (self.nextUse or 0) > CurTime() then return end
 	self.nextUse = CurTime() + 0.5
-	if self.cassetteInstanceID then
-		self:OnSelectEjectCassette(client)
-	end
 	local inv = client:GetInventory("main")
 	if not inv then return end
+
+	-- Вернуть кассету игроку ДО удаления сущности. Не вызываем OnSelectEjectCassette:
+	-- он отбрасывается собственным дебаунсом nextUse (мы только что его выставили),
+	-- из-за чего кассета терялась при поднятии плеера.
+	if self.cassetteInstanceID then
+		local cassette = ix.Item.instances[self.cassetteInstanceID]
+		if cassette then
+			if not inv:AddItemByID(self.cassetteInstanceID) then
+				-- Инвентарь полон — роняем кассету рядом, чтобы её не потерять.
+				ix.Item:Spawn(self:GetPos() + Vector(0, 0, 10), Angle(0, 0, 0), cassette)
+			end
+		end
+		self.cassetteInstanceID = nil
+		self:SetNetVar("boombox_cassette", "")
+		self:SetNetVar("boombox_sound",    "")
+		self:SetNetVar("boombox_stime",    0)
+	end
 	local placed = false
 	local boomboxID = self.boomboxItemID
 	if boomboxID and ix.Item.instances[boomboxID] then

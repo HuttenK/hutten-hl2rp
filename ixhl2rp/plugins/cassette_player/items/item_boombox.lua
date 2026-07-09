@@ -1,6 +1,6 @@
 ITEM.name        = "Кассетный плеер"
 ITEM.description = "Портативный аудиоплеер. Выложите на пол, вставьте кассету через ТАБ-меню."
-ITEM.model       = "models/props_lab/citizenradio.mdl"
+ITEM.model       = "models/props_generic/bm_batteryradio01.mdl"
 ITEM.category    = "item.category.misc"
 ITEM.width       = 2
 ITEM.height      = 2

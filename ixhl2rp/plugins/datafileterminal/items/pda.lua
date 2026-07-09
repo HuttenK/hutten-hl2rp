@@ -1,6 +1,6 @@
 ITEM.name = "КПК"
 ITEM.description = "Карманный персональный компьютер. Доступ к базе досье. Включить/выключить — клавиша G."
-ITEM.model = "models/v_item_pda.mdl"
+ITEM.model = "models/nirrti/tablet/tablet_sfm.mdl"
 ITEM.width = 1
 ITEM.height = 1
 ITEM.category = "Устройства"

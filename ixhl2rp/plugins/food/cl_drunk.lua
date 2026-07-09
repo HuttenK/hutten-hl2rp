@@ -36,6 +36,14 @@ function PLUGIN:CalcView(ply, pos, ang, fov)
 	local client = LocalPlayer()
 
 	if IsValid(client) and ix then
+		-- В рэгдолле (нокдаун/усыпление/крит) вид считает ядро по глазам рэгдолла —
+		-- иначе пьяный вид без origin оставил бы камеру в стоячей точке.
+		local ragdoll = Entity(client:GetLocalVar("ragdoll", 0))
+
+		if IsValid(ragdoll) and ragdoll:IsRagdoll() then
+			return
+		end
+
 		local drunkFactor = client:GetLocalVar("drunk", 0)
 
 		if drunkFactor > 0 then

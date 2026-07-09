@@ -110,7 +110,9 @@ function ENT:GetPrice(uniqueID, selling, editor)
 			local sell = self.items[uniqueID][5]
 			local buy = self.items[uniqueID][6]
 
-			price = math.max(math.floor(price * math.max(1 + 0.975 * math.Remap(buy, 0, sell, -0.975, 0), 1 - 0.975)), 1)
+			if (sell and buy and sell != 0) then
+				price = math.max(math.floor(price * math.max(1 + 0.975 * math.Remap(buy, 0, sell, -0.975, 0), 1 - 0.975)), 1)
+			end
 		end
 	end
 

@@ -869,10 +869,11 @@ if BRANCH == "x86-64" then
 	end
 
 	function PANEL:OnRemove()
-		if (self.channel) then
+		if (IsValid(self.channel)) then
 			self.channel:Stop()
-			self.channel = nil
 		end
+
+		self.channel = nil
 	end
 
 	vgui.Register("ixCharMenu", PANEL, "EditablePanel")
