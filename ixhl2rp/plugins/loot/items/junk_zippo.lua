@@ -1,7 +1,7 @@
 ITEM.name = "item.junk_zippo"
 ITEM.description = "item.junk_zippo.desc"
 ITEM.category = "loot.categoryJunk"
-ITEM.model = "models/freeman/zippo.mdl"
+ITEM.model = "models/mosi/fallout4/props/junk/lighter.mdl"
 ITEM.width = 1
 ITEM.height = 1
 ITEM.iconCam = {

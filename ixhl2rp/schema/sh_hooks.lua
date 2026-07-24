@@ -153,6 +153,15 @@ function Schema:InitializedChatClasses()
 	})
 
 
+	-- Локальный ивент (/localevent) — как глобальный /event, но слышно только рядом
+	ix.chat.Register("localevent", {
+		CanHear = ix.config.Get("chatRange", 280) * 2,
+		OnChatAdd = function(self, speaker, text)
+			chat.AddText(Color(255, 150, 0), text)
+		end,
+		indicator = "chatPerforming"
+	})
+
 	-- Dispatch broadcast
 	ix.chat.Register("dispatch", {
 		color = Color(200, 75, 75),

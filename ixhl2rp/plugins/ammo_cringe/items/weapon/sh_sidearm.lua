@@ -90,6 +90,7 @@ ITEM.bDropOnDeath = true
 
 ITEM.Info = {
 	Skill = "guns",
+	Damage = {32, 43},
 	Distance = {[1]=7,[2]=3,[3]=0,[4]=-7},
 	Dmg = {AP=3,Limb=26,Shock={111,2200},Blood={25,100},Bleed=50}
 }

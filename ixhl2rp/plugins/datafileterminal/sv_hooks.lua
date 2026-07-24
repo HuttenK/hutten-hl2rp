@@ -178,6 +178,69 @@ function PLUGIN:BuildList(client)
 	return list
 end
 
+-- ------------------------------------------------------------------
+-- Фильтр по фракции владельца досье.
+-- В базовом терминале показываем ТОЛЬКО граждан и роли ССД (CWU + медики).
+-- Метрополиция (группа COMBINE), OTA/EOW (группа OTA) и администрация
+-- (без группы) в список не выводятся. datafileID == character:GetID().
+-- ------------------------------------------------------------------
+local function IsFactionAllowed(factionIndex)
+	-- Неизвестная фракция (осиротевшая/легаси запись без строки в ix_characters)
+	-- — показываем: почти всегда это старые гражданские досье, не Комбайн.
+	if !factionIndex then return true end
+	if factionIndex == FACTION_CITIZEN then return true end
+	return Schema:GetFactionGroup(factionIndex) == FACTION_GROUP_CWU
+end
+
+-- Приводит значение колонки faction (uniqueID-строка, иногда число) к индексу фракции.
+local function FactionIndexFromRaw(raw)
+	if raw == nil then return nil end
+	if isnumber(raw) then return ix.faction.indices[raw] and raw or nil end
+	local n = tonumber(raw)
+	if n and ix.faction.indices[n] then return n end
+	local f = ix.faction.teams[tostring(raw)]
+	return f and f.index or nil
+end
+
+-- Резолвим фракции: онлайн — сразу с персонажа, оффлайн — одним запросом к ix_characters.
+-- cb(filteredList) вызывается всегда.
+function PLUGIN:FilterByFaction(list, cb)
+	local factionByID = {}
+	for _, p in ipairs(player.GetAll()) do
+		local c = p:GetCharacter()
+		if c then factionByID[c:GetID()] = c:GetFaction() end
+	end
+
+	local offline = {}
+	for _, e in ipairs(list) do
+		if factionByID[e.id] == nil then offline[#offline + 1] = e.id end
+	end
+
+	local function finish()
+		local out = {}
+		for _, e in ipairs(list) do
+			if IsFactionAllowed(factionByID[e.id]) then out[#out + 1] = e end
+		end
+		cb(out)
+	end
+
+	if #offline == 0 then finish() return end
+
+	local q = mysql:Select("ix_characters")
+		q:Select("id")
+		q:Select("faction")
+		q:WhereIn("id", offline)
+		q:Callback(function(rows)
+			if istable(rows) then
+				for _, row in ipairs(rows) do
+					factionByID[tonumber(row.id)] = FactionIndexFromRaw(row.faction)
+				end
+			end
+			finish()
+		end)
+	q:Execute()
+end
+
 -- Вызывается из ENT:Use
 function PLUGIN:OpenBrowser(client, terminal)
 	local list = self:BuildList(client)
@@ -187,12 +250,16 @@ function PLUGIN:OpenBrowser(client, terminal)
 		return
 	end
 
-	if #list == 0 then
-		client:Notify("База данных досье пуста.")
-		return
-	end
+	self:FilterByFaction(list, function(filtered)
+		if !IsValid(client) then return end
 
-	netstream.Start(client, "ixDfBrowserOpen", list)
+		if #filtered == 0 then
+			client:Notify("База данных досье пуста.")
+			return
+		end
+
+		netstream.Start(client, "ixDfBrowserOpen", filtered)
+	end)
 end
 
 -- Внешность владельца (модель/скин/физописание). Асинхронно: для оффлайн-персонажей
@@ -219,7 +286,11 @@ local function ResolveAppearance(id, cb)
 	for _, p in ipairs(player.GetAll()) do
 		local c = p:GetCharacter()
 		if c and c:GetID() == id then
-			local model = (p.char_outfit and p.char_outfit.model) or c:GetModel() or cModel or ""
+			-- Всегда берём БАЗОВУЮ модель персонажа, а не текущую. Форма/костюм/форма МП
+			-- подменяют модель ИГРОКА (client:SetModel) и char_outfit.model, но
+			-- character:GetModel() остаётся исходной моделью из карт-генерации. Так в
+			-- терминале показывается изначальная модель без бодигрупп и костюмов.
+			local model = c:GetModel() or cModel or ""
 			local skin  = c:GetData("skin", 0) or cSkin or 0
 			cb(model, skin, cGenetic)
 			return

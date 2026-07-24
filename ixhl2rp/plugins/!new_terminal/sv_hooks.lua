@@ -10,6 +10,15 @@ net.Receive("civil.terminal.login", function(_, client)
 	if !character or !IsValid(terminal) then return end
 	if client:GetEyeTraceNoCursor().Entity != terminal then return end
 
+	-- Терминал внутри активной зоны затемнения обесточен. Проверка нужна именно
+	-- здесь: вход в терминал идёт своим net-сообщением, минуя PlayerUse.
+	local blackout = ix.plugin.list["blackout"]
+
+	if blackout and blackout:IsEntityBlackedOut(terminal) then
+		client:NotifyLocalized("blackout.noPower")
+		return
+	end
+
 	-- Доступ к терминалу только с экипированной CID-картой
 	if !client:GetIDCard() then
 		client:Notify("Требуется CID-карта для авторизации в терминале.")

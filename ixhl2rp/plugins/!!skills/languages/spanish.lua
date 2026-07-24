@@ -56,6 +56,8 @@ skillSet = "Has establecido el nivel de la habilidad %s de %s a %s."
 skillNotFound = "¡Habilidad especificada no encontrada!"
 skillIncreased = "Tu habilidad en %s ha sido aumentada a %s."
 skillsResetDisabled = "El reinicio de características está temporalmente deshabilitado, contacte a la administración senior."
+skillsResetNoMoney = "Reiniciar tus características cuesta %s créditos."
+skillsResetDone = "Tus características han sido reiniciadas. Puntos devueltos: %s."
 
 cmdLvlDesc = "Distribuir puntos de atributos"
 cmdLvlResetDesc = "Restablecer puntos de atributos"

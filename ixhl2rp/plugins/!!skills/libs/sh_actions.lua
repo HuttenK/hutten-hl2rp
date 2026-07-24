@@ -154,6 +154,10 @@ do
 			elseif action.alwaysLog then
 				ix.log.Add(self:GetPlayer(), "skillActionNoExp", action.name)
 			end
+
+			-- Возвращаем РЕАЛЬНО начисленный опыт (после голода и лимита «памяти навыка»),
+			-- чтобы вызывающий код (крафт и т.п.) мог показать честное число, а не запрошенное.
+			return (isnumber(result) and result > 0) and result or 0
 		end
 	end
 

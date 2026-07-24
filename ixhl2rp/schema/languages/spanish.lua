@@ -79,6 +79,7 @@ cmdMeD						= "Realizar una acción física directamente."
 cmdItC						= "Hacer que algo a tu alrededor realice una acción a corta distancia."
 cmdItL						= "Hacer que algo a tu alrededor realice una acción a larga distancia."
 cmdItD						= "Hacer que algo a tu alrededor realice una acción directamente."
+cmdLocalEvent				= "Describe un evento que solo los jugadores cercanos pueden ver."
 cmdLocalSound				= "Reproducir audio en un radio de acción especificado."
 
 legs						= "Piernas"

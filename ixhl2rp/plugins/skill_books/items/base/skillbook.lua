@@ -47,7 +47,16 @@ do
 			local item = ix.Item.stored[id]
 
 			if item then
-				local remainingTime = (item.bookTime - (self:GetLocalVar("book_end", 0) - os.time()))
+				-- НИКОГДА не затираем уже прочитанную книгу (info[id] == true) остаточным
+				-- прогрессом: иначе после рестарта требуется перечитать книгу заново, а том 2
+				-- становится недоступен (см. успешную ветку чтения).
+				if info[id] == true then
+					return
+				end
+
+				-- Ограничиваем прогресс диапазоном [0, bookTime], чтобы просроченный book_end
+				-- (os.time() > book_end) не давал число больше bookTime → мгновенное перечтение.
+				local remainingTime = math.Clamp(item.bookTime - (self:GetLocalVar("book_end", 0) - os.time()), 0, item.bookTime)
 
 				info[id] = remainingTime
 
@@ -161,6 +170,17 @@ function ItemSkillBook:Init()
 					if self.OnRead then
 						self:OnRead(client)
 					end
+
+					-- Сбрасываем состояние чтения ВРУЧНУЮ (без Interrupt/SaveBookProgress),
+					-- иначе при выходе игрока / выключении сервера PlayerDisconnected → Interrupt
+					-- → SaveBookProgress перезапишет info[id] = true остаточным числом, и после
+					-- рестарта книгу придётся перечитывать (том 2 останется заблокирован).
+					self.reading_by = nil
+					client.read_item = nil
+					client.read_character = nil
+					client:SetLocalVar("reading", nil)
+					client:SetLocalVar("book_start", nil)
+					client:SetLocalVar("book_end", nil)
 
 					item:Remove()
 					return

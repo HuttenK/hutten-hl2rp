@@ -1058,6 +1058,14 @@ if SERVER then
 
 		if !item then return end
 
+		-- Любой nil-аргумент = WriteUInt(nil) УЖЕ ПОСЛЕ net.Start → 'inventory.delta.moved'
+		-- полуоткрывается, и движок отбрасывает следующее нет-сообщение (напр. CharacterVarChanged
+		-- из тика голода). Валидируем всё до net.Start.
+		if !isnumber(old_x) or !isnumber(old_y) or !isnumber(old_w) or !isnumber(old_h)
+		or !isnumber(item.x) or !isnumber(item.y) then
+			return
+		end
+
 		local targets = FilterReceivers(self:GetReceivers(), except)
 
 		if #targets == 0 then return end
@@ -1352,7 +1360,13 @@ if SERVER then
 		if to_id == from_id then
 			local move_item = ix.Item.instances[items[1]]
 			local old_move_x, old_move_y = move_item and move_item.x, move_item and move_item.y
-			local old_move_w, old_move_h = move_item and inventory:GetItemSize(move_item)
+			-- ВАЖНО: `move_item and inventory:GetItemSize(move_item)` обрезает второй возврат (h)
+		-- до одного значения → old_move_h всегда nil → WriteUInt(nil) в SendDeltaMove роняло
+		-- и оставляло 'inventory.delta.moved' полуоткрытым (следующее нет-сообщение отбрасывалось).
+			local old_move_w, old_move_h
+			if move_item then
+				old_move_w, old_move_h = inventory:GetItemSize(move_item)
+			end
 
 			local success, error = inventory:MoveStack(items, target_x, target_y, was_rotated)
 
@@ -1736,9 +1750,10 @@ else
 		["ears"] = true,
 		["arm"] = true,
 		["backpack"] = true,
-		-- added by the ixhl2rp items_clothing plugin (body armour / leg armour)
+		-- added by the ixhl2rp items_clothing plugin (body armour / leg armour / glasses)
 		["vest"] = true,
 		["legprotection"] = true,
+		["glasses"] = true,
 	}
 
 	local Inventory = ix.Inventory

@@ -62,26 +62,26 @@ function PANEL:SetCharacter(client)
 	face:MoveBelow(head, 16)
 	face:SetTitle(L("equip.face"))
 
+	-- Очки: отдельный слот от «Лица» (маски). Приходит из плагина items_clothing,
+	-- поэтому без него раскладка остаётся рабочей.
+	local glassesInventory = client:GetInventory("glasses")
+	local glasses
+
+	if glassesInventory then
+		glasses = glassesInventory:CreatePanel(self)
+		glasses:SetSlotSize(64)
+		glasses:Rebuild()
+		glasses:SizeToContents()
+		glasses:MoveBelow(face, 16)
+		glasses:SetTitle(L("equip.glasses"))
+	end
+
 	local torso = client:GetInventory("torso"):CreatePanel(self)
 	torso:SetSlotSize(64)
 	torso:Rebuild()
 	torso:SizeToContents()
-	torso:MoveBelow(face, 16)
+	torso:MoveBelow(glasses or face, 16)
 	torso:SetTitle(L("equip.torso"))
-
-	-- vest/legprotection are provided by the items_clothing plugin, not by core,
-	-- so fall back to the previous layout when that plugin is absent.
-	local vestInventory = client:GetInventory("vest")
-	local vest
-
-	if vestInventory then
-		vest = vestInventory:CreatePanel(self)
-		vest:SetSlotSize(64)
-		vest:Rebuild()
-		vest:SizeToContents()
-		vest:MoveBelow(torso, 16)
-		vest:SetTitle(L("equip.vest"))
-	end
 
 	local cid = client:GetInventory("cid"):CreatePanel(self)
 	cid:SetSlotSize(64)
@@ -105,19 +105,27 @@ function PANEL:SetCharacter(client)
 	ears:AlignRight(0)
 	ears:SetTitle(L("equip.ears"))
 
-	local arm = client:GetInventory("arm"):CreatePanel(self)
-	arm:SetSlotSize(64)
-	arm:Rebuild()
-	arm:SizeToContents()
-	arm:MoveBelow(ears, 16)
-	arm:AlignRight(0)
-	arm:SetTitle(L("equip.shoulder"))
+	-- vest/legprotection are provided by the items_clothing plugin, not by core,
+	-- so fall back to the previous layout when that plugin is absent.
+	-- The vest takes over the slot the removed "shoulder" (arm) panel used to hold.
+	local vestInventory = client:GetInventory("vest")
+	local vest
+
+	if vestInventory then
+		vest = vestInventory:CreatePanel(self)
+		vest:SetSlotSize(64)
+		vest:Rebuild()
+		vest:SizeToContents()
+		vest:MoveBelow(ears, 16)
+		vest:AlignRight(0)
+		vest:SetTitle(L("equip.vest"))
+	end
 
 	local legs = client:GetInventory("legs"):CreatePanel(self)
 	legs:SetSlotSize(64)
 	legs:Rebuild()
 	legs:SizeToContents()
-	legs:MoveBelow(arm, 16)
+	legs:MoveBelow(vest or ears, 16)
 	legs:AlignRight(0)
 	legs:SetTitle(L("equip.legs"))
 

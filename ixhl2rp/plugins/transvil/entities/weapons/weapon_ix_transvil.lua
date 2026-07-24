@@ -89,10 +89,22 @@ function SWEP:Tranquilize(victim, owner)
 	-- Эффект и сообщения жертве — в общей функции плагина (см. sh_plugin.lua),
 	-- чтобы дротомёт и контактный инъектор действовали одинаково.
 	local plugin = ix.plugin.list["transvil"]
+	if (!plugin or !plugin.ApplyTranquilizer) then return end
 
-	if (plugin and plugin.ApplyTranquilizer) then
-		plugin:ApplyTranquilizer(victim, owner, self.FalloverTime)
+	-- Броня ловит дротик. Инъектор эту проверку не делает — контактный укол
+	-- ставят в открытый участок тела.
+	if (plugin.IsDartProof and plugin:IsDartProof(victim)) then
+		victim:EmitSound("physics/metal/metal_solid_impact_bullet" .. math.random(1, 4) .. ".wav")
+		victim:Notify("Дротик ударил в броню и отскочил.")
+
+		if (IsValid(owner) and owner:IsPlayer()) then
+			owner:Notify("Дротик не пробил броню цели.")
+		end
+
+		return
 	end
+
+	plugin:ApplyTranquilizer(victim, owner, self.FalloverTime)
 end
 
 function SWEP:SecondaryAttack() end

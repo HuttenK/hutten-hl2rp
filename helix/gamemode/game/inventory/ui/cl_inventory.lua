@@ -991,16 +991,25 @@ function PANEL:GetInventoryID()
 	return self.inventory_id
 end
 
+-- GetInventory() = ix.Inventory:Get(inventory_id); возвращает nil, если inventory_id ещё
+-- не выставлен (SetInventoryID не вызвался — напр. Init панели упал раньше, как в cl_dynamicloot)
+-- или инвентарь ещё не подгружен. Раньше :GetWidth()/:GetHeight()/:GetSize() падали на nil
+-- прямо в PerformLayout. Отдаём пустой размер — панель отрисуется пустой и переверстается,
+-- когда инвентарь появится.
 function PANEL:GetInventoryWidth()
-	return self:GetInventory():GetWidth()
+	local inventory = self:GetInventory()
+	return inventory and inventory:GetWidth() or 0
 end
 
 function PANEL:GetInventoryHeight()
-	return self:GetInventory():GetHeight()
+	local inventory = self:GetInventory()
+	return inventory and inventory:GetHeight() or 0
 end
 
 function PANEL:GetInventorySize()
-	return self:GetInventory():GetSize()
+	local inventory = self:GetInventory()
+	if not inventory then return 0, 0 end
+	return inventory:GetSize()
 end
 
 function PANEL:GetInventoryType()

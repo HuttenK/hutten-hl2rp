@@ -56,6 +56,8 @@ skillSet = "You have set %s skill %s level to %s."
 skillNotFound = "Specified skill not found!"
 skillIncreased = "Your skill in %s has increased to %s."
 skillsResetDisabled = "Character reset is temporarily disabled, please contact senior administration."
+skillsResetNoMoney = "Resetting your attributes costs %s credits."
+skillsResetDone = "Your attributes have been reset. Points refunded: %s."
 
 cmdLvlDesc = "Distribute attribute points"
 cmdLvlResetDesc = "Reset attribute points"

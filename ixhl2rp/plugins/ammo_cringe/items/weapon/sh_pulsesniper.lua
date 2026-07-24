@@ -76,6 +76,7 @@ ITEM.iconCam = {
 
 ITEM.Info = {
 	Skill = "impulse",
+	Damage = {108, 135},
 	Distance = {[1]=5,[2]=5,[3]=5,[4]=5},
 	Dmg = {AP=22,Limb=90,Shock={600,18000},Blood={90,600},Bleed=5}
 }

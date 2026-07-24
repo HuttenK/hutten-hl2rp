@@ -318,6 +318,20 @@ if (CLIENT) then
 				end
 			end
 		end
+
+		-- Утраченная нога не должна отрастать в виде от первого лица: эта
+		-- модель — клиентская сущность, серверных манипуляций костей на ней нет.
+		if (ix.Amputation) then
+			local limb = ix.Amputation.GetLimb(LocalPlayer():GetCharacter())
+
+			if (limb and limb.kind == "leg") then
+				local bones = ix.Amputation.CollectBones(self.LegEnt, limb)
+
+				for _, bone in ipairs(bones or {}) do
+					self.LegEnt:ManipulateBoneScale(bone, ix.Amputation.scale)
+				end
+			end
+		end
 	end
 
 	function PLUGIN:PlayerWeaponChanged(client, weapon)

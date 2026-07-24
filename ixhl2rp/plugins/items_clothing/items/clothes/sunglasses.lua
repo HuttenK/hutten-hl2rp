@@ -5,7 +5,7 @@ ITEM.rarity = 1
 ITEM.bodyGroups = {
 	[4] = 2
 }
-ITEM.equip_inv = 'mask'
+ITEM.equip_inv = 'glasses'
 ITEM.equip_slot = nil
 ITEM.iconCam = {
 	pos = Vector(-4.9198527336121, -257.72015380859, 72.303321838379),

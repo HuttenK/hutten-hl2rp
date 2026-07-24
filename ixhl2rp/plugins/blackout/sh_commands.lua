@@ -72,3 +72,47 @@ ix.command.Add("BlackoutFuseboxRemove", {
 		return PLUGIN:RemoveFusebox(client)
 	end
 })
+
+-- Диагностика: почему сущность не обесточивается. Смотрим на неё и печатаем
+-- каждое условие по отдельности — класс, попадание в зоны, состояние зон.
+ix.command.Add("BlackoutDebug", {
+	description = "Проверить, считается ли сущность под прицелом обесточенной.",
+	adminOnly = true,
+	OnRun = function(self, client)
+		local entity = client:GetEyeTraceNoCursor().Entity
+
+		client:PrintMessage(HUD_PRINTCONSOLE, "\n[Blackout debug]\n")
+
+		if (!IsValid(entity)) then
+			client:PrintMessage(HUD_PRINTCONSOLE, "  no entity under crosshair\n")
+			return
+		end
+
+		local class = entity:GetClass()
+		local pos = entity:GetPos()
+
+		client:PrintMessage(HUD_PRINTCONSOLE, string.format("  entity: %s  pos: %s\n", class, tostring(pos)))
+		client:PrintMessage(HUD_PRINTCONSOLE, string.format("  powered class: %s (exact=%s)\n",
+			tostring(PLUGIN:IsPoweredClass(class)), tostring(PLUGIN.poweredClasses[class] == true)))
+		client:PrintMessage(HUD_PRINTCONSOLE, string.format("  zones on server: %d\n", table.Count(PLUGIN.zones)))
+
+		-- Владелец точки — самая тесная из накрывающих её зон. Именно ей
+		-- принадлежат стоящие здесь щитки.
+		local owner = PLUGIN:GetOwningZone(pos)
+
+		for name, z in pairs(PLUGIN.zones) do
+			client:PrintMessage(HUD_PRINTCONSOLE, string.format(
+				"    zone '%s' active=%s  min=%s max=%s  contains entity: %s | contains you: %s | owns it: %s\n",
+				name, tostring(z.active), tostring(z.min), tostring(z.max),
+				tostring(pos:WithinAABox(z.min, z.max)),
+				tostring(client:GetPos():WithinAABox(z.min, z.max)),
+				tostring(z == owner)))
+		end
+
+		client:PrintMessage(HUD_PRINTCONSOLE, string.format("  IsPosBlackedOut(entity): %s\n", tostring(PLUGIN:IsPosBlackedOut(pos))))
+		client:PrintMessage(HUD_PRINTCONSOLE, string.format("  IsEntityBlackedOut:      %s\n", tostring(PLUGIN:IsEntityBlackedOut(entity))))
+		client:PrintMessage(HUD_PRINTCONSOLE, string.format("  has ENT:Use: %s\n", tostring(isfunction(entity.Use))))
+
+		client:Notify("Результат в консоли (~).")
+	end
+})

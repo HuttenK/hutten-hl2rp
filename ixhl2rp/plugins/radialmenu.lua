@@ -127,7 +127,7 @@ end
 -- навыка медицины и расход использований. У функции inject цель определяется по
 -- прицелу (трасса 96 ед.); курсор меню не меняет угол обзора, поэтому персонаж,
 -- на которого смотрит игрок, остаётся под прицелом.
-local function RunItemFunction(item, key)
+local function RunItemFunction(item, key, data)
 	local func = item and item.functions and item.functions[key]
 	if (!func or func.index == nil or !item.id) then return end
 
@@ -135,9 +135,72 @@ local function RunItemFunction(item, key)
 		net.WriteUInt(item.id, 32)
 		net.WriteUInt(item.inventory_id or 0, 32)
 		net.WriteUInt(func.index, item.functions_bits)
-		net.WriteTable({})
+		net.WriteTable(data or {})
 		net.WriteBool(false) -- без разбиения стака
 	net.SendToServer()
+end
+
+-- Подменю ампутации: показывается, только если у игрока есть подходящий клинок
+-- и навык медицины 5. Согласие цели спрашивает сервер.
+local function BuildAmputationOptions(target)
+	local client = LocalPlayer()
+
+	if (!ix.Amputation or !client.GetItems) then return {} end
+	if (!ix.Amputation.HasSkill(client:GetCharacter())) then return {} end
+
+	local tool
+
+	for _, item in ipairs(client:GetItems()) do
+		if (istable(item) and ix.Amputation.IsTool(item)) then
+			tool = item
+			break
+		end
+	end
+
+	if (!tool) then return {} end
+
+	local options = {}
+
+	for _, key in ipairs({"larm", "rarm", "lleg", "rleg"}) do
+		options[#options + 1] = {
+			label = L(ix.Amputation.limbs[key].phrase),
+			icon = "icon16/cut.png",
+			callback = function()
+				if (IsValid(target)) then
+					RunItemFunction(tool, "amputate", {limb = key})
+				end
+			end
+		}
+	end
+
+	return options
+end
+
+-- Подменю пришивания: по одной опции на каждую носимую отрезанную конечность.
+-- Совпадение конечности с недостающей проверяет сервер (functions.reattach).
+local function BuildReattachOptions(target)
+	local client = LocalPlayer()
+
+	if (!ix.Amputation or !client.GetItems) then return {} end
+	if (!ix.Amputation.HasSkill(client:GetCharacter())) then return {} end
+
+	local options = {}
+
+	for _, item in ipairs(client:GetItems()) do
+		if (!istable(item) or !item.limb or !item.functions or !item.functions.reattach) then continue end
+
+		options[#options + 1] = {
+			label = (item.GetName and item:GetName()) or item.name or item.uniqueID,
+			icon = "icon16/user_add.png",
+			callback = function()
+				if (IsValid(target)) then
+					RunItemFunction(item, "reattach")
+				end
+			end
+		}
+	end
+
+	return options
 end
 
 -- Подменю медикаментов: по одной опции на КАЖДЫЙ вид носимого медицинского
@@ -253,11 +316,37 @@ local function BuildOptions(target, menuEntity, isRagdoll)
 
 	-- Медикаменты — применить носимый медпрепарат на цель. Работает и по лежачему:
 	-- функция inject на сервере резолвит prop_ragdoll → игрока по прицелу.
+	-- Ампутация и пришивание — это тоже медицина, поэтому лежат внутри «Лечить».
 	local medical = BuildMedicalOptions(target)
+
+	-- Резать и шить можно только стоящего: серверные проверки всё равно
+	-- трассируют прицел в живого игрока, а не в его рэгдолл.
+	if (!isRagdoll) then
+		local amputation = BuildAmputationOptions(target)
+
+		if (#amputation > 0) then
+			medical[#medical + 1] = {
+				label = L("amputation.cut"),
+				icon = "icon16/cut.png",
+				children = amputation
+			}
+		end
+
+		local reattach = BuildReattachOptions(target)
+
+		if (#reattach > 0) then
+			medical[#medical + 1] = {
+				label = L("amputation.reattach"),
+				icon = "icon16/user_add.png",
+				children = reattach
+			}
+		end
+	end
 
 	if (#medical > 0) then
 		options[#options + 1] = {
 			label = "Лечить",
+			icon = "icon16/heart.png",
 			children = medical
 		}
 	end

@@ -861,6 +861,8 @@ function HEALTH:AddHediff(uniqueID, hitGroup, data, id)
 			net.WriteUInt(hitGroup, 4)
 			hediff:Send(data)
 		net.Send(self.character:GetPlayer())
+
+		hook.Run("OnHediffAdded", self, hediff, hitGroup)
 	end
 
 	return hediff

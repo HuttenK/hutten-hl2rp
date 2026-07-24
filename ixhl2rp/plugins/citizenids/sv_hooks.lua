@@ -33,8 +33,27 @@ netstream.Hook("ixCitizenIDEdit", function(client, itemID, newData)
 		access[v] = true
 	end
 
+	-- Защита от дубликатов УЛ: кнопка «сгенерировать» в редакторе ставит math.random,
+	-- который при 50+ игроках регулярно совпадает. Не даём выдать номер, уже занятый
+	-- другой картой. Проверяем среди ЗАГРУЖЕННЫХ карт (онлайн-игроки, мир, загруженные
+	-- хранилища) — этого достаточно для типичного случая двух активных игроков.
+	local newCID = tostring(newData["cid"] or "0000")
+
+	if newCID != "" and newCID != "0000" and newCID != "000-00" then
+		for _, other in pairs(ix.Item.instances) do
+			if other == item then continue end
+			if !istable(other) or !other.GetData then continue end
+			if other.equip_inv != "cid" then continue end
+
+			if tostring(other:GetData("cid", "")) == newCID then
+				client:Notify("Номер УЛ " .. newCID .. " уже выдан другой карте. Выберите другой.")
+				return
+			end
+		end
+	end
+
 	item:SetData("name", newData["name"] or "nobody")
-	item:SetData("cid", newData["cid"] or "0000")
+	item:SetData("cid", newCID)
 	item:SetData("number", newData["number"] or "")
 	item:SetData("access", access)
 	item:SetData("type", newData["type"])
@@ -70,6 +89,32 @@ end
 util.AddNetworkString("ixCardImprintDescReq")
 util.AddNetworkString("ixCardImprintDescResp")
 
+-- Отзывает ВСЕ прочие CID-карты, привязанные к досье datafileID, кроме keepItemID.
+-- Отозванная карта: отвязана от досье (datafileID = 0), помечена revoked и лишена
+-- доступа — она больше не открывает досье и не даёт допуск. datafileID и revoked
+-- пишутся сквозь в БД (item:SetData), поэтому эффект переживает перезагрузку.
+--
+-- Замечание: перебираем только ЗАГРУЖЕННЫЕ карты (ix.Item.instances) — то есть те,
+-- что в инвентарях онлайн-игроков, в мире и в загруженных хранилищах. Старая карта
+-- владельца почти всегда среди них. Карта, лежащая офлайн в невыгруженном контейнере,
+-- отзовётся только когда прогрузится (тогда её datafileID ещё указывает на досье и
+-- она сработает — см. TODO о сквозном апдейте БД, если понадобится строгий вариант).
+function Schema:RevokeOtherCards(datafileID, keepItemID)
+	datafileID = tonumber(datafileID)
+	if !datafileID or datafileID <= 0 then return end
+
+	for _, other in pairs(ix.Item.instances) do
+		if !istable(other) or !other.GetData then continue end
+		if other:GetID() == keepItemID then continue end
+		if other.equip_inv != "cid" then continue end
+		if tonumber(other:GetData("datafileID", 0)) != datafileID then continue end
+
+		other:SetData("datafileID", 0)
+		other:SetData("access", {})
+		other:SetData("revoked", true)
+	end
+end
+
 function Schema:ImprintCard(item, character)
 	if !item or !item.SetData or !character then return false end
 
@@ -77,12 +122,23 @@ function Schema:ImprintCard(item, character)
 	-- терминалом/админом). Детерминирован от ID персонажа => уникален и стабилен.
 	local curCID = tostring(item:GetData("cid", "") or "")
 	if curCID == "" or curCID == "000-00" or curCID == "0000" then
-		local n = Schema:ZeroNumber(character:GetID() % 100000, 5)
+		-- Канонический уникальный номер: QPR-перестановка от ID персонажа (та же
+		-- биекция, что и citizen_id в !new_datafile), поэтому РАЗНЫЕ персонажи всегда
+		-- получают РАЗНЫЕ номера. Fallback на charID%100000, если библиотека досье
+		-- почему-то недоступна. (math.random здесь НЕ используем — он давал дубликаты.)
+		local n = (ix.Datafile and ix.Datafile.GenerateCitizenID)
+			and ix.Datafile:GenerateCitizenID(character:GetID())
+			or Schema:ZeroNumber(character:GetID() % 100000, 5)
 		item:SetData("cid", string.format("%s-%s", n:sub(1, 3), n:sub(4, 5)))
 	end
 
 	-- Связь карта <-> персонаж
 	item:SetData("datafileID", character:GetID())
+
+	-- Эта карта становится единственной рабочей: все ранее впечатанные в это же
+	-- досье — отзываем.
+	item:SetData("revoked", nil)
+	Schema:RevokeOtherCards(character:GetID(), item:GetID())
 
 	-- Идентичность (снимок)
 	item:SetData("name",      character:GetName())

@@ -34,6 +34,10 @@ local EQUIP_INV_TO_APPEARANCE_SLOT = {
 	-- иначе бронежилет вытеснил бы рубашку (13), а поножи — штаны (14).
 	vest           = 15, -- equip_inv 'vest' (бронежилеты)
 	legprotection  = 16, -- equip_inv 'legprotection' (защита ног)
+
+	-- Очки носятся отдельным слотом от 'mask' (маски/противогазы), поэтому у них
+	-- собственный Appearance-слот: иначе очки вытесняли бы маску и наоборот.
+	glasses        = 17, -- equip_inv 'glasses' (очки)
 }
 
 function ItemCloth:Init()
@@ -184,6 +188,17 @@ function ItemCloth:OnRegistered()
 			info.variants = {
 				mpf = { bodyGroups = self.bodyGroupsMPF }
 			}
+		end
+
+		-- То же самое для формы ополчения (модели conscript, modelClass "militia",
+		-- регистрируются в items_clothing/sh_plugin.lua).
+		-- ВАЖНО: проверяем istable, а НЕ next() — пустая таблица здесь осмысленна и
+		-- означает «на этой модели предмет не даёт бодигрупп вообще». Без явного
+		-- пустого варианта Outfit:Update откатился бы на базовые (гражданские)
+		-- bodyGroups, т.к. resolve выглядит как variants[modelClass] or displayInfo.
+		if istable(self.bodyGroupsMilitia) then
+			info.variants = info.variants or {}
+			info.variants.militia = { bodyGroups = self.bodyGroupsMilitia }
 		end
 
 		self.displayID = ix.Appearance:New(self.uniqueID, info)

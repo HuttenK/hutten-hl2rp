@@ -1,7 +1,7 @@
 ITEM.name = "item.junk_calculator"
 ITEM.description = "item.junk_calculator.desc"
 ITEM.category = "loot.categoryJunk"
-ITEM.model = "models/props_office/calculator.mdl"
+ITEM.model = "models/illusion/eftcontainers/tetriz.mdl"
 ITEM.width = 1
 ITEM.height = 1
 ITEM.iconCam = {

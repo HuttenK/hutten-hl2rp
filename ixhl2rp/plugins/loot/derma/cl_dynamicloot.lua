@@ -178,6 +178,11 @@ function PANEL:Rebuild(inventory, title)
 
 	for k, v in pairs(inventory) do
 		local item = ix.Item.stored[v]
+		-- Лут ссылается на uniqueID, чьё определение удалили/переименовали при обновлении гейммода:
+		-- ix.Item.stored[v] = nil, и замыкание GetItemSize падало на item.width, роняя весь UI лут-контейнера.
+		-- Пропускаем такой слот — контейнер просто не покажет отсутствующий предмет вместо краша.
+		if not item then continue end
+
 		local itemIcon = self.list:Add("craft.preview")
 		itemIcon.id = k
 		itemIcon.item_count = 1
@@ -228,7 +233,11 @@ function PANEL:SetLocalInventory()
 		local inventory = LocalPlayer():GetInventory("main")
 		local backpackID = LocalPlayer():GetFirstAtSlot(1, 1, 'backpack')
 		local backpack = backpackID and ix.Item.instances[backpackID]
-		local backpackInventory = backpack and backpack:GetInventory()
+		-- GetInventory существует только у предметов-сумок (base/bags.lua). Если в слоте
+			-- 'backpack' лежит НЕ-сумка, вызов метода-nil роняет Init на полпути и оставляет
+			-- local_inventory без inventory_id (→ каскад GetInventoryWidth). Проверяем метод,
+			-- как это делает сам движок в sh_inventory.lua.
+			local backpackInventory = backpack and backpack.GetInventory and backpack:GetInventory()
 
 		if backpackInventory then
 			self.back_inventory = self:Add('ui.inv')

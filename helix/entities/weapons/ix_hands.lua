@@ -289,8 +289,13 @@ function SWEP:DropObject(bThrow)
 	self:GetOwner():SetLocalVar("bIsHoldingObject", false)
 	self:GetOwner():SetLocalVar("holdingObject", nil)
 
-	self.constraint:Remove()
-	self.holdEntity:Remove()
+	if (IsValid(self.constraint)) then
+		self.constraint:Remove()
+	end
+
+	if (IsValid(self.holdEntity)) then
+		self.holdEntity:Remove()
+	end
 
 	self.heldEntity:StopMotionController()
 	self.heldEntity:SetCollisionGroup(self.heldEntity.ixCollisionGroup or COLLISION_GROUP_NONE)

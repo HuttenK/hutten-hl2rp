@@ -7,5 +7,5 @@ ITEM.height = 1
 ITEM.bodyGroups = {
 	[4] = 1
 }
-ITEM.equip_inv = 'mask'
+ITEM.equip_inv = 'glasses'
 ITEM.equip_slot = nil

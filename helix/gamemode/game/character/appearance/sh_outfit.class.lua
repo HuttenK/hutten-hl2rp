@@ -74,6 +74,11 @@ if SERVER then
 		
 		self.armor = {}
 		self.gasmask = nil
+		-- Сбрасываем одежду прошлого персонажа. Раньше SetupItems чистил armor/gasmask,
+		-- но НЕ displayIds — из-за этого слоты одежды (и их body-группы) накапливались между
+		-- персонажами, и одежда/бодигруппы старого персонажа «прилипали» к новому. Outfit:Reset()
+		-- при этом — заглушка (if true then return end), так что чистки не было нигде.
+		self.displayIds = {}
 
 		for k, v in pairs(self.owner:GetInventories()) do
 			for z, x in ipairs(v:GetItemsID()) do
@@ -86,6 +91,11 @@ if SERVER then
 				end
 			end
 		end
+
+		-- Применяем итоговый набор одежды. Важно вызвать даже если у нового персонажа
+		-- одежды нет: тогда OnEquipped ни разу не дёрнул бы Update, и body-группы остались
+		-- бы от прошлого персонажа. Update со снятым displayIds сбрасывает их в 0/charGen.
+		self:Update()
 
 		if self.loading then
 			self.loading = false

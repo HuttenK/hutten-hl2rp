@@ -23,6 +23,20 @@ function PLUGIN:NearTerminal(client)
 	return false
 end
 
+-- Разрешён ли доступ к доске: рядом с терминалом ЛИБО поднят КПК.
+-- КПК открывает тот же интерфейс доски удалённо (через плагин datafileterminal),
+-- поэтому публикация/приём с поднятого КПК должны работать так же, как у терминала.
+function PLUGIN:HasTerminalAccess(client)
+	if (self:NearTerminal(client)) then return true end
+
+	local pda = ix.plugin.list["datafileterminal"]
+	if (pda and pda.IsHoldingRaisedPDA and pda:IsHoldingRaisedPDA(client)) then
+		return true
+	end
+
+	return false
+end
+
 -- Копия списка БЕЗ деталей — её видят все. Детали приходят только принявшему.
 function PLUGIN:SanitizedTasks()
 	local out = {}
@@ -184,7 +198,7 @@ end
 
 -- ==== Приём от клиента ====
 netstream.Hook("taskboard.post", function(client, info)
-	if (!PLUGIN:NearTerminal(client)) then return end
+	if (!PLUGIN:HasTerminalAccess(client)) then return end
 
 	local character = client:GetCharacter()
 	if (!character) then return end
@@ -203,7 +217,7 @@ netstream.Hook("taskboard.post", function(client, info)
 end)
 
 netstream.Hook("taskboard.accept", function(client, id)
-	if (!PLUGIN:NearTerminal(client)) then return end
+	if (!PLUGIN:HasTerminalAccess(client)) then return end
 
 	local character = client:GetCharacter()
 	if (!character) then return end

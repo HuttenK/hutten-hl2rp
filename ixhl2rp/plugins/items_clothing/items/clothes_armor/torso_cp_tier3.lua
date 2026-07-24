@@ -14,6 +14,10 @@ ITEM.equip_slot = nil
 ITEM.bodyGroups = {
 	[7] = 1
 }
+-- Bodygroups used on the militia/conscript model (open-face uniform).
+ITEM.bodyGroupsMilitia = {
+	[5] = 1,
+}
 ITEM.armor = {
 	class = 2,
 	max_durability = 600,

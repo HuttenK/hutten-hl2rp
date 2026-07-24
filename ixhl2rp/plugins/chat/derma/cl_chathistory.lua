@@ -75,7 +75,16 @@ function PANEL:AddLine(elements, bShouldScroll, class)
 			if str == "" or type(v) == "Material" or string.StartWith(str, "Material ") then
 				continue
 			end
-			text = text .. str:gsub("<", "&lt;"):gsub(">", "&gt;")
+
+			str = str:gsub("<", "&lt;"):gsub(">", "&gt;")
+
+			-- *курсив*: текст, окружённый одиночными звёздочками с обеих сторон,
+			-- отображается курсивом (сами звёздочки убираются). Escape уже сделан выше,
+			-- поэтому вставка <font> безопасна.
+			-- ...и в тот же золотой цвет, что и текст /me (Color(255,200,50) в schema/sh_hooks.lua)
+			str = str:gsub("%*([^%*\n]+)%*", "<font=ixChatItalic><color=255,200,50>%1</color></font>")
+
+			text = text .. str
 		end
 	end
 	

@@ -105,6 +105,13 @@ elseif (CLIENT) then
 	function ENT:Draw()
 		self:DrawModel()
 
+		-- Терминал внутри активной зоны затемнения обесточен: экран и подсветка гаснут.
+		local blackout = ix.plugin.list["blackout"]
+
+		if (blackout and blackout:IsEntityBlackedOut(self)) then
+			return
+		end
+
 		if (EyePos():DistToSqr(self:GetPos()) < 160000) then
 			self:UpdateLight()
 			self:DrawScreen()

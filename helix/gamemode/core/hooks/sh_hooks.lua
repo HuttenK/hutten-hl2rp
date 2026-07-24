@@ -262,7 +262,7 @@ local function UpdateAnimationTable(client, vehicle)
 
 	client.ixAnimGlide = baseTable["glide"]
 
-	if (client.ixAnimTable) then
+	if (istable(client.ixAnimTable)) then
 		client.ixAnimGlide = client.ixAnimTable.glide or client.ixAnimGlide
 	end
 end

@@ -4,7 +4,7 @@ RECIPE.requirements = {
 	electro_battery = 4,
 }
 RECIPE.results = {
-	mat_sulfur = 1
+	mat_sulfur = 4
 }
 RECIPE.skill = {"electric", 2}
 RECIPE.xp = 15

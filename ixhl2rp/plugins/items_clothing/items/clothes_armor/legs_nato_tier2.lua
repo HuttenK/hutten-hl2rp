@@ -14,6 +14,10 @@ ITEM.bodyGroups = {
 ITEM.bodyGroupsMPF = {
 	[5] = 0,
 }
+-- На модели ополченца (conscript) защита ног не меняет НИЧЕГО. Пустая таблица
+-- здесь обязательна и не равна отсутствию поля: без явного пустого варианта
+-- Outfit:Update взял бы гражданские bodyGroups ([9] = 1).
+ITEM.bodyGroupsMilitia = {}
 ITEM.rarity = 1
 ITEM.iconCam = {
 	pos = Vector(-3.2253472805023, -271.79052734375, 326.21942138672),

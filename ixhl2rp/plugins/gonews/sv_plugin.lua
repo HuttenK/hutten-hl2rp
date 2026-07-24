@@ -6,12 +6,9 @@ PLUGIN.editorRadius = 140
 
 util.AddNetworkString("gonews.openeditor")
 
--- Кто может управлять новостями: админы и Гражданская Оборона (Combine)
+-- Управлять новостями может кто угодно (терминал открыт для всех игроков).
 local function CanManage(client)
-	if !IsValid(client) then return false end
-	if client:IsAdmin() or client:IsSuperAdmin() then return true end
-	if client.IsCombine and client:IsCombine() then return true end
-	return false
+	return IsValid(client) and client:IsPlayer()
 end
 PLUGIN.CanManage = CanManage
 

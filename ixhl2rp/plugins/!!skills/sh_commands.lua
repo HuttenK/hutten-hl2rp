@@ -46,27 +46,46 @@ ix.command.Add("lvl", {
 ix.command.Add("lvlreset", {
 	description = "@cmdLvlResetDesc",
 	OnRun = function(self, client)
-		/*
 		local char = client:GetCharacter()
 
-		if char:HasMoney(1000) then
-			char:TakeMoney(1000)
+		if !char then
+			return
+		end
 
-			for k, v in pairs(ix.specials.list) do
-				char:SetSpecial(k, 0)
-			end
+		local cost = 1000
 
-			local points = 0
-			for i = 1, char:GetLevel() do
-				points = points + ix.plugin.list["!!levelsystem"]:GetPointsAtLevel(i)
-			end
+		if !char:HasMoney(cost) then
+			return client:NotifyLocalized("skillsResetNoMoney", cost)
+		end
 
-			target:SetSkillPoints(points)
+		local levelSystem = ix.plugin.list["!!levelsystem"]
 
-			char:SetData("levelup", true)
-		end*/
+		if !levelSystem then
+			return client:NotifyLocalized("skillsResetDisabled")
+		end
 
-		client:NotifyLocalized("skillsResetDisabled")
+		-- Возвращаем ВСЕ очки, полученные персонажем за жизнь. Первый уровень
+		-- включён намеренно: его очки (см. sh_data.levelpoints.lua, [1] = 30)
+		-- выдаются при создании персонажа, поэтому полный сброс обязан вернуть
+		-- и их. Код повышения уровня пропускает i == 1 ровно по обратной причине.
+		local points = 0
+		for i = 1, char:GetLevel() do
+			points = points + levelSystem:GetPointsAtLevel(i)
+		end
+
+		char:TakeMoney(cost)
+
+		for k, _ in pairs(ix.specials.list) do
+			char:SetSpecial(k, 0)
+		end
+
+		char:SetSkillPoints(points)
+		char:SetData("levelup", true)
+
+		client:NotifyLocalized("skillsResetDone", points)
+
+		net.Start("ixLevelUp")
+		net.Send(client)
 	end
 })
 

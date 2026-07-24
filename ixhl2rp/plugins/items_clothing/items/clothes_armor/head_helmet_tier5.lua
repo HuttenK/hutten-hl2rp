@@ -18,6 +18,10 @@ ITEM.bodyGroups = {
 ITEM.bodyGroupsMPF = {
 	[6] = 1,
 }
+-- Bodygroups used on the militia/conscript model (open-face uniform).
+ITEM.bodyGroupsMilitia = {
+	[1] = 2,
+}
 ITEM.noRepair = true
 ITEM.destroyable = true
 ITEM.armor = {

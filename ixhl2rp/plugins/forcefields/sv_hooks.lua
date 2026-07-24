@@ -38,6 +38,15 @@ function PLUGIN:KeyPress(player, key)
 	local entity = trace.Entity;
 
 	if (key == IN_USE and IsValid(entity) and entity:GetClass() == "ix_forcefield") then
+		-- Этот хук вызывает ENT:Use НАПРЯМУЮ, минуя GM:PlayerUse, поэтому блэкаут
+		-- нужно проверять здесь же — иначе поле переключалось бы в обесточенной зоне.
+		local blackout = ix.plugin.list["blackout"];
+		if (blackout and blackout.IsEntityBlackedOut and blackout:IsEntityBlackedOut(entity)) then
+			if (player.NotifyLocalized) then player:NotifyLocalized("blackout.noPower"); end;
+
+			return;
+		end;
+
 		entity:Use(player, player, USE_ON, 1);
 	end;
 end;

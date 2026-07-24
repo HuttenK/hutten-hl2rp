@@ -332,21 +332,32 @@ function PANEL:Paint(w, h)
 			if !self.mdl_pos then
 				self:RecacheHintSize(w, h)
 			else
+				-- GetBoneMatrix возвращает nil, если у модели нет такой кости (или матрицы ещё
+				-- не готовы) — у некоторых предметных моделей меньше 4 костей. Раньше это роняло
+				-- mat:SetTranslation на nil. Пропускаем отсутствующие кости.
 				local mat = self.mdl:GetBoneMatrix(1)
-				mat:SetTranslation(self.mdl_pos[1])
-				self.mdl:SetBoneMatrix(1, mat)
+				if mat then
+					mat:SetTranslation(self.mdl_pos[1])
+					self.mdl:SetBoneMatrix(1, mat)
+				end
 
-				local mat = self.mdl:GetBoneMatrix(0)
-				mat:SetTranslation(self.mdl_pos[2])
-				self.mdl:SetBoneMatrix(0, mat)
+				mat = self.mdl:GetBoneMatrix(0)
+				if mat then
+					mat:SetTranslation(self.mdl_pos[2])
+					self.mdl:SetBoneMatrix(0, mat)
+				end
 
-				local mat = self.mdl:GetBoneMatrix(2)
-				mat:SetTranslation(self.mdl_pos[3])
-				self.mdl:SetBoneMatrix(2, mat)
+				mat = self.mdl:GetBoneMatrix(2)
+				if mat then
+					mat:SetTranslation(self.mdl_pos[3])
+					self.mdl:SetBoneMatrix(2, mat)
+				end
 
-				local mat = self.mdl:GetBoneMatrix(3)
-				mat:SetTranslation(self.mdl_pos[4])
-				self.mdl:SetBoneMatrix(3, mat)
+				mat = self.mdl:GetBoneMatrix(3)
+				if mat then
+					mat:SetTranslation(self.mdl_pos[4])
+					self.mdl:SetBoneMatrix(3, mat)
+				end
 			end
 
 			self.mdl:SetPos(self._size)

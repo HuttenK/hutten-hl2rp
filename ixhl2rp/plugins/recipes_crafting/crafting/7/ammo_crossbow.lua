@@ -1,4 +1,4 @@
-RECIPE.name = "Болты для арбалета"
+RECIPE.name = "Патроны для автомата"
 RECIPE.category = "recipe.category.ammo"
 RECIPE.requirements = {
 	metal_reclaimed = 3,
@@ -7,7 +7,7 @@ RECIPE.requirements = {
 	box_of_gunpowder = 3,
 }
 RECIPE.results = {
-	crossbowammo = 1
+	crossbowammo = 90
 }
 RECIPE.skill = {"crafting", 7}
 RECIPE.tools = {"wm_hammer"}

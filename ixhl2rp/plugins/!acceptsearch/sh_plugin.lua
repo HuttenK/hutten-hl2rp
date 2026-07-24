@@ -53,15 +53,19 @@ if CLIENT then
 		local sender = net.ReadEntity()
 		local itemID = net.ReadString()
 		local item = ix.Item:Get(itemID)
+		if not item then return end
+
 		local target = sender:GetEyeTraceNoCursor().Entity
 		local entityPlayer = target:GetNetVar("player")
+		local speaker = target:IsRagdoll() and entityPlayer or target
 
-		local name = hook.Run("GetCharacterName", target:IsRagdoll() and entityPlayer or target, "me")
+		local name = IsValid(speaker) and hook.Run("GetCharacterName", speaker, "me")
 
+		-- Emote expects args as a TABLE (it does pairs()/unpack() on them).
 		if name then
-			sender:Emote("me", "emoteConfiscateItemFrom", L(item.name), name)
+			sender:Emote("me", "emoteConfiscateItemFrom", {L(item.name), name})
 		else
-			sender:Emote("me", "emoteConfiscateItemFromYou", L(item.name))
+			sender:Emote("me", "emoteConfiscateItemFromYou", {L(item.name)})
 		end
 	end)
 end

@@ -160,10 +160,13 @@ function PANEL:SetDesc(desc)
 		if self.xp and self.skill then
 			local skills = LocalPlayer():GetCharacter():GetSkills()
 			local skill = ix.skills.list[self.skill]
+			local skillData = skills[self.skill]
 
-			local tooltip = tooltip:AddRow("description")
-			tooltip:SetText(L("levelXP", math.Round(skills[self.skill][2]), math.Round(skill:GetRequiredXP(skills, skills[self.skill][1]))))
-			tooltip:SizeToContents()
+			if skillData and skill then
+				local tooltip = tooltip:AddRow("description")
+				tooltip:SetText(L("tooltip.levelXP", math.Round(skillData[2]), math.Round(skill:GetRequiredXP(skills, skillData[1]))))
+				tooltip:SizeToContents()
+			end
 		end
 
 		local description = tooltip:AddRow("description")
@@ -181,10 +184,13 @@ function PANEL:SetDesc(desc)
 		if self.xp and self.skill then
 			local skills = LocalPlayer():GetCharacter():GetSkills()
 			local skill = ix.skills.list[self.skill]
+			local skillData = skills[self.skill]
 
-			local tooltip = tooltip:AddRow("description")
-			tooltip:SetText(L("levelXP", math.Round(skills[self.skill][2]), math.Round(skill:GetRequiredXP(skills, skills[self.skill][1]))))
-			tooltip:SizeToContents()
+			if skillData and skill then
+				local tooltip = tooltip:AddRow("description")
+				tooltip:SetText(L("tooltip.levelXP", math.Round(skillData[2]), math.Round(skill:GetRequiredXP(skills, skillData[1]))))
+				tooltip:SizeToContents()
+			end
 		end
 
 		local description = tooltip:AddRow("description")

@@ -109,9 +109,16 @@ else
 		gui.MouseY = my
 	end
 
+	-- Терминал внутри активной зоны затемнения обесточен: экран не горит.
+	local function IsBlackedOut(entity)
+		local blackout = ix.plugin.list["blackout"]
+
+		return blackout and blackout:IsEntityBlackedOut(entity) or false
+	end
+
 	function ENT:Draw()
 		self:DrawModel()
-		if EyePos():DistToSqr(self:GetPos()) < DRAW_DIST2 then
+		if EyePos():DistToSqr(self:GetPos()) < DRAW_DIST2 and !IsBlackedOut(self) then
 			self:DrawScreen()
 		end
 	end

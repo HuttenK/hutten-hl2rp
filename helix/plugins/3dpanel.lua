@@ -141,7 +141,10 @@ else
 		if (file.Exists(path..filename, "DATA")) then
 			local material = Material("../data/"..path..filename, "noclamp smooth")
 
-			if (!material:IsError()) then
+			-- Material() возвращает nil (не error-материал), если файл — не картинка:
+			-- URL отдал HTML-ошибку, редирект или битый ответ, который file.Write
+			-- сохранил как есть. Без этой проверки material:IsError() крашится.
+			if (material and !material:IsError()) then
 				info[7] = material
 
 				if fixDimension then
@@ -158,7 +161,7 @@ else
 
 				local material = Material("../data/"..path..filename, "noclamp smooth")
 
-				if (!material:IsError()) then
+				if (material and !material:IsError()) then
 					info[7] = material
 
 					if fixDimension then
@@ -181,8 +184,8 @@ else
 		if (file.Exists(path..filename, "DATA")) then
 			local preview = Material("../data/"..path..filename, "noclamp smooth")
 
-			-- Update the cached preview if success
-			if (!preview:IsError()) then
+			-- Update the cached preview if success (nil = файл не картинка).
+			if (preview and !preview:IsError()) then
 				cachedPreview = {url, preview}
 			else
 				cachedPreview = {}
@@ -195,8 +198,8 @@ else
 
 				local preview = Material("../data/"..path..filename, "noclamp smooth")
 
-				-- Update the cached preview if success
-				if (!preview:IsError()) then
+				-- Update the cached preview if success (nil = файл не картинка).
+				if (preview and !preview:IsError()) then
 					cachedPreview = {url, preview}
 				else
 					cachedPreview = {}

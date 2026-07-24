@@ -170,6 +170,24 @@ if (SERVER) then
 			return
 		end
 
+		-- Нет питания: в обесточенной зоне блэкаута замок не переключается. Замок может
+		-- висеть на внешней грани приграничной двери (вне AABB зоны), поэтому проверяем
+		-- ещё и позицию двери. Авторитетно, не зависит от порядка хуков PlayerUse.
+		local blackout = ix.plugin.list["blackout"]
+		if (blackout and blackout.IsPosBlackedOut) then
+			local dark = blackout:IsPosBlackedOut(self:GetPos())
+				or (IsValid(self.door) and blackout:IsPosBlackedOut(self.door:GetPos()))
+
+			if (dark) then
+				if (IsValid(client) and client.NotifyLocalized) then
+					client:NotifyLocalized("blackout.noPower")
+				end
+				self.nextUseTime = CurTime() + 1
+
+				return
+			end
+		end
+
 		if (!client:HasIDAccess(self:GetAccess())) then
 			self:DisplayError()
 			self.nextUseTime = CurTime() + 2

@@ -30,6 +30,16 @@ if CLIENT then
 			antialias = true,
 		})
 
+		-- Курсивный вариант базового IC — для текста, окружённого *звёздочками*.
+		surface.CreateFont("ixChatItalic", {
+			font     = genericFont,
+			size     = math.Round(baseSize),
+			extended = true,
+			weight   = 400,
+			antialias = true,
+			italic   = true,
+		})
+
 		-- Крик (/y)
 		surface.CreateFont("ixChatFontYell", {
 			font     = genericFont,

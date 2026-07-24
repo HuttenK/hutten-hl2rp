@@ -96,6 +96,7 @@ end
 
 ITEM.Info = {
 	Skill = "guns",
+	Damage = {47, 58},
 	Distance = {[1]=5,[2]=5,[3]=3,[4]=-1},
 	Dmg = {AP=11,Limb=40,Shock={100,2100},Blood={32,170},Bleed=55}
 }

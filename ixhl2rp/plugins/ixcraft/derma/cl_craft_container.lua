@@ -349,7 +349,9 @@ function PANEL:Setup(isMini, inventoryID)
 	parent.searchResults = searchResults
 
 	local function RunSearch(query)
-		query = string.lower(string.Trim(query or ""))
+		-- string.lower не трогает кириллицу (работает только с ASCII), поэтому
+		-- «Бинт» не находился по запросу «бинт». utf8lower обрабатывает и то и другое.
+		query = string.utf8lower(string.Trim(query or ""))
 
 		if query == "" then
 			searchResults:SetVisible(false)
@@ -367,7 +369,7 @@ function PANEL:Setup(isMini, inventoryID)
 		local matches = {}
 
 		for _, recipe in ipairs(flatRecipes) do
-			if string.find(string.lower(recipe:GetName() or ""), query, 1, true) then
+			if string.find(string.utf8lower(recipe:GetName() or ""), query, 1, true) then
 				matches[#matches + 1] = recipe
 			end
 		end

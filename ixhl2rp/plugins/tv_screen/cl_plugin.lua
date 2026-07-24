@@ -39,6 +39,18 @@ local function TVDistanceVolume(ent)
 	return 1 - (d - TV_SND_FULL) / (TV_SND_SILENT - TV_SND_FULL)
 end
 
+-- Телевизор считается включённым, только если он включён выключателем И у него
+-- есть питание. Проверять надо во ВСЕХ трёх местах: картинка, звук BASS-канала и
+-- громкость HTML-панели — иначе обесточенный экран гаснет, но продолжает звучать.
+local function TVIsOn(ent)
+	if not IsValid(ent) then return false end
+	if not ent:GetNWBool("tv_on", true) then return false end
+
+	local blackout = ix.plugin.list["blackout"]
+
+	return not blackout or not blackout:IsPosBlackedOut(ent:GetPos())
+end
+
 local function RefreshTVCache()
 	local now = CurTime()
 	if now - PLUGIN.lastCacheAt < CACHE_INTERVAL then return end
@@ -265,8 +277,7 @@ hook.Add("Think", "ix_tv_sound_update", function()
 		local ch = PLUGIN.tvSoundObjs[ent:EntIndex()]
 		if IsValid(ch) then
 			ch:SetPos(ent:GetPos())
-			local isOn = ent:GetNWBool("tv_on", true)
-			ch:SetVolume(isOn and TVDistanceVolume(ent) or 0)
+			ch:SetVolume(TVIsOn(ent) and TVDistanceVolume(ent) or 0)
 		end
 	end
 
@@ -323,10 +334,10 @@ do
 		local ply = LocalPlayer()
 		if not IsValid(ply) then return end
 
-		-- Find nearest ON TV entity (off TVs don't emit sound).
+		-- Find nearest ON TV entity (off and unpowered TVs don't emit sound).
 		local minDist = math.huge
 		for _, ent in ipairs(PLUGIN.cachedTVs) do
-			if IsValid(ent) and ent:GetNWBool("tv_on", true) then
+			if TVIsOn(ent) then
 				local d = ply:GetPos():Distance(ent:GetPos())
 				if d < minDist then minDist = d end
 			end
@@ -407,7 +418,7 @@ hook.Add("PostDrawOpaqueRenderables", "ix_tv_screen_render", function()
 		local pw = config.width  / scale * 0.5
 		local ph = config.height / scale * 0.5
 
-		local isOn = ent:GetNWBool("tv_on", true)
+		local isOn = TVIsOn(ent)
 		local idx  = ent:EntIndex()
 
 		if PLUGIN.tvLastState[idx] != isOn then

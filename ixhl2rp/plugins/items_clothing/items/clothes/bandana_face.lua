@@ -7,5 +7,11 @@ ITEM.height = 1
 ITEM.bodyGroups = {
 	[2] = 1
 }
+-- Bodygroups used on the militia/conscript model (open-face uniform). Совпадает с
+-- гражданским значением, но задано явно: иначе смена ITEM.bodyGroups молча
+-- утянула бы за собой и модель ополченца.
+ITEM.bodyGroupsMilitia = {
+	[2] = 1,
+}
 ITEM.equip_inv = 'mask'
 ITEM.equip_slot = nil

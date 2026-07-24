@@ -192,6 +192,10 @@ end
 
 function PLUGIN:OnIDCardInstanced(item)
 	if item:GetData("datafileID", 0) == 0 then
+		-- Отозванная карта отвязана намеренно — НЕ заводим ей новое досье, иначе при
+		-- следующей загрузке она бы «ожила» с чистым досье.
+		if item:GetData("revoked") then return end
+
 		local name = item:GetData("name", "")
 		local cid = item:GetData("cid", "")
 		local regid = item:GetData("number", "")

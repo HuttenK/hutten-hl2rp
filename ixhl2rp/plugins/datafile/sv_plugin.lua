@@ -337,9 +337,12 @@ do
 	function CHAR:ReturnDatafilePermission()
 		local cid = self:GetPlayer():GetIDCard()
 
-		if !cid then 
-			return 0 
+		if !cid then
+			return 0
 		end
+
+		-- Отозванная карта допуска не даёт.
+		if cid:GetData("revoked") then return 0 end
 
 		local accesses = cid:GetData("access", {})
 		

@@ -252,7 +252,9 @@ if SERVER then
 			
 			xp = xp * self:GetSkillScale(client, skill, level)
 
-			character:DoAction("craft_"..skill, xp)
+			-- DoAction возвращает РЕАЛЬНО начисленный опыт (урезанный голодом и лимитом
+			-- «памяти навыка»); берём его, чтобы сообщение в чате совпадало с фактом.
+			xp = character:DoAction("craft_"..skill, xp) or 0
 		end
 
 		local inventory = client:GetInventory("main")
@@ -506,7 +508,7 @@ if SERVER then
 
 		if recipe.skill then
 			local activityKey = recipe.isBreakdown and "craft.breakdown" or "craft.creation"
-			client:NotifyLocalized("craft.xpGained", xp, L(activityKey, client))
+			client:NotifyLocalized("craft.xpGained", math.Round(xp), L(activityKey, client))
 		end
 		
 		return true

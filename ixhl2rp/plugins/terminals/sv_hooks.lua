@@ -4,6 +4,27 @@ util.AddNetworkString("ixTerminalResponse")
 util.AddNetworkString("ixTerminalRetrieveInfo")
 util.AddNetworkString("ixTerminalRequest")
 
+-- Лояльность на терминале раньше искалась сравнением старого строкового статуса
+-- (его выставляют через КПК: Citizen/Red/Blue/… из datafile PLUGIN.CivilStatus)
+-- с НАЗВАНИЯМИ новых уровней ix.Loyalty — они никогда не совпадали, поэтому всем
+-- показывался один уровень «Обычные граждане (3)».
+-- Явная таблица: старый статус -> индекс уровня ix.Loyalty (1-9). Совпадение по цвету
+-- там, где у нового уровня он есть (красный/синий/зелёный/белый), иначе по рангу.
+-- ПРАВЬТЕ ЗДЕСЬ, если нужен другой уровень для конкретного статуса.
+local STATUS_TO_LOYALTY = {
+	["Anti-Citizen"] = 1, -- Анти-социальный (уровень G)
+	["Citizen"]      = 3, -- Обычные граждане (уровень 0)
+	["Black"]        = 3, -- нет отдельного уровня -> обычные граждане
+	["Brown"]        = 3, -- нет отдельного уровня -> обычные граждане
+	["Orange"]       = 3, -- нет отдельного уровня -> обычные граждане
+	["Red"]          = 4, -- Сторонник 1-го уровня (красный)
+	["Green"]        = 7, -- Лоялист 2-го уровня (зелёный)
+	["Blue"]         = 6, -- Лоялист 1-го уровня (синий)
+	["White"]        = 8, -- Почетный лоялист (белый)
+	["Gold"]         = 9, -- Высший лоялист
+	["Platinum"]     = 9, -- Высший лоялист (фиолетовый)
+}
+
 local function UpdateCardAppearance(character)
 	local charID = character:GetID()
 	local model  = character:GetModel() or ""
@@ -64,26 +85,10 @@ net.Receive("ixTerminalRetrieveInfo", function(len, ply)
 				end
 			end
 
-			-- Уровень лояльности: приоритет - строка из OLD датафайла (set admins),
-			-- fallback - новая система, default - CITIZEN (3).
-			local civilStatus = 3
-
-			if genericdata.status and ix.Loyalty then
-				for i = 1, #ix.Loyalty.levels do
-					local level = ix.Loyalty.levels[i]
-					if level and level.name == genericdata.status then
-						civilStatus = i
-						break
-					end
-				end
-			end
-
-			if civilStatus == 3 then
-				local character = ply:GetCharacter()
-				if character and character.datafile then
-					civilStatus = character.datafile:GetCivilStatus() or 3
-				end
-			end
+			-- Уровень лояльности: старый строковый статус из датафайла (его задают
+			-- через КПК) маппится в индекс нового ix.Loyalty. Неизвестный/пустой
+			-- статус -> «Обычные граждане» (3).
+			local civilStatus = STATUS_TO_LOYALTY[genericdata.status] or 3
 
 			-- Модель владельца карточки (не того, кто стоит у терминала).
 			-- Ищем среди всех онлайн-игроков по character:GetID().
@@ -104,12 +109,12 @@ net.Receive("ixTerminalRetrieveInfo", function(len, ply)
 				end
 
 				if IsValid(ownerPly) then
-					-- Берём ОРИГИНАЛЬНУЮ модель персонажа, а не текущую: форма/аутфит
-					-- через client:SetModel подменяют модель ИГРОКА (но не модель
-					-- персонажа). Авторитетный источник базовой модели — char_outfit.model.
+					-- Берём ОРИГИНАЛЬНУЮ модель персонажа, а не текущую: форма/аутфит/
+					-- форма МП через client:SetModel подменяют модель ИГРОКА и
+					-- char_outfit.model (пока костюм надет), но character:GetModel()
+					-- остаётся исходной моделью персонажа — её и берём.
 					local ownerChar = ownerPly:GetCharacter()
-					ownerModel = (ownerPly.char_outfit and ownerPly.char_outfit.model)
-						or (ownerChar and ownerChar:GetModel())
+					ownerModel = (ownerChar and ownerChar:GetModel())
 						or ownerPly:GetModel() or ""
 					-- Скин формы тоже подменяется -> берём скин персонажа
 					ownerSkin  = (ownerChar and ownerChar:GetData("skin", 0)) or 0

@@ -227,6 +227,12 @@ function PLUGIN:SetupMove(ply, mv, cmd)
 
 		local fraction = 1 - (0.75 * (1 - math.Clamp(value / totalHP, 0, 1)))
 
+		-- Утраченная нога — постоянный штраф поверх урона по ногам.
+		-- Кэш сбрасывается через Health():OnUpdateDiffs() при ампутации.
+		if ix.Amputation and ix.Amputation.HasKind(character, "leg") then
+			fraction = fraction * ix.Amputation.legSpeed
+		end
+
 		ply.movementPenalty = fraction
 		ply.fracturedLegs = hasFracture
 	end

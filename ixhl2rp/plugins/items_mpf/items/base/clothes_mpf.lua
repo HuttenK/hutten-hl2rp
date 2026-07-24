@@ -38,22 +38,6 @@ function ItemClothMPF:Init()
 	self:AddData("captured", {
 		Transmit = ix.transmit.owner,
 	})
-
-	self.functions.devEdit = {
-		name = "item.mpf_devMakeCaptured",
-		icon = "icon16/wrench.png",
-		OnClick = function(item)
-
-		end,
-		OnRun = function(item)
-			item:SetData("captured", true)
-
-			return false
-		end,
-		OnCanRun = function(item)
-			return item:GetData("captured", false) != true and (!item.player:IsCombine() or item.player:IsAdmin())
-		end
-	}
 end
 
 function ItemClothMPF:OnInstanced(isCreated)

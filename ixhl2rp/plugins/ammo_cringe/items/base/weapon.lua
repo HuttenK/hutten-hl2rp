@@ -72,6 +72,19 @@ function Item:Init()
 		tip = "equipTip",
 		icon = "icon16/box.png",
 		OnRun = function(item)
+			-- Однорукий персонаж не удержит двуручное оружие — оно падает на землю.
+			if ix.Amputation and ix.Amputation.IsTwoHanded(item) then
+				local client = item.player
+
+				if IsValid(client) and ix.Amputation.HasKind(client:GetCharacter(), "arm") then
+					client:NotifyLocalized("amputation.noTwoHanded")
+
+					ix.Item:DropItem(client, item.id)
+
+					return false
+				end
+			end
+
 			if item.hasLock then
 				local client = item.player
 				if item:CheckBiolock(client) == false then
@@ -110,6 +123,61 @@ function Item:Init()
 		end
 	}
 
+	-- Ампутация: подменю на 4 конечности. Показывается только у подходящих
+	-- клинков и только хирургу с медициной 5. Жертва подтверждает согласие.
+	self.functions.amputate = {
+		name = "amputation.cut",
+		icon = "icon16/cut.png",
+		isMulti = true,
+		multiOptions = function(item)
+			local options = {}
+
+			for _, key in ipairs({"larm", "rarm", "lleg", "rleg"}) do
+				options[#options + 1] = {
+					name = ix.Amputation.limbs[key].phrase,
+					data = {limb = key}
+				}
+			end
+
+			return options
+		end,
+		OnRun = function(item, items, data)
+			local client = item.player
+			local key = data and data.limb
+
+			if !key or !ix.Amputation.limbs[key] then return false end
+
+			if !ix.Amputation.HasSkill(client:GetCharacter()) then
+				client:NotifyLocalized("amputation.noSkill")
+				return false
+			end
+
+			local target = ix.Amputation.GetTarget(client)
+
+			if !IsValid(target) or !target:Alive() then
+				client:NotifyLocalized("amputation.noTarget")
+				return false
+			end
+
+			if ix.Amputation.Get(target:GetCharacter()) then
+				client:NotifyLocalized("amputation.targetHasLimb")
+				return false
+			end
+
+			ix.Amputation.RequestCut(client, target, key, item)
+
+			return false
+		end,
+		OnCanRun = function(item)
+			if IsValid(item:GetEntity()) then return false end
+			if !ix.Amputation or !ix.Amputation.IsTool(item) then return false end
+
+			local client = item.player
+
+			return IsValid(client) and ix.Amputation.HasSkill(client:GetCharacter())
+		end
+	}
+
 	self.functions.unequip = {
 		tip = "unequipTip",
 		icon = "icon16/box.png",
@@ -127,21 +195,36 @@ function Item:Init()
 		name = "weapon.unloadMagazine",
 		icon = "icon16/page_go.png",
 		OnRun = function(item)
-			local primary = baseclass.Get(item.class).Primary
+			-- Тип патронов берём из того, что РЕАЛЬНО было заряжено (сохраняется
+			-- при снятии/выбросе оружия), и только если его нет — из класса SWEP-а.
+			-- Переходники калибра ArcCW меняют боеприпас у экземпляра оружия:
+			-- если читать класс, то АК, переведённый под пистолетный патрон,
+			-- заряжался бы патронами SMG, а разряжался винтовочными — бесплатная
+			-- конвертация боеприпасов.
+			local ammoType = item:GetData("ammoType")
 
-			if (!primary) then
-				return ErrorNoHalt(Format("Unable to find baseclass %s of item %s\n", item.class, item.uniqueID))
+			if (!ammoType or ammoType == "") then
+				local primary = baseclass.Get(item.class).Primary
+
+				if (!primary) then
+					return ErrorNoHalt(Format("Unable to find baseclass %s of item %s\n", item.class, item.uniqueID))
+				end
+
+				ammoType = primary.Ammo
 			end
 
-			local ammoType = primary.Ammo
 			local targetItemID = nil
 
-			-- Find the correct item ID for this ammo type
+			-- Find the correct item ID for this ammo type.
+			-- Сравниваем без учёта регистра: сохранённый тип приведён к нижнему
+			-- регистру, а у предметов регистр разный ("ar2", но "XBowBolt").
+			local ammoTypeLower = string.lower(ammoType or "")
+
 			if (ix.Item.stored[ammoType]) then
 				targetItemID = ammoType
 			else
 				for k, v in pairs(ix.Item.stored) do
-					if (v.ammo == ammoType) then
+					if (v.ammo and string.lower(v.ammo) == ammoTypeLower) then
 						targetItemID = k
 						break
 					end
@@ -247,6 +330,15 @@ function Item:Init()
 	self:AddData("arccw_atts", {
 		Transmit = ix.transmit.none, -- server-only state, no net sync needed
 		-- persisted to DB (NoSave defaults to false)
+	})
+
+	-- Тип патронов, РЕАЛЬНО заряженных в это оружие. Нужен потому, что переходники
+	-- калибра ArcCW меняют тип боеприпаса у конкретного экземпляра: разряжать по
+	-- умолчанию из класса SWEP-а нельзя (см. functions.unloadMagazine). Ключ
+	-- регистрируется здесь же, в общем Init базы, по той же причине, что и
+	-- arccw_atts выше.
+	self:AddData("ammoType", {
+		Transmit = ix.transmit.none,
 	})
 end
 
@@ -400,6 +492,20 @@ function Item:Equip(client, bNoSelect, bNoSound)
 	end
 end
 
+-- Запоминает тип патронов, которыми оружие заряжено ПРЯМО СЕЙЧАС. Переходники
+-- калибра ArcCW меняют боеприпас у конкретного экземпляра, а живой SWEP — это
+-- единственный источник правды: в момент разряжания оружие уже снято и его
+-- сущности нет, а класс SWEP-а знает только калибр «с завода».
+function Item:SaveLoadedAmmoType(weapon)
+	if !IsValid(weapon) then return end
+
+	local ammoName = game.GetAmmoName(weapon:GetPrimaryAmmoType())
+
+	if ammoName then
+		self:SetData("ammoType", ammoName:lower())
+	end
+end
+
 function Item:Unequip(user, bPlaySound, bRemoveItem)
 	local client = self:GetOwner()
 
@@ -417,6 +523,8 @@ function Item:Unequip(user, bPlaySound, bRemoveItem)
 
 	if IsValid(weapon) then
 		weapon.ixItem = nil
+
+		self:SaveLoadedAmmoType(weapon)
 
 		if self.isRPG then
 			self:SetData("ammo", client:GetAmmoCount(weapon:GetPrimaryAmmoType()))
@@ -484,6 +592,8 @@ function Item:OnDrop(client, inventory)
 		end
 
 		if IsValid(weapon) then
+			self:SaveLoadedAmmoType(weapon)
+
 			if self.isRPG then
 				self:SetData("ammo", owner:GetAmmoCount(weapon:GetPrimaryAmmoType()))
 			else
@@ -540,6 +650,7 @@ function Item:OnSave()
 		local weapon = owner:GetWeapon(self.class)
 
 		if IsValid(weapon) and weapon.ixItem == self and self:GetData("equip") then
+			self:SaveLoadedAmmoType(weapon)
 			self:SetData("ammo", weapon:Clip1())
 		end
 	end
@@ -683,44 +794,6 @@ if CLIENT then
 			end
 		end
 
-		-- Info.Dmg stats (from autonomous schema weapon data)
-		local info = self.Info
-		if info and info.Dmg then
-			local dmg = info.Dmg
-			local cyanClr   = Color(80, 210, 230)
-			local orangeClr = Color(240, 160, 60)
-			local pinkClr   = Color(230, 100, 130)
-
-			-- Section header
-			StatRow("dmg_header", "── Wound Stats ──", cyanClr, tooltip, false, false)
-
-			-- AP (armor penetration rating) — only for ranged weapons
-			if dmg.AP then
-				local apClr = dmg.AP >= 12 and greenClr or (dmg.AP >= 6 and color_white or redClr)
-				StatRow("dmg_ap", string.format("Penetration: %d", dmg.AP), apClr, tooltip)
-			end
-
-			-- Limb damage
-			if dmg.Limb then
-				StatRow("dmg_limb", string.format("Limb damage: %d", dmg.Limb), color_white, tooltip)
-			end
-
-			-- Shock range
-			if dmg.Shock then
-				StatRow("dmg_shock", string.format("Shock: %d – %d", dmg.Shock[1], dmg.Shock[2]), orangeClr, tooltip)
-			end
-
-			-- Blood loss range
-			if dmg.Blood then
-				StatRow("dmg_blood", string.format("Blood loss: %d – %d", dmg.Blood[1], dmg.Blood[2]), pinkClr, tooltip)
-			end
-
-			-- Bleed chance
-			if dmg.Bleed and dmg.Bleed > 0 then
-				local bleedClr = dmg.Bleed >= 70 and redClr or (dmg.Bleed >= 40 and orangeClr or color_white)
-				StatRow("dmg_bleed", string.format("Bleed chance: %d%%", dmg.Bleed), bleedClr, tooltip)
-			end
-		end
 	end
 
 	function Item:PaintOver(w, h)

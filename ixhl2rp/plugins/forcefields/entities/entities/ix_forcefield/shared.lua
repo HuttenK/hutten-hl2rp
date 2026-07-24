@@ -174,6 +174,18 @@ if (SERVER) then
 
 
 	function ENT:Use(act, call, type, val)
+		-- Нет питания: в обесточенной зоне блэкаута поле нельзя переключать (иначе
+		-- комбайн сменой режима снова включил бы его прямо в темноте). Авторитетная
+		-- проверка, не зависящая от порядка хуков PlayerUse.
+		local blackout = ix.plugin.list["blackout"];
+		if (blackout and blackout.IsEntityBlackedOut and blackout:IsEntityBlackedOut(self)) then
+			if (IsValid(act) and act.NotifyLocalized) then
+				act:NotifyLocalized("blackout.noPower");
+			end;
+
+			return;
+		end;
+
 		if ((self.nextUse or 0) < CurTime()) then
 			self.nextUse = CurTime() + 1;
 		else

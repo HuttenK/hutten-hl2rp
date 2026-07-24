@@ -4,24 +4,43 @@ PLUGIN.name = "Clothing Items"
 PLUGIN.author = "Schwarz Kruppzo"
 PLUGIN.description = "Adds a clothing items from HL2TS2."
 
+-- Помечаем модели ополченца (conscript) отдельным Appearance modelClass, чтобы
+-- броня и одежда могли задать для них свой набор бодигрупп через
+-- ITEM.bodyGroupsMilitia (раскладка бодигрупп conscript-моделей отличается и от
+-- гражданских, и от метрополицейских). См. items/base/clothes.lua OnRegistered.
+-- Наборы совпадают с гражданскими: male_01..10, female_01..15.
+if ix.Appearance then
+	for i = 1, 10 do
+		ix.Appearance:SetModelClass(string.format("models/autonomous/africa/conscript/male_%02d.mdl", i), "militia")
+	end
+
+	for i = 1, 15 do
+		ix.Appearance:SetModelClass(string.format("models/autonomous/africa/conscript/female_%02d.mdl", i), "militia")
+	end
+end
+
 -- Дополнительные слоты экипировки: бронежилет ('vest') и защита ног
 -- ('legprotection'). Раньше броня занимала слоты 'torso' и 'legs' и вытесняла
 -- обычную одежду; теперь броня носится поверх неё.
 ix.lang.AddTable("ru", {
 	["equip.vest"] = "БРОНЕЖИЛЕТ",
 	["equip.legprotection"] = "ЗАЩИТА НОГ",
+	["equip.glasses"] = "ОЧКИ",
 })
 ix.lang.AddTable("en", {
 	["equip.vest"] = "VEST",
 	["equip.legprotection"] = "LEG PROTECTION",
+	["equip.glasses"] = "GLASSES",
 })
 ix.lang.AddTable("fr", {
 	["equip.vest"] = "GILET",
 	["equip.legprotection"] = "PROTECTION DES JAMBES",
+	["equip.glasses"] = "LUNETTES",
 })
 ix.lang.AddTable("es-es", {
 	["equip.vest"] = "CHALECO",
 	["equip.legprotection"] = "PROTECCIÓN DE PIERNAS",
+	["equip.glasses"] = "GAFAS",
 })
 
 ix.lang.AddTable("ru", {
@@ -80,7 +99,7 @@ end
 function PLUGIN:CreatePlayerInventories(client, inventories)
 	if !inventories then return end
 
-	for _, slotType in ipairs({"vest", "legprotection"}) do
+	for _, slotType in ipairs({"vest", "legprotection", "glasses"}) do
 		local slot = ix.meta.Inventory:New()
 		slot.type = slotType
 		slot.multislot = false

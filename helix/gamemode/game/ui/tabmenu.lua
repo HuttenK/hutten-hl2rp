@@ -895,10 +895,13 @@ function PANEL:Init()
 				title:SetMaxWidth(math.max(title:GetMaxWidth(), ScrW() * 0.5))
 
 				local skills = character:GetSkills()
+				local skillData = skills[k]
 
-				local xp = tooltip:AddRow("description")
-				xp:SetText(L("levelXP", math.Round(skills[k][2]), math.Round(skill:GetRequiredXP(skills, skills[k][1]))))
-				xp:SizeToContents()
+				if skillData then
+					local xp = tooltip:AddRow("description")
+					xp:SetText(L("tooltip.levelXP", math.Round(skillData[2]), math.Round(skill:GetRequiredXP(skills, skillData[1]))))
+					xp:SizeToContents()
+				end
 
 				local description = tooltip:AddRow("description")
 				description:SetText(desc)
@@ -910,7 +913,9 @@ function PANEL:Init()
 	end)
 
 	timer.Simple(0, function()
-		if !self.active then
+		-- Отложенный на кадр таймер: панель меню или кнопка HP могли быть удалены
+		-- (быстрое закрытие F1) → health.state = true падал на NULL-панели (__newindex).
+		if IsValid(self) and IsValid(health) and !self.active then
 			health.state = true
 			health:OnToggle(true)
 		end
@@ -1180,8 +1185,9 @@ local buttons = {
 					legs:CenterHorizontal()
 					legs:SetTitle(L("tab_slot_legs"))
 
-					-- vest/legprotection come from the items_clothing plugin, not core;
-					-- they occupy the free row underneath the legs slot.
+					-- vest/legprotection приходят из плагина items_clothing, не из ядра,
+					-- поэтому без него раскладка должна остаться рабочей.
+					-- «Бронежилет» занимает место бывшего слота «Плечо» — слева от торса.
 					local vestInventory = client:GetInventory("vest")
 					local vest
 
@@ -1190,22 +1196,9 @@ local buttons = {
 						vest:SetSlotSize(slot_size_small)
 						vest:Rebuild()
 						vest:SizeToContents()
-						vest:MoveBelow(legs, 16)
-						vest:CenterHorizontal()
-						vest:SetX(vest:GetX() - vest:GetWide() * 0.5 - 2.5)
+						vest:MoveBelow(head, 16)
+						vest:MoveLeftOf(torso, 5)
 						vest:SetTitle(L("equip.vest"))
-					end
-
-					local legProtectionInventory = client:GetInventory("legprotection")
-
-					if legProtectionInventory and vest then
-						local legprotection = legProtectionInventory:CreatePanel(parent)
-						legprotection:SetSlotSize(slot_size_small)
-						legprotection:Rebuild()
-						legprotection:SizeToContents()
-						legprotection:SetY(vest:GetY())
-						legprotection:MoveRightOf(vest, 5)
-						legprotection:SetTitle(L("equip.legprotection"))
 					end
 
 					local face = client:GetInventory("mask"):CreatePanel(parent)
@@ -1216,6 +1209,20 @@ local buttons = {
 					face:MoveLeftOf(head, 5)
 					face:SetTitle(L("tab_slot_face"))
 
+					-- «Очки» — слева от «Лица» и над «Руками» (свой слот, не 'mask').
+					-- Приходят из плагина items_clothing, поэтому раскладка без него не падает.
+					local glassesInventory = client:GetInventory("glasses")
+
+					if glassesInventory then
+						local glasses = glassesInventory:CreatePanel(parent)
+						glasses:SetSlotSize(slot_size_small)
+						glasses:Rebuild()
+						glasses:SizeToContents()
+						glasses:SetY(face:GetY())
+						glasses:MoveLeftOf(face, 5)
+						glasses:SetTitle(L("equip.glasses"))
+					end
+
 					local ears = client:GetInventory("ears"):CreatePanel(parent)
 					ears:SetSlotSize(slot_size_small)
 					ears:Rebuild()
@@ -1224,20 +1231,12 @@ local buttons = {
 					ears:MoveRightOf(head, 5)
 					ears:SetTitle(L("tab_slot_ears"))
 
-					local arm = client:GetInventory("arm"):CreatePanel(parent)
-					arm:SetSlotSize(slot_size_small)
-					arm:Rebuild()
-					arm:SizeToContents()
-					arm:MoveBelow(head, 16)
-					arm:MoveLeftOf(torso, 5)
-					arm:SetTitle(L("tab_slot_shoulder"))
-					
 					local hands = client:GetInventory("hands"):CreatePanel(parent)
 					hands:SetSlotSize(slot_size_small)
 					hands:Rebuild()
 					hands:SizeToContents()
 					hands:MoveBelow(head, 16)
-					hands:MoveLeftOf(arm, 5)
+					hands:MoveLeftOf(vest or torso, 5)
 					hands:SetTitle(L("tab_slot_hands"))
 
 					local cid = client:GetInventory("cid"):CreatePanel(parent)
@@ -1255,6 +1254,19 @@ local buttons = {
 					radio:MoveBelow(torso, 16)
 					radio:MoveLeftOf(legs, 5)
 					radio:SetTitle(L("tab_radio"))
+
+					-- «Защита ног» — под «Руками», в один ряд с «Рацией».
+					local legProtectionInventory = client:GetInventory("legprotection")
+
+					if legProtectionInventory then
+						local legprotection = legProtectionInventory:CreatePanel(parent)
+						legprotection:SetSlotSize(slot_size_small)
+						legprotection:Rebuild()
+						legprotection:SizeToContents()
+						legprotection:SetY(radio:GetY())
+						legprotection:MoveLeftOf(radio, 5)
+						legprotection:SetTitle(L("equip.legprotection"))
+					end
 
 					local backpack = client:GetInventory("backpack"):CreatePanel(parent)
 					backpack:SetSlotSize(slot_size)
@@ -1536,6 +1548,20 @@ function PANEL:Init()
 			RememberCursorPosition()
 
 			local pos, ang = ix.Item:GetDropAngles()
+
+				-- GetDropAngles возвращает nil, если превью-модель невалидна ИЛИ ещё не
+				-- отрисовалась (быстрый drag→drop, плохая модель предмета). Тогда WriteVector(nil)
+				-- падает УЖЕ ПОСЛЕ net.Start и оставляет 'item.drop' наполовину открытым — после
+				-- чего движок отбрасывает ЛЮБОЕ следующее net-сообщение (в т.ч. чужие: ixTypeClass
+				-- при наборе в чат). Подстраховываемся направлением взгляда: сервер и так трассирует
+				-- от GetShootPos() вдоль этого вектора.
+				if (not isvector(pos)) then
+					pos = LocalPlayer():GetAimVector()
+				end
+
+				if (not isangle(ang)) then
+					ang = pos:Angle()
+				end
 
 			net.Start('item.drop')
 				net.WriteUInt(dropped_itemID, 32)

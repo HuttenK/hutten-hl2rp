@@ -23,31 +23,108 @@ local function OrderBox(a, b)
 	       Vector(math.max(a.x, b.x), math.max(a.y, b.y), math.max(a.z, b.z))
 end
 
+-- Комбайновские силовые поля внутри зоны. При обесточивании поле гаснет и
+-- становится проходимым — как в режиме 3 (выключено), но НЕ трогая настроенный
+-- админом режим: он восстанавливается вместе с питанием.
+function PLUGIN:SetZoneForcefields(zone, bOn)
+	for _, ff in ipairs(ents.FindByClass("ix_forcefield")) do
+		if (!ff:GetPos():WithinAABox(zone.min, zone.max)) then continue end
+
+		if (!bOn) then
+			-- Уже обесточено — второй раз не выключаем (и не помним "off" как исходное).
+			if (ff.ixBlackoutOff) then continue end
+
+			ff.ixBlackoutOff = true
+			ff.ixBlackoutWasOn = ff.on
+
+			if (ff.on) then
+				ff.on = false
+				ff:SetSkin(1)
+				if (IsValid(ff.post)) then ff.post:SetSkin(1) end
+				ff:SetCollisionGroup(COLLISION_GROUP_WORLD)
+				ff:EmitSound("shield/deactivate.wav")
+			end
+		elseif (ff.ixBlackoutOff) then
+			ff.ixBlackoutOff = nil
+
+			-- Поле, выключенное админом до блэкаута, остаётся выключенным.
+			if (ff.ixBlackoutWasOn) then
+				ff.on = true
+				ff:SetSkin(0)
+				if (IsValid(ff.post)) then ff.post:SetSkin(0) end
+				ff:SetCollisionGroup(COLLISION_GROUP_NONE)
+				ff:EmitSound("shield/activate.wav")
+			end
+
+			ff.ixBlackoutWasOn = nil
+		end
+	end
+end
+
 -- Turn switchable lights inside a zone off (bOn = false) or on (bOn = true).
+-- Заодно это единственная точка переключения питания зоны: сюда же повешены
+-- силовые поля, чтобы не дублировать вызовы по всем местам смены состояния.
 function PLUGIN:SetZoneLights(zone, bOn)
 	for _, e in ipairs(ents.FindInBox(zone.min, zone.max)) do
 		if LIGHT_CLASSES[e:GetClass()] then
 			e:Fire(bOn and "TurnOn" or "TurnOff")
 		end
 	end
+
+	self:SetZoneForcefields(zone, bOn)
 end
 
 --
 -- Circuit box (fusebox) repair system.
 --
 
--- True if the point sits inside any ACTIVE (blacked-out) zone.
-function PLUGIN:IsPosBlackedOut(pos)
-	for _, z in pairs(self.zones) do
-		if (z.active and pos:WithinAABox(z.min, z.max)) then
-			return true
-		end
+-- IsPosBlackedOut / IsEntityBlackedOut объявлены в sh_plugin.lua: клиенту они
+-- нужны для гашения экранов терминалов и телевизоров.
+
+-- Обесточенное оборудование не реагирует на E. Серверная проверка — основная:
+-- клиентские подавления меню лишь убирают лишний интерфейс.
+function PLUGIN:PlayerUse(client, entity)
+	-- Замок обесточивается сам по себе (см. ENT:Toggle) — здесь дверь НЕ подменяем на
+	-- замок: иначе незапертую дверь с замком нельзя было бы открыть в темноте. Сама
+	-- дверь не «питается», поэтому её использование блэкаут не трогает.
+	if (!self:IsEntityBlackedOut(entity)) then return end
+
+	-- E удерживают — уведомление не должно сыпаться каждый кадр.
+	if ((client.ixBlackoutNotify or 0) < CurTime()) then
+		client.ixBlackoutNotify = CurTime() + 2
+		client:NotifyLocalized("blackout.noPower")
 	end
 
 	return false
 end
 
--- Все валидные щитки внутри зоны (заодно чистим невалидные ссылки).
+local function BoxVolume(zone)
+	local size = zone.max - zone.min
+
+	return size.x * size.y * size.z
+end
+
+-- Зоны вкладываются друг в друга: общегородская накрывает поздания, у каждого из
+-- которых своя. Точка принадлежит САМОЙ ТЕСНОЙ зоне, которая её содержит — так
+-- щиток внутри дома управляет только домом, а не городом заодно.
+function PLUGIN:GetOwningZone(pos)
+	local best, bestVolume
+
+	for _, z in pairs(self.zones) do
+		if (!pos:WithinAABox(z.min, z.max)) then continue end
+
+		local volume = BoxVolume(z)
+
+		if (!bestVolume or volume < bestVolume) then
+			best, bestVolume = z, volume
+		end
+	end
+
+	return best
+end
+
+-- Валидные щитки, ПРИНАДЛЕЖАЩИЕ зоне (заодно чистим невалидные ссылки).
+-- Щиток внутри вложенной зоны сюда не попадает — он принадлежит ей, а не этой.
 function PLUGIN:BoxesInZone(zone)
 	local t = {}
 
@@ -56,7 +133,7 @@ function PLUGIN:BoxesInZone(zone)
 
 		if (!IsValid(box)) then
 			table.remove(self.fuseboxes, i)
-		elseif (box:GetPos():WithinAABox(zone.min, zone.max)) then
+		elseif (self:GetOwningZone(box:GetPos()) == zone) then
 			t[#t + 1] = box
 		end
 	end
@@ -235,7 +312,11 @@ function PLUGIN:TryRepair(client, box)
 			self:RecomputeZones()
 			self:SaveFuseboxes()
 
-			if (self:IsPosBlackedOut(box:GetPos())) then
+			-- Судим по СВОЕЙ зоне щитка: под общегородским блэкаутом IsPosBlackedOut
+			-- всегда true, и починка последнего щитка в доме врала бы про «остались».
+			local zone = self:GetOwningZone(box:GetPos())
+
+			if (zone and zone.active) then
 				client:Notify("Электрощит починен, но в зоне остались повреждённые щитки.")
 			else
 				client:Notify("Электрощит починен. Свет снова включён.")
@@ -273,7 +354,9 @@ function PLUGIN:ApplyBreak(client, box, xp)
 	self:RecomputeZones()
 	self:SaveFuseboxes()
 
-	if (self:IsPosBlackedOut(box:GetPos())) then
+	local zone = self:GetOwningZone(box:GetPos())
+
+	if (zone and zone.active) then
 		client:Notify("Электрощит выведен из строя. Электричество отключено.")
 	else
 		client:Notify("Электрощит выведен из строя. В зоне ещё остались рабочие щитки.")
@@ -393,9 +476,12 @@ function PLUGIN:SpawnFusebox(pos, ang, broken, bNoSave)
 
 	self.fuseboxes[#self.fuseboxes + 1] = box
 
-	-- Свежая установка: состояние берём по текущей темноте зоны. Загрузка из сейва:
-	-- восстанавливаем сохранённое состояние щитка.
-	if (broken == nil) then broken = self:IsPosBlackedOut(pos) end
+	-- Свежая установка: состояние берём по СВОЕЙ зоне щитка (самой тесной из тех,
+	-- что его накрывают). Загрузка из сейва: восстанавливаем сохранённое состояние.
+	if (broken == nil) then
+		local zone = self:GetOwningZone(pos)
+		broken = (zone != nil and zone.active) or false
+	end
 	box:SetBroken(broken)
 	box.ixLastSavePos = box:GetPos()
 
@@ -590,7 +676,9 @@ function PLUGIN:CreateZone(client, name, height)
 		return "A blackout zone named '" .. name .. "' already exists."
 	end
 
-	height = math.max(tonumber(height) or 512, 0)
+	-- Коробка должна перекрывать самую высокую стену внутри зоны: там, где верхняя
+	-- грань режет стену, на ней остаётся горизонтальная полоса затемнения.
+	height = math.max(tonumber(height) or 1024, 0)
 
 	local mn, mx = OrderBox(s[1], s[2])
 	mn = mn - Vector(0, 0, 32)     -- small floor margin

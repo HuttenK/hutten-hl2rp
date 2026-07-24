@@ -36,6 +36,15 @@ net.Receive("cassette.record.response", function(len, client)
 	item:SetData("customName", newName  != "" and newName  or nil)
 	item:SetData("track",      newTrack != "" and newTrack or nil)
 
+	-- SetData only queues Helix's fire-and-forget Async_SaveData (a data-column
+	-- UPDATE). If that write doesn't commit before a restart — e.g. a non-graceful
+	-- shutdown, or the item's DB row not existing yet right after it was created —
+	-- the recorded track is lost and the cassette comes back blank/silent. Force a
+	-- full immediate row save so the data column (customName + track) is written now.
+	if item.Save then
+		item:Save()
+	end
+
 	local display = newName != "" and newName or "Без названия"
 	client:Notify("Кассета записана: " .. display)
 end)

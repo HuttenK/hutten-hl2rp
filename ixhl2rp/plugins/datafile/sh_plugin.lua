@@ -61,6 +61,14 @@ do
 	end
 
 	function COMMAND:OnRun(client, citizenid, regid)
+		-- Доступ к базе досье — только при наличии предмета КПК в инвентаре, как и
+		-- через сам КПК. Иначе /datafile был бы лазейкой в обход устройства.
+		local pda = ix.plugin.list["datafileterminal"]
+
+		if (IsValid(client) and (!pda or !pda:HasPDAItem(client))) then
+			return "У вас нет КПК для доступа к базе досье."
+		end
+
 		local query     = citizenid .. (isstring(regid) and (" " .. regid) or "")
 		local queryNorm = normCID(query)
 
@@ -308,6 +316,10 @@ if SERVER then
 	function CHAR:ReturnDatafilePermission()
 		local cid = self:GetPlayer():GetIDCard()
 		if !cid then return 0 end
+
+		-- Отозванная карта не даёт допуска. Проверяем ДО отката к доступу из шаблона:
+		-- у отозванной карты access очищен, и без этого шаблон вернул бы допуск снова.
+		if cid:GetData("revoked") then return 0 end
 
 		local accesses = cid:GetData("access", {})
 		local hasFlag = accesses["DATAFILE_ELEVATED"] or accesses["DATAFILE_FULL"]

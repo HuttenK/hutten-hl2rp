@@ -543,7 +543,9 @@ function PLUGIN:GetMeleeDamageDef(class)
 		for _, item in pairs(ix.Item.stored or {}) do
 			local info = item.Info
 
-			if item.class and istable(info) and istable(info.Damage) and info.Damage[1] then
+			-- info.Skill != "guns": огнестрел исключаем из ближнего реестра, иначе его Info.Damage
+			-- превратил бы пулю в slash. Огнестрел обрабатывается отдельно (см. Info.Damage ниже).
+			if item.class and istable(info) and info.Skill != "guns" and info.Skill != "impulse" and istable(info.Damage) and info.Damage[1] then
 				self.ixMeleeDamage[item.class] = {
 					min = info.Damage[1],
 					max = info.Damage[2] or info.Damage[1],
@@ -603,6 +605,25 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 	local inflictor = dmg:GetInflictor()
 	local client = dmg:GetAttacker()
 	local amount = dmg:GetDamage()
+
+	-- Огнестрел: игнорируем урон SWEP/ArcCW (включая модификаторы аттачментов) и берём урон
+	-- из item-файла оружия — Info.Damage = {min, max}, как это сделано для ближнего боя. Тип
+	-- урона (пуля/дробь/энергия) НЕ трогаем: он нужен ниже для isBuckshot/isEnergy и ран.
+	-- Оружие без Info.Damage остаётся на ArcCW-уроне (плавный переход, ничего не ломается).
+	-- Урон падения НЕ трогаем. Взрыв берём из item-файла ТОЛЬКО если в руках гранатомёт
+	-- (Info.Launcher) — иначе брошенная граната / чужой взрыв унаследовали бы урон
+	-- случайно зажатой в руках винтовки. Обычные пули/дробь/энергия работают как раньше.
+	if IsValid(client) and client:IsPlayer() and not dmg:IsDamageType(DMG_FALL) then
+		local activeWep = client:GetActiveWeapon()
+		local wepInfo = IsValid(activeWep) and activeWep.ixItem and activeWep.ixItem.Info
+
+		if istable(wepInfo) and (wepInfo.Skill == "guns" or wepInfo.Skill == "impulse")
+			and istable(wepInfo.Damage) and wepInfo.Damage[1]
+			and ((not dmg:IsExplosionDamage()) or wepInfo.Launcher) then
+			amount = math.random(wepInfo.Damage[1], wepInfo.Damage[2] or wepInfo.Damage[1])
+			dmg:SetDamage(amount)
+		end
+	end
 
 	local isAttackingMelee
 	local isAttackingFists
@@ -892,9 +913,10 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 	local head_hp = health:GetPartHealth(2)
 	local torso_hp = health:GetPartHealth(3)
 
-	if head_hp <= 0 then
-		target:SetCriticalState(true)
-	elseif torso_hp <= 0 and head_hp <= 0 then
+	-- Было `elseif torso_hp <= 0 and head_hp <= 0` — условие недостижимо (первый if уже
+	-- ловит head_hp<=0), поэтому уничтожение торса НИКОГДА не валило в критсостояние, и урон
+	-- по корпусу «убивал» только через кровопотерю (~11-14 попаданий). Теперь торс на 0 = криты.
+	if head_hp <= 0 or torso_hp <= 0 then
 		target:SetCriticalState(true)
 	end
 

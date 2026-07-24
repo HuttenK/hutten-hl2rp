@@ -248,7 +248,9 @@ do
 	end
 
 	function charMeta:GetSkill(key)
-		return self:GetSkills()[key][1] or 0
+		local skill = self:GetSkills()[key]
+
+		return skill and skill[1] or 0
 	end
 
 	function charMeta:GetSkillModified(key)

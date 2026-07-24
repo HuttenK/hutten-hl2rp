@@ -37,65 +37,141 @@ function playerMeta:CalculateAmmo(ammoType)
 			self:SetAmmo(0, k)
 		end
 
+		-- Полный пересчёт — начинаем трекер с нуля. Иначе ключи типов, предметов
+		-- которых уже нет (например от прошлого персонажа), остались бы в таблице
+		-- со СТАРЫМИ значениями при нулевом движковом запасе, и PlayerTick принял
+		-- бы эту разницу за расход.
+		self.ixAmmoTracker = {}
+
 		for aType, amount in pairs(totals) do
 			self:SetAmmo(amount, aType)
 			self.ixAmmoTracker[aType] = amount
 		end
+
+		-- Движковый запас теперь совпадает с инвентарём — сверку можно включать.
+		self.ixAmmoReady = true
 	end
 end
 
 if SERVER then
-	-- Constantly check if the engine ammo went down (which means the weapon consumed it)
+	-- Списывает diff патронов типа ammoName из предметов инвентаря.
+	local function ConsumeAmmoItems(client, ammoName, diff)
+		local inventory = client:GetInventory("main")
+		if not inventory then return end
+
+		for _, item in pairs(inventory:GetItems()) do
+			if item.ammo and item.ammo:lower() == ammoName then
+				local stack = (item.GetValue and item:GetValue()) or item:GetData("stack") or item.ammoAmount or 30
+
+				if stack > diff then
+					item:SetData("stack", stack - diff)
+					diff = 0
+					break
+				else
+					diff = diff - stack
+					item:Remove()
+				end
+			end
+		end
+	end
+
+	-- Типы патронов, которые может расходовать ЛЮБОЕ носимое сейчас оружие:
+	-- и primary, и secondary (подствольник ArcCW стреляет вторичным типом).
+	-- Возвращает { [имя типа] = ammoID }.
+	local function GetCarriedAmmoTypes(client)
+		local types = {}
+
+		for _, weapon in ipairs(client:GetWeapons()) do
+			if not IsValid(weapon) then continue end
+
+			for _, ammoID in ipairs({weapon:GetPrimaryAmmoType(), weapon:GetSecondaryAmmoType()}) do
+				if ammoID and ammoID > 0 then
+					local ammoName = game.GetAmmoName(ammoID)
+
+					if ammoName then
+						types[ammoName:lower()] = ammoID
+					end
+				end
+			end
+		end
+
+		return types
+	end
+
+	-- Сверяем ВСЕ типы патронов, а не только primary активного оружия.
+	--
+	-- Раньше здесь читался только weapon:GetPrimaryAmmoType(). Подствольный
+	-- гранатомёт ArcCW стреляет ВТОРИЧНЫМ типом патронов (у 40мм это
+	-- smg1_grenade), поэтому его выстрел никогда не списывал предмет: движковый
+	-- счётчик падал, а граната в инвентаре оставалась. Любой последующий вызов
+	-- CalculateAmmo (например выбросить и снова взять оружие — срабатывает
+	-- InventoryItemAdded/Removed) пересчитывал движковый запас ПО ИНВЕНТАРЮ и
+	-- возвращал потраченную гранату => бесконечные выстрелы.
+	--
+	-- КРИТИЧНО: списывать предметы можно ТОЛЬКО по тем типам, которые способно
+	-- расходовать носимое сейчас оружие. Снятие оружия (Item:Unequip ->
+	-- StripWeapon) обнуляет движковый запас, и без этой проверки падение
+	-- запаса до нуля выглядело бы как расход => удалялись ВСЕ патроны этого
+	-- типа из инвентаря. По «бесхозным» типам просто восстанавливаем движковый
+	-- счётчик из инвентаря (инвариант: движок == сумма предметов).
 	function PLUGIN:PlayerTick(client)
 		if not client:Alive() or not client:GetCharacter() then return end
 
+		-- Пока движковый запас не синхронизирован с инвентарём (загрузка/смена
+		-- персонажа), любая разница — это ещё не расход. Сверку не ведём.
+		if not client.ixAmmoReady then return end
+
 		client.ixAmmoTracker = client.ixAmmoTracker or {}
 
-		local weapon = client:GetActiveWeapon()
-		if IsValid(weapon) then
-			local primaryAmmo = weapon:GetPrimaryAmmoType()
-			if primaryAmmo > 0 then
-				local ammoName = game.GetAmmoName(primaryAmmo)
-				if not ammoName then return end
-				ammoName = ammoName:lower()
+		local carried = GetCarriedAmmoTypes(client)
 
-				local currentAmmo = client:GetAmmoCount(primaryAmmo)
-				local trackedAmmo = client.ixAmmoTracker[ammoName] or 0
-				
-				-- The player used ammo (e.g. reloaded or fired)
+		-- Типы носимого оружия проверяем ДАЖЕ если предметов этого типа нет:
+		-- иначе выданный движком вместе с оружием запас (в т.ч. подствольные
+		-- гранаты) не будет срезан и даст бесплатные выстрелы. Ноль в трекере —
+		-- ветка "прибавились" сама срежет излишек.
+		for ammoName in pairs(carried) do
+			client.ixAmmoTracker[ammoName] = client.ixAmmoTracker[ammoName] or 0
+		end
+
+		for ammoName, trackedAmmo in pairs(client.ixAmmoTracker) do
+			local ammoID = carried[ammoName] or game.GetAmmoID(ammoName)
+
+			if ammoID and ammoID > 0 then
+				local currentAmmo = client:GetAmmoCount(ammoID)
+
 				if currentAmmo < trackedAmmo then
-					local diff = trackedAmmo - currentAmmo
-					local inventory = client:GetInventory("main")
-					
-					if inventory then
-						for _, item in pairs(inventory:GetItems()) do
-							if item.ammo and item.ammo:lower() == ammoName then
-								local stack = (item.GetValue and item:GetValue()) or item:GetData("stack") or item.ammoAmount or 30
-								if stack > diff then
-									item:SetData("stack", stack - diff)
-									diff = 0
-									break
-								else
-									diff = diff - stack
-									item:Remove()
-								end
-							end
-						end
-					end
-					
-					-- Update the tracker
-					client.ixAmmoTracker[ammoName] = currentAmmo
+					if carried[ammoName] then
+						-- Оружие этого типа в руках — значит патроны реально
+						-- потрачены (выстрел или перезарядка), списываем предметы.
+						ConsumeAmmoItems(client, ammoName, trackedAmmo - currentAmmo)
 
-				-- Ammo somehow increased (gave ammo via engine weapon spawn). 
-				-- Strip the excess to stay synced with the inventory items!
+						client.ixAmmoTracker[ammoName] = currentAmmo
+					else
+						-- Оружия этого типа нет: запас обнулил StripWeapon при
+						-- снятии, а не выстрел. Предметы НЕ трогаем — возвращаем
+						-- движковый счётчик к сумме предметов.
+						client:SetAmmo(trackedAmmo, ammoID)
+					end
+
+				-- Патроны откуда-то прибавились (движок выдал их вместе с оружием) —
+				-- срезаем излишек, чтобы движковый запас совпадал с инвентарём.
 				elseif currentAmmo > trackedAmmo then
-					client:SetAmmo(trackedAmmo, primaryAmmo)
+					client:SetAmmo(trackedAmmo, ammoID)
 				end
 			end
 		end
 	end
 
 	function PLUGIN:PlayerLoadedCharacter(client, character, currentChar)
+		-- Трекер принадлежит ИГРОКУ, а не персонажу, поэтому при смене персонажа он
+		-- ещё хранит счётчики предыдущего. Оружие нового персонажа экипируется сразу
+		-- (значит проверка "оружие в руках" пропускает списание), а движковый запас
+		-- ещё нулевой — PlayerTick принял бы разницу за расход и вычистил бы патроны
+		-- НОВОГО персонажа. Сбрасываем трекер и глушим сверку до первого полного
+		-- CalculateAmmo (он в таймере ниже и включит ixAmmoReady обратно).
+		client.ixAmmoTracker = {}
+		client.ixAmmoReady = false
+
 		timer.Simple(0.5, function()
 			if IsValid(client) then
 				client:CalculateAmmo()
