@@ -10,7 +10,7 @@ local OPTION_HEIGHT = ix.UI.Scale(22)
 
 do
 	surface.CreateFont('simple.option.button', {
-		font = 'Blender Pro Bold',
+		font = "Tahoma",
 		extended = true,
 		size = ix.UI.Scale(16),
 		weight = 500,

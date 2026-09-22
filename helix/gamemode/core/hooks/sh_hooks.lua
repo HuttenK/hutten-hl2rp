@@ -45,6 +45,13 @@ function GM:TranslateActivity(client, act)
 	local bRaised = client:IsWepRaised()
 
 	clientInfo.CalcSeqOverride2 = nil
+	local arc9Activity = ix.anim.GetARC9NativeActivity and
+		ix.anim.GetARC9NativeActivity(client, client:GetActiveWeapon(), act)
+	if arc9Activity then
+		-- Do not let the model's legacy Cellar/NPC sequence override this stance.
+		clientInfo.CalcSeqOverride = -1
+		return arc9Activity
+	end
 
 	if (modelClass == "player") then
 		local weapon = client:GetActiveWeapon()
@@ -66,10 +73,12 @@ function GM:TranslateActivity(client, act)
 				end
 			end
 
-			local holdType = weapon and (weapon.HoldType or weapon:GetHoldType()) or "normal"
+			local holdType = ix.anim.GetWeaponHoldType(client, weapon)
 
 			if (!bAlwaysRaised and weapon and !bRaised and client:OnGround()) then
-				holdType = PLAYER_HOLDTYPE_TRANSLATOR[holdType] or "passive"
+				if not weapon.ARC9 then
+					holdType = PLAYER_HOLDTYPE_TRANSLATOR[holdType] or "passive"
+				end
 			end
 
 			local tree = ix.anim.player[holdType]
@@ -149,6 +158,9 @@ end
 
 function GM:DoAnimationEvent(client, event, data)
 	local class = client.ixAnimModelClass
+	if ix.anim.CanUseARC9NativePose and ix.anim.CanUseARC9NativePose(client, client:GetActiveWeapon()) then
+		class = "player"
+	end
 
 	if (class == "player") then
 		return self.BaseClass:DoAnimationEvent(client, event, data)
@@ -168,7 +180,7 @@ function GM:DoAnimationEvent(client, event, data)
 			end
 
 			-- ixAnimTable can be nil when the active weapon uses a holdtype the
-			-- player model's anim class doesn't define (e.g. some Woowz Melee
+			-- player model's anim class doesn't define (e.g. some melee
 			-- weapons / dynamic holdtype swaps). Fall back to an empty table so the
 			-- attack/reload gesture lookups below use their defaults instead of
 			-- erroring on a nil index.
@@ -233,8 +245,7 @@ local function UpdatePlayerHoldType(client, weapon)
 		local class = weapon:GetClass()
 		local baseTable = ix.anim[client.ixAnimModelClass] or {}
 
-		holdType = weapon.HoldType or weapon:GetHoldType()
-		holdType = HOLDTYPE_TRANSLATOR[holdType] or holdType
+		holdType = ix.anim.GetWeaponAnimationHoldType(client, weapon)
 
 
 		if baseTable and baseTable[class] then
@@ -257,7 +268,7 @@ local function UpdateAnimationTable(client, vehicle)
 			client.ixAnimTable = baseTable.normal[ACT_MP_CROUCH_IDLE]
 		end
 	else
-		client.ixAnimTable = baseTable[client.ixAnimHoldType]
+		client.ixAnimTable = baseTable[client.ixAnimHoldType] or baseTable.normal
 	end
 
 	client.ixAnimGlide = baseTable["glide"]
@@ -316,8 +327,10 @@ function GM:PlayerSwitchWeapon(client, oldWeapon, weapon)
 end
 
 function GM:PlayerModelChanged(client, model)
-	client.ixAnimModelClass = ix.anim.GetModelClass(model)
-
+	if not IsValid(client) then return end
+	client.ixAnimModelClass = ix.anim.GetModelClass(model, client)
+	client.ixAnimResolvedModel = client:GetModel() == model and client:GetSequenceCount() > 1 and model or nil
+	UpdatePlayerHoldType(client)
 	UpdateAnimationTable(client)
 end
 
@@ -327,7 +340,17 @@ do
 
 	function GM:CalcMainActivity(client, velocity)
 		local clientInfo = client:GetTable()
+		if clientInfo.ixAnimResolvedModel ~= client:GetModel() then
+			self:PlayerModelChanged(client, client:GetModel())
+		end
 		local forcedSequence = client:GetNetVar("forcedSequence")
+		local weapon = client:GetActiveWeapon()
+		if IsValid(weapon) and weapon.ARC9 and not client:InVehicle() then
+			-- ADS, sprint and safety can change without switching weapons.
+			local previous = clientInfo.ixAnimHoldType
+			UpdatePlayerHoldType(client, weapon)
+			if previous ~= clientInfo.ixAnimHoldType then UpdateAnimationTable(client) end
+		end
 
 		if (forcedSequence) then
 			if (client:GetSequence() != forcedSequence) then

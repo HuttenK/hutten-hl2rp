@@ -2,6 +2,7 @@ do
 	local mat = Material("debug/debugdrawflat")
 	local preview = false
 	local mdl = NULL
+	local previewItem
 	local angle = Angle()
 
 	local trace
@@ -46,9 +47,13 @@ do
 
 		mdl:SetPos(trace.HitPos + Vector(0,0, math.abs(mins.z)))
 		mdl.normal = trace.Normal
-		mdl:DrawModel()
+		if not (ix.WeaponAssembly and ix.WeaponAssembly.DrawItem(mdl, previewItem, mdl:GetPos(), angle)) then
+			mdl:DrawModel()
+		end
 
 		render.MaterialOverride(nil)
+		render.SetBlend(1)
+		render.SetColorModulation(1, 1, 1)
 	end
 
 	function ix.Item:GetDropAngles()
@@ -70,6 +75,7 @@ do
 	function ix.Item:DropPreview(enable, item)
 		if enable and !preview then
 			preview = true
+			previewItem = item
 
 			mdl = ClientsideModel(item.model, RENDERGROUP_OPAQUE)
 			mdl:SetNoDraw(true)
@@ -79,6 +85,8 @@ do
 			hook.Add('PostDrawTranslucentRenderables', 'item.preview', PostDrawTranslucentRenderables)
 		elseif !enable and preview then
 			preview = false
+			previewItem = nil
+			if ix.WeaponAssembly then ix.WeaponAssembly.Remove(mdl) end
 
 			mdl:Remove()
 		end

@@ -170,6 +170,12 @@ function GM:KeyPress(client, key)
 		local entity = util.TraceLine(data).Entity
 
 		if (IsValid(entity) and hook.Run("PlayerUse", client, entity)) then
+			-- Assembled ARC9 items use a custom hull instead of the viewmodel's
+			-- collision mesh. Start the usual hold interaction from our trace;
+			-- Source's native use search does not reliably select these models.
+			if entity:GetClass() == "ix_item" and entity.ixAssemblyHull then
+				entity:Use(client, client)
+			end
 			if (entity:IsDoor()) then
 				local result = hook.Run("CanPlayerUseDoor", client, entity)
 

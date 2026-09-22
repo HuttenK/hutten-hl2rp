@@ -74,4 +74,6 @@ local function DrawFlare()
 	CenteredSprite(mulW(sunpos.x,-1.5),mulH(sunpos.y,-1.5),rSz*1.9)
 end
 
-hook.Add("RenderScreenspaceEffects", "autonomous.lensflare", DrawFlare)
+hook.Add("RenderScreenspaceEffects", "autonomous.lensflare", function()
+ if ix.CinematicFX and ix.CinematicFX.Visible() and ix.option.Get("cinematicLens",false) then DrawFlare() end
+end)

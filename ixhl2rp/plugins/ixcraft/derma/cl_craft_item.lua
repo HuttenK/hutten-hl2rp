@@ -3,7 +3,7 @@ local scale = ix.UI.Scale
 
 function PANEL:Init()
 	local recipeData = self:GetParent().recipeData
-	self:SetSize(self:GetParent().first:GetWide() - scale(40), scale(20 ))
+	self:SetSize(self:GetParent().first:GetWide() - scale(40), scale(56))
 	self:Dock(TOP)
 	self.recipe = recipeData.recipe
 
@@ -18,34 +18,24 @@ function PANEL:Init()
 	self.recipeButton:SetContentAlignment(4)
 
 	if recipeData.recipe.category then
-		self.recipeButton:SetTextInset(scale(61), 0)
+		self.recipeButton:SetTextInset(scale(18), 0)
 	else
-		self.recipeButton:SetTextInset(scale(41), 0)
+		self.recipeButton:SetTextInset(scale(18), 0)
 	end
 
-	self.recipeButton:SetFont("ui.craft.large")
-	self.recipeButton:SetText(self.recipe:GetName())
-	self.recipeButton:SetSize(self:GetParent().first:GetWide(), scale(20))
+	self.recipeButton:SetFont("legends.Body")
+	self.recipeButton:SetText("")
+	self.recipeButton:Dock(FILL)
 	self.recipeButton.OnCursorEntered = function()
 		surface.PlaySound("helix/ui/rollover.wav")
 	end
-	self.recipeButton.Paint = function(panel, w, h)
-		if panel:IsHovered() then
-			panel:SetTextColor(panel:GetParent():GetColor())
-
-			if !self.recipe.noIngredients then
-				surface.SetDrawColor(ColorAlpha(color_white, 22))
-				surface.DrawRect(0, 0, panel:GetWide(), h)
-			end
-		end
-
-		if ix.gui.currentCraft and self.recipe.uniqueID == ix.gui.currentCraft then
-			render.OverrideBlend(true, 4, 1, BLENDFUNC_ADD, 4, 1, BLENDFUNC_ADD)
-				surface.SetDrawColor(ColorAlpha(panel:GetParent():GetColor(), 72))
-				surface.DrawRect(0, 0, w, h)
-			render.OverrideBlend(false)
-		end 
-	end
+	self.recipeButton.Paint = function(panel,w,h)
+  local U=ix.Legends
+  local selected=ix.gui.currentCraft==self.recipe.uniqueID
+  U.ButtonFace(panel,w,h,false,selected)
+  U.Text(ix.Civic.Fit(self.recipe:GetName(),"Body",math.max(1,w-scale(38))),"Body",scale(18),scale(7),self:GetColor())
+ end
+ self:DockMargin(0,0,0,scale(6))
 
 	local character = LocalPlayer():GetCharacter()
 
@@ -60,7 +50,7 @@ function PANEL:Init()
 		local result = self.recipe.xp or 0
 
 		self.experienceText = self:Add("DLabel")
-		self.experienceText:SetFont("ui.craft.xp")
+		self.experienceText:SetFont("legends.Mono")
 		self.experienceText:SetText(result.." XP")
 		self.experienceText:SizeToContents()
 		self.experienceText:SetPos(self:GetWide() - self.experienceText:GetWide() - 15, self:GetTall() * 0.5 - self.experienceText:GetTall() * 0.5)
@@ -68,7 +58,7 @@ function PANEL:Init()
 
 	if skillLevel > character:GetSkillModified(skillName) then
 		self.levelRequirement = self:Add("DLabel")
-		self.levelRequirement:SetFont("ui.craft.xp")
+		self.levelRequirement:SetFont("legends.Mono")
 		self.levelRequirement:SetText(skillLevel.." "..L("craftLevelShort"))
 		self.levelRequirement:SizeToContents()
 		self.levelRequirement:SetPos(self:GetWide() - self.levelRequirement:GetWide() - 15, self:GetTall() * 0.5 - self.levelRequirement:GetTall() * 0.5)
@@ -106,6 +96,8 @@ function PANEL:SetupCraft()
 	ix.gui.currentCraft = self.recipe.uniqueID
 	local parent = ix.gui.craftFrame
 	if not parent or not IsValid(parent.itemIcon) then return end -- craftFrame not ready
+ if IsValid(parent.emptyHint) then parent.emptyHint:SetVisible(false) end
+	if IsValid(parent.button) then parent.button:SetDisabled(false) end
 
 	-- Замыкания ниже вешаются на долгоживущие панели (parent.itemIcon), а сама
 	-- строка рецепта может быть удалена (например, при фильтрации поиском).
@@ -242,16 +234,16 @@ function PANEL:SetupCraft()
 				tools = tools .. itemName .. " "
 
 				local tools = parent.toolsPanel:Add("DLabel")
-				tools:SetFont("craft.item.value")
+				tools:SetFont("legends.Body")
 				tools:SetText(k > 1 and string.utf8lower(itemName) or itemName)
-				tools:SetTextColor(LocalPlayer():HasItem(data.uniqueID) and Color(255, 255, 255, 255) or Color(255, 72, 72, 255))
+				tools:SetTextColor(ix.Craft:HasTool(LocalPlayer(),data.uniqueID) and Color(255, 255, 255, 255) or Color(255, 72, 72, 255))
 				tools:Dock(LEFT)
 				tools:SizeToContents()
 				tools.tool = true
 
 				if #self.recipe.tools > 1 and k < #self.recipe.tools then
 					local tools = parent.toolsPanel:Add("DLabel")
-					tools:SetFont("craft.item.value")
+					tools:SetFont("legends.Body")
 					tools:SetText(", ")
 					tools:SetTextColor(color_white)
 					tools:Dock(LEFT)
@@ -345,9 +337,22 @@ function PANEL:SetupCraft()
 		end
 	end
 
-	parent.components:InvalidateLayout(true)
+	if IsValid(parent.requirementText) then parent.requirementText:Remove() end
+ local lines={}
+ local entries=self.recipe.isBreakdown and self.recipe.results or self.recipe.requirements
+ if istable(entries) then
+  for id,amount in SortedPairs(entries) do
+   local item=ix.Item:Get(id)
+   local count=istable(amount) and (tostring(amount[1]).."–"..tostring(amount[2])) or tostring(amount)
+   lines[#lines+1]=(item and L(item.name) or tostring(id)).."  × "..count
+  end
+ end
+ local label=parent.top:Add("DLabel"); label:Dock(TOP); label:DockMargin(scale(15),scale(16),scale(15),scale(16))
+ label:SetFont("legends.Body"); label:SetTextColor(ix.Legends.muted); label:SetWrap(true); label:SetAutoStretchVertical(true)
+ label:SetText(table.concat(lines,"\n")); parent.requirementText=label
+ parent.components:InvalidateLayout(true)
 	parent.top:InvalidateLayout(true)
-	parent.top:SizeToChildren(true, true)
+	parent.top:SizeToChildren(false, true)
 end
 
 local color_error = Color(255, 64, 64, 255)
@@ -367,10 +372,15 @@ function PANEL:GetColor()
 			return color_error
 		end
 
-		return skill_color
+		return ix.Legends.ink
 	end
 end
 
+function PANEL:PerformLayout(w,h)
+ for _,label in pairs({self.experienceText,self.levelRequirement}) do
+  if IsValid(label) then label:SetPos(scale(18),h-scale(22)) end
+ end
+end
 function PANEL:Paint() end
 
 function PANEL:Think()

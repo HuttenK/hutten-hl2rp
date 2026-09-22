@@ -6,7 +6,7 @@ RECIPE.requirements = {
 	box_of_nails = 3,
 }
 RECIPE.results = {
-	go_nade_frag = 1
+	selected_eft_m67 = 1
 }
 RECIPE.skill = {"crafting", 6}
 RECIPE.tools = {"tool_welding", "wm_screwdriver"}

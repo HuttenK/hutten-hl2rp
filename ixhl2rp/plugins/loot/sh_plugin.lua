@@ -12,14 +12,16 @@ ix.util.Include("sh_lootcontainer.class.lua")
 -- add or remove breaching tools; keys are item uniqueIDs.
 ix.loot = ix.loot or {}
 ix.loot.breachTools = {
-	wm_crowbar = true, -- Монтировка (canonical)
-	wm_fubar   = true, -- Фубар (лом/топор/кувалда в одном)
-	wm_fireaxe = true, -- Пожарный топор
-	wm_axe     = true, -- Топор
-	wm_sledge  = true, -- Кувалда
-	wm_pickaxe = true, -- Кирка
-	wm_ice_axe = true, -- Ледоруб
-	wm_hammer  = true, -- Молоток
+ selected_eft_melee_crowbar=true,
+ selected_eft_melee_hultafors=true,
+	selected_eft_melee_crowbar = true, -- Монтировка (canonical)
+	selected_eft_melee_crowbar   = true, -- Фубар (лом/топор/кувалда в одном)
+	selected_eft_melee_kukri = true, -- Пожарный топор
+	selected_eft_melee_kukri     = true, -- Топор
+	selected_eft_melee_hultafors  = true, -- Кувалда
+	selected_eft_melee_hultafors = true, -- Кирка
+	selected_eft_melee_kukri = true, -- Ледоруб
+	selected_eft_melee_hultafors  = true, -- Молоток
 }
 
 ix.util.Include("sh_definitions.lua")

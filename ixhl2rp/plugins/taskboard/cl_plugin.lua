@@ -27,6 +27,14 @@ PLUGIN.Colors = {
 -- ==== Кэш заданий ====
 netstream.Hook("taskboard.sync", function(tasks)
 	PLUGIN.tasks = istable(tasks) and tasks or {}
+	local active = {}
+	for _, task in ipairs(PLUGIN.tasks) do
+		if task.status == "taken" then active[task.id] = true end
+	end
+	for id in pairs(PLUGIN.details) do
+		if not active[id] then PLUGIN.details[id] = nil end
+	end
+	hook.Run("CivicTasksUpdated")
 
 	-- обновить открытые экраны терминалов «вживую»
 	for _, ent in ipairs(ents.FindByClass("ix_taskboard")) do
@@ -44,12 +52,24 @@ end)
 -- Детали приходят только тому, кто взял задание (ключ существует => мы исполнитель).
 netstream.Hook("taskboard.details", function(id, details)
 	PLUGIN.details[id] = details or ""
+	hook.Run("CivicTasksUpdated")
 end)
 
 -- Сброс деталей (мы отказались/закрыто) — убираем ключ.
 netstream.Hook("taskboard.cleardetails", function(id)
 	PLUGIN.details[id] = nil
+	hook.Run("CivicTasksUpdated")
 end)
+
+netstream.Hook("taskboard.resetdetails", function()
+	PLUGIN.details = {}
+	hook.Run("CivicTasksUpdated")
+end)
+
+function PLUGIN:CharacterLoaded(character)
+	PLUGIN.details = {}
+	hook.Run("CivicTasksUpdated")
+end
 
 function PLUGIN:GetTasks()
 	return self.tasks or {}

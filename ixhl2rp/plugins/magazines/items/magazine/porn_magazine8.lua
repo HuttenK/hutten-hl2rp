@@ -1,6 +1,6 @@
 ITEM.name = "item.porn_magazine8"
 ITEM.description = "item.porn_magazine8.desc"
-ITEM.model = "models/autonomous/books/magazineset01.mdl"
+ITEM.model = "models/props_lab/binderblue.mdl"
 ITEM.width = 2
 ITEM.height = 1
 ITEM.cost = 200

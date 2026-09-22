@@ -11,6 +11,6 @@ RECIPE.results = {
 	head_helmet_tier2 = 1
 }
 RECIPE.skill = {"tailoring", 5}
-RECIPE.tools = {"wm_hammer", "tool_welding"}
+RECIPE.tools = {"selected_eft_melee_hultafors", "tool_welding"}
 RECIPE.station = "station_tokar"
 RECIPE.xp = 150

@@ -1,4 +1,6 @@
 ix.Locale:Build("en")
+option.legendsAtmosphere = "Animated menu atmosphere"
+option.legendsAtmosphere.desc = "Moving clouds, rooftop smoke and sunlight in the character and TAB menus."
 
 
 helix								= "Helix"

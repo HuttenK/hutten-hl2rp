@@ -41,7 +41,7 @@ function GM:LoadFonts(font, genericFont)
 	})
 
 	surface.CreateFont("ixMenuButtonFont", {
-		font = "Blender Pro Book",
+		font = "Tahoma",
 		size = ix.UI.Scale(20),
 		extended = true,
 		weight = 500
@@ -272,7 +272,7 @@ function GM:LoadFonts(font, genericFont)
 	})
 
 	surface.CreateFont("autonomous.hud.lvl", {
-		font = "Blender Pro Bold",
+		font = "Tahoma",
 		extended = true,
 		size = ix.UI.Scale(28),
 		weight = 500,
@@ -282,7 +282,7 @@ function GM:LoadFonts(font, genericFont)
 	})
 
 	surface.CreateFont("autonomous.hud.lvltext", {
-		font = "Blender Pro Heavy",
+		font = "Tahoma",
 		extended = true,
 		size = ix.UI.Scale(12),
 		weight = 500,
@@ -292,14 +292,14 @@ function GM:LoadFonts(font, genericFont)
 	})
 
 	surface.CreateFont("item.contraband", {
-		font = "Blender Pro Bold",
+		font = "Tahoma",
 		size = math.max(ix.UI.Scale(15), 14),
 		extended = true,
 		weight = 500
 	})
 
 	surface.CreateFont("char.create.button", {
-		font = "Blender Pro Book",
+		font = "Tahoma",
 		extended = true,
 		size = ix.UI.Scale(30),
 		weight = 500,

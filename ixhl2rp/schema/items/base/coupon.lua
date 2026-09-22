@@ -1,6 +1,6 @@
 local Item = class("ItemCoupon"):implements("Item")
 
-Item.model = "models/autonomous/citizen_coupon.mdl"
+Item.model = "models/props_c17/paper01.mdl"
 Item.iconCam = {
 	pos = Vector(-2.3968870639801, -57.830913543701, 191.46466064453),
 	ang = Angle(73.127899169922, 89.893287658691, 0),

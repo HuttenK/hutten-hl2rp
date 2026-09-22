@@ -103,7 +103,7 @@ end
 
 net.Receive("ixActEnter", function()
 	PLUGIN.bIdle = net.ReadBool()
-	PLUGIN.forward = LocalPlayer():GetNetVar("actEnterAngle"):Forward()
+	PLUGIN.forward = (LocalPlayer():GetNetVar("actEnterAngle") or LocalPlayer():EyeAngles()):Forward()
 	PLUGIN.cameraTween = ix.tween.new(animationTime, PLUGIN, {
 		cameraFraction = 1
 	}, "outQuint")

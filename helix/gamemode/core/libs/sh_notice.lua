@@ -91,7 +91,9 @@ else
 			return
 		end
 
-		if (IsValid(ix.gui.notices)) then
+		if ix.GameplayHUD and ix.GameplayHUD.Enabled() then
+			ix.GameplayHUD.Notify(message)
+		elseif (IsValid(ix.gui.notices)) then
 			ix.gui.notices:AddNotice(message)
 		end
 

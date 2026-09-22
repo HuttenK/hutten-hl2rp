@@ -6,7 +6,7 @@ RECIPE.requirements = {
 	mat_oil = 1,
 }
 RECIPE.results = {
-	go_nade_molotov = 1
+	selected_eft_rgd5 = 1
 }
 RECIPE.skill = {"crafting", 3}
 RECIPE.xp = 50

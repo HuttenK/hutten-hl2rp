@@ -173,10 +173,10 @@ if SERVER then
 		if IsValid(client) and client:IsPlayer() then
 			local activeWeapon = tostring(client:GetActiveWeapon())
 
-			if string.find(activeWeapon, "tfa_nmrih_pickaxe") or string.find(activeWeapon, "wm_pickaxe") then
+			if string.find(activeWeapon, "tfa_nmrih_pickaxe") or string.find(activeWeapon, "arc9_eft_melee_hultafors") then
 				local activeWeapon = client:GetActiveWeapon()
 				local dmg = damageInfo:GetDamage()
-				local secDmg = (activeWeapon.Secondary and activeWeapon.Secondary.Damage) or math.huge
+				local secDmg = activeWeapon.Bash2Damage or (activeWeapon.Secondary and activeWeapon.Secondary.Damage) or math.huge
 				local isPower = dmg >= secDmg
 
 				self:EmitSound(self.BreakSounds[math.random(1, #self.BreakSounds)])

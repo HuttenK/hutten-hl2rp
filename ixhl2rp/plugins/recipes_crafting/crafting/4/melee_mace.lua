@@ -9,5 +9,5 @@ RECIPE.results = {
 	wm_mace = 1
 }
 RECIPE.skill = {"crafting", 4}
-RECIPE.tools = {"wm_hammer"}
+RECIPE.tools = {"selected_eft_melee_hultafors"}
 RECIPE.xp = 90

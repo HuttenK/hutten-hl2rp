@@ -352,6 +352,52 @@ ix.anim.fastZombie = {
 }
 
 local translations = {}
+ix.anim.modelOverrides = translations
+ix.anim.modelHints = {}
+
+-- Legacy compatibility hints do not override a model's actual capabilities.
+function ix.anim.SetModelClassHint(model, class)
+	ix.anim.modelHints[model:lower()] = class
+end
+
+-- Keep the animation stance aligned with weapons that change hold type at runtime.
+function ix.anim.GetWeaponHoldType(client, weapon)
+	if not IsValid(weapon) then return "normal" end
+	if weapon.ARC9 then
+		-- ARC9's static HoldType is only its starting stance (EFT uses rpg).
+		-- Helix lowering does not set ARC9's safety/sprint state.
+		if not client:IsWepRaised() and not ix.config.Get("weaponAlwaysRaised") then
+			return weapon.HoldTypeHolstered or weapon.HoldTypeSprint or "passive"
+		end
+		local current = weapon:GetHoldType()
+		if current and current ~= "" then return current end
+	end
+	return weapon.HoldType or weapon:GetHoldType() or "normal"
+end
+
+-- Model-specific substitutions must not change unrelated NPC/player rigs.
+function ix.anim.GetWeaponAnimationHoldType(client, weapon)
+	local modelClass = client.ixAnimModelClass or "player"
+	local holdType = ix.anim.GetWeaponHoldType(client, weapon)
+	local definition = ix.anim[modelClass] or {}
+	if ix.anim.ARC9NeedsPistolFallback and definition.pistol and ix.anim.ARC9NeedsPistolFallback(client, weapon) then
+		return "pistol"
+	end
+	-- NPC rigs have no multiplayer passive stance. Translating passive to normal
+	-- puts the gun in an empty, hanging hand; use their relaxed rifle pair instead.
+	if IsValid(weapon) and weapon.ARC9 and modelClass ~= "player" and
+		holdType == "passive" and definition.smg then
+		return "smg"
+	end
+	return ix.anim.ResolveHoldType(modelClass, holdType)
+end
+
+function ix.anim.ResolveHoldType(modelClass, holdType)
+	local definition = ix.anim[modelClass] or {}
+	local aliases = definition.holdTypeAliases
+	if aliases and aliases[holdType] then return aliases[holdType] end
+	return (HOLDTYPE_TRANSLATOR or {})[holdType] or holdType
+end
 
 --- Sets a model's animation class.
 -- @realm shared
@@ -373,9 +419,15 @@ end
 -- @treturn[2] nil If there was no animation associated with the given model
 -- @usage ix.anim.GetModelClass("models/police.mdl")
 -- > metrocop
-function ix.anim.GetModelClass(model)
+function ix.anim.GetModelClass(model, entity)
 	model = string.lower(model)
 	local class = translations[model]
+	if class then return class end
+	if ix.anim.DetectModelClass then
+		local detected = ix.anim.DetectModelClass(entity, model)
+		if detected then return detected end
+	end
+	class = ix.anim.modelHints[model]
 
 	if (!class and string.find(model, "/player")) then
 		return "player"
@@ -431,12 +483,25 @@ if (SERVER) then
 			return
 		end
 
-		sequence = self:LookupSequence(tostring(sequence))
+		local requested=tostring(sequence)
+		sequence = self:LookupSequence(requested)
+		local sharedPose
+		if (not sequence or sequence<0) and ix.sharedPoses then
+			sharedPose=ix.sharedPoses.Resolve(self,requested)
+			if sharedPose then sequence=sharedPose.base end
+		end
 
-		if (sequence and sequence > 0) then
+		if (sequence and sequence >= 0) then
+			if ix.sharedPoses then
+				if sharedPose then ix.sharedPoses.Begin(self,sharedPose) else ix.sharedPoses.Clear(self) end
+			end
 			time = time or self:SequenceDuration(sequence)
 
-			self.ixCouldShoot = self:GetNetVar("canShoot", false)
+			timer.Remove("ixSeq" .. self:EntIndex())
+			if self.ixSequenceMoveType == nil then
+				self.ixSequenceMoveType = self:GetMoveType()
+				self.ixCouldShoot = self:GetNetVar("canShoot", false)
+			end
 			self.ixSeqCallback = callback
 			self:SetCycle(0)
 			self:SetPlaybackRate(1)
@@ -470,6 +535,13 @@ if (SERVER) then
 	--- Forcefully stops this player's model from playing an animation that was started by `ForceSequence`.
 	-- @realm server
 	function playerMeta:LeaveSequence()
+		if self.ixSequenceLeaving then return end
+		if self:GetNetVar("forcedSequence") == nil and not self.ixUntimedSequence then return end
+		self.ixSequenceLeaving = true
+		if ix.sharedPoses then ix.sharedPoses.Clear(self) end
+		timer.Remove("ixSeq" .. self:EntIndex())
+		local callback = self.ixSeqCallback
+		self.ixSeqCallback = nil
 		hook.Run("PlayerLeaveSequence", self)
 
 		net.Start("ixSequenceReset")
@@ -478,12 +550,12 @@ if (SERVER) then
 
 		self:SetNetVar("canShoot", self.ixCouldShoot)
 		self:SetNetVar("forcedSequence", nil)
-		self:SetMoveType(MOVETYPE_WALK)
+		self:SetMoveType(self.ixSequenceMoveType or MOVETYPE_WALK)
+		self.ixSequenceMoveType = nil
 		self.ixCouldShoot = nil
 
-		if (self.ixSeqCallback) then
-			self:ixSeqCallback()
-		end
+		self.ixSequenceLeaving = nil
+		if callback then callback(self) end
 	end
 else
 	net.Receive("ixSequenceSet", function()

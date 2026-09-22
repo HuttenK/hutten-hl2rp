@@ -18,6 +18,7 @@ local RARITY_CLR2 = {
 }
 
 function PANEL:Paint(w, h)
+ if ix.Legends then ix.Legends.Plate(0,0,w,h,Color(16,11,16,235),ix.Legends.line); return end
 	surface.SetDrawColor(0, 34, 57, 255 * 0.75)
 	surface.DrawRect(0, 0, w, h)
 	

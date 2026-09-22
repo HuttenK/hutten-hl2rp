@@ -78,18 +78,21 @@ function UI:OpenMessage(title, text, btnText, callback)
 end
 
 do
-	local vignette = Material("effects/shaders/autonomous_vignette")
-
-	local outerPos = 0.9
-	local innerPos = 0.5
-
-	function UI:DrawMainVignette()
-		render.UpdateScreenEffectTexture()
-		vignette:SetFloat("$c0_x", outerPos)
-		vignette:SetFloat("$c0_y", innerPos)
-		render.SetMaterial(vignette)
-		render.DrawScreenQuad()
-	end
+ -- Material also returns load time; parenthesize the final call to keep it out of the array.
+local gradients={Material("vgui/gradient-l"),Material("vgui/gradient-r"),Material("vgui/gradient-u"),(Material("vgui/gradient-d"))}
+ function UI:DrawMainVignette()
+  local w,h=ScrW(),ScrH()
+  cam.Start2D()
+  surface.SetDrawColor(0,0,0,150)
+  for i,mat in ipairs(gradients) do
+   surface.SetMaterial(mat)
+   if i==1 then surface.DrawTexturedRect(0,0,w*0.25,h)
+   elseif i==2 then surface.DrawTexturedRect(w*0.75,0,w*0.25,h)
+   elseif i==3 then surface.DrawTexturedRect(0,0,w,h*0.2)
+   else surface.DrawTexturedRect(0,h*0.8,w,h*0.2) end
+  end
+  cam.End2D()
+ end
 end
 
 do
@@ -130,6 +133,7 @@ do
 				end
 			end
 
+			hook.Run("SDDClassApply", ent)
 			self:DrawModel()
 
 			render.SuppressEngineLighting(false)

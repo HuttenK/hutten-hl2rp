@@ -24,11 +24,29 @@ function Item:All() return self.stored end
 function Item:Instances() return self.instances end
 function Item:InstanceCount() return self.instance_count end
 function Item:Ents() return self.entities end
-function Item:Get(uniqueID) return self.stored[uniqueID] end
+function Item:ResolveID(uniqueID) return (self.legacyIDs or {})[uniqueID] or uniqueID end
+function Item:Get(uniqueID) return self.stored[self:ResolveID(uniqueID)] end
+
+-- Only retired IDs migrate; canonical saved weapons retain their attachments and magazines.
+function Item:MigrateLegacyRow(row, data)
+ local resolvedID = self:ResolveID(row.unique_id)
+ if resolvedID == row.unique_id then return data end
+ data = istable(data) and table.Copy(data) or {}
+ data.equip = false
+ data.ammo, data.ammo2 = 0, 0
+ data.arc9_atts, data.attachments, data.arc9Spent = nil, nil, nil
+ local migration = mysql:Update("ix_items")
+ migration:Update("unique_id", resolvedID)
+ migration:Update("data", util.TableToJSON(data))
+ migration:Where("item_id", tonumber(row.item_id))
+ migration:Execute()
+ row.unique_id = resolvedID
+ return data
+end
 
 function Item:Register(uniqueID, item)
 	if !item then return end
-	
+
 	if !uniqueID then
 		ErrorNoHalt("[Helix] Attempt to register an item without a valid ID!\n")
 		return
@@ -40,7 +58,9 @@ function Item:Register(uniqueID, item)
 	item.functions_bits = net.ChooseOptimalBits(max)
 
 	local i = 0
-	for key, action in pairs(item.functions) do
+	-- These indexes cross the network. Hash traversal order can differ between
+	-- client and server, making an Equip click invoke a different action.
+	for key, action in SortedPairs(item.functions) do
 		i = i + 1
 
 		action.index = i
@@ -54,7 +74,7 @@ function Item:Register(uniqueID, item)
 		item.combine_bits = net.ChooseOptimalBits(max)
 
 		local i = 0
-		for key, action in pairs(item.combine) do
+		for key, action in SortedPairs(item.combine) do
 			i = i + 1
 
 			action.index = i
@@ -71,12 +91,12 @@ function Item:Load(path, uniqueID, baseID)
 	if prefix == "sh_" then
 		uniqueID = uniqueID:sub(4)
 	end
-	
+
 	if uniqueID:sub(1, 1) == "!" then
 		ix.util.Include(path, "shared")
 		return
 	end
-	
+
 	uniqueID = uniqueID:sub(1, #uniqueID - 4)
 
 	ITEM = ix.meta.Item:New(uniqueID)
@@ -95,7 +115,7 @@ function Item:LoadBase(path, uniqueID)
 	uniqueID = uniqueID:sub(1, #uniqueID - 4)
 
 	local ITEM = ix.util.Include(path, "shared")
-	
+
 	if !ITEM then
 		ErrorNoHalt("[Helix] Attempt to register an invalid base! path=" .. tostring(path) .. " (" .. (uniqueID or "nil") .. ")\n")
 		return
@@ -110,7 +130,7 @@ function Item:LoadFromDir(directory)
 	local files, folders = file.Find(directory.."/base/*", "LUA")
 
 	for _, v in ipairs(files) do
-		self:LoadBase(directory.."/base/"..v, v)
+		if string.GetExtensionFromFilename(v) == "lua" then self:LoadBase(directory.."/base/"..v, v) end
 	end
 
 	files, folders = file.Find(directory.."/*", "LUA")
@@ -126,11 +146,12 @@ function Item:LoadFromDir(directory)
 	end
 
 	for _, v in ipairs(files) do
-		self:Load(directory.."/"..v, v)
+		if string.GetExtensionFromFilename(v) == "lua" then self:Load(directory.."/"..v, v) end
 	end
 end
 
 function Item:New(uniqueID, forcedID)
+	uniqueID = self:ResolveID(uniqueID)
 	if self.instances[forcedID] and self.instances[forcedID].uniqueID == uniqueID then
 		return self.instances[forcedID]
 	end
@@ -172,7 +193,7 @@ if SERVER then
 			if self.instances[itemID] then
 				self.instances[itemID]:Save()
 			end
-			
+
 			count = count + 1
 		end
 
@@ -214,11 +235,11 @@ if SERVER then
 		local handle = coroutine.create(threadsave)
     	coroutine.resume(handle)
 	end
-	
+
 	function Item:SyncAll(client)
 		for itemID, entity in pairs(self.entities) do
 			if !IsValid(entity) then continue end
-			
+
 			self.instances[itemID]:Sync(client)
 		end
 	end
@@ -239,7 +260,7 @@ if SERVER then
 				return
 			end
 		end
-		
+
 		local query = mysql:Select("ix_items")
 			query:Select("item_id")
 			query:Select("unique_id")
@@ -262,6 +283,9 @@ if SERVER then
 						local x, y = tonumber(item.x), tonumber(item.y)
 						local itemID = tonumber(item.item_id)
 						local data = util.JSONToTable(item.data or "[]")
+                        data = self:MigrateLegacyRow(item, data)
+
+
 						local characterID, playerID = tonumber(item.character_id), tostring(item.player_id)
 
 						local item2 = self:New(item.unique_id, itemID)//, characterID, (playerID == "" or playerID == "NULL") and nil or playerID)
@@ -308,7 +332,7 @@ if SERVER then
 		if !id then
 			return
 		end
-		
+
 		self:LoadInstanceByID(id, function(item)
 			if item.inventory_id then
 				return
@@ -321,7 +345,7 @@ if SERVER then
 			if itemCallback then
 				itemCallback(item, inventory)
 			end
-			
+
 			inventory:AddItem(item, item.x, item.y, nil, true)
 		end, callback)
 	end
@@ -344,6 +368,7 @@ if SERVER then
 	end
 
 	function Item:Instance(uniqueID, itemData, forcedID, characterID, playerID)
+		uniqueID = uniqueID and self:ResolveID(uniqueID)
 		if !uniqueID or self.stored[uniqueID] then
 			local itemID = forcedID or self:GenerateID()
 			local item = self:New(uniqueID, itemID)
@@ -353,7 +378,7 @@ if SERVER then
 				item.characterID = characterID or 0
 				item.playerID = playerID or 0
 				item.mark_as_save = true
-				
+
 				if item.OnInstanced then
 					item:OnInstanced(true)
 				end
@@ -427,7 +452,7 @@ if SERVER then
 			if item.OnDrop then
 				result = item:OnDrop(client, inventory)
 			end
-			
+
 			if result != true then
 				self:Spawn(pos and pos or client, ang, item)
 			end
@@ -452,7 +477,7 @@ if SERVER then
 		if !inventory then
 			return
 		end
-		
+
 		//if hook.Run("CanPlayerInteractItem", client, action, item, data) == false then
 		//	return
 		//end
@@ -494,7 +519,7 @@ if SERVER then
 
 				items = {}
 
-				for i = 1, item_count do
+				for i = 1, math.min(item_count, #slot) do
 					table.insert(items, slot[i])
 				end
 			end
@@ -594,11 +619,11 @@ if SERVER then
 		if item.uniqueID == targetItem.uniqueID and item.stackable then
 			return
 		end
-		
+
 		if !item.inventory_id or !targetItem.inventory_id then
 			return
 		end
-		
+
 		local inventory = ix.Inventory:Get(item.inventory_id)
 		local targetInventory = ix.Inventory:Get(targetItem.inventory_id)
 
@@ -606,7 +631,7 @@ if SERVER then
 		//	return
 		//end
 
-		if !inventory:OnCheckAccess(client) then
+		if not inventory or not targetInventory or not inventory:OnCheckAccess(client) or not targetInventory:OnCheckAccess(client) then
 			return
 		end
 
@@ -640,7 +665,7 @@ if SERVER then
 
 				items = {}
 
-				for i = 1, item_count do
+				for i = 1, math.min(item_count, #slot) do
 					table.insert(items, slot[i])
 				end
 			end
@@ -679,7 +704,7 @@ if SERVER then
 		local item = Item.instances[net.ReadUInt(32)]
 		local targetItem = Item.instances[net.ReadUInt(32)]
 
-		if item and targetItem then
+		if item and targetItem and item.combine_bits and item.combine_id then
 			ix.Item:PerformInventoryCombineAction(client, item, targetItem, net.ReadUInt(item.combine_bits), net.ReadTable(), (net.ReadBool() == true) and net.ReadUInt(32) or 0)
 		end
 	end)
@@ -691,7 +716,7 @@ if SERVER then
 
 		local character = client:GetCharacter()
 
-		if !character then
+		if not character or not item then
 			return
 		end
 
@@ -701,9 +726,13 @@ if SERVER then
 			return
 		end
 
-		item.player = client
-
 		local data = {}
+		if normal.x ~= normal.x or normal.y ~= normal.y or normal.z ~= normal.z or normal:LengthSqr() == math.huge then return end
+		for _, value in ipairs({ang.p, ang.y, ang.r}) do
+			if value ~= value or math.abs(value) == math.huge then return end
+		end
+		item.player = client
+		normal:Normalize()
 		data.start = client:GetShootPos()
 		data.endpos = data.start + normal * 86
 		data.filter = client
@@ -711,8 +740,9 @@ if SERVER then
 		local trace = util.TraceLine(data)
 
 		ix.Item:DropItem(client, item.id, trace.HitPos, ang)
-		
+
 		timer.Simple(0, function()
+			if not IsValid(item.entity) then return end
 			local vFlushPoint = item.entity:NearestPoint(trace.HitPos - (trace.HitNormal * 512))
 			vFlushPoint = item.entity:GetPos() - vFlushPoint
 			vFlushPoint = trace.HitPos + vFlushPoint
@@ -727,10 +757,13 @@ if SERVER then
 		local item = Item.instances[net.ReadUInt(32)]
 		local targetItem = Item.instances[net.ReadUInt(32)]
 
-		if !item or !targetItem then
+		if not item or not targetItem or item == targetItem or item.uniqueID ~= targetItem.uniqueID or not item.stackable_legacy or not targetItem.stackable_legacy then
 			return
 		end
-		
+		local source = ix.Inventory:Get(item.inventory_id)
+		local target = ix.Inventory:Get(targetItem.inventory_id)
+		if not source or not target or not source:OnCheckAccess(client) or not target:OnCheckAccess(client) then return end
+
 		local isSplit = net.ReadBool()
 		local splitCount = 0
 		local sentStacks = 0
@@ -751,7 +784,7 @@ if SERVER then
 			for i = 1, splitCount do
 				if (value - i) < 0 then break end
 				if (targetValue + i) > max then break end
-				
+
 				sentStacks = sentStacks + 1
 			end
 
@@ -778,76 +811,38 @@ if SERVER then
 	end)
 
 	net.Receive('item.legacy.stack.create', function(len, client)
-		local from_id = net.ReadUInt(32)
-		local to_id = net.ReadUInt(32)
-		local x = net.ReadUInt(8)
-		local y = net.ReadUInt(8)
-		local target_x = net.ReadUInt(8)
-		local target_y = net.ReadUInt(8)
-		local isSplit = net.ReadBool()
-		local splitCount = net.ReadUInt(32)
-		local was_rotated = net.ReadBool()
+        local fromID, toID = net.ReadUInt(32), net.ReadUInt(32)
+        local x, y = net.ReadUInt(8), net.ReadUInt(8)
+        local targetX, targetY = net.ReadUInt(8), net.ReadUInt(8)
+        local split, count = net.ReadBool(), net.ReadUInt(32)
+        local rotated = net.ReadBool()
+        local source, target = ix.Inventory:Get(fromID), ix.Inventory:Get(toID)
+        if not source or not target or not source:OnCheckAccess(client) or not target:OnCheckAccess(client) then return end
+        local slot = source:GetSlot(x, y)
+        local item = istable(slot) and Item.instances[slot[1]]
+        if not item or not item.stackable_legacy or item.inventory_id ~= fromID then return end
+        local value = math.floor(item:GetValue())
+        if value <= 0 then return end
+        local amount = split and (count == 0 and math.floor(value / 2) or count) or value
+        amount = math.min(amount, value, item.max_stack)
+        if amount < 1 then return end
+        local data = table.Copy(item.data)
+        data.stack = amount
+        local created = ix.Item:Instance(item.uniqueID, data, nil, item.characterID, item.playerID)
+        if not created then return end
+        created.rotated = rotated
+        local success = target:AddItem(created, targetX, targetY)
+        if not success then
+            -- Remove(true) is this fork's explicit database-delete path.
+            created:Remove(true)
+            return
+        end
+        item:SetData('stack', value - amount)
+        if value == amount then item:Remove(true, true) end
+        source:Sync()
+        if source ~= target then target:Sync() end
+    end)
 
-		local old_inventory = ix.Inventory:Get(from_id)
-		local inventory = ix.Inventory:Get(to_id)
-
-		if !old_inventory or !inventory then
-			return
-		end
-
-		if !inventory:OnCheckAccess(client) or !old_inventory:OnCheckAccess(client) then
-			return
-		end
-
-		local slot = old_inventory:GetSlot(x, y)
-
-		if !istable(slot) or table.IsEmpty(slot) then
-			return
-		end
-
-		local item = ix.Item.instances[slot[1]]
-
-		local newItem = ix.Item:Instance(item.uniqueID)
-		local success, error_text
-
-		if to_id == from_id then
-			success, error_text = inventory:AddItem(newItem, target_x, target_y)
-			inventory:Sync()
-		else
-			success, error_text = old_inventory:AddItem(newItem, target_x, target_y)
-			old_inventory:Sync()
-		end
-
-		if success then
-			local sentStacks = 0
-
-			local max = item.max_stack
-			local value = item:GetValue()
-
-			if isSplit then
-				splitCount = math.Clamp(splitCount, 0, max)
-
-				if splitCount == 0 then
-					splitCount = value * 0.5
-				end
-				
-				for i = 1, splitCount do
-					if (value - i) < 0 then break end
-					
-					sentStacks = sentStacks + 1
-				end
-
-				sentStacks = math.max(math.min(sentStacks, value), 1)
-			end
-
-			item:SetData("stack", item:GetValue() - sentStacks)
-			newItem:SetData("stack", sentStacks)
-
-			if item:GetValue() <= 0 then
-				item:Remove()
-			end
-		end
-	end)
 else
 	local function InventoryAction(item, inventory_id, action_index, items, data)
 		net.Start('item.action')
@@ -896,7 +891,7 @@ else
 		elseif input.IsKeyDown(KEY_LSHIFT) then
 			new_items = {items[#items]}
 		end
-		
+
 		if !item then
 			return
 		end
@@ -1029,7 +1024,7 @@ else
 		if !istable(item.combine) then
 			return
 		end
-		
+
 		targetItem.player = LocalPlayer()
 		item.player = LocalPlayer()
 
@@ -1135,4 +1130,3 @@ else
 		return true
 	end
 end
-		

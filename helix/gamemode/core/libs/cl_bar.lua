@@ -58,6 +58,7 @@ local TEXT_COLOR = Color(240, 240, 240)
 local SHADOW_COLOR = Color(20, 20, 20)
 
 function ix.bar.DrawAction()
+	if ix.GameplayHUD and ix.GameplayHUD.Enabled() then return ix.GameplayHUD.Action() end
 	local start, finish = ix.bar.actionStart, ix.bar.actionEnd
 	local curTime = CurTime()
 	local scrW, scrH = ScrW(), ScrH()

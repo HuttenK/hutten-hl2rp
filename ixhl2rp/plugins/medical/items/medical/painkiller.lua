@@ -1,21 +1,13 @@
-ITEM.name = "item.painkiller"
-ITEM.description = "item.painkiller.desc"
-ITEM.model = Model("models/items/painkiller.mdl")
-ITEM.cost = 20
-ITEM.stats.uses = 5
-ITEM.stats.time = 5
-ITEM.iconCam = {
-	pos = Vector(0.44081175327301, 56.994258880615, 107.27256774902),
-	ang = Angle(62.007186889648, 269.50588989258, 0),
-	fov = 4.0087238838698,
-}
-
-function ITEM:OnConsume(player, injector, mul, character)
-	local health = character:Health()
-	local timeMul = (2 - mul)
-	local effect = 10
-
-	health:AddHediff("painkiller", 0, {severity = effect, tended_start = os.time(), tended_time = 60 * timeMul})
-
-	return {dmg = effect}
-end
+-- Legacy item IDs intentionally retained so stored inventories and recipes migrate.
+local def = ix.Medicine.Catalog["painkiller"]
+ITEM.name = def.name
+ITEM.description = "Подавляет ограничения переломов на 3 минуты. Не сращивает кости."
+ITEM.model = Model(ix.Medicine.Model(def))
+ITEM.skin = def.skin or 0
+ITEM.width = 1
+ITEM.height = 1
+ITEM.cost = 60
+ITEM.rarity = 2
+ITEM.stats.uses = def.uses
+ITEM.stats.time = def.time
+ITEM.medicalID = "painkiller"

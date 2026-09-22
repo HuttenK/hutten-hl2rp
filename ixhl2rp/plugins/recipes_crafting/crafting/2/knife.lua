@@ -7,8 +7,8 @@ RECIPE.requirements = {
 	mat_leather = 2
 }
 RECIPE.results = {
-	wm_combat_knife = 1
+	selected_eft_melee_6x5 = 1
 }
 RECIPE.skill = {"crafting", 2}
-RECIPE.tools = {"wm_hammer"}
+RECIPE.tools = {"selected_eft_melee_hultafors"}
 RECIPE.xp = 50

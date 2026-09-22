@@ -88,6 +88,7 @@ if (SERVER) then
 
 	function PLUGIN:PlayerLoadedCharacter(client, character)
 		timer.Simple(0.25, function()
+			if not IsValid(client) or client:GetCharacter() ~= character then return end
 			client:SetLocalVar("stm", character:GetData("stamina", character:GetMaxStamina()))
 		end)
 	end

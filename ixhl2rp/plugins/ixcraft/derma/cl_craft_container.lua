@@ -4,45 +4,9 @@ local scale = ix.UI.Scale
 local categories = {}
 local recipesList = {}
 
-local function DrawCorners(x, y, w, h)
-	surface.SetDrawColor(8, 32, 48, 128)
-	surface.DrawRect(x, y, w, h)
-	
-	local size = ix.UI.Scale( (h / 4) * 0.1 )
-
-	surface.SetDrawColor(0, 190, 255, 255)
-	surface.DrawLine(x, y, x + size, y)
-	surface.DrawLine(x, y, x, y + size)
-
-	x, y = w - 1, y
-
-	surface.DrawLine(x, y, x - size, y)
-	surface.DrawLine(x, y, x, y + size)
-
-	x, y = 0, h - 1
-
-	surface.DrawLine(x, y, x + size, y)
-	surface.DrawLine(x, y, x, y - size)
-
-	x, y = w - 1, h - 1
-
-	surface.DrawLine(x, y, x - size, y)
-	surface.DrawLine(x, y, x, y - size)
-
-
-	surface.SetDrawColor(0, 190, 255, 255 * 0.25)
-
-	local halfW, halfH = w / 2, h /2
-	local halfSize = size / 2
-
-	x, y = halfW - size, 0
-	surface.DrawLine(x, y, x + size * 2, y)
-	y = h - 1
-	surface.DrawLine(x, y, x + size * 2, y)
-	x, y = 0, halfH - size
-	surface.DrawLine(x, y, x, y + size * 2)
-	x = w - 1
-	surface.DrawLine(x, y, x, y + size * 2)
+local function DrawCorners(x,y,w,h)
+ local U=ix.Legends
+ U.Plate(x,y,w,h,Color(12,8,13,235),U.line)
 end
 
 local function SortByLevel(recipe)
@@ -72,6 +36,7 @@ function PANEL:Setup(isMini, inventoryID)
 	first:Dock(LEFT)
 	first:DockMargin(!isMini and margin or 0, !isMini and margin or 0, margin, !isMini and margin or 0)
 	first:SetSize(oneSize * 0.95, parent:GetTall())
+	parent.recipeColumn = first
 	first.Paint = function(panel, w, h)
 		DrawCorners(0, 0, w, h)
 	end
@@ -80,28 +45,31 @@ function PANEL:Setup(isMini, inventoryID)
 	firstTitle:Dock(TOP)
 	firstTitle:DockMargin(0, 10, 0, 0)
 	firstTitle:SetContentAlignment(5)
-	firstTitle:SetTextColor(Color(0, 225, 255))
-	firstTitle:SetFont("craft.item.title")
+	firstTitle:SetTextColor(Color(245, 95, 112))
+	firstTitle:SetFont("legends.Heading")
 	firstTitle:SetText(L("craftRecipesTitle"))
+ firstTitle:SetTall(scale(34))
 
 	local search = first:Add("DTextEntry")
 	search:Dock(TOP)
 	search:DockMargin(scale(10), scale(8), scale(10), 0)
-	search:SetTall(scale(22))
-	search:SetFont("ui.craft.large")
+	search:SetTall(scale(38))
+	search:SetFont("legends.Body")
 	search:SetUpdateOnType(true)
+	search.OnGetFocus = function() if IsValid(ix.gui.menu) then ix.gui.menu:SetKeyboardInputEnabled(true) end end
+	search.OnLoseFocus = function() if IsValid(ix.gui.menu) then ix.gui.menu:SetKeyboardInputEnabled(false) end end
 	search:SetPaintBackground(false)
 	search.Paint = function(panel, w, h)
-		surface.SetDrawColor(8, 32, 48, 200)
+		surface.SetDrawColor(24, 10, 17, 200)
 		surface.DrawRect(0, 0, w, h)
-		surface.SetDrawColor(0, 190, 255, 120)
+		surface.SetDrawColor(210, 48, 72, 120)
 		surface.DrawOutlinedRect(0, 0, w, h)
 
-		panel:DrawTextEntryText(Color(0, 225, 255), Color(0, 120, 200), Color(0, 225, 255))
+		panel:DrawTextEntryText(Color(245, 95, 112), Color(135, 30, 55), Color(245, 95, 112))
 
 		if panel:GetText() == "" and !panel:IsEditing() then
-			surface.SetFont("ui.craft.large")
-			surface.SetTextColor(0, 150, 190, 160)
+			surface.SetFont("legends.Body")
+			surface.SetTextColor(180, 60, 85, 160)
 
 			local _, ty = surface.GetTextSize("A")
 
@@ -115,10 +83,10 @@ function PANEL:Setup(isMini, inventoryID)
 	parent.first:SetSize(first:GetWide(), first:GetTall())
 	parent.first:DockMargin(margin * 0.5, margin, margin * 0.5, margin)
 	
-	local buttonHeight = scale(20)
+	local buttonHeight = scale(36)
 	local iconOffset, sizeIcon = scale(5), scale(15)
 
-	self:GetParent():CacheRecipeNeeds()
+	self:GetParent():CacheRecipeNeeds(stationID, stationID and ix.Inventory:Get(inventoryID))
 
 	local categories = {}
 	local recipesList = {}
@@ -230,7 +198,7 @@ function PANEL:Setup(isMini, inventoryID)
 
 	ix.gui.craft_categories = ix.gui.craft_categories or {}
 
-	local category_style = Color(0, 225, 255)
+	local category_style = Color(245, 95, 112)
 
 	for k, v in ipairs(categories) do
 		local noSkill = (v.recipesList or {}).noSkill
@@ -252,11 +220,10 @@ function PANEL:Setup(isMini, inventoryID)
 			surface.SetDrawColor(category_style)
 
 			if collapsibleCategory:GetExpanded() then
-				surface.SetMaterial(ix.util.GetMaterial("cellar/ui/minus.png"))
-				surface.DrawTexturedRect(iconOffset, buttonHeight * 0.5 - sizeIcon * 0.5, sizeIcon, sizeIcon)
+				surface.DrawRect(iconOffset, ( buttonHeight * 0.5 - sizeIcon * 0.5) + sizeIcon * 0.5 - 1, sizeIcon, 2)
 			else
-				surface.SetMaterial(ix.util.GetMaterial("cellar/ui/plus.png"))
-				surface.DrawTexturedRect(iconOffset, buttonHeight * 0.5 - sizeIcon * 0.5, sizeIcon, sizeIcon)
+				surface.DrawRect(iconOffset, ( buttonHeight * 0.5 - sizeIcon * 0.5) + sizeIcon * 0.5 - 1, sizeIcon, 2)
+				surface.DrawRect((iconOffset) + sizeIcon * 0.5 - 1,  buttonHeight * 0.5 - sizeIcon * 0.5, 2, sizeIcon)
 			end
 		end
 		collapsibleCategory.OnToggle = function(_, expanded)
@@ -267,7 +234,7 @@ function PANEL:Setup(isMini, inventoryID)
 		local categoryTitle = vgui.Create("DLabel", collapsibleCategory)
 		
 		categoryTitle:SetText(noSkill and L(v.category) or ix.skills.list[v.category].name)
-		categoryTitle:SetFont("ui.craft.large")
+		categoryTitle:SetFont("legends.Body")
 		categoryTitle:SetTextColor(category_style)
 		categoryTitle:SizeToContents()
 		categoryTitle:SetPos(iconOffset + sizeIcon * 1.75, collapsibleCategory:GetTall() * 0.5 - categoryTitle:GetTall() * 0.5)
@@ -297,11 +264,10 @@ function PANEL:Setup(isMini, inventoryID)
 				surface.SetDrawColor(category_style)
 
 				if collapsibleSubCategory:GetExpanded() then
-					surface.SetMaterial(ix.util.GetMaterial("cellar/ui/minus.png"))
-					surface.DrawTexturedRect(iconOffset + iconOffset * 2, buttonHeight * 0.5 - sizeIcon * 0.5, sizeIcon, sizeIcon)
+					surface.DrawRect(iconOffset + iconOffset * 2, ( buttonHeight * 0.5 - sizeIcon * 0.5) + sizeIcon * 0.5 - 1, sizeIcon, 2)
 				else
-					surface.SetMaterial(ix.util.GetMaterial("cellar/ui/plus.png"))
-					surface.DrawTexturedRect(iconOffset + iconOffset * 2, buttonHeight * 0.5 - sizeIcon * 0.5, sizeIcon, sizeIcon)
+					surface.DrawRect(iconOffset + iconOffset * 2, ( buttonHeight * 0.5 - sizeIcon * 0.5) + sizeIcon * 0.5 - 1, sizeIcon, 2)
+				surface.DrawRect((iconOffset + iconOffset * 2) + sizeIcon * 0.5 - 1,  buttonHeight * 0.5 - sizeIcon * 0.5, 2, sizeIcon)
 				end
 			end
 			collapsibleSubCategory.OnToggle = function(_, expanded)
@@ -314,7 +280,7 @@ function PANEL:Setup(isMini, inventoryID)
 
 			local subcategoryTitle = vgui.Create("DLabel", collapsibleSubCategory)
 			subcategoryTitle:SetText(L(v2.category))
-			subcategoryTitle:SetFont("ui.craft.large")
+			subcategoryTitle:SetFont("legends.Body")
 			subcategoryTitle:SetTextColor(category_style)
 			subcategoryTitle:SizeToContents()
 			subcategoryTitle:SetPos(iconOffset + sizeIcon * 2.75, collapsibleSubCategory:GetTall() * 0.5 - subcategoryTitle:GetTall() * 0.5 + scale(1 / 3))
@@ -382,7 +348,7 @@ function PANEL:Setup(isMini, inventoryID)
 			local empty = searchResults:Add("DLabel")
 			empty:Dock(TOP)
 			empty:DockMargin(scale(10), scale(10), 0, 0)
-			empty:SetFont("ui.craft.large")
+			empty:SetFont("legends.Body")
 			empty:SetTextColor(Color(255, 72, 72))
 			empty:SetText(L("craftSearchNoResults"))
 			empty:SizeToContents()
@@ -411,6 +377,7 @@ function PANEL:Setup(isMini, inventoryID)
 	
 	parent.second = second:Add("DScrollPanel")
 	parent.second:Dock(TOP)
+ parent.second:DockPadding(scale(16),scale(12),scale(16),scale(12))
 	if !isMini then
 		parent.second:SetSize(second:GetWide(), second:GetTall() * 0.525)
 	else
@@ -438,8 +405,8 @@ function PANEL:Setup(isMini, inventoryID)
 		firstTitle:Dock(TOP)
 		firstTitle:DockMargin(0, 10, 0, 0)
 		firstTitle:SetContentAlignment(5)
-		firstTitle:SetTextColor(Color(0, 225, 255))
-		firstTitle:SetFont("craft.item.title")
+		firstTitle:SetTextColor(Color(245, 95, 112))
+		firstTitle:SetFont("legends.Heading")
 		firstTitle:SetText(L("inv"))
 
 		local panel = inv:Add('ui.inv')
@@ -453,11 +420,14 @@ function PANEL:Setup(isMini, inventoryID)
 	end
 
 	local button = second:Add('ui.craft.button')
+	button:SetDisabled(true)
 	button:Dock(BOTTOM)
+ button:SetZPos(-1)
 	button:SetText(L("craftCreate"))
 	button:DockMargin(0, 0, 0, !isMini and margin or 0)
-	button:SetTall(scale(40))
+	button:SetTall(scale(50))
 	button.DoClick = function()
+		if not ix.gui.currentCraft or not ix.Craft.recipes[ix.gui.currentCraft] then return end
 		net.Start("ixCraftRecipe")
 			net.WriteString(ix.gui.currentCraft)
 		net.SendToServer()
@@ -480,8 +450,8 @@ function PANEL:Setup(isMini, inventoryID)
 		stationTitle:Dock(TOP)
 		stationTitle:DockMargin(0, 10, 0, 0)
 		stationTitle:SetContentAlignment(5)
-		stationTitle:SetTextColor(Color(0, 225, 255))
-		stationTitle:SetFont("craft.item.title")
+		stationTitle:SetTextColor(Color(245, 95, 112))
+		stationTitle:SetFont("legends.Heading")
 		stationTitle:SetText(L("craftStationTitle"))
 
 		third:InvalidateParent(true)

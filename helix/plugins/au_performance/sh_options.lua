@@ -118,12 +118,6 @@ ix.option.Add("mat_filterlightmaps", ix.type.bool, true, {
 	end
 })
 
-ix.option.Add("muzzleflash_light", ix.type.bool, true, {
-	category = "option.category.performance",
-	OnChanged = function(oldValue, value)
-		RunConsoleCommand("muzzleflash_light", value and 1 or 0)
-	end
-})
 
 ix.option.Add("props_break_max_pieces", ix.type.number, -1, {
 	category = "option.category.performance",
@@ -164,12 +158,6 @@ ix.option.Add("r_eyes", ix.type.bool, true, {
 	end
 })
 
-ix.option.Add("r_teeth", ix.type.bool, true, {
-	category = "option.category.performance",
-	OnChanged = function(oldValue, value)
-		RunConsoleCommand("r_teeth", value and 1 or 0)
-	end
-})
 
 ix.option.Add("r_radiosity", ix.type.number, 3, {
 	category = "option.category.performance",
@@ -180,14 +168,6 @@ ix.option.Add("r_radiosity", ix.type.number, 3, {
 	end
 })
 
-ix.option.Add("r_worldlights", ix.type.number, 4, {
-	category = "option.category.performance",
-	min = 0,
-	max = 4,
-	OnChanged = function(oldValue, value)
-		RunConsoleCommand("r_worldlights", value)
-	end
-})
 
 ix.option.Add("rope_averagelight", ix.type.bool, true, {
 	category = "option.category.performance",

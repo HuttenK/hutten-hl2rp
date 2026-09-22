@@ -9,6 +9,6 @@ RECIPE.results = {
 }
 RECIPE.skill = {"crafting", 2}
 RECIPE.station = "station_tokar"
-RECIPE.tools = {"wm_hammer"}
+RECIPE.tools = {"selected_eft_melee_hultafors"}
 RECIPE.xp = 110
 RECIPE.preview = "models/props/de_inferno/tableantique.mdl"

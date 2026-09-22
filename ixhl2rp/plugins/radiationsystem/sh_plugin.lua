@@ -53,6 +53,7 @@ do
 			if filterID then
 				filter = ix.Item.instances[filterID]
 			end
+			if ix.GasMask then filter = ix.GasMask.Filter(self, gasmask) end
 		end
 		
 		if filter and filter:GetFilterQuality() > 0 then
@@ -63,6 +64,10 @@ do
 	end
 
 	function PLAYER:HasWearedFilter()
+		if ix.GasMask then
+			local filter = ix.GasMask.Filter(self, ix.GasMask.Equipped(self))
+			return filter and filter.id
+		end
 		if SERVER then
 			return self.char_outfit.gasmask and self.char_outfit.gasmask:GetData("filter")
 		else

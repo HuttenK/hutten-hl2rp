@@ -9,6 +9,6 @@ RECIPE.results = {
 	pistolammo = 12
 }
 RECIPE.skill = {"crafting", 3}
-RECIPE.tools = {"wm_hammer"}
+RECIPE.tools = {"selected_eft_melee_hultafors"}
 RECIPE.station = "station_guns"
 RECIPE.xp = 80

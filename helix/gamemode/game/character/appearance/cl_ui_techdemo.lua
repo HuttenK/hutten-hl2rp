@@ -5,14 +5,14 @@ PANEL.textClr = Color(0, 225, 255)
 do
 	local Scale = ix.UI.Scale
 	surface.CreateFont('demo.title', {
-		font = 'Blender Pro Book',
+		font = "Tahoma",
 		extended = true,
 		size = Scale(24),
 		weight = 500,
 		antialias = true,
 	})
 	surface.CreateFont('demo.title1', {
-		font = 'Blender Pro Medium',
+		font = "Tahoma",
 		extended = true,
 		size = Scale(22),
 		weight = 500,
@@ -20,7 +20,7 @@ do
 	})
 
 	surface.CreateFont('demo.selector', {
-		font = 'Blender Pro Bold',
+		font = "Tahoma",
 		extended = true,
 		size = Scale(21),
 		weight = 500,
@@ -494,7 +494,7 @@ function PANEL:OpenPicker(attach)
 	end
 end
 
-local shadow = Material('cellar/slot_shadow.png')
+-- Native shading: no external slot-shadow material.
 local clrBG = Color(16, 32, 48, 255 * 0.75)
 local clrOutline = Color(0, 190 * 0.5, 128, 128)
 
@@ -533,8 +533,8 @@ function PANEL:Paint(w, h)
 	ix.DX.Draw(0, 0, 0, w, h, nil, ix.DX.BLUR)
 
 	surface.SetDrawColor(color_white)
-	surface.SetMaterial(shadow)
-	surface.DrawTexturedRect(0, 0, w, h)
+	surface.SetDrawColor(0, 0, 0, 35)
+	surface.DrawOutlinedRect(0, 0, w, h)
 
 	ix.DX.Draw(0, 0, 0, w, h, clrBG)
 

@@ -8,7 +8,7 @@ RECIPE.requirements = {
 	mat_oil = 2,
 }
 RECIPE.results = {
-	pulsesmg = 1
+	selected_eft_sr2m = 1
 }
 RECIPE.skill = {"crafting", 9}
 RECIPE.tools = {"tool_welding", "wm_screwdriver"}

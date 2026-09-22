@@ -34,7 +34,7 @@ end
 
 do
 	surface.CreateFont('tabmenu.btn', {
-		font = 'Blender Pro Medium',
+		font = "Tahoma",
 		extended = true,
 		size = Scale(21),
 		weight = 500,
@@ -42,7 +42,7 @@ do
 	})
 
 	surface.CreateFont('tabmenu.btn.small', {
-		font = 'Blender Pro Book',
+		font = "Tahoma",
 		extended = true,
 		size = Scale(18),
 		weight = 500,
@@ -283,7 +283,7 @@ end
 
 
 surface.CreateFont("ui.tab.stat.title", {
-	font = "Blender Pro Medium",
+	font = "Tahoma",
 	extended = true,
 	size = ix.UI.Scale(16),
 	weight = 500,
@@ -292,7 +292,7 @@ surface.CreateFont("ui.tab.stat.title", {
 	antialias = true,
 })
 surface.CreateFont("ui.tab.stat.value", {
-	font = "Blender Pro Bold",
+	font = "Tahoma",
 	extended = true,
 	size = ix.UI.Scale(14),
 	weight = 500,
@@ -302,7 +302,7 @@ surface.CreateFont("ui.tab.stat.value", {
 })
 
 surface.CreateFont("ui.tab.smalltitle", {
-	font = "Blender Pro Medium",
+	font = "Tahoma",
 	extended = true,
 	size = ix.UI.Scale(18),
 	weight = 500,
@@ -312,7 +312,7 @@ surface.CreateFont("ui.tab.smalltitle", {
 })
 
 surface.CreateFont("ui.tab.smalltitle2", {
-	font = "Blender Pro Medium",
+	font = "Tahoma",
 	extended = true,
 	size = ix.UI.Scale(16),
 	weight = 500,
@@ -322,7 +322,7 @@ surface.CreateFont("ui.tab.smalltitle2", {
 })
 
 surface.CreateFont("ui.skillpoints.title", {
-	font = "Blender Pro Bold",
+	font = "Tahoma",
 	extended = true,
 	size = ix.UI.Scale(14),
 	weight = 500,
@@ -331,7 +331,7 @@ surface.CreateFont("ui.skillpoints.title", {
 	antialias = true,
 })
 surface.CreateFont("ui.profile.value", {
-	font = "Blender Pro Book",
+	font = "Tahoma",
 	extended = true,
 	size = ix.UI.Scale(14),
 	weight = 500,
@@ -340,7 +340,7 @@ surface.CreateFont("ui.profile.value", {
 	antialias = true,
 })
 surface.CreateFont("ui.skillpoints.value", {
-	font = "Blender Pro Medium",
+	font = "Tahoma",
 	extended = true,
 	size = ix.UI.Scale(22),
 	weight = 500,
@@ -350,7 +350,7 @@ surface.CreateFont("ui.skillpoints.value", {
 })
 
 surface.CreateFont("ui.specialpoints.title", {
-	font = "Blender Pro Bold",
+	font = "Tahoma",
 	extended = true,
 	size = ix.UI.Scale(16),
 	weight = 500,
@@ -1431,7 +1431,7 @@ end
 
 
 surface.CreateFont("ui.tabmenu.level", {
-	font = "Blender Pro Bold",
+	font = "Tahoma",
 	extended = true,
 	size = ix.UI.Scale(48),
 	weight = 500,
@@ -1441,7 +1441,7 @@ surface.CreateFont("ui.tabmenu.level", {
 })
 
 surface.CreateFont("ui.tabmenu.leveltext", {
-	font = "Blender Pro Heavy",
+	font = "Tahoma",
 	extended = true,
 	size = ix.UI.Scale(18),
 	weight = 500,
@@ -1451,7 +1451,7 @@ surface.CreateFont("ui.tabmenu.leveltext", {
 })
 
 surface.CreateFont("ui.tabmenu.levelmini", {
-	font = "Blender Pro Medium",
+	font = "Tahoma",
 	extended = true,
 	size = ix.UI.Scale(14),
 	weight = 500,
@@ -1459,7 +1459,7 @@ surface.CreateFont("ui.tabmenu.levelmini", {
 	antialias = true,
 })
 surface.CreateFont("ui.tabmenu.time", {
-	font = "Blender Pro Medium",
+	font = "Tahoma",
 	extended = true,
 	size = ix.UI.Scale(18),
 	weight = 500,
@@ -1467,14 +1467,14 @@ surface.CreateFont("ui.tabmenu.time", {
 })
 
 surface.CreateFont("ui.tabmenu.money", {
-	font = "Blender Pro Book",
+	font = "Tahoma",
 	extended = true,
 	size = ix.UI.Scale(28),
 	weight = 500,
 	antialias = true,
 })
 surface.CreateFont("ui.tabmenu.moneytext", {
-	font = "Blender Pro Bold",
+	font = "Tahoma",
 	extended = true,
 	size = ix.UI.Scale(15),
 	weight = 500,
@@ -1941,8 +1941,10 @@ end
 
 function PANEL:Paint(w, h)
 	surface.SetDrawColor(0, 0, 0)
-	surface.SetMaterial(vignette)
-	surface.DrawTexturedRect(-w*0.5, 0, w*2, h*2)
+	if not vignette:IsError() then
+		surface.SetMaterial(vignette)
+		surface.DrawTexturedRect(-w*0.5, 0, w*2, h*2)
+	end
 end
 
 do
@@ -2047,7 +2049,8 @@ function PANEL:StartCommand(_, cmd)
 	end
 end
 
-vgui.Register('ui.tabmenu', PANEL, 'EditablePanel')
+ix.UI.MenuEntries = buttons
+vgui.Register('ui.tabmenu.legacy', PANEL, 'EditablePanel')
 
 if (IsValid(ix.gui.menu)) then
 	ix.gui.menu:Remove()

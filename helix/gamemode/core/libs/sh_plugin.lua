@@ -265,11 +265,15 @@ function ix.plugin.LoadFromDir(directory)
 	local files, folders = file.Find(directory.."/*", "LUA")
 
 	for _, v in ipairs(folders) do
-		ix.plugin.Load(v, directory.."/"..v)
+		if file.Exists(directory.."/"..v.."/sh_plugin.lua", "LUA") then
+			ix.plugin.Load(v, directory.."/"..v)
+		end
 	end
 
 	for _, v in ipairs(files) do
-		ix.plugin.Load(string.StripExtension(v), directory.."/"..v, true)
+		if string.GetExtensionFromFilename(v) == "lua" then
+			ix.plugin.Load(string.StripExtension(v), directory.."/"..v, true)
+		end
 	end
 end
 

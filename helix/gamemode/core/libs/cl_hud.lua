@@ -42,6 +42,7 @@ function ix.hud.DrawDeath()
 end
 
 function ix.hud.DrawItemPickup()
+	if ix.GameplayHUD and ix.GameplayHUD.Enabled() then return ix.GameplayHUD.Pickup() end
 	local pickupTime = ix.config.Get("itemPickupTime", 0.5)
 
 	if (pickupTime == 0) then
@@ -137,5 +138,5 @@ function ix.hud.DrawAll(postHook)
 		ix.hud.DrawDeath()
 	end
 
-	ix.hud.DrawItemPickup()
+	if not postHook then ix.hud.DrawItemPickup() end
 end

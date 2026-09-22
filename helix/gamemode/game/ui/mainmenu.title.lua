@@ -1,7 +1,7 @@
 local scale = ix.UI.Scale
 
 surface.CreateFont("cellar.main.warn", {
-	font = "Blender Pro Medium",
+	font = "Tahoma",
 	extended = true,
 	size = 16,
 	weight = 500,
@@ -734,7 +734,6 @@ local PANEL = {}
 
 AccessorFunc(PANEL, "bUsingCharacter", "UsingCharacter", FORCE_BOOL)
 
-local cyb = Material("ui/vignette.png")
 
 function PANEL:Init()
 	self.bUsingCharacter = LocalPlayer().GetCharacter and LocalPlayer():GetCharacter()
@@ -743,8 +742,7 @@ function PANEL:Init()
 	self.bg:Dock(FILL)
 	self.bg.Paint = function(this, w, h)
 		surface.SetDrawColor(color_black)
-		surface.SetMaterial(cyb)
-		surface.DrawTexturedRect(0, 0, w, h)
+		surface.DrawRect(0, 0, w, h)
 
 		if BRANCH != "x86-64" then
 			surface.SetTextColor(255, 0, 0)

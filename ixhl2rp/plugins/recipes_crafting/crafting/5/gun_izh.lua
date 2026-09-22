@@ -6,7 +6,7 @@ RECIPE.requirements = {
 	gun_weapon_barrel = 2,
 }
 RECIPE.results = {
-	izh = 1
+	selected_eft_mr43_sawedoff = 1
 }
 RECIPE.skill = {"crafting", 5}
 RECIPE.station = "station_guns"

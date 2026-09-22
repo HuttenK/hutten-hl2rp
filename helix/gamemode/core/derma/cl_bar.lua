@@ -92,7 +92,7 @@ end
 function PANEL:Think()
 	local menu = (IsValid(ix.gui.characterMenu) and !ix.gui.characterMenu:IsClosing()) and ix.gui.characterMenu
 		or IsValid(ix.gui.menu) and ix.gui.menu
-	local fraction = menu and 1 - menu.currentAlpha / 255 or 1
+	local fraction = menu and 1 - (tonumber(menu.currentAlpha) or menu:GetAlpha()) / 255 or 1
 
 	self:SetAlpha(255 * fraction)
 
@@ -107,6 +107,10 @@ function PANEL:Think()
 
 	for _, v in ipairs(self.bars) do
 		local info = ix.bar.list[v:GetID()]
+		if ix.GameplayHUD and ix.GameplayHUD.Enabled() and ix.GameplayHUD.ManagedBars[info.identifier] then
+			v:SetVisible(false)
+			continue
+		end
 		local realValue = info.GetValue()
 
 		realValue = realValue or 0

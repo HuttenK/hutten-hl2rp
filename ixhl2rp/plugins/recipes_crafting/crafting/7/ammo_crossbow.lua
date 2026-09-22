@@ -10,6 +10,6 @@ RECIPE.results = {
 	crossbowammo = 90
 }
 RECIPE.skill = {"crafting", 7}
-RECIPE.tools = {"wm_hammer"}
+RECIPE.tools = {"selected_eft_melee_hultafors"}
 RECIPE.station = "station_guns"
 RECIPE.xp = 100

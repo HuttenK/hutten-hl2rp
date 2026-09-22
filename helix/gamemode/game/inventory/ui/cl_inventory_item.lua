@@ -22,7 +22,7 @@ local RARITY_CLR2 = {
 	[3] = Color(150, 64, 255, 225),
 	[4] = Color(230, 188, 22, 255),
 }
-local shadow = Material('cellar/slot_shadow.png')
+-- Native shading: no external slot-shadow material.
 
 function PANEL:Paint(w, h)
 	local draw_color
@@ -72,10 +72,10 @@ function PANEL:Paint(w, h)
 	end
 
 
-	surface.SetDrawColor(32, 8, 8, 255 * 0.75)
+	surface.SetDrawColor(10, 30, 43, 225)
 	surface.DrawRect(0, 0, w, h)
 
-	surface.SetDrawColor(98 * 0.75, 24 * 0.75, 24 * 0.75, 255)
+	surface.SetDrawColor(61, 117, 136, 200)
 		surface.DrawOutlinedRect(0, 0, w, h)
 	
 	if self.item_data then
@@ -116,13 +116,13 @@ function PANEL:Paint(w, h)
 	end
 
 	surface.SetDrawColor(255, 255, 255, 255 * 0.75)
-	surface.SetMaterial(shadow)
-	surface.DrawTexturedRect(1, 1, w, h)
+	surface.SetDrawColor(0, 0, 0, 35)
+	surface.DrawOutlinedRect(1, 1, w, h)
 	
 end
 
 surface.CreateFont("item.count", {
-	font = "Blender Pro Bold",
+	font = "Tahoma",
 	extended = true,
 	size = 16,
 	weight = 500,
@@ -367,6 +367,15 @@ function PANEL:Rebuild()
 	end
 	
 	local icon
+	if ix.WeaponAssembly and ix.WeaponAssembly.Supports(self.item_data) then
+		if IsValid(self.mdl) then self.mdl:Remove() end
+		self.mdl = vgui.Create("ixARC9ItemIcon", self)
+		self.mdl.item = self.item_data
+		self.mdl.rotated = self:IsRotated()
+		self.mdl:Dock(FILL)
+		self.mdl:SetPaintedManually(true)
+		return
+	end
 
 	if icon then
 

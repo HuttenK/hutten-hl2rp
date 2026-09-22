@@ -48,6 +48,13 @@ function PANEL:DrawCorners(x, y, w, h, size)
 end
 
 function PANEL:Paint(w, h)
+	if ix.Legends then
+		local U = ix.Legends
+		self:SetFont("legends.Body")
+		self:SetTextColor(self:GetDisabled() and U.muted or U.ink)
+		U.ButtonFace(self, w, h, true)
+		return
+	end
 	self.stateAlpha = math.Approach((self.stateAlpha or 0), (self:IsHovered() or self.m_MenuClicking) and 1 or 0, FrameTime() * 10)
 	local a = 0
 
@@ -74,6 +81,8 @@ function PANEL:Paint(w, h)
 end
 
 function PANEL:OnCursorEntered()
+	if self:GetDisabled() then return end
+	if ix.Legends then ix.Legends.HoverSound(); return end
 	surface.PlaySound("helix/ui/rollover.wav")
 end
 

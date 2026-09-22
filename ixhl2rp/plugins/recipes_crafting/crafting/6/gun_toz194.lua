@@ -7,7 +7,7 @@ RECIPE.requirements = {
 	mat_weaponparts = 2,
 }
 RECIPE.results = {
-	toz194 = 1
+	selected_eft_mr153 = 1
 }
 RECIPE.skill = {"crafting", 6}
 RECIPE.station = "station_guns"

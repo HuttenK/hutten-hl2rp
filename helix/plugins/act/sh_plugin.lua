@@ -68,6 +68,8 @@ function ix.act.Remove(name)
 	ix.command.list["Act" .. name] = nil
 end
 
+ix.util.Include("sh_sharedposes.lua")
+ix.util.Include("sh_resolver.lua")
 ix.util.Include("sh_definitions.lua")
 ix.util.Include("sv_hooks.lua")
 ix.util.Include("cl_hooks.lua")
@@ -79,6 +81,8 @@ end
 
 function PLUGIN:ExitAct(client)
 	client.ixUntimedSequence = nil
+	client.ixActModel = nil
+	client.ixActCharacter = nil
 	client:SetNetVar("actEnterAngle")
 
 	net.Start("ixActLeave")
@@ -95,7 +99,7 @@ function PLUGIN:PostSetupActs()
 
 		-- check if this act has any variants (i.e /ActSit 2)
 		for _, v in pairs(classes) do
-			if (#v.sequence > 1) then
+			if (istable(v) and v.sequence and #v.sequence > 1) then
 				variants = math.max(variants, #v.sequence)
 			end
 		end
@@ -120,9 +124,13 @@ function PLUGIN:PostSetupActs()
 				return false
 			end
 
-			local modelClass = ix.anim.GetModelClass(client:GetModel())
+			local modelClass = ix.anim.GetModelClass(client:GetModel(), client)
 
-			if (!classes[modelClass]) then
+			local available = false
+			for i = 1, variants do
+				if ix.act.Resolve(client, classes, i) then available = true break end
+			end
+			if (!available) then
 				return false, "modelNoSeq"
 			end
 
@@ -130,20 +138,23 @@ function PLUGIN:PostSetupActs()
 		end
 
 		COMMAND.OnRun = function(command, client, variant)
-			variant = math.Clamp(tonumber(variant) or 1, 1, variants)
+			variant = tonumber(variant) or 1
+			if variant ~= variant or variant == math.huge or variant == -math.huge then return "@modelNoSeq" end
+			variant = math.Clamp(math.floor(variant), 1, variants)
 
 			if (client:GetNetVar("actEnterAngle")) then
 				return "@notNow"
 			end
 
-			local modelClass = ix.anim.GetModelClass(client:GetModel())
+			local modelClass = ix.anim.GetModelClass(client:GetModel(), client)
 			local bCanEnter, error = PLUGIN:CanPlayerEnterAct(client, modelClass, variant, classes)
 
 			if (!bCanEnter) then
 				return error
 			end
 
-			local data = classes[modelClass]
+			local data = ix.act.Resolve(client, classes, variant)
+			if not data then return "@modelNoSeq" end
 			local mainSequence = data.sequence[variant]
 			local mainDuration
 
@@ -176,6 +187,8 @@ function PLUGIN:PostSetupActs()
 				startSequence = startSequence[1]
 			end
 
+			client.ixActModel = client:GetModel()
+			client.ixActCharacter = client:GetCharacter()
 			client:SetNetVar("actEnterAngle", client:GetAngles())
 
 			client:ForceSequence(startSequence, function()
@@ -212,6 +225,7 @@ function PLUGIN:PostSetupActs()
 				end
 			end, startDuration, nil)
 
+			if not client:GetNetVar("actEnterAngle") then return end
 			net.Start("ixActEnter")
 				net.WriteBool(data.idle or false)
 			net.Send(client)

@@ -3,7 +3,7 @@ local size = math.scale(64)
 local REGION_GAP = math.scale(5)
 local REGION_CLUSTER_PADDING = math.scale(5)
 local REGION_OUTLINE_THICK = 1
-local clrRegionOutline = Color(248, 64, 64, 255 * 0.1)
+local clrRegionOutline = Color(230, 68, 90, 50)
 
 --- @param canvas Panel scroll canvas (receiver); coordinates x,y are local to this panel
 local function GetClosestVisibleSlot(canvas, x, y)
@@ -200,7 +200,7 @@ end
 
 do
 	surface.CreateFont('inventory.title', {
-		font = 'Blender Pro Bold',
+		font = "Tahoma",
 		extended = true,
 		size = ix.UI.Scale(13),
 		weight = 500,
@@ -208,7 +208,7 @@ do
 	})
 end
 
-local clrTitle = Color(248 * 0.35, 64 * 0.35, 64 * 0.35, 225)
+local clrTitle = Color(48, 14, 24, 225)
 function PANEL:PaintOver(w, h)
 	if self.title and self.title != '' then
 		DisableClipping(true)
@@ -218,7 +218,7 @@ function PANEL:PaintOver(w, h)
 			surface.SetDrawColor(clrTitle)
 			surface.DrawRect(0, 0, w, -textH - 2)
 
-			surface.SetTextColor(248 * 0.8, 64 * 0.8, 64 * 0.8, 255)
+			surface.SetTextColor(220, 150, 161, 255)
 			surface.SetTextPos(2, -textH - 1)
 			surface.DrawText(self.title)
 		DisableClipping(false)

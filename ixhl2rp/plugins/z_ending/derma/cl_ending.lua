@@ -230,7 +230,7 @@ end
 -- ========================================================
 
 surface.CreateFont("credits.subtext", {
-    font = "Blender Pro Medium",
+    font = "Tahoma",
     extended = true,
     size = ix.UI.Scale(22),
     weight = 100,
@@ -238,7 +238,7 @@ surface.CreateFont("credits.subtext", {
 })
 
 surface.CreateFont("credits.text", {
-    font = "Blender Pro Medium",
+    font = "Tahoma",
     extended = true,
     size = ix.UI.Scale(32),
     weight = 500,
@@ -246,7 +246,7 @@ surface.CreateFont("credits.text", {
 })
 
 surface.CreateFont("credits.book", {
-    font = "Blender Pro Book",
+    font = "Tahoma",
     extended = true,
     size = ix.UI.Scale(32),
     weight = 500,

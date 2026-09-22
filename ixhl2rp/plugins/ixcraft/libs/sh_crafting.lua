@@ -3,6 +3,18 @@ local Craft = ix.util.Lib("Craft", {
 	stations = {},
 })
 
+-- Tool capabilities preserve recipes without requiring a particular weapon addon.
+function Craft:FindTools(client, uniqueID)
+ local result={}
+ for _,item in pairs(client:GetItems()) do
+  if item.uniqueID==uniqueID or (item.craftingTools and item.craftingTools[uniqueID]) then result[#result+1]=item end
+ end
+ return result
+end
+function Craft:HasTool(client, uniqueID)
+ return #self:FindTools(client,uniqueID)>0
+end
+
 local function ValidateItem(recipe, entry)
 	if isstring(entry) then
 		if !ix.Item.stored[entry] then
@@ -76,10 +88,24 @@ if SERVER then
 	util.AddNetworkString("ixCraftRecipe")
 
 	function Craft:AttemptCraft(recipe, client)
+		if not IsValid(client) or not client:Alive() then return false, "craftNeedItems" end
 		local character = client:GetCharacter()
 
 		if !character then
-			return false
+			return false, "craftNeedItems"
+		end
+		-- Station pointers can survive walking away, power loss, or stale UI.
+		if IsValid(client.ixStation) then
+			local station = client.ixStation
+			local blackout = ix.plugin.Get("blackout")
+			if client:GetPos():DistToSqr(station:GetPos()) > 192 * 192 or not station.inventory or
+				not station.inventory:OnCheckAccess(client) or (blackout and blackout:IsEntityBlackedOut(station)) then
+				return false, "craftNeedWorkstation"
+			end
+		end
+		-- Reject broken recipes before consuming any material or granting XP.
+		for id in pairs(recipe.results or {}) do
+			if not ix.Item:Get(id) then return false, "craftNeedItems" end
 		end
 		
 		if recipe.skill and istable(recipe.skill) then
@@ -133,7 +159,7 @@ if SERVER then
 
 				if !hasStation then
 					local stationInfo = self.stations[recipe.station]
-					return false, "craftNeedStation", L(stationInfo.name, client)
+					return false, "craftNeedStation", stationInfo and L(stationInfo.name, client) or tostring(recipe.station)
 				end
 			end
 		end
@@ -143,7 +169,7 @@ if SERVER then
 
 		if recipe.tools then
 			for _, uniqueID in pairs(recipe.tools or {}) do
-				if !client:HasItem(uniqueID) then
+				if !self:HasTool(client,uniqueID) then
 					hasTools = false
 					break
 				end
@@ -168,6 +194,7 @@ if SERVER then
 			for uniqueID, amount in pairs(recipe.requirements or {}) do
 				local count = 0
 				local stored = ix.Item:Get(uniqueID)
+				if not stored then return false, "craftNeedItems" end
 
 				if stored.stackable_legacy then
 					for k, v in ipairs(client:GetInventory("main"):GetItems()) do
@@ -373,7 +400,7 @@ if SERVER then
 
 				local sorted = {}
 
-				for k, v in ipairs(client:FindItems(uniqueID)) do
+				for k, v in ipairs(self:FindTools(client,uniqueID)) do
 					sorted[#sorted + 1] = {value = (v:GetData("durability") or v.durability), item = v}
 				end
 
@@ -527,12 +554,15 @@ if SERVER then
 			end
 
 			local success = self:OnCraft(recipeTable, client)
+			if success then hook.Run("CharacterCraftedRecipe", client, client:GetCharacter(), recipeTable) end
 
 			return success
 		end
 	end
 
 	net.Receive("ixCraftRecipe", function(length, client)
+		if length > 2048 or (client.ixNextCraftRequest or 0) > CurTime() then return end
+		client.ixNextCraftRequest = CurTime() + 0.25
 		ix.Craft:CraftRecipe(client, net.ReadString())
 	end)
 end

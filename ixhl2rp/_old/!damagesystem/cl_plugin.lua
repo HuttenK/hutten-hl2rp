@@ -4,7 +4,7 @@ clmp = math.Clamp
 local aprg, aprg2 = 0, 0
 
 surface.CreateFont("unconscious.font", {
-	font = "Blender Pro Bold",
+	font = "Tahoma",
 	size = ix.UI.Scale(49),
 	extended = true,
 	weight = 100

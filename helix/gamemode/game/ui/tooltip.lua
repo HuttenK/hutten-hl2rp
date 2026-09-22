@@ -1,25 +1,25 @@
 local Scale = ix.UI.Scale
 
 surface.CreateFont("autonomous.hint.title", {
-	font = "Blender Pro Book",
+	font = "Tahoma",
 	size = Scale(25),
 	extended = true,
 	weight = 500
 })
 surface.CreateFont("autonomous.hint.small", {
-	font = "Blender Pro Medium",
+	font = "Tahoma",
 	size = Scale(16),
 	extended = true,
 	weight = 500
 })
 surface.CreateFont("autonomous.hint.info", {
-	font = "Blender Pro Medium",
+	font = "Tahoma",
 	size = Scale(18),
 	extended = true,
 	weight = 500
 })
 surface.CreateFont("autonomous.hint.infobig", {
-	font = "Blender Pro Bold",
+	font = "Tahoma",
 	size = Scale(18),
 	extended = true,
 	weight = 500
@@ -98,20 +98,6 @@ end
 
 vgui.Register("hint.textpanel", PANEL, "Panel")
 
-local RT_HINT = GetRenderTargetEx("autonomous_hint_rt", 512, 256, RT_SIZE_OFFSCREEN, MATERIAL_RT_DEPTH_NONE, 0, 0, IMAGE_FORMAT_RGBA8888)
-local HINT_FX = CreateMaterial("autonomous_hint_fx", "Modulate", {
-	["$basetexture"] = "autonomous/ui/terminal/cmb_bg_animated",
-	["$selfillum"] = 1,
-	["$vertexalpha"] = 1,
-	["Proxies"] = {
-		["AnimatedTexture"] = {
-			["animatedTextureVar"] = "$basetexture",
-			["animatedTextureFrameNumVar"] = "$frame",
-			["animatedTextureFrameRate"] = 30
-		}
-	}
-})
-
 local PANEL = {}
 PANEL.colors = {}
 
@@ -168,12 +154,6 @@ function PANEL:SetTitle(text)
 end
 
 function PANEL:Init()
-	local hintMaterial = Material("autonomous/hint1")
-
-	hintMaterial:SetTexture("$basetexture", RT_HINT)
-	hintMaterial:SetInt("$translucent", 1)
-	hintMaterial:SetInt("$vertexalpha", 1)
-
 	local padding = 30
 
 	self.isAutonomousTooltip = true
@@ -181,16 +161,6 @@ function PANEL:Init()
 	self.mousePadding = 8
 	self.minWidth = Scale(640)
 	self.minHeightBottom = 64
-
-	self.z = ScrH()
-	self.scale = 0.8 + (1 - (self.z / 900))
-	self._size = Vector(0, -x, -y) * self.scale
-	self.mdl_pos = nil
-
-	self.mdl = ClientsideModel('models/autonomous/hint1.mdl', RENDERGROUP_TRANSLUCENT)
-	self.mdl:SetRenderMode(RENDERMODE_TRANSTEXTURE)
-	self.mdl:SetNoDraw(true)
-	self.mdl:SetupBones()
 
 	self:SetAlpha(255)
 	self:SetDrawOnTop(true)
@@ -273,107 +243,11 @@ function PANEL:Think()
 	self:MoveToFront() -- dragging a panel w/ tooltip will push the tooltip beneath even the menu panel(???)*/
 end
 
-local bg = Material("devtest/dif1.png")
-local blendFX = Color(255, 255, 255, 255)
-
-local m = Matrix()
-m:Translate(pos)
-function PANEL:RecacheHintSize(w, h)
-	local size = (w / 2 - 2)
-	local sizeh = (h / 2 - 2)
-
-	self.mdl_pos = {}
-	self.mdl_pos[1] = Vector(0, -size, sizeh) * self.scale
-	self.mdl_pos[2] = Vector(0, size, sizeh) * self.scale
-	self.mdl_pos[3] = Vector(0, -size, -sizeh) * self.scale
-	self.mdl_pos[4] = Vector(0, size, -sizeh) * self.scale
-end
-
-function PANEL:Paint(w, h)
-	render.PushRenderTarget(RT_HINT)
-		render.Clear(0, 0, 0, 255)
-
-		cam.Start2D()
-		--surface.SetAlphaMultiplier(0.1)
-
-			surface.SetMaterial(bg)
-			surface.SetDrawColor(color_white)
-			surface.DrawTexturedRect(0, 0, 512, 256)
-			
-
-			render.OverrideBlend(true, 9, 1, BLENDFUNC_ADD, 4, 1, BLENDFUNC_ADD)
-				surface.SetMaterial(HINT_FX)
-				surface.SetDrawColor(blendFX)
-				surface.DrawTexturedRect(0, 0, 256, 256)
-				surface.DrawTexturedRect(0, 0, 256, 256)
-			render.OverrideBlend(false)
-
-			surface.SetDrawColor(248, 64, 64, 32)
-			surface.DrawRect(0, 0, self.padding * 0.75 * (256 / w), 256)
-
-			surface.DrawRect(self.padding * 0.75 * (256 / w) + 1, 0, 1, 256)
-
-			surface.SetDrawColor(248, 64, 64, 200)
-			surface.DrawRect(256, 0, 21, 256)
-			
-		cam.End2D()
-	render.PopRenderTarget()
-
-	local alpha = (self:GetAlpha() / 255)
-
-	cam.Start3D(pos, ang)
-		render.SetViewPort(self:GetX(), self:GetY(), w, h)
-		cam.StartOrthoView(-w/2 * self.scale, h/2 * self.scale, w/2 * self.scale, -h/2 * self.scale)
-			render.SuppressEngineLighting(true)
-			cam.PushModelMatrix(m, true)
-			
-			self.mdl:SetupBones()
-
-			if !self.mdl_pos then
-				self:RecacheHintSize(w, h)
-			else
-				-- GetBoneMatrix возвращает nil, если у модели нет такой кости (или матрицы ещё
-				-- не готовы) — у некоторых предметных моделей меньше 4 костей. Раньше это роняло
-				-- mat:SetTranslation на nil. Пропускаем отсутствующие кости.
-				local mat = self.mdl:GetBoneMatrix(1)
-				if mat then
-					mat:SetTranslation(self.mdl_pos[1])
-					self.mdl:SetBoneMatrix(1, mat)
-				end
-
-				mat = self.mdl:GetBoneMatrix(0)
-				if mat then
-					mat:SetTranslation(self.mdl_pos[2])
-					self.mdl:SetBoneMatrix(0, mat)
-				end
-
-				mat = self.mdl:GetBoneMatrix(2)
-				if mat then
-					mat:SetTranslation(self.mdl_pos[3])
-					self.mdl:SetBoneMatrix(2, mat)
-				end
-
-				mat = self.mdl:GetBoneMatrix(3)
-				if mat then
-					mat:SetTranslation(self.mdl_pos[4])
-					self.mdl:SetBoneMatrix(3, mat)
-				end
-			end
-
-			self.mdl:SetPos(self._size)
-
-			render.SetBlend(alpha)
-			render.CullMode(MATERIAL_CULLMODE_NONE)
-
-			self.mdl:DrawModel()
-
-			render.CullMode(MATERIAL_CULLMODE_CCW)
-			render.SetBlend(1)
-
-			cam.PopModelMatrix()
-			render.SuppressEngineLighting(false)
-		cam.EndOrthoView()
-	cam.End3D()
+function PANEL:RecacheHintSize(w,h) end
+function PANEL:Paint(w,h)
+ surface.SetDrawColor(12,8,13,248); surface.DrawRect(0,0,w,h)
+ surface.SetDrawColor(105,38,49,230); surface.DrawOutlinedRect(0,0,w,h)
+ surface.SetDrawColor(235,65,82,230); surface.DrawRect(0,0,2,h)
 end
 
 vgui.Register("autonomous.tooltip", PANEL, "EditablePanel")

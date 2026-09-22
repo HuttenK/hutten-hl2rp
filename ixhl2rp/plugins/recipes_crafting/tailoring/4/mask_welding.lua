@@ -9,7 +9,7 @@ RECIPE.results = {
 	respirator_af = 1
 }
 RECIPE.skill = {"tailoring", 4}
-RECIPE.tools = {"wm_hammer"}
+RECIPE.tools = {"selected_eft_melee_hultafors"}
 RECIPE.station = "station_tailor"
 RECIPE.xp = 75
 RECIPE.preview = "models/autonomous/africa/items/prop_face_respirator.mdl"

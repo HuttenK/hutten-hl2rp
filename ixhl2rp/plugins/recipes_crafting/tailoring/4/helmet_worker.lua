@@ -8,6 +8,6 @@ RECIPE.results = {
 	helmet_construction = 1
 }
 RECIPE.skill = {"tailoring", 4}
-RECIPE.tools = {"wm_hammer"}
+RECIPE.tools = {"selected_eft_melee_hultafors"}
 RECIPE.station = "station_tailor"
 RECIPE.xp = 50

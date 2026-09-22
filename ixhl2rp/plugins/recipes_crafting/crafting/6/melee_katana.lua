@@ -6,8 +6,8 @@ RECIPE.requirements = {
 	mat_oil = 1,
 }
 RECIPE.results = {
-	wm_katana = 1
+	selected_eft_melee_gladius = 1
 }
 RECIPE.skill = {"crafting", 6}
-RECIPE.tools = {"wm_hammer", "tool_hacksaw"}
+RECIPE.tools = {"selected_eft_melee_hultafors", "tool_hacksaw"}
 RECIPE.xp = 140

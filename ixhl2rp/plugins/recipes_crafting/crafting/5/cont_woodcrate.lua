@@ -9,6 +9,6 @@ RECIPE.results = {
 }
 RECIPE.skill = {"crafting", 5}
 RECIPE.station = "station_tokar"
-RECIPE.tools = {"wm_hammer"}
+RECIPE.tools = {"selected_eft_melee_hultafors"}
 RECIPE.xp = 250
 RECIPE.preview = "models/props_junk/wood_crate001a.mdl"

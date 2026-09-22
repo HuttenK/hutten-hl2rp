@@ -7,7 +7,7 @@ RECIPE.requirements = {
 	metal_armature = 1,
 }
 RECIPE.results = {
-	model10 = 1
+	selected_eft_rsh12 = 1
 }
 RECIPE.skill = {"crafting", 5}
 RECIPE.station = "station_guns"

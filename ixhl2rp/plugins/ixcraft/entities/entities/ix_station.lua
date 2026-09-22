@@ -19,7 +19,7 @@ function ENT:HasTag(tag)
 	end
 	
 	if istable(self.Tags) then
-		return table.HasValue(tag)
+		return table.HasValue(self.Tags, tag)
 	end
 end
 
@@ -76,19 +76,30 @@ if SERVER then
 	end
 
 	function ENT:Use(client)
+		if not IsValid(client) or not client:IsPlayer() or not client:GetCharacter() then return end
 		local ct = CurTime()
 
 		if (client.nextStationUse and ct < client.nextStationUse) or client:IsRestricted() then
 			return
 		end
 
+		local previous = client.ixStation
+		if IsValid(previous) and previous ~= self and previous.inventory then
+			previous.inventory:RemoveReceiver(client)
+		end
+		client.ixStation = self
 		self.inventory:AddReceiver(client)
 		self.inventory:SyncTo(client)
 
 		local pingtime = client:Ping() * 0.001
 
 		timer.Simple(pingtime, function()
-			if !IsValid(client) then
+			if not IsValid(self) or not IsValid(client) or client.ixStation ~= self then
+				return
+			end
+			if not client:Alive() or client:IsRestricted() or client:GetPos():DistToSqr(self:GetPos()) > 192 * 192 then
+				self.inventory:RemoveReceiver(client)
+				client.ixStation = nil
 				return
 			end
 			
@@ -147,7 +158,7 @@ else
 
 	net.Receive("ixOpenStationCraft", function(len)
 		local station = net.ReadEntity()
-		local stationTable = station:GetStationTable()
+		local stationTable = IsValid(station) and station:GetStationTable()
 		local id = net.ReadUInt(32)
 		local inventory = ix.Inventory:Get(id)
 
@@ -158,7 +169,7 @@ else
 			ix.gui.stationCraft = nil
 		end
 
-		if IsValid(station) and inventory then
+		if IsValid(station) and stationTable and inventory then
 			local panel = vgui.Create("ui.craft")
 			panel.station = stationTable
 			panel.inventoryID = id

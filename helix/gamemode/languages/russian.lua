@@ -1,4 +1,6 @@
 ix.Locale:Build("ru")
+option.legendsAtmosphere = "Атмосфера меню"
+option.legendsAtmosphere.desc = "Движущиеся облака, дым и солнечные лучи в меню персонажей и TAB."
 
 
 helix									= "Helix"

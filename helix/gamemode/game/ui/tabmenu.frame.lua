@@ -125,14 +125,14 @@ DEFINE_BASECLASS('DFrame')
 
 do
 	surface.CreateFont('tab.frame.title', {
-		font = 'Blender Pro Book',
+		font = "Tahoma",
 		extended = true,
 		size = Scale(18),
 		weight = 500,
 		antialias = true,
 	})
 	surface.CreateFont('tab.frame.close', {
-		font = 'Blender Pro Heavy',
+		font = "Tahoma",
 		extended = true,
 		size = Scale(14),
 		weight = 500,
@@ -183,9 +183,10 @@ function DebugTabMenu()
 end
 
 function ix.util.TabRequestFocus(x)
-	if x.isTabFrame and newpanel != x.isTabFrame then
+	if not IsValid(x) or not IsValid(ix.gui.menu) or not ix.gui.menu.frames then return end
+	if IsValid(x.isTabFrame) and newpanel != x.isTabFrame then
 		for id, panel in pairs(ix.gui.menu.frames) do
-			panel:AlphaTo(panel == x.isTabFrame and 255 or 100, 0.1)
+			if IsValid(panel) then panel:AlphaTo(panel == x.isTabFrame and 255 or 215, 0.1) end
 		end
 		newpanel = x.isTabFrame
 		x.isTabFrame:MoveToFront()
@@ -207,7 +208,8 @@ function PANEL:Init()
 	self.lblTitle:SetAlpha(255)
 	self.lblTitle:SetPos(0, 0)
 	self.lblTitle:SetTall(22)
-	self.lblTitle:SetTextColor(Color(248, 64, 64))
+	self.lblTitle:SetTextColor(ix.Civic.colors.accent)
+	self.lblTitle:SetFont("civic.Small")
 
 	self.close = self:Add('ui.tab.frame.button')
 	self.close:SetStyle(2)
@@ -229,34 +231,22 @@ end
 function PANEL:PerformLayout(width, height)
 	self.close:AlignRight(0)
 
-	self.lblTitle:SetWide(width)
+	self.lblTitle:SetWide(math.max(0, width - self.close:GetWide() - Scale(16)))
 	self.lblTitle:SetX(Scale(8))
 end
 
 do
-	local shadow = Material('cellar/slot_shadow.png')
+	-- Panel shading is drawn by ix.Civic.
 
 	function PANEL:Paint(w, h) 
-		ix.util.DrawBlur(self, 2)
-
-		local y = 23
-
-		surface.SetDrawColor(255, 255, 255, 255)
-		surface.SetMaterial(shadow)
-		surface.DrawTexturedRect(0, 0, w, h)
-
-		surface.SetDrawColor(32, 8, 8, 255 * 0.75)
-		surface.DrawRect(0, 0, w, h)
-
-		DrawTitleCorners(0, 0, w - self.close:GetWide() - 2, 22, 2)
-
-		surface.SetDrawColor(248 * 0.5, 64 * 0.5, 64 * 0.5, 255 * 0.5)
-		surface.DrawOutlinedRect(0, y, w, h - y)
+		ix.Civic.Card(w, h)
+		ix.Civic.Rect(0, 0, w, 23, ix.Civic.colors.raised)
+		ix.Civic.Rect(0, 22, w, 1, ix.Civic.colors.line)
 	end
 end
 
 function PANEL:OnFocusChanged(gained)
-	self:SetAlpha(gained and 255 or 100)
+	self:SetAlpha(gained and 255 or 215)
 end
 
 function PANEL:OnMousePressed()

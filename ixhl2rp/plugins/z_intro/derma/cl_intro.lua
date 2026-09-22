@@ -233,7 +233,7 @@ end
 
 --[[
 surface.CreateFont("credits.book", {
-	font = "Blender Pro Book",
+	font = "Tahoma",
 	extended = true,
 	size = ix.UI.Scale(32),
 	weight = 500,

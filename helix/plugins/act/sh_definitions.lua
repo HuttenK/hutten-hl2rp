@@ -21,6 +21,9 @@ local function FacingWallBack(client)
 	end
 end
 
+ix.act.FacingWall = FacingWall
+ix.act.FacingWallBack = FacingWallBack
+
 function PLUGIN:SetupActs()
 	-- sit
 	ix.act.Register("Sit", {"citizen_male", "citizen_female"}, {
@@ -50,6 +53,8 @@ function PLUGIN:SetupActs()
 		untimed = true,
 		idle = true
 	})
+
+	ix.act.stored.Sit.nativeSit = true
 
 	-- stand
 	ix.act.Register("Stand", "citizen_male", {

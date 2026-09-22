@@ -13,3 +13,9 @@ end
 
 ix.util.Include("sh_definitions.lua")
 ix.util.Include("sv_hooks.lua")
+
+ix.util.Include("sh_treatment.lua")
+ix.util.Include("sv_treatment.lua")
+ix.util.Include("cl_treatment.lua")
+ix.util.Include("sv_examination.lua")
+ix.util.Include("cl_examination.lua")

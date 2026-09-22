@@ -34,7 +34,7 @@ function PANEL:CacheRecipeNeeds(stationID, stationInventory)
 
 			if canCraft then
 				for k, itemID in ipairs(recipe.tools or {}) do
-					if !client:HasItem(itemID) and (stationID and !stationInventory:HasItem(itemID) or false) then
+					if !ix.Craft:HasTool(client,itemID) and not (stationInventory and stationInventory:HasItem(itemID)) then
 						canCraft = false
 						break
 					end
@@ -108,10 +108,10 @@ function PANEL:Paint(w, h)
 	end
 
 	if !self.isMini then
-		surface.SetDrawColor(16, 32, 48, 255 * 0.9)
+		surface.SetDrawColor(30, 12, 20, 255 * 0.9)
 		surface.DrawRect(0, 0, w, h)
 
-		surface.SetDrawColor(0, 190 * 0.5, 255 * 0.5, 255 * 0.5)
+		surface.SetDrawColor(210 * 0.5, 48 * 0.5, 72 * 0.5, 255 * 0.5)
 		surface.DrawOutlinedRect(0, 0, w, h)
 	end
 end
@@ -127,10 +127,11 @@ function PANEL:BuildCraftPanel()
 	itemTitle:Dock(TOP)
 	itemTitle:DockMargin(0, 10, 0, 0)
 	itemTitle:SetContentAlignment(5)
-	itemTitle:SetTextColor(Color(0, 225, 255))
-	itemTitle:SetFont("craft.item.title")
-	itemTitle:SetText("USP MATCH")
+	itemTitle:SetTextColor(Color(245, 95, 112))
+	itemTitle:SetFont("legends.Heading")
+	itemTitle:SetText("")
 	itemTitle:SetVisible(false)
+ itemTitle:SetTall(scale(40)); itemTitle:SetWrap(true)
 
 	self.craftTitle = itemTitle
 
@@ -149,7 +150,7 @@ function PANEL:BuildCraftPanel()
 	self.itemIcon = itemIcon
 
 	local resultAmount = itemIcon:Add("DLabel")
-	resultAmount:SetFont("ui.craft.large")
+	resultAmount:SetFont("legends.Body")
 	resultAmount:SetText("")
 	resultAmount:SetContentAlignment(6)
 	resultAmount:SetVisible(true)
@@ -160,18 +161,18 @@ function PANEL:BuildCraftPanel()
 	self.itemCount = resultAmount
 
 	local itemLevelUp = top:Add("DLabel")
-	itemLevelUp:SetFont("craft.item.key")
+	itemLevelUp:SetFont("legends.Mono")
 	itemLevelUp:Dock(TOP)
 	itemLevelUp:SetVisible(false)
 	itemLevelUp:SetText("")
 	itemLevelUp:SetContentAlignment(5)
-	itemLevelUp:SetTextColor(Color(100, 255, 100, 255))
+	itemLevelUp:SetTextColor(ix.Legends.muted)
 	itemLevelUp:SizeToContents()
 
 	self.itemXP = itemLevelUp
 
 	local skill = top:Add("DLabel")
-	skill:SetFont("craft.item.key")
+	skill:SetFont("legends.Mono")
 	skill:SetText("")
 	skill:SetTextColor(Color(255, 255, 255, 255))
 	skill:SetContentAlignment(5)
@@ -188,14 +189,14 @@ function PANEL:BuildCraftPanel()
 	stationsPanel:SetTall(scale(20))
 	stationsPanel:SetVisible(false)
 		local stationsTitle = stationsPanel:Add("DLabel")
-		stationsTitle:SetFont("craft.item.key")
+		stationsTitle:SetFont("legends.Mono")
 		stationsTitle:SetText(L("craftStationKey"))
-		stationsTitle:SetTextColor(Color(0, 225, 255, 255))
+		stationsTitle:SetTextColor(Color(245, 95, 112, 255))
 		stationsTitle:Dock(LEFT)
 		stationsTitle:SizeToContents()
 
 		local station = stationsPanel:Add("DLabel")
-		station:SetFont("craft.item.value")
+		station:SetFont("legends.Body")
 		station:SetText("")
 		station:SetTextColor(Color(255, 255, 255, 255))
 		station:Dock(LEFT)
@@ -210,21 +211,21 @@ function PANEL:BuildCraftPanel()
 	toolsPanel:SetTall(scale(20))
 	toolsPanel:SetVisible(false)
 		local toolsTitle = toolsPanel:Add("DLabel")
-		toolsTitle:SetFont("craft.item.key")
+		toolsTitle:SetFont("legends.Mono")
 		toolsTitle:SetText(L("craftToolsKey"))
-		toolsTitle:SetTextColor(Color(0, 225, 255, 255))
+		toolsTitle:SetTextColor(Color(245, 95, 112, 255))
 		toolsTitle:Dock(LEFT)
 		toolsTitle:SizeToContents()
 
 		self.toolsPanel = toolsPanel
 
 	local componentsTitle = top:Add("DLabel")
-	componentsTitle:SetFont("craft.item.key")
+	componentsTitle:SetFont("legends.Mono")
 	componentsTitle:Dock(TOP)
 	componentsTitle:DockMargin(15, 10, 0, 0)
 	componentsTitle:SetVisible(false)
 	componentsTitle:SetText(L("craftComponentsKey"))
-	componentsTitle:SetTextColor(Color(0, 225, 255, 255))
+	componentsTitle:SetTextColor(Color(245, 95, 112, 255))
 	componentsTitle:SizeToContents()
 
 	self.componentsTitle = componentsTitle
@@ -237,7 +238,7 @@ function PANEL:BuildCraftPanel()
 	self.components:SetSpaceX(0)
 
 	top:InvalidateLayout(true)
-	top:SizeToChildren(true, true)
+	top:SizeToChildren(false, true)
 
 	self.top = top
 end
@@ -256,6 +257,8 @@ function PANEL:PaintOver(w, h)
 end
 
 function PANEL:Setup()
+	ix.gui.currentCraft = nil
+ ix.gui.can_craft = nil
 	if self.isMini then
 		self:Dock(FILL)
 		self:InvalidateParent(true)
@@ -268,10 +271,20 @@ function PANEL:Setup()
 		self.animTime = 0.3
 	end
 
-	local container = self:Add("ui.craft.container", 1)
+	local header=self:Add("Panel"); header:Dock(TOP); header:SetTall(scale(58))
+ header.Paint=function(_,w,h)
+  local U=ix.Legends
+  U.Text(U.T("FABRICATION / RECIPE LIBRARY","ИЗГОТОВЛЕНИЕ / РЕЦЕПТЫ"),"Heading",scale(16),scale(10),U.ink)
+  U.Rect(scale(16),h-scale(10),w-scale(32),1,U.line)
+ end
+ local container = self:Add("ui.craft.container", 1)
 	container:Setup(self.isMini, self.inventoryID)
 
 	self:BuildCraftPanel()
+ self.emptyHint=self.second:Add("DLabel"); self.emptyHint:Dock(TOP)
+ self.emptyHint:SetFont("legends.Body"); self.emptyHint:SetTextColor(ix.Legends.muted)
+ self.emptyHint:SetWrap(true); self.emptyHint:SetAutoStretchVertical(true)
+ self.emptyHint:SetText(ix.Legends.T("Select a recipe to inspect its result, station, tools and materials.","Выберите рецепт: результат, станция, инструменты и материалы появятся здесь."))
 
 	if !self.isMini then
 		local close = self:Add("DButton")
@@ -281,9 +294,9 @@ function PANEL:Setup()
 		close:MoveToFront()
 		close.Paint = function(btn, w, h)
 			local hovered = btn:IsHovered()
-			local clr = hovered and Color(255, 80, 80) or Color(0, 225, 255)
+			local clr = hovered and Color(255, 80, 80) or Color(245, 95, 112)
 
-			surface.SetDrawColor(16, 32, 48, 230)
+			surface.SetDrawColor(30, 12, 20, 230)
 			surface.DrawRect(0, 0, w, h)
 			surface.SetDrawColor(clr.r, clr.g, clr.b, 255)
 			surface.DrawOutlinedRect(0, 0, w, h)
@@ -299,12 +312,18 @@ function PANEL:Setup()
 		self.closeButton = close
 
 		local hint = self:Add("DLabel")
-		hint:SetFont("craft.item.key")
+		hint:SetFont("legends.Mono")
 		hint:SetText(L("craftCloseHint"))
-		hint:SetTextColor(Color(0, 225, 255, 200))
+		hint:SetTextColor(Color(245, 95, 112, 200))
 		hint:SizeToContents()
 		hint:SetPos(ScrW() - scale(54) - hint:GetWide() - scale(10), scale(18) + (scale(36) - hint:GetTall()) * 0.5)
 		hint:MoveToFront()
+	end
+end
+
+function PANEL:PerformLayout(w, h)
+	if self.isMini and IsValid(self.recipeColumn) then
+		self.recipeColumn:SetWide(math.max(1, (w - scale(20)) * 0.48))
 	end
 end
 

@@ -10,7 +10,7 @@ local background_width, background_height = 1920, 1080
 -- ─────────────────────────────────────────────
 
 surface.CreateFont("ending.prompt.key", {
-	font      = "Blender Pro Bold",
+	font      = "Tahoma",
 	extended  = true,
 	size      = ix.UI.Scale(15),
 	weight    = 700,
@@ -18,7 +18,7 @@ surface.CreateFont("ending.prompt.key", {
 })
 
 surface.CreateFont("ending.prompt.main", {
-	font      = "Blender Pro Medium",
+	font      = "Tahoma",
 	extended  = true,
 	size      = ix.UI.Scale(20),
 	weight    = 400,
@@ -26,7 +26,7 @@ surface.CreateFont("ending.prompt.main", {
 })
 
 surface.CreateFont("ending.slide.text", {
-	font      = "Blender Pro Book",
+	font      = "Tahoma",
 	extended  = true,
 	size      = ix.UI.Scale(32),
 	weight    = 500,

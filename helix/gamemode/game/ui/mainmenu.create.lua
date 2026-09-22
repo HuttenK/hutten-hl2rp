@@ -339,35 +339,35 @@ vgui.Register("ui.character.model", PANEL, "DButton")
 
 do
 	surface.CreateFont("char.create.title", {
-		font = "Blender Pro Book",
+		font = "Tahoma",
 		extended = true,
 		size = Scale(48),
 		weight = 500,
 		antialias = true,
 	})
 	surface.CreateFont("char.create.subtitle", {
-		font = "Blender Pro Medium",
+		font = "Tahoma",
 		extended = true,
 		size = Scale(30),
 		weight = 500,
 		antialias = true,
 	})
 	surface.CreateFont("char.create.container", {
-		font = "Blender Pro Medium",
+		font = "Tahoma",
 		extended = true,
 		size = Scale(20),
 		weight = 500,
 		antialias = true,
 	})
 	surface.CreateFont("char.create.text", {
-		font = "Blender Pro Book",
+		font = "Tahoma",
 		extended = true,
 		size = Scale(19),
 		weight = 500,
 		antialias = true,
 	})
 	surface.CreateFont("char.create.button", {
-		font = "Blender Pro Book",
+		font = "Tahoma",
 		extended = true,
 		size = Scale(30),
 		weight = 500,
@@ -601,7 +601,7 @@ function Payload:Get(id)
 end
 
 surface.CreateFont("attribute.slider", {
-	font = "Blender Pro Medium",
+	font = "Tahoma",
 	extended = true,
 	size = Scale(64),
 	weight = 500,
@@ -609,7 +609,7 @@ surface.CreateFont("attribute.slider", {
 })
 
 surface.CreateFont("attribute.title", {
-	font = "Blender Pro Medium",
+	font = "Tahoma",
 	extended = true,
 	size = Scale(32),
 	weight = 500,
@@ -617,7 +617,7 @@ surface.CreateFont("attribute.title", {
 })
 
 surface.CreateFont("attribute.desc", {
-	font = "Blender Pro Book",
+	font = "Tahoma",
 	extended = true,
 	size = Scale(19),
 	weight = 500,
@@ -625,7 +625,7 @@ surface.CreateFont("attribute.desc", {
 })
 
 surface.CreateFont("attribute.slider.fx", {
-	font = "autonomous-extra",
+	font = "Tahoma",
 	extended = true,
 	size = Scale(35),
 	weight = 1000,
@@ -633,7 +633,7 @@ surface.CreateFont("attribute.slider.fx", {
 })
 
 surface.CreateFont("attribute.maxpoints", {
-	font = "Blender Pro Medium",
+	font = "Tahoma",
 	extended = true,
 	size = Scale(80),
 	weight = 500,
@@ -641,7 +641,7 @@ surface.CreateFont("attribute.maxpoints", {
 })
 
 surface.CreateFont("attribute.star", {
-	font = "autonomous-star",
+	font = "Tahoma",
 	extended = true,
 	size = Scale(32),
 	weight = 500,
@@ -683,7 +683,7 @@ PANEL.style = {
 }
 function PANEL:Init()
 	self:SetFont("attribute.star")
-	self:SetText("A")
+	self:SetText("☆")
 
 
 	self:SetChecked(false)
@@ -691,6 +691,7 @@ end
 
 function PANEL:SetChecked(value)
 	self.checked = value
+ self:SetText(value and "★" or "☆")
 	self:SetAlpha(value and (255 * 0.5) or 30)
 
 	self.currentAlpha = self:GetAlpha()
@@ -838,7 +839,7 @@ function PANEL:Init()
 	local textW = Scale(100)
 
 	local plus = self:Add("attribute.slider.button")
-	plus:SetText("B")
+	plus:SetText("+")
 	plus:SetWide(buttonW)
 	plus:Dock(RIGHT)
 	plus.DoClick = function(this)
@@ -847,7 +848,7 @@ function PANEL:Init()
 	end
 
 	local minus = self:Add("attribute.slider.button")
-	minus:SetText("A")
+	minus:SetText("−")
 	minus:SetWide(buttonW)
 	minus:Dock(LEFT)
 	minus.DoClick = function(this)
@@ -905,7 +906,7 @@ function PANEL:OnChanged(difference) end
 vgui.Register("ui.attribute.slider", PANEL, "EditablePanel")
 
 surface.CreateFont("gender.selector.fx", {
-	font = "autonomous-gender",
+	font = "Tahoma",
 	extended = true,
 	size = Scale(72),
 	weight = 500,
@@ -1002,22 +1003,22 @@ PANEL.clr = {
 
 local factionsTest = {
 	[1] = {
-		icon = Material("autonomous/factions/citizen.png"),
+		icon = Material("icon16/user.png"),
 		title = "ГРАЖДАНИН",
 		desc = "Fusce rhoncus vehicula consectetur. Cras sed libero eget lectus faucibus porta. Praesent auctor pharetra mauris, vehicula aliquam lorem convallis eu. Proin finibus pretium pellentesque. Mauris at dignissim turpis. Phasellus tempor ligula ex, at placerat ante porta ut. Maecenas nec dolor auctor, facilisis turpis et, dignissim urna. Phasellus lacinia accumsan lorem. Phasellus ultrices metus nec elementum fermentum. Sed quis interdum turpis. Fusce mauris justo, vestibulum dignissim varius at, tincidunt vel neque. Praesent non nulla ac erat vehicula blandit eget ut erat. Nulla vehicula imperdiet nisl."
 	},
 	[2] = {
-		icon = Material("autonomous/factions/cca.png"),
+		icon = Material("icon16/shield.png"),
 		title = "ГРАЖДАНСКАЯ ОБОРОНА",
 		desc = "Fusce rhoncus vehicula consectetur. Cras sed libero eget lectus faucibus porta. Praesent auctor pharetra mauris, vehicula aliquam lorem convallis eu. Proin finibus pretium pellentesque. Mauris at dignissim turpis. Phasellus tempor ligula ex, at placerat ante porta ut. Maecenas nec dolor auctor, facilisis turpis et, dignissim urna. Phasellus lacinia accumsan lorem. Phasellus ultrices metus nec elementum fermentum. Sed quis interdum turpis. Fusce mauris justo, vestibulum dignissim varius at, tincidunt vel neque. Praesent non nulla ac erat vehicula blandit eget ut erat. Nulla vehicula imperdiet nisl."
 	},
 	[3] = {
-		icon = Material("autonomous/factions/vortigaunt.png"),
+		icon = Material("icon16/lightning.png"),
 		title = "ВОРТИГОНТ",
 		desc = "Fusce rhoncus vehicula consectetur. Cras sed libero eget lectus faucibus porta. Praesent auctor pharetra mauris, vehicula aliquam lorem convallis eu. Proin finibus pretium pellentesque. Mauris at dignissim turpis. Phasellus tempor ligula ex, at placerat ante porta ut. Maecenas nec dolor auctor, facilisis turpis et, dignissim urna. Phasellus lacinia accumsan lorem. Phasellus ultrices metus nec elementum fermentum. Sed quis interdum turpis. Fusce mauris justo, vestibulum dignissim varius at, tincidunt vel neque. Praesent non nulla ac erat vehicula blandit eget ut erat. Nulla vehicula imperdiet nisl."
 	},
 	[4] = {
-		icon = Material("autonomous/factions/conscripts_africa.png"),
+		icon = Material("icon16/group.png"),
 		title = "РЕЗЕРВ АРМИИ НАДЗОРА",
 		desc = [[Армия Надзора — военная структура Альянса, созданная незадолго после завершения Семичасовой войны на основе миротворческих войск ООН, НАТО и ОДКБ. Следуя стандартным армейским практикам, Надзор активно использует земную военную технику. Основной задачей армии Надзора считается гарантии безопасности, стабильности - и восстановления планеты Земля под контролем Альянса.
 
@@ -1026,14 +1027,14 @@ local factionsTest = {
 }
 
 surface.CreateFont("char.create.factionTitle", {
-	font = "Blender Pro Book",
+	font = "Tahoma",
 	extended = true,
 	size = Scale(30),
 	weight = 500,
 	antialias = true,
 })
 surface.CreateFont("char.create.factionDesc", {
-	font = "Blender Pro Book",
+	font = "Tahoma",
 	extended = true,
 	size = Scale(21),
 	weight = 500,
@@ -1044,7 +1045,7 @@ function PANEL:CreateFactionStage()
 	local w, h = ScrW(), ScrH()
 	local factionSizeW, factionSizeH = Scale(500) * 0.8, Scale(833) * 0.8
 	local infoBlockH = Scale(256)
-	local factionBG = Material("autonomous/charcreate/faction_bg.png")
+	local factionBG = Material("vgui/gradient-d")
 
 	self.factionPanel = self:AddSubpanel("selectFaction", true)
 	self.factionPanel:SetSize(w, h)
@@ -1056,7 +1057,7 @@ function PANEL:CreateFactionStage()
 		--end
 	end
 	self.factionPanel.Paint = function(_, w, h)
-		ix.DX.DrawMaterial(0, 0, 0, w, h, color_white, factionBG)
+		ix.DX.DrawMaterial(0, 0, 0, w, h, Color(16,10,17), factionBG)
 	end
 
 	local padding = Scale(24)
@@ -1224,6 +1225,7 @@ function PANEL:CreateVisualStage(container)
 	self.view:SetPos(0, 0)
 	self.view:SetSize(w, h)
 	self.view.PaintOver = function(this, w, h)
+		if vignette:IsError() then return end
 		surface.SetDrawColor(0, 0, 0)
 		surface.SetMaterial(vignette)
 		surface.DrawTexturedRect(0, 0, w, h)
@@ -1549,7 +1551,7 @@ function PANEL:CreateVisualStage(container)
 		body2:SetUnselectedColor(Color(200, 56, 56))
 		body2:DockMargin(size * 0.24, 0, 0, 0)
 		body2:SetSize(size)
-		body2:SetText("B")
+		body2:SetText("♀")
 		body2.DoClick = function(this)
 			self:SelectGender(2)
 		end
@@ -1559,7 +1561,7 @@ function PANEL:CreateVisualStage(container)
 		body1:SetUnselectedColor(Color(56, 200, 200))
 		body1:Dock(RIGHT)
 		body1:SetSize(size)
-		body1:SetText("A")
+		body1:SetText("♂")
 		body1.DoClick = function(this)
 			self:SelectGender(1)
 		end
@@ -1898,7 +1900,7 @@ function PANEL:CreateSkillsStage()
 	local w, h = ScrW(), ScrH()
 	local factionSizeW, factionSizeH = Scale(500) * 0.8, Scale(833) * 0.8
 	local infoBlockH = Scale(256)
-	local statBG = Material("autonomous/charcreate/stat_bg.png")
+	local statBG = Material("vgui/gradient-d")
 
 	self.skillsPanel = self:AddSubpanel("selectSkills", true)
 	self.skillsPanel:SetSize(w, h)
@@ -1910,7 +1912,7 @@ function PANEL:CreateSkillsStage()
 		--end
 	end
 	self.skillsPanel.Paint = function(_, w, h)
-		ix.DX.DrawMaterial(0, 0, 0, w, h, color_white, statBG)
+		ix.DX.DrawMaterial(0, 0, 0, w, h, Color(16,10,17), statBG)
 	end
 
 	local padding = Scale(24)

@@ -12,7 +12,7 @@ AccessorFunc(PANEL, "m_bPressed", "Pressed", FORCE_BOOL)
 AccessorFunc(PANEL, "m_Font", "Font", FORCE_STRING)
 
 surface.CreateFont("TerminalButtonText", {
-	font = "Harmonia Sans Pro Cyr",
+	font = "Tahoma",
 	size = 30,
 	antialias = true,
 	weight = 0,
@@ -173,7 +173,7 @@ local screenWidth, screenHeight = 56, 32.7
 local scaledWidth, scaledHeight = screenWidth / scale, screenHeight / scale
 
 surface.CreateFont("TerminalTitleLight", {
-	font = "Blender Pro Thin",
+	font = "Tahoma",
 	weight = 100,
 	size = 80,
 	antialias = true,
@@ -182,7 +182,7 @@ surface.CreateFont("TerminalTitleLight", {
 })
 
 surface.CreateFont("TerminalSubTitleLight", {
-	font = "Blender Pro Book",
+	font = "Tahoma",
 	size = 60,
 	antialias = true,
 	weight = 0,
@@ -190,7 +190,7 @@ surface.CreateFont("TerminalSubTitleLight", {
 })
 
 surface.CreateFont("TerminalSubTitle", {
-	font = "Harmonia Sans Pro Cyr",
+	font = "Tahoma",
 	size = 60,
 	antialias = true,
 	weight = 0,
@@ -198,7 +198,7 @@ surface.CreateFont("TerminalSubTitle", {
 })
 
 surface.CreateFont("TerminalSubTitleLightAlt", {
-	font = "Blender Pro Heavy",
+	font = "Tahoma",
 	size = 30,
 	antialias = true,
 	weight = 0,
@@ -206,7 +206,7 @@ surface.CreateFont("TerminalSubTitleLightAlt", {
 })
 
 surface.CreateFont("TerminalTitle", {
-	font = "Harmonia Sans Pro Cyr",
+	font = "Tahoma",
 	size = 80,
 	antialias = true,
 	weight = 0,
@@ -214,7 +214,7 @@ surface.CreateFont("TerminalTitle", {
 })
 
 surface.CreateFont("TerminalLarge", {
-	font = "Harmonia Sans Pro Cyr",
+	font = "Tahoma",
 	size = 100,
 	antialias = true,
 	weight = 0,
@@ -222,7 +222,7 @@ surface.CreateFont("TerminalLarge", {
 })
 
 surface.CreateFont("TerminalTextLight", {
-	font = "Harmonia Sans Pro Cyr Light",
+	font = "Tahoma",
 	size = 45,
 	antialias = true,
 	weight = 0,
@@ -230,7 +230,7 @@ surface.CreateFont("TerminalTextLight", {
 })
 
 surface.CreateFont("TerminalText", {
-	font = "Harmonia Sans Pro Cyr",
+	font = "Tahoma",
 	size = 45,
 	antialias = true,
 	weight = 0,
@@ -238,7 +238,7 @@ surface.CreateFont("TerminalText", {
 })
 
 surface.CreateFont("TerminalTextSmall3", {
-	font = "Blender Pro Bold",
+	font = "Tahoma",
 	size = 25,
 	antialias = true,
 	weight = 0,
@@ -246,7 +246,7 @@ surface.CreateFont("TerminalTextSmall3", {
 })
 
 surface.CreateFont("TerminalTextSmall4", {
-	font = "Blender Pro Bold",
+	font = "Tahoma",
 	size = 20,
 	antialias = true,
 	weight = 0,
@@ -254,7 +254,7 @@ surface.CreateFont("TerminalTextSmall4", {
 })
 
 surface.CreateFont("TerminalClock", {
-	font = "Blender Pro Medium",
+	font = "Tahoma",
 	size = 25,
 	antialias = true,
 	weight = 0,
@@ -262,7 +262,7 @@ surface.CreateFont("TerminalClock", {
 })
 
 surface.CreateFont("TerminalLargePointsLarge", {
-	font = "Blender Pro Medium",
+	font = "Tahoma",
 	size = 85,
 	antialias = true,
 	weight = 0,
@@ -270,7 +270,7 @@ surface.CreateFont("TerminalLargePointsLarge", {
 })
 
 surface.CreateFont("TerminalTextPointsBig", {
-	font = "Blender Pro Book",
+	font = "Tahoma",
 	size = 40,
 	antialias = true,
 	weight = 0,
@@ -278,7 +278,7 @@ surface.CreateFont("TerminalTextPointsBig", {
 })
 
 surface.CreateFont("TerminalTextPointsSmalll", {
-	font = "Blender Pro Book",
+	font = "Tahoma",
 	size = 25,
 	antialias = true,
 	weight = 0,

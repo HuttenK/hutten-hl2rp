@@ -3,7 +3,8 @@ local PLUGIN = PLUGIN
 -- ─────────────────────────────────────────────
 --  Текстуры
 -- ─────────────────────────────────────────────
-local matVignette = Material("helix/gui/vignette.png", "smooth")
+local vignetteEdges = {Material("vgui/gradient-l"), Material("vgui/gradient-r"),
+    Material("vgui/gradient-u"), (Material("vgui/gradient-d"))}
 
 -- ─────────────────────────────────────────────
 --  Состояние индикатора попадания
@@ -17,17 +18,35 @@ local prevHealth     = -1
 -- ─────────────────────────────────────────────
 local function DrawVignette(r, g, b, alpha)
     if alpha <= 0 then return end
-    surface.SetMaterial(matVignette)
     surface.SetDrawColor(r, g, b, math.Clamp(alpha, 0, 255))
-    surface.DrawTexturedRect(0, 0, ScrW(), ScrH())
+    local w, h = ScrW(), ScrH()
+    local rects = {{0, 0, w * 0.2, h}, {w * 0.8, 0, w * 0.2, h},
+        {0, 0, w, h * 0.2}, {0, h * 0.8, w, h * 0.2}}
+    for i, material in ipairs(vignetteEdges) do
+        if not material:IsError() then
+            surface.SetMaterial(material)
+            surface.DrawTexturedRect(unpack(rects[i]))
+        end
+    end
 end
+
+local observedCharacter
 
 -- ─────────────────────────────────────────────
 --  HUDPaint — индикатор попадания
 -- ─────────────────────────────────────────────
 function PLUGIN:HUDPaint()
     local client = LocalPlayer()
-    if not IsValid(client) or not client:Alive() then return end
+    local character = IsValid(client) and client.GetCharacter and client:GetCharacter()
+    if not character or not client:Alive() then
+        prevHealth, HitFlashBright, HitFlashVig, observedCharacter = -1, 0, 0, nil
+        return
+    end
+    if observedCharacter ~= character or (ix.gui and IsValid(ix.gui.characterMenu)) then
+        observedCharacter = character
+        prevHealth, HitFlashBright, HitFlashVig = client:Health(), 0, 0
+        return
+    end
     if client:GetMoveType() == MOVETYPE_NOCLIP then return end
 
     local ft = FrameTime()

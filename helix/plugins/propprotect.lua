@@ -3,6 +3,14 @@ PLUGIN.name = "Basic Prop Protection"
 PLUGIN.author = "Chessnut"
 PLUGIN.description = "Adds a simple prop protection system."
 
+local function CanMoveCorpse(client, entity)
+	-- Only the corpse lifecycle sets this replicated marker. An unconscious
+	-- player's ragdoll is not public property, nor are spawned decorative props.
+	return IsValid(client) and client:GetCharacter() and IsValid(entity)
+		and entity:GetClass() == "prop_ragdoll" and entity:GetNetVar("ixCorpse", false)
+		and !entity:GetNetVar("Persistent", false)
+end
+
 CAMI.RegisterPrivilege({
 	Name = "Helix - Bypass Prop Protection",
 	MinAccess = "admin"
@@ -77,6 +85,8 @@ if (SERVER) then
 	end
 
 	function PLUGIN:PhysgunPickup(client, entity)
+		if CanMoveCorpse(client, entity) then return end
+		if !client:GetCharacter() then return false end
 		local characterID = client:GetCharacter():GetID()
 
 		if (entity:GetNetVar("owner", 0) != characterID
@@ -86,8 +96,10 @@ if (SERVER) then
 	end
 
 	function PLUGIN:OnPhysgunReload(weapon, client)
+		if !client:GetCharacter() then return false end
 		local characterID = client:GetCharacter():GetID()
 		local trace = client:GetEyeTrace()
+		if CanMoveCorpse(client, trace.Entity) then return end
 
 		if (IsValid(trace.Entity) and trace.Entity:GetNetVar("owner", 0) != characterID
 		and !CAMI.PlayerHasAccess(client, "Helix - Bypass Prop Protection", nil)) then
@@ -130,6 +142,8 @@ if (SERVER) then
 	PLUGIN.PlayerSpawnedVehicle = PLUGIN.PlayerSpawnedNPC
 else
 	function PLUGIN:PhysgunPickup(client, entity)
+		if CanMoveCorpse(client, entity) then return end
+		if !client:GetCharacter() then return false end
 		if (entity:GetNetVar("owner", 0) != client:GetCharacter():GetID()
 		and !CAMI.PlayerHasAccess(client, "Helix - Bypass Prop Protection", nil)) then
 			return false

@@ -1,5 +1,5 @@
 
-local backgroundColor = Color(0, 0, 0, 66)
+local backgroundColor = Color(20, 9, 16, 235)
 
 local PANEL = {}
 
@@ -92,9 +92,14 @@ function PANEL:Init()
 end
 
 function PANEL:AddCategory(name)
-	local button = self.categoryPanel:Add("ixMenuButton")
-	button:SetText(L(name))
-	button:SizeToContents()
+	local button
+	if ix.Legends then
+		button = ix.Legends.Button(self.categoryPanel, L(name), function() self:OnCategorySelected(name) end)
+		button:SetWide(ix.Legends.Scale(190))
+	else
+		button = self.categoryPanel:Add("ixMenuButton")
+		button:SetText(L(name)); button:SizeToContents()
+	end
 	-- @todo don't hardcode this but it's the only panel that needs docking at the bottom so it'll do for now
 	button:Dock(name == "credits" and BOTTOM or TOP)
 	button.DoClick = function()

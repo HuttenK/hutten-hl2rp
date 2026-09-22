@@ -55,6 +55,10 @@ function GM:CalcViewModelView(weapon, viewModel, oldEyePos, oldEyeAngles, eyePos
 	eyeAngles:RotateAroundAxis(eyeAngles:Forward(), rotation.y * fraction)
 	eyeAngles:RotateAroundAxis(eyeAngles:Right(), rotation.r * fraction)
 
+	if ix.Immersion and ix.Immersion.WeaponMotion then
+		ix.Immersion.WeaponMotion(client, weapon, eyePos, eyeAngles)
+	end
+
 	viewModel:SetAngles(eyeAngles)
 	return self.BaseClass:CalcViewModelView(weapon, viewModel, oldEyePos, oldEyeAngles, eyePos, eyeAngles)
 end
@@ -308,7 +312,7 @@ function GM:HUDPaintBackground()
 
 	local weapon = client:GetActiveWeapon()
 
-	if (IsValid(weapon) and hook.Run("CanDrawAmmoHUD", weapon) != false and weapon.DrawAmmo != false) then
+	if (not (ix.GameplayHUD and ix.GameplayHUD.Enabled()) and IsValid(weapon) and hook.Run("CanDrawAmmoHUD", weapon) != false and weapon.DrawAmmo != false) then
 		local clip = weapon:Clip1()
 		local clipMax = weapon:GetMaxClip1()
 		local count = client:GetAmmoCount(weapon:GetPrimaryAmmoType())

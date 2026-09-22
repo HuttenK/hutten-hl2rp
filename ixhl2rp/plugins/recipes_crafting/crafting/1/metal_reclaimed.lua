@@ -8,9 +8,9 @@ RECIPE.results = {
 	metal_reclaimed = 1
 }
 RECIPE.tool_durability = {
-	wm_hammer = 5
+	selected_eft_melee_hultafors = 5
 }
 RECIPE.skill = {"crafting", 1}
-RECIPE.tools = {"wm_hammer"}
+RECIPE.tools = {"selected_eft_melee_hultafors"}
 RECIPE.station = "station_tokar"
 RECIPE.xp = 40

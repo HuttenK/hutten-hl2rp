@@ -11,6 +11,6 @@ RECIPE.results = {
 	gun_pistol_frame = 1
 }
 RECIPE.skill = {"crafting", 4}
-RECIPE.tools = {"wm_screwdriver", "wm_hammer"}
+RECIPE.tools = {"wm_screwdriver", "selected_eft_melee_hultafors"}
 RECIPE.station = "station_guns"
 RECIPE.xp = 100

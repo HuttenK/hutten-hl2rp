@@ -3,7 +3,7 @@ local RADIUS_INNER = 100
 local RADIUS_OUTER = 250
 
 surface.CreateFont("autonomous.radialmenu.btn", {
-	font = "Blender Pro Medium",
+	font = "Tahoma",
 	extended = true,
 	size = 21,
 	weight = 500,

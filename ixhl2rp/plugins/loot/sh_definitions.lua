@@ -126,7 +126,7 @@ ix.LootContainer:Add("trash_cluster", {  -- garbage tier 1
 			{ id = "dirty_water", weight = 35 },
 			{ id = "mat_wood", weight = 50, min = 2, max = 3 },
 			{ id = "mat_charcoal", weight = 50 },
-			{ id = "wm_pipe", weight = 50 },
+			{ id = "selected_eft_melee_crowbar", weight = 50 },
 			{ id = "junk_metalbucket", weight = 50 },
 			{ id = "junk_metalpot", weight = 50 },
 			{ id = "junk_briefcase", weight = 50 },
@@ -186,7 +186,7 @@ ix.LootContainer:Add("dumpster", { -- garbage tier 2
 			{ id = "junk_harddrive", weight = 5 },
 			{ id = "junk_citizenradio", weight = 5 },
 			{ id = "junk_tv", weight = 5 },
-			{ id = "wm_pipe", weight = 5 },
+			{ id = "selected_eft_melee_crowbar", weight = 5 },
 			{ id = "junk_chair", weight = 5 },
 			{ id = "junk_lamp", weight = 5 },
 			{ id = "junk_drawerchunk", weight = 5 },
@@ -259,7 +259,7 @@ ix.LootContainer:Add("crate", { -- rnp - utility
 	Locked = true,
 	Hide = false,
 	Respawn = 3600,
-	Tool = "wm_crowbar",
+	Tool = "selected_eft_melee_crowbar",
 	ToolDamage = 20,
 
 	LootGroup = {
@@ -305,7 +305,7 @@ ix.LootContainer:Add("crate", { -- rnp - utility
 			{ id = "junk_tv", weight = 5 },
 			{ id = "tool_scissors", weight = 2 },
 			{ id = "wm_screwdriver", weight = 2 },
-			{ id = "wm_hammer", weight = 2 }
+			{ id = "selected_eft_melee_hultafors", weight = 2 }
 		}
 	},
 	Loot = {
@@ -446,7 +446,7 @@ ix.LootContainer:Add("supply_crate", { -- resource crate
 	Locked = true,
 	Hide = false,
 	Respawn = 3600,
-	Tool = "wm_crowbar",
+	Tool = "selected_eft_melee_crowbar",
 	ToolDamage = 20,
 
 	LootGroup = {
@@ -517,7 +517,7 @@ ix.LootContainer:Add("military_crate", { -- military tier 0
 	Locked = true,
 	Hide = false,
 	Respawn = 3600,
-	Tool = "wm_crowbar",
+	Tool = "selected_eft_melee_crowbar",
 	ToolDamage = 30,
 
 	LootGroup = {
@@ -525,8 +525,8 @@ ix.LootContainer:Add("military_crate", { -- military tier 0
 			{ id = "resin", weight = 20 },
 			{ id = "box_of_gunpowder", weight = 70, min = 1, max = 2 },
 			{ id = "box_of_casings", weight = 30 },
-			{ id = "grenade", weight = 5 },
-			{ id = "gasgrenade", weight = 5 },
+			{ id = "selected_eft_rgd5", weight = 5 },
+			{ id = "selected_eft_m18y", weight = 5 },
 			{ id = "smg1grenade", weight = 5 },
 			{ id = "357ammo", weight = 5 },
 			{ id = "smg1ammo", weight = 5 },
@@ -553,7 +553,7 @@ ix.LootContainer:Add("military_crate", { -- military tier 0
 			{ id = "broken_shotgun", weight = 30 },
 			{ id = "head_helmet_tier4", weight = 15 },
 			{ id = "broken_ar2", weight = 5 },
-			{ id = "wm_crowbar", weight = 8 },
+			{ id = "selected_eft_melee_crowbar", weight = 8 },
 		},
 		regular = {
 			{ id = "resin", weight = 20 },
@@ -574,7 +574,7 @@ ix.LootContainer:Add("military_crate", { -- military tier 0
 			{ id = "junk_shoe", weight = 3 },
 			{ id = "junk_metalgascan", weight = 5 },
 			{ id = "junk_citizenradio", weight = 10 },
-			{ id = "wm_combat_knife", weight = 10 },
+			{ id = "selected_eft_melee_6x5", weight = 10 },
 			{ id = "hatchet", weight = 10 },
 			{ id = "gun_smg_receiver", weight = 10 },
 			{ id = "gun_shotgun_grip", weight = 10 },
@@ -608,7 +608,7 @@ ix.LootContainer:Add("infection_crate", {  -- infestation control 1
     Locked = true,
 	Hide = false,
 	Respawn = 3600,
-	Tool = "wm_crowbar",
+	Tool = "selected_eft_melee_crowbar",
 	ToolDamage = 30,
 
 	LootGroup = {

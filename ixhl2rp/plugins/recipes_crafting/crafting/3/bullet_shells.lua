@@ -7,6 +7,6 @@ RECIPE.results = {
 	box_of_casings = 2
 }
 RECIPE.skill = {"crafting", 3}
-RECIPE.tools = {"wm_hammer"}
+RECIPE.tools = {"selected_eft_melee_hultafors"}
 RECIPE.station = "station_guns"
 RECIPE.xp = 75
