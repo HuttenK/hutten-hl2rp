@@ -1,0 +1,10 @@
+ITEM.name = "ПМ"
+ITEM.description = "Компактный пистолет Макарова со свободным затвором."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_pm.mdl"
+ITEM.class = "arc9_eft_pm"
+ITEM.weaponCategory = "sidearm"
+ITEM.width = 2
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = false

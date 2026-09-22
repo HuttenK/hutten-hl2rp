@@ -9,9 +9,11 @@ if SERVER then
 
 	function playerMeta:CreateServerRagdoll(bDontSetPlayer)
 		local entity = ents.Create("prop_ragdoll")
+		if (!IsValid(entity)) then return end
 		entity:SetPos(self:GetPos())
 		entity:SetAngles(self:EyeAngles())
 		entity:SetModel(self:GetModel())
+		entity:SetModelScale(self:GetModelScale(), 0)
 		entity:SetSkin(self:GetSkin())
 
 		for k, v in ipairs(self:GetBodyGroups()) do
@@ -25,9 +27,11 @@ if SERVER then
 		end
 
 		entity:SetCollisionGroup(COLLISION_GROUP_WEAPON)
+		entity:SetNotSolid(false)
+		entity:SetCustomCollisionCheck(false)
 		entity:Activate()
 
-		hook.Run("OnCreatePlayerServerRagdoll", self)
+		hook.Run("OnCreatePlayerServerRagdoll", self, entity)
 
 		local velocity = self:GetVelocity()
 
@@ -39,11 +43,13 @@ if SERVER then
 
 				local index = entity:TranslatePhysBoneToBone(i)
 
-				if (index) then
-					local position, angles = self:GetBonePosition(index)
-
-					physObj:SetPos(position)
-					physObj:SetAngles(angles)
+				local playerBone = index and index >= 0 and self:LookupBone(entity:GetBoneName(index))
+				if (playerBone) then
+					local position, angles = self:GetBonePosition(playerBone)
+					if (position and angles) then
+						physObj:SetPos(position)
+						physObj:SetAngles(angles)
+					end
 				end
 			end
 		end

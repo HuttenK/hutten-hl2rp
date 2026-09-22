@@ -41,8 +41,9 @@ function PLUGIN:OnSkillMemoryRestored(character)
 end
 
 net.Receive("ixLevelUp", function(len, ply)
+	if len > 4096 or not IsValid(ply) then return end
 	local character = ply:GetCharacter()
-
+	if not character then return end
 	local points = character:GetSkillPoints()
 
 	if points == 0 then
@@ -51,26 +52,32 @@ net.Receive("ixLevelUp", function(len, ply)
 
 	local spendPoints = net.ReadInt(10)
 	local specials = net.ReadTable()
-	local diff = math.abs(points) - math.abs(spendPoints)
-
-	if diff < 0 or diff > math.abs(points) then
-		return
-	end
-
+	if not istable(specials) or spendPoints == 0 then return end
+	if (points > 0) ~= (spendPoints > 0) or math.abs(spendPoints) > math.abs(points) then return end
+	-- Validate a copy: rejected requests cannot mutate live character data.
 	local sum = 0
-	local charSpecials = character:GetSpecials()
+	local charSpecials = table.Copy(character:GetSpecials())
 
 	for k, v in pairs(specials) do
-		sum = sum + math.abs(v)
-		charSpecials[k] = charSpecials[k] + v
+		if not ix.specials.list[k] or not isnumber(v) or v ~= v or math.abs(v) == math.huge then return end
+		if v ~= math.floor(v) or (v ~= 0 and (v > 0) ~= (points > 0)) then return end
+		local cost = character:GetPrimaryStat(k) and 1 or 4
+		if v % cost ~= 0 then return end
+		local value = (charSpecials[k] or 0) + v
+		if value < 0 then return end
+		sum = sum + v
+		charSpecials[k] = value
 	end
 
-	if sum != math.abs(spendPoints) then
+	if sum ~= spendPoints then
 		return
 	end
 
 	character:SetSkillPoints(points - spendPoints)
 	character:SetSpecials(charSpecials)
+	ix.specials.Setup(ply)
+	ply.recalculateSpeed = true
+	hook.Run("CharacterAllocatedSpecials", ply, character, specials)
 end)
 
 do

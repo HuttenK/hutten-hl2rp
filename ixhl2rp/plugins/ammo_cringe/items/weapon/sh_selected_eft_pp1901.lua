@@ -1,0 +1,10 @@
+ITEM.name = "PP-19-01 Vityaz"
+ITEM.description = "Пистолет-пулемёт «Витязь» на основе семейства Калашникова для ближнего боя."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_pp1901_2.mdl"
+ITEM.class = "arc9_eft_pp1901"
+ITEM.weaponCategory = "primary"
+ITEM.width = 4
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = true

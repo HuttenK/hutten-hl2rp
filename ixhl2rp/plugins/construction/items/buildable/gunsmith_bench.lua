@@ -2,7 +2,8 @@ ITEM.category = "item.category.construction"
 ITEM.name = "item.gunsmith_bench"
 ITEM.description = "item.gunsmith_bench.desc"
 ITEM.model = "models/props_combine_enhanced/combine_table.mdl"
-ITEM.preview_model = "models/props_combine_enhanced/combine_table.mdl"
+if not util.IsValidModel(ITEM.model) then ITEM.model = "models/props_c17/FurnitureTable001a.mdl" end
+ITEM.preview_model = ITEM.model
 ITEM.width = 3
 ITEM.height = 2
 

@@ -57,17 +57,20 @@ Amputation.consentTimeout = 30
 -- хотя формально у них тоже Info.Class == "slash". uniqueID = имя файла без
 -- префикса sh_ и расширения (sh_wm_axe.lua -> wm_axe).
 Amputation.tools = {
-	["wm_axe"] = true,
-	["wm_fireaxe"] = true,
-	["wm_ice_axe"] = true,
-	["wm_cleaver"] = true,
-	["wm_machete"] = true,
-	["wm_katana"] = true,
-	["wm_modern_sword"] = true,
-	["wm_kitchen_knife"] = true,
-	["wm_combat_knife"] = true,
-	["wm_sickle"] = true,
-	["wm_razor"] = true,
+ ["selected_eft_melee_6x5"]=true,
+ ["selected_eft_melee_kukri"]=true,
+ ["selected_eft_melee_gladius"]=true,
+	["selected_eft_melee_kukri"] = true,
+	["selected_eft_melee_kukri"] = true,
+	["selected_eft_melee_kukri"] = true,
+	["selected_eft_melee_kukri"] = true,
+	["selected_eft_melee_kukri"] = true,
+	["selected_eft_melee_gladius"] = true,
+	["selected_eft_melee_gladius"] = true,
+	["selected_eft_melee_6x5"] = true,
+	["selected_eft_melee_6x5"] = true,
+	["selected_eft_melee_kukri"] = true,
+	["selected_eft_melee_6x5"] = true,
 }
 
 -- Предмет-конечность, который получает хирург и которым конечность пришивают.
@@ -343,8 +346,8 @@ ix.command.Add("AmputateCheck", {
 			Amputation.HasSkill(character) and "OK" or "FAIL -- опция скрыта")
 
 		-- Функция должна быть зарегистрирована на базе оружия при загрузке.
-		local sample = ix.Item.stored["wm_axe"]
-		lines[#lines + 1] = string.format("item 'wm_axe' registered: %s | has amputate function: %s",
+		local sample = ix.Item.stored["selected_eft_melee_kukri"]
+		lines[#lines + 1] = string.format("item selected_eft_melee_kukri registered: %s | has amputate function: %s",
 			tostring(sample != nil),
 			tostring(sample != nil and sample.functions != nil and sample.functions.amputate != nil))
 

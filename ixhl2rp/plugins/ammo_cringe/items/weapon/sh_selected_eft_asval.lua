@@ -1,0 +1,10 @@
+ITEM.name = "AS VAL"
+ITEM.description = "Компактный специальный автомат с интегрированным глушителем для скрытных действий."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_vss_val2.mdl"
+ITEM.class = "arc9_eft_asval"
+ITEM.weaponCategory = "primary"
+ITEM.width = 4
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = true

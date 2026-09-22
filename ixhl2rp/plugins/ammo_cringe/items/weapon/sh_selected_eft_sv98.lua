@@ -1,0 +1,10 @@
+ITEM.name = "SV-98"
+ITEM.description = "Магазинная снайперская винтовка с ручным затвором для точного огня."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_sv98.mdl"
+ITEM.class = "arc9_eft_sv98"
+ITEM.weaponCategory = "primary"
+ITEM.width = 4
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = true

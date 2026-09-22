@@ -9,36 +9,11 @@ if SERVER then
 end
 
 local timerID = "ixAmbient"
+-- Tracks bundled with Half-Life 2 / Garry's Mod; no custom music pack.
 local ambients = {
-	[1] = {"autonomous/ambient/ambient_1.ogg", 95},
-	//[2] = {"autonomous/ambient/ambient_2.ogg", 447},
-	[2] = {"autonomous/ambient/ambient_3.ogg", 185},
-	[3] = {"autonomous/ambient/ambient_4.ogg", 190},
-	[4] = {"autonomous/ambient/ambient_5.ogg", 162},
-	[5] = {"autonomous/ambient/ambient_6.ogg", 252},
-	[6] = {"autonomous/ambient/ambient_7.ogg", 198},
-	[7] = {"autonomous/ambient/ambient_8.ogg", 169},
-	[8] = {"autonomous/ambient/ambient_9.ogg", 286},
-	[9] = {"autonomous/ambient/ambient_10.ogg", 264},
-	[10] = {"autonomous/ambient/ambient_11.mp3"},
-	//[12] = {"autonomous/ambient/ambient_12.mp3"},
-	[11] = {"autonomous/ambient/ambient_13.ogg", 198},
-	[12] = {"autonomous/ambient/ambient_14.ogg", 268},
-	[13] = {"autonomous/ambient/ambient_30.mp3"},
-	[14] = {"autonomous/ambient/ambient_16.ogg", 179},
-	//[17] = {"autonomous/ambient/ambient_17.ogg", 411},
-	[15] = {"autonomous/ambient/ambient_18.mp3"},
-	//[19] = {"autonomous/ambient/ambient_19.mp3"},
-	[16] = {"autonomous/ambient/ambient_20.mp3"},
-	//[17] = {"autonomous/ambient/ambient_21.mp3"},
-	[17] = {"autonomous/ambient/ambient_22.ogg", 351},
-	[18] = {"autonomous/ambient/ambient_23.ogg", 437},
-	//[24] = {"autonomous/ambient/ambient_24.ogg", 505},
-	[19] = {"autonomous/ambient/ambient_25.ogg", 286},
-	[20] = {"autonomous/ambient/ambient_26.ogg", 328},
-	[21] = {"autonomous/ambient/ambient_27.mp3"},
-	[22] = {"autonomous/ambient/ambient_28.mp3"},
-	[23] = {"autonomous/ambient/ambient_29.mp3"},
+ {"music/hl2_song7.mp3"}, {"music/hl2_song8.mp3"},
+ {"music/hl2_song14.mp3"}, {"music/hl2_song16.mp3"},
+ {"music/hl2_song19.mp3"}, {"music/hl2_song26.mp3"}
 }
 
 local function SetVolume(volume)
@@ -61,11 +36,15 @@ end
 local function PlayAmbient(ambientData)
 	StopAmbient()
 
-	PLUGIN.snd = CreateSound(LocalPlayer(), ambientData[1])
+	if not IsValid(LocalPlayer()) then return end
+ PLUGIN.snd = CreateSound(LocalPlayer(), ambientData[1])
+ if not PLUGIN.snd then return end
 	PLUGIN.snd:Play()
 	
-	timer.Simple(0, function()
-		PLUGIN.snd:ChangeVolume(ix.option.Get("ambientVol"), 0)
+	local playing=PLUGIN.snd
+ timer.Simple(0, function()
+  if PLUGIN.snd~=playing then return end
+		playing:ChangeVolume(ix.option.Get("ambientVol"), 0)
 	end)
 
 	local time = ambientData[2]
@@ -74,7 +53,7 @@ local function PlayAmbient(ambientData)
 		time = SoundDuration(ambientData[1])
 	end
 	
-	timer.Create(timerID, time + ix.option.Get("ambientTime", 0), 1, function()
+	timer.Create(timerID, math.max(time or 0, 30) + ix.option.Get("ambientTime", 0), 1, function()
 		PlayAmbient(ambients[math.random(1, #ambients)])
 	end)
 end

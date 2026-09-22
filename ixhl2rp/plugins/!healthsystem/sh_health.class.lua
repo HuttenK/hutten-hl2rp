@@ -520,9 +520,10 @@ if SERVER then
 				if !IsValid(client.ixRagdoll) then
 					client:SetRagdolled(true)
 					client:SetLocalVar("knocked", true)
-					client:SetCriticalState(true)
 				end
-			elseif consciousness >= 0.4 and client:GetLocalVar("knocked") then
+				if !client:InCriticalState() then client:SetCriticalState(true) end
+			elseif consciousness >= 0.4 and client:GetLocalVar("knocked") and
+				(not ix.Downed or ix.Downed.CanRecover(self)) then
 				local ratio = self:GetPercent()
 				local chanceSuccess = (ratio * 100)
 				local chanceFail = (100 - chanceSuccess) * 0.5
@@ -531,6 +532,11 @@ if SERVER then
 					local time = 15 + math.Round(60 * math.max((1 - ratio), 0))
 
 					client:SetAction("@wakingUp", time, function(player)
+						if !IsValid(client) or !client:Alive() or client:GetCharacter() != self.character or
+							(ix.Downed and !ix.Downed.CanRecover(self)) then
+							if IsValid(client) then client.ixRegainConscious = nil end
+							return
+						end
 						client:SetLocalVar("knocked", false)
 						client:SetRagdolled(false)
 						client:SetCriticalState(false)
@@ -809,6 +815,7 @@ function HEALTH:AddHediff(uniqueID, hitGroup, data, id)
 				v:Send()
 			net.Send(self.character:GetPlayer())
 
+			if SERVER then hook.Run("OnHediffAdded", self, v, hitGroup) end
 			return
 		end
 	elseif stored.max then

@@ -1,0 +1,10 @@
+ITEM.name = "M60E4"
+ITEM.description = "Пулемёт с ленточным питанием, сошками и возможностью установки оптики."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_m60.mdl"
+ITEM.class = "arc9_eft_m60e4"
+ITEM.weaponCategory = "primary"
+ITEM.width = 4
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = true

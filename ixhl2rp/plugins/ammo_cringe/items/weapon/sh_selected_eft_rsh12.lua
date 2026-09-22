@@ -1,0 +1,10 @@
+ITEM.name = "RSh-12"
+ITEM.description = "Крупнокалиберный штурмовой револьвер с пятизарядным барабаном."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_rsh12.mdl"
+ITEM.class = "arc9_eft_rsh12"
+ITEM.weaponCategory = "sidearm"
+ITEM.width = 2
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = false

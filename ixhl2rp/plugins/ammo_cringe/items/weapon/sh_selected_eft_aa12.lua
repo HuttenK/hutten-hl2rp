@@ -1,0 +1,10 @@
+ITEM.name = "AA-12"
+ITEM.description = "Автоматическое ружьё с отъёмным магазином для интенсивного огня на короткой дистанции."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_aa12.mdl"
+ITEM.class = "arc9_eft_aa12"
+ITEM.weaponCategory = "primary"
+ITEM.width = 4
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = true

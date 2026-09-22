@@ -140,6 +140,8 @@ function Injury:Stage()
 end*/
 
 function Injury:TendedMultiplier()
+	-- Zero marks a dressed wound: bleeding stopped, HP still requires treatment.
+	if self.tended_time == 0 then return 1 end
 	if self.tended_time != -1 then
 		local time = (self.tended_start + self.tended_time) - os.time()
 
@@ -180,6 +182,7 @@ end
 
 if SERVER then
 	function Injury:OnTick(health)
+		if self.tended_time == 0 then return false end
 		if self.tended_time != -1 then
 			local client = health.client
 

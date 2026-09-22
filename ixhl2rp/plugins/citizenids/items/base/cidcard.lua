@@ -46,6 +46,19 @@ end
 
 function Item:Init()
 	ix.meta.ItemEquipable.Init(self)
+	self.combine=self.combine or {}
+	self.combine.fieldlinkRegister={
+		name="Зарегистрировать КПК по CID",
+		OnCanRun=function(card,device)
+			return device.uniqueID=="pda" and not device:GetData("fieldlinkIdentity") and
+				ix.Fieldlink and ix.Fieldlink.CardIdentity(card)~=nil or false
+		end,
+		OnRun=function(card,device)
+			local plugin=ix.plugin.list.site_pda
+			if plugin then plugin:RegisterPDA(card.player,device,card) end
+			return false
+		end
+	}
 
 	self.category = "item.category.cid"
 

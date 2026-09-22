@@ -89,10 +89,11 @@ function PLUGIN:Think()
 end
 
 function PLUGIN:HUDPaint()
+	if ix.GameplayHUD and ix.GameplayHUD.Enabled() then return end
 	local ply = LocalPlayer()
 	local char = ply:GetCharacter()
 
-	if !char or !ply:Alive() or ix.gui.characterMenu:IsVisible() then
+	if !char or !ply:Alive() or (IsValid(ix.gui.characterMenu) and ix.gui.characterMenu:IsVisible()) then
 		return
 	end
 

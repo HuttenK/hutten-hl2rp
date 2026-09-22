@@ -1,0 +1,11 @@
+ITEM.name = "M67"
+ITEM.description = "Ручная осколочная граната в округлом корпусе."
+ITEM.model = "models/weapons/arc9/darsu_eft/w_m67_unthrowed.mdl"
+ITEM.class = "arc9_eft_m67"
+ITEM.weaponCategory = "utility"
+ITEM.width = 1
+ITEM.height = 1
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = false
+ITEM.isGrenadeARC9 = true

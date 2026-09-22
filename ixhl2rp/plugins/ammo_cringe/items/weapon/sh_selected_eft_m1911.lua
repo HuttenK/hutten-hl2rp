@@ -1,0 +1,10 @@
+ITEM.name = "M1911A1"
+ITEM.description = "Классический самозарядный пистолет одинарного действия с однорядным магазином."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_m1911.mdl"
+ITEM.class = "arc9_eft_m1911"
+ITEM.weaponCategory = "sidearm"
+ITEM.width = 2
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = false

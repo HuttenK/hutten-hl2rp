@@ -45,11 +45,11 @@ local function Read_Equip(item)
 end
 
 local function Write_Ammo(item, value)
-	net.WriteInt(value, 9)
+	net.WriteInt(value, 32)
 end
 
 local function Read_Ammo(item)
-	return net.ReadInt(9)
+	return net.ReadInt(32)
 end
 
 local function Write_Durability(item, value)
@@ -79,8 +79,6 @@ function Item:Init()
 				if IsValid(client) and ix.Amputation.HasKind(client:GetCharacter(), "arm") then
 					client:NotifyLocalized("amputation.noTwoHanded")
 
-					ix.Item:DropItem(client, item.id)
-
 					return false
 				end
 			end
@@ -103,7 +101,7 @@ function Item:Init()
 			item:Equip(item.player)
 		end,
 		OnCanRun = function(item)
-			if item:GetEntity() then
+			if IsValid(item:GetEntity()) then
 				return false
 			end
 
@@ -187,7 +185,7 @@ function Item:Init()
 		OnCanRun = function(item)
 			local client = item.player
 
-			return !item:GetEntity() and IsValid(client) and item:IsEquipped()
+			return not IsValid(item:GetEntity()) and IsValid(client) and item:IsEquipped()
 		end
 	}
 
@@ -195,58 +193,19 @@ function Item:Init()
 		name = "weapon.unloadMagazine",
 		icon = "icon16/page_go.png",
 		OnRun = function(item)
-			-- Тип патронов берём из того, что РЕАЛЬНО было заряжено (сохраняется
-			-- при снятии/выбросе оружия), и только если его нет — из класса SWEP-а.
-			-- Переходники калибра ArcCW меняют боеприпас у экземпляра оружия:
-			-- если читать класс, то АК, переведённый под пистолетный патрон,
-			-- заряжался бы патронами SMG, а разряжался винтовочными — бесплатная
-			-- конвертация боеприпасов.
-			local ammoType = item:GetData("ammoType")
-
-			if (!ammoType or ammoType == "") then
-				local primary = baseclass.Get(item.class).Primary
-
-				if (!primary) then
-					return ErrorNoHalt(Format("Unable to find baseclass %s of item %s\n", item.class, item.uniqueID))
+			for _, pair in ipairs({{"ammo", "ammoType"}, {"ammo2", "ammoType2"}}) do
+				local count = item:GetData(pair[1], 0)
+				local ammo = item:GetData(pair[2])
+				if not ammo and pair[1] == "ammo" then
+					local definition = weapons.Get(item.class) or {}
+					ammo = definition.Ammo or (definition.Primary or {}).Ammo
 				end
-
-				ammoType = primary.Ammo
+				if count > 0 and ix.arc9Inventory.ReturnAmmo(item.player, ammo, count) then item:SetData(pair[1], 0) end
 			end
-
-			local targetItemID = nil
-
-			-- Find the correct item ID for this ammo type.
-			-- Сравниваем без учёта регистра: сохранённый тип приведён к нижнему
-			-- регистру, а у предметов регистр разный ("ar2", но "XBowBolt").
-			local ammoTypeLower = string.lower(ammoType or "")
-
-			if (ix.Item.stored[ammoType]) then
-				targetItemID = ammoType
-			else
-				for k, v in pairs(ix.Item.stored) do
-					if (v.ammo and string.lower(v.ammo) == ammoTypeLower) then
-						targetItemID = k
-						break
-					end
-				end
-			end
-
-			if (!targetItemID) then
-				return ErrorNoHalt(Format("Unable to unload magazine. No item found with ammoType %s\n", ammoType))
-			end
-
-			local instance = ix.Item:Instance(targetItemID)
-			instance:SetData("stack", item:GetData("ammo", 0))
-			item:SetData("ammo", 0)
-
-			if (!item.player:AddItem(instance)) then
-				ix.Item:Spawn(item.player, nil, instance)
-			end
-
-			(item.entity or item.player):EmitSound("weapons/smg1/smg1_reload.wav")
+			return false
 		end,
 		OnCanRun = function(item)
-			return item:GetData("ammo", 0) > 0 && !item:IsEquipped()
+			return not item:IsEquipped() and (item:GetData("ammo", 0) > 0 or item:GetData("ammo2", 0) > 0)
 		end
 	}
 
@@ -318,28 +277,13 @@ function Item:Init()
 		Read = Read_Durability
 	})
 
-	-- ArcCW per-item attachment storage (used by the arccw_item_atts plugin).
-	-- MUST be registered here in the shared base Init, not in a server-only
-	-- plugin file. AddData mutates var_max/var_max_bits and the index->key map;
-	-- if the server and client disagree on the var count, the per-key item.data
-	-- sync misreads the var index and silently drops pushes (e.g. equip),
-	-- AND a server-only registration that races item loading can leave some
-	-- weapon prototypes without the var, so SetData("arccw_atts") early-returns
-	-- and attachments never persist. Registering in the base guarantees an
-	-- identical, deterministic var on both realms for every weapon.
-	self:AddData("arccw_atts", {
-		Transmit = ix.transmit.none, -- server-only state, no net sync needed
-		-- persisted to DB (NoSave defaults to false)
-	})
+	-- Registered in both realms to keep item-data indexes identical.
+	self:AddData("arc9_atts", {Transmit = ix.transmit.all})
+	self:AddData("ammoType", {Transmit = ix.transmit.none})
+	self:AddData("ammoType2", {Transmit = ix.transmit.none})
+	self:AddData("ammo2", {Transmit = ix.transmit.owner, Write = Write_Ammo, Read = Read_Ammo})
+	self:AddData("arc9Spent", {Transmit = ix.transmit.none})
 
-	-- Тип патронов, РЕАЛЬНО заряженных в это оружие. Нужен потому, что переходники
-	-- калибра ArcCW меняют тип боеприпаса у конкретного экземпляра: разряжать по
-	-- умолчанию из класса SWEP-а нельзя (см. functions.unloadMagazine). Ключ
-	-- регистрируется здесь же, в общем Init базы, по той же причине, что и
-	-- arccw_atts выше.
-	self:AddData("ammoType", {
-		Transmit = ix.transmit.none,
-	})
 end
 
 function Item:CheckBiolock(client)
@@ -397,161 +341,68 @@ function Item:OnInstanced(isCreated)
 end
 
 function Item:Equip(client, bNoSelect, bNoSound)
-	if self.hasLock then
-		if !self:GetData("locked") then
-			self:SetData("locked", client:GetCharacter():GetID())
-		end
+	if not IsValid(client) or not client:GetCharacter() then return false end
+	if self:GetData("arc9Spent") then client:Notify("Эта граната уже использована.") return false end
+	if not ix.arc9Inventory.IsClass(self.class) then
+		client:Notify("Требуется установленное оружие ARC9. Класс предмета: " .. tostring(self.class))
+		return false
 	end
-
-	local items = client:GetItems()
-
 	client.carryWeapons = client.carryWeapons or {}
-
-	for _, v in pairs(items) do
-		if v.id != self.id then
-			local itemTable = ix.Item.instances[v.id]
-
-			if !itemTable then
-				client:NotifyLocalized("tellAdmin", "wid!xt")
-
-				return false
-			else
-				if itemTable.isWeapon and client.carryWeapons[self.weaponCategory] and itemTable:GetData("equip") then
-					client:NotifyLocalized("weaponSlotFilled", self.weaponCategory)
-
-					return false
-				end
-			end
+	for _, other in pairs(client:GetItems()) do
+		if other.id ~= self.id and other.isWeapon and other.weaponCategory == self.weaponCategory and other:GetData("equip") then
+			client:NotifyLocalized("weaponSlotFilled", self.weaponCategory)
+			return false
 		end
 	end
-
-	if client:HasWeapon(self.class) then
-		client:StripWeapon(self.class)
+	-- Never silently destroy an unlinked weapon and its ammunition.
+	local existing = client:GetWeapon(self.class)
+	if IsValid(existing) then
+		if existing.ixItem == self then return true end
+		client:Notify("У вас уже есть оружие этого класса. Сначала уберите его.")
+		return false
 	end
-
-	local weapon = client:Give(self.class, !self.isGrenade)
-
-	if IsValid(weapon) then
-		local ammoType = weapon:GetPrimaryAmmoType()
-
-		client.carryWeapons[self.weaponCategory] = weapon
-
-		if !bNoSelect then
-			client:SelectWeapon(weapon:GetClass())
-		end
-
-		if !bNoSound then
-			client:EmitSound(self.useSound, 80)
-		end
-
-		-- The buggy RemoveAmmo logic was deleted from here to prevent it from destroying inventory ammo.
-
-		-- assume that a weapon with -1 clip1 and clip2 would be a throwable (i.e hl2 grenade)
-		-- TODO: figure out if this interferes with any other weapons
-		if weapon:GetMaxClip1() == -1 and weapon:GetMaxClip2() == -1 and client:GetAmmoCount(ammoType) == 0 and !self.isRPG then
-			client:SetAmmo(1, ammoType)
-		end
-
-		self:SetData("equip", true)
-
-		if self.isRPG then
-			client:SetAmmo(self:GetData("ammo", 0), ammoType)
-		else
-			if self.isGrenadeARC9 then
-				weapon:SetClip1(1)
-				client:SetAmmo(0, ammoType)
-			else
-				if (self.isGrenade) then
-					weapon:SetClip1(1)
-					client:SetAmmo(0, ammoType)
-				else
-					if weapon.SetLoadedRounds then
-						weapon:SetLoadedRounds(self:GetData("ammo", 0))
-					end
-					weapon:SetClip1(self:GetData("ammo", 0))
-				end
-			end
-		end
-
-		weapon.ixItem = self
-
-		-- Sync engine reserve with inventory ammo items.
-		-- Without this, PlayerTick sees currentAmmo(0) < trackedAmmo(N) on the
-		-- very next frame and incorrectly consumes all matching inventory items.
-		timer.Simple(0, function()
-			if IsValid(client) and client.CalculateAmmo then
-				client:CalculateAmmo()
-			end
-		end)
-
-		if self.OnEquipWeapon then
-			self:OnEquipWeapon(client, weapon)
-		end
-	else
-		print(Format("[Helix] Cannot equip weapon - %s does not exist!", self.class))
+	local weapon = client:Give(self.class, true)
+	if not IsValid(weapon) then
+		client:Notify("Не удалось выдать " .. tostring(self.class) .. ". Проверьте серверную консоль.")
+		return false
 	end
-end
-
--- Запоминает тип патронов, которыми оружие заряжено ПРЯМО СЕЙЧАС. Переходники
--- калибра ArcCW меняют боеприпас у конкретного экземпляра, а живой SWEP — это
--- единственный источник правды: в момент разряжания оружие уже снято и его
--- сущности нет, а класс SWEP-а знает только калибр «с завода».
-function Item:SaveLoadedAmmoType(weapon)
-	if !IsValid(weapon) then return end
-
-	local ammoName = game.GetAmmoName(weapon:GetPrimaryAmmoType())
-
-	if ammoName then
-		self:SetData("ammoType", ammoName:lower())
-	end
-end
-
-function Item:Unequip(user, bPlaySound, bRemoveItem)
-	local client = self:GetOwner()
-
-	if !client then
-		return
-	end
-	
-	client.carryWeapons = client.carryWeapons or {}
-
-	local weapon = client.carryWeapons[self.weaponCategory]
-
-	if !IsValid(weapon) then
-		weapon = client:GetWeapon(self.class)
-	end
-
-	if IsValid(weapon) then
+	if self.hasLock and not self:GetData("locked") then self:SetData("locked", client:GetCharacter():GetID()) end
+	if not ix.arc9Inventory.Bind(self, weapon, client) then
 		weapon.ixItem = nil
+		weapon:Remove()
+		client:CalculateAmmo()
+		return false
+	end
+	client.carryWeapons[self.weaponCategory] = weapon
+	self:SetData("equip", true)
+	if not bNoSelect then client:SelectWeapon(self.class) end
+	if not bNoSound then client:EmitSound(self.useSound, 80) end
+	return true
+end
 
-		self:SaveLoadedAmmoType(weapon)
+-- Запоминает тип и оба магазина с живого экземпляра ARC9.
+function Item:SaveLoadedAmmoType(weapon)
+	ix.arc9Inventory.Save(self, weapon)
+end
 
-		if self.isRPG then
-			self:SetData("ammo", client:GetAmmoCount(weapon:GetPrimaryAmmoType()))
-		else
-			self:SetData("ammo", weapon:Clip1())
-		end
-
+function Item:Unequip(user, bPlaySound, bRemoveItem, previousOwner)
+	local client = previousOwner or self:GetOwner()
+	if not IsValid(client) then return end
+	local weapon = client:GetWeapon(self.class)
+	if IsValid(weapon) and weapon.ixItem == self then
+		if weapon.CancelReload then weapon:CancelReload() end
+		if ix.arc9Inventory.Settle then ix.arc9Inventory.Settle(client) end
+		ix.arc9Inventory.Save(self, weapon)
+		weapon.ixItem = nil
+		client.ixAmmoReady = false
 		client:StripWeapon(self.class)
-	else
-		print(Format("[Helix] Cannot unequip weapon - %s does not exist!", self.class))
 	end
-
-	if bPlaySound then
-		client:EmitSound(self.useSound, 80)
-	end
-
+	client.carryWeapons = client.carryWeapons or {}
 	client.carryWeapons[self.weaponCategory] = nil
-
 	self:SetData("equip", false)
-
-	if self.OnUnequipWeapon then
-		self:OnUnequipWeapon(client, weapon)
-	end
-
-	if bRemoveItem then
-		self:Remove()
-	end
+	client:CalculateAmmo()
+	if bPlaySound then client:EmitSound(self.useSound, 80) end
+	if bRemoveItem then self:Remove() end
 end
 
 function Item:CanTransfer(oldInventory, newInventory, x, y)
@@ -569,71 +420,12 @@ function Item:CanTransfer(oldInventory, newInventory, x, y)
 end
 
 function Item:OnDrop(client, inventory)
-	if !inventory then
-		return
-	end
-
-	-- the item could have been dropped by someone else (i.e someone searching this player), so we find the real owner
-	local owner = inventory.owner
-
-	if !IsValid(owner) then
-		return
-	end
-
-	if self:GetData("equip") then
-		self:SetData("equip", false)
-
-		owner.carryWeapons = owner.carryWeapons or {}
-
-		local weapon = owner.carryWeapons[self.weaponCategory]
-
-		if !IsValid(weapon) then
-			weapon = owner:GetWeapon(self.class)
-		end
-
-		if IsValid(weapon) then
-			self:SaveLoadedAmmoType(weapon)
-
-			if self.isRPG then
-				self:SetData("ammo", owner:GetAmmoCount(weapon:GetPrimaryAmmoType()))
-			else
-				self:SetData("ammo", weapon:Clip1())
-			end
-
-			owner:StripWeapon(self.class)
-			owner.carryWeapons[self.weaponCategory] = nil
-			owner:EmitSound(self.useSound, 80)
-		end
-	end
+	if self:GetData("equip") and inventory then self:Unequip(client, true, false, inventory.owner) end
 end
 
 function Item:OnLoadout()
 	if self:GetData("equip") then
-		local client = self.player
-		client.carryWeapons = client.carryWeapons or {}
-
-		local weapon = client:Give(self.class, true)
-
-		if IsValid(weapon) then
-			client.carryWeapons[self.weaponCategory] = weapon
-
-			weapon.ixItem = self
-
-			if self.isRPG then
-				client:SetAmmo(self:GetData("ammo", 0), weapon:GetPrimaryAmmoType())
-			else
-				if weapon.SetLoadedRounds then
-					weapon:SetLoadedRounds(self:GetData("ammo", 0))
-				end
-				weapon:SetClip1(self:GetData("ammo", 0))
-			end
-
-			if self.OnEquipWeapon then
-				self:OnEquipWeapon(client, weapon)
-			end
-		else
-			print(Format("[Helix] Cannot give weapon - %s does not exist!", self.class))
-		end
+		if not self:Equip(self.player, true, true) then self:SetData("equip", false) end
 	end
 end
 
@@ -647,11 +439,12 @@ function Item:OnSave()
 	local owner = inventory.GetOwner and inventory:GetOwner()
 
 	if IsValid(owner) and owner:IsPlayer() then
+		owner.carryWeapons = owner.carryWeapons or {}
 		local weapon = owner:GetWeapon(self.class)
 
 		if IsValid(weapon) and weapon.ixItem == self and self:GetData("equip") then
 			self:SaveLoadedAmmoType(weapon)
-			self:SetData("ammo", weapon:Clip1())
+			-- Clip state is saved together by SaveLoadedAmmoType.
 		end
 	end
 end
@@ -669,14 +462,18 @@ function Item:OnRemoved()
 	self:SetData("equip", false)
 
 	if IsValid(owner) and owner:IsPlayer() then
+		owner.carryWeapons = owner.carryWeapons or {}
 		if wasEquipped then
 			owner.carryWeapons[self.weaponCategory] = nil
 		end
 
 		local weapon = owner:GetWeapon(self.class)
 
-		if IsValid(weapon) then
+		if IsValid(weapon) and weapon.ixItem == self then
+			ix.arc9Inventory.Settle(owner)
+			owner.ixAmmoReady = false
 			weapon:Remove()
+			owner:CalculateAmmo()
 		end
 	end
 end
@@ -749,11 +546,12 @@ if CLIENT then
 		local weapon = weapons.GetStored(self.class)
 		if weapon then
 			local character = LocalPlayer():GetCharacter()
-			local isMelee = weapon.Type == "Melee"
-			local damage = weapon.Primary.Damage or 0
+			local isMelee = weapon.PrimaryBash and (weapon.ClipSize or 0) <= 0
+			local primary = weapon.Primary or {}
+			local damage = weapon.DamageMax or primary.Damage or weapon.BashDamage or 0
 
-			if weapon.Primary.NumShots then
-				damage = damage * weapon.Primary.NumShots
+			if weapon.Num then
+				damage = damage * weapon.Num
 			end
 
 			-- Melee weapons store their schema-controlled damage in Info.Damage
@@ -770,10 +568,10 @@ if CLIENT then
 				StatRow("dmgtype", L("weaponStatDamageType", typeText), color_white, tooltip, true)
 			end
 
-			if weapon.Primary.RPM and !isMelee then
-				StatRow("rpm", L("weaponStatRPM", weapon.Primary.RPM), color_white, tooltip, true)
-			elseif weapon.Primary.RPM and isMelee then
-				StatRow("attackspeed", L("weaponStatAttackSpeed", math.Round(weapon.Primary.RPM / 60, 1)), color_white, tooltip, true)
+			if weapon.RPM and !isMelee then
+				StatRow("rpm", L("weaponStatRPM", weapon.RPM), color_white, tooltip, true)
+			elseif weapon.RPM and isMelee then
+				StatRow("attackspeed", L("weaponStatAttackSpeed", math.Round(weapon.RPM / 60, 1)), color_white, tooltip, true)
 			end
 
 			if weapon.armor then
@@ -835,69 +633,10 @@ hook.Add("PlayerDeath", "ixStripClip", function(client)
 	for _, v in pairs(client:GetItems()) do
 		if (v.isWeapon and v:GetData("equip")) then
 			v:SetData("ammo", 0)
+			v:SetData("ammo2", 0)
 			v:SetData("equip", false)
 		end
 	end
 end)
-
-hook.Add("EntityRemoved", "ixRemoveGrenade", function(entity)
-	-- hack to remove hl2 grenades after they've all been thrown
-	if (entity:GetClass() == "weapon_frag") then
-		local client = entity:GetOwner()
-
-		if (IsValid(client) and client:IsPlayer() and client:GetCharacter()) then
-			local ammoName = game.GetAmmoName(entity:GetPrimaryAmmoType())
-
-			if (isstring(ammoName) and ammoName:lower() == "grenade" and client:GetAmmoCount(ammoName) < 1
-			and entity.ixItem and entity.ixItem.Unequip) then
-				entity.ixItem:Unequip(client, false, true)
-			end
-		end
-	end
-end)
-
--- ArcCW-гранаты не используют движковый weapon_frag/боезапас, поэтому хук выше их
--- не ловит, и брошенный предмет оставался в инвентаре (можно было переэкипировать
--- и бросить снова). Ловим САМ БРОСОК: ArcCW создаёт снаряд arccw_thr_* во владении
--- метателя — при его появлении снимаем и удаляем экипированную предмет-гранату.
--- Одна граната = один бросок.
-if (SERVER) then
-	hook.Add("OnEntityCreated", "ixArcGrenadeThrown", function(entity)
-		if (!IsValid(entity) or !string.StartWith(entity:GetClass() or "", "arccw_thr_")) then
-			return
-		end
-
-		-- Владелец проставляется ArcCW не в момент ents.Create, а чуть позже —
-		-- поэтому читаем его в конце кадра.
-		timer.Simple(0, function()
-			if (!IsValid(entity)) then return end
-
-			local client = (IsValid(entity.Owner) and entity.Owner) or entity:GetOwner()
-
-			if (!IsValid(client) or !client:IsPlayer() or !client:GetCharacter()) then
-				return
-			end
-
-			-- Сначала пробуем экипированное оружие-гранату игрока...
-			local weapon = client.carryWeapons and client.carryWeapons["grenade"]
-			local item = IsValid(weapon) and weapon.ixItem or nil
-
-			-- ...иначе ищем экипированную предмет-гранату среди вещей (на случай,
-			-- если ArcCW уже сняла само оружие к этому моменту).
-			if (!item) then
-				for _, v in pairs(client:GetItems()) do
-					if (v.isGrenade and v.GetData and v:GetData("equip")) then
-						item = v
-						break
-					end
-				end
-			end
-
-			if (item and item.isGrenade and item.Unequip) then
-				item:Unequip(client, false, true) -- снять оружие + удалить предмет
-			end
-		end)
-	end)
-end
 
 return Item

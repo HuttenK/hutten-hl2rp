@@ -1,0 +1,10 @@
+ITEM.name = "SR-2M"
+ITEM.description = "Компактный пистолет-пулемёт «Вереск» со складным прикладом."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_sr2m.mdl"
+ITEM.class = "arc9_eft_sr2m"
+ITEM.weaponCategory = "primary"
+ITEM.width = 4
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = true

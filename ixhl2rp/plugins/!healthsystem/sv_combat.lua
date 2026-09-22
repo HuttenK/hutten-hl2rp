@@ -38,9 +38,9 @@ function PLUGIN:PlayerDisconnected(client)
 
 	if character then
 		if client:InCriticalState() then
-			client.KilledByRP = true
-			client.KilledBySystem = false
-			client:Kill()
+			-- Persist the rescue state; disconnecting must not silently permakill.
+			character:SetData("crit", true)
+			character:Save()
 		end
 	end
 end
@@ -559,7 +559,7 @@ function PLUGIN:GetMeleeDamageDef(class)
 end
 
 function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
-	-- Woowz Melee SWEPs deal too-high native damage. Replace it with the value
+	-- Optional per-item melee damage overrides replace native damage with the value
 	-- defined in the ixhl2rp item (Info.Damage) and tag the proper melee damage
 	-- type so the wound system treats it as a slash (bleed) or club (bruise) hit.
 	if target:IsPlayer() or target:IsNPC() then
@@ -693,6 +693,11 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 
 	if !target:IsPlayer() then 
 		return
+	end
+	if target:InCriticalState() and ix.Downed then
+		if ix.Downed.ShouldFinish(target, dmg) then ix.Downed.EndLife(target, false) end
+		dmg:SetDamage(0)
+		return true
 	end
 
 	
@@ -909,6 +914,8 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 			hook.Run("PlayerHurt", target, client, 100 * health:GetPercent(), amount)
 		end
 	end
+
+	hook.Run("CharacterBodyDamaged", target, dmg)
 
 	local head_hp = health:GetPartHealth(2)
 	local torso_hp = health:GetPartHealth(3)

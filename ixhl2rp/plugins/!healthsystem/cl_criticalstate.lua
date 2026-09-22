@@ -10,7 +10,7 @@ do
 	local size = 32
 	local mid  = size / 2
 	local abs = math.abs
-	local use = string.upper(input.LookupBinding("+use"))
+	local use = string.upper(input.LookupBinding("+use") or "E")
 
 	local focus_stick = 0
 	local focus_range = 25
@@ -51,7 +51,7 @@ do
 				net.SendToServer()
 			end)
 		else
-			Derma_Query("Добивая этого персонажа, Вы безвозвратно заблокируете его, получив инвентарь погибшего. Этот процесс займет 30 секунд. Вы точно уверены в этом?", "Добить персонажа", "Добить", function() 
+			Derma_Query("Добив этого персонажа, вы отправите его на точку появления. Вещи останутся в теле по правилам сервера. Процесс займёт 30 секунд и прервётся, если персонажа спасут. Продолжить?", "Добить персонажа", "Добить", function()
 				net.Start("crit.apply")
 					net.WriteBool(true)
 				net.SendToServer()

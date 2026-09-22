@@ -108,20 +108,20 @@ end
 
 if CLIENT then
 	surface.CreateFont("item.stats", {
-		font = "Blender Pro Medium",
+		font = "Tahoma",
 		size = math.max(ix.UI.Scale(13), 14),
 		extended = true,
 		weight = 500
 	})
 	surface.CreateFont("item.stats.bold2", {
-		font = "Blender Pro Bold",
+		font = "Tahoma",
 		size = math.max(ix.UI.Scale(15), 14),
 		extended = true,
 		weight = 500
 	})
 
 	surface.CreateFont("item.stats.bold", {
-		font = "Blender Pro Bold",
+		font = "Tahoma",
 		size = math.max(ix.UI.Scale(17), 17),
 		extended = true,
 		weight = 500

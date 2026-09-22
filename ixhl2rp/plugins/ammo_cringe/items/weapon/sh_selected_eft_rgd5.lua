@@ -1,0 +1,11 @@
+ITEM.name = "РГД-5"
+ITEM.description = "Ручная осколочная граната с задержкой подрыва."
+ITEM.model = "models/weapons/arc9/darsu_eft/w_rgd5_unthrowed.mdl"
+ITEM.class = "arc9_eft_rgd5"
+ITEM.weaponCategory = "utility"
+ITEM.width = 1
+ITEM.height = 1
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = false
+ITEM.isGrenadeARC9 = true

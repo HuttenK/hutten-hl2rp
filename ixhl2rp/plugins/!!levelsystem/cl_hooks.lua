@@ -57,6 +57,7 @@ local function DrawLevelXP(x, y, w, h, delta, clr)
 end
 
 function PLUGIN:HUDPaint()
+	if ix.GameplayHUD and ix.GameplayHUD.Enabled() then return end
 	local client = LocalPlayer()
 	local character = client:GetCharacter()
 

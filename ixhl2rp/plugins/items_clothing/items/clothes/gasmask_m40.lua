@@ -20,3 +20,5 @@ ITEM.iconCam = {
 	fov = 3.05605798943,
 }
 ITEM.contraband = true
+-- Enclosed lenses; respirators without eye protection intentionally omit this.
+ITEM.immersionLens = true

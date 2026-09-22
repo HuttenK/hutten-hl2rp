@@ -86,6 +86,12 @@ if (CLIENT) then
 	Legs.NextBreath = 0
 
 	function Legs:Think(maxSeqGroundSpeed)
+		local character = LocalPlayer():GetCharacter()
+		local missing = ix.Amputation and ix.Amputation.Get(character)
+		if self.amputationCharacter != character or self.amputationKey != missing then
+			self.amputationCharacter, self.amputationKey = character, missing
+			if IsValid(self.LegEnt) then self:FixBones() end
+		end
 		if (!LocalPlayer():Alive()) then
 			Legs:Setup()
 			return

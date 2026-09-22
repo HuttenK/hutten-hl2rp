@@ -110,8 +110,8 @@ local CLR_BLACK  = pal("black",         Color(8, 12, 15))
 local CLR_TEXT   = Color(200, 235, 245)
 local CLR_DIM    = Color(120, 160, 175)
 
-local MAT_ANIM = Material("autonomous/ui/terminal/cmb_bg_animated")
-local MAT_BG   = Material("autonomous/ui/terminal/bg.png")
+local MAT_ANIM = Material("vgui/gradient-l")
+local MAT_BG   = Material("vgui/gradient-d")
 
 -- Размер области картинки (под него же делаем HTML-канвас, чтобы не было двойного letterbox).
 -- Высота ~ по 16:9 от ширины: типовые (широкоформатные) изображения заполняют всю

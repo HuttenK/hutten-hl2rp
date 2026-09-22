@@ -1,0 +1,11 @@
+ITEM.name = "РШГ-2"
+ITEM.description = "Одноразовая реактивная штурмовая граната. После выстрела тубус не перезаряжается."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_rshg.mdl"
+ITEM.class = "arc9_eft_rshg2"
+ITEM.weaponCategory = "utility"
+ITEM.width = 1
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = false
+ITEM.isDisposableEFT = true

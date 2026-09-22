@@ -11,20 +11,26 @@ function PLAYER:SetCriticalState(state)
 	end
 
 	if state then
+		if !self:Alive() then return end
+		local alreadyCritical = self:InCriticalState()
+		if !alreadyCritical and self.LeaveSequence and self:GetNetVar("forcedSequence") then self:LeaveSequence() end
 		self:SetHealth(1)
 		self:SetNetVar("crit", true)
 
 		character:SetData("crit", true)
-		character:SetData("critTime", os.time() + 600)
+		character:SetData("critTime", nil)
+		if !alreadyCritical then self:SetNetVar("downedSince", CurTime()) end
 
 		if !IsValid(self.ixRagdoll) then
 			self:SetRagdolled(true)
-			self.ixRagdoll.ixGrace = nil
-			self:SetLocalVar("knocked", true)
 		end
+		if IsValid(self.ixRagdoll) then self.ixRagdoll.ixGrace = nil end
+		self:SetLocalVar("knocked", true)
 	else
-		self:SetHealth(100)
+		if self:Alive() then self:SetHealth(100) end
 		self:SetNetVar("crit", nil)
+		self:SetNetVar("downedSince", nil)
+		self.ixGiveUpRequest = nil
 
 		character:SetData("crit", nil)
 		character:SetData("critTime", nil)
@@ -124,7 +130,8 @@ net.Receive("crit.apply", function(len, client)
 
 			local traceEnt = client:GetEyeTraceNoCursor().Entity
 
-			if !target:Alive() or (traceEnt != (target.ixRagdoll and target.ixRagdoll or target)) then
+			if !IsValid(target) or !target:Alive() or (!isSlay and !target:InCriticalState()) or
+				(traceEnt != (IsValid(target.ixRagdoll) and target.ixRagdoll or target)) then
 				return false
 			end
 
@@ -139,7 +146,8 @@ net.Receive("crit.apply", function(len, client)
 					bonusXP = 50 * targetLevel
 				end
 				
-				target.KilledByRP = !isSlay
+				-- Finishing ends this life and uses respawn, not a character ban.
+				target.KilledByRP = false
 				target.KilledBySystem = false
 				target:Kill()
 

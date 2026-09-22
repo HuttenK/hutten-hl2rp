@@ -19,9 +19,11 @@ function Flow:Add(name, info, category)
 		category = category
 	}
 
-	if ix.City.FlowCategory[category] then
-		ix.City.FlowCategory[category][name] = self[name]
+	local group = istable(category) and category or ix.City.FlowCategory[category]
+	if group then
+		group.flows[name] = self[name]
 	end
+	self[name].index = name
 end
 
 local City = ix.util.Lib("City", {
@@ -40,6 +42,14 @@ City.FlowCategory:Add("TradeImport", {
 City.Flow:Add("Trade", {}, City.FlowCategory.TradeImport)
 
 if SERVER then
+	function City:GetEconomicFlowByID(id)
+		return self.Flow[id]
+	end
+
+	function City:GetEconomicFlow(id)
+		return self.Flow[id]
+	end
+
 	function City:Get(id)
 		return self.stored[id]
 	end
@@ -67,6 +77,7 @@ if SERVER then
 		if !city or !self.restockCallbacks[class] then return end
 
 		city = self:Get(city)
+		if not city or city:IsLoading() then return end
 
 		/*if !city or (city and city:IsLoading()) then 
 			return 

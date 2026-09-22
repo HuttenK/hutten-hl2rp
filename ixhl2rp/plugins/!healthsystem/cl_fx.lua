@@ -167,6 +167,7 @@ do
 	dmg = 0
 
 	function PLUGIN:RenderScreenspaceEffects()
+		local delta = math.Clamp(FrameTime(), 0, 0.1)
 		local character = LocalPlayer():GetCharacter()
 
 		if character then

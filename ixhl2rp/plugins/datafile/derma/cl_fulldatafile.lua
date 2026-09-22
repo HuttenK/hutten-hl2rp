@@ -19,9 +19,9 @@ local DF_DIM   = Color(110, 140, 150)
 local DF_RED   = Color(210, 60, 50)
 local DF_AMBER = Color(235, 170, 50)
 
-surface.CreateFont("ixDfHeader", { font = "Blender Pro Medium", size = 28, weight = 600, extended = true, antialias = true })
-surface.CreateFont("ixDfName",   { font = "Blender Pro Medium", size = 34, weight = 700, extended = true, antialias = true })
-surface.CreateFont("ixDfLabel",  { font = "Blender Pro Book",   size = 18, weight = 500, extended = true, antialias = true })
+surface.CreateFont("ixDfHeader", { font = "Tahoma", size = 28, weight = 600, extended = true, antialias = true })
+surface.CreateFont("ixDfName",   { font = "Tahoma", size = 34, weight = 700, extended = true, antialias = true })
+surface.CreateFont("ixDfLabel",  { font = "Tahoma",   size = 18, weight = 500, extended = true, antialias = true })
 surface.CreateFont("ixDfText",   { font = "Consolas",           size = 15, weight = 500, antialias = true })
 surface.CreateFont("ixDfSmall",  { font = "Consolas",           size = 13, weight = 500, antialias = true })
 

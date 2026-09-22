@@ -1,0 +1,10 @@
+ITEM.name = "Vortex Ranger 1500"
+ITEM.description = "Лазерный дальномер Vortex Ranger 1500 для измерения расстояния до наблюдаемого объекта."
+ITEM.model = "models/weapons/arc9/darsu_eft/w_rangefinder.mdl"
+ITEM.class = "arc9_eft_rangefinder"
+ITEM.weaponCategory = "utility"
+ITEM.width = 2
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = false

@@ -1,0 +1,10 @@
+ITEM.name = "MP-443 Грач"
+ITEM.description = "Самозарядный пистолет Ярыгина «Грач» с двухрядным магазином."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_mp443_2.mdl"
+ITEM.class = "arc9_eft_mp443"
+ITEM.weaponCategory = "sidearm"
+ITEM.width = 2
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = false

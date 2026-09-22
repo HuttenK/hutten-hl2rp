@@ -7,7 +7,7 @@ local M_LINED = Color(0, 90, 115)
 local M_TEXT  = Color(200, 235, 245)
 
 surface.CreateFont("ixDfEntryFont", { font = "Consolas",           size = 30, weight = 600, antialias = true })
-surface.CreateFont("ixDfEntryHdr",  { font = "Blender Pro Medium", size = 34, weight = 600, extended = true, antialias = true })
+surface.CreateFont("ixDfEntryHdr",  { font = "Tahoma", size = 34, weight = 600, extended = true, antialias = true })
 
 local function MBrackets(x, y, w, h, len, col)
 	surface.SetDrawColor(col)

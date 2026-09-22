@@ -18,3 +18,4 @@ ITEM.iconCam = {
 	fov = 2.2327247131098,
 }
 ITEM.contraband = true
+ITEM.immersionLens = true

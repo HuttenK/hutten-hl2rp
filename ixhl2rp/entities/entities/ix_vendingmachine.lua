@@ -287,7 +287,7 @@ if SERVER then
 	end
 else
 	surface.CreateFont("ixVendingMachine", {
-		font = "Blender Pro Book",
+		font = "Tahoma",
 		size = 13,
 		weight = 500,
 		antialias = false

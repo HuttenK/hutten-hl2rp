@@ -1,5 +1,5 @@
 surface.CreateFont("health.part.label", {
-	font = "Blender Pro Medium",
+	font = "Tahoma",
 	extended = true,
 	size = ix.UI.Scale(14),
 	weight = 500,
@@ -9,7 +9,7 @@ surface.CreateFont("health.part.label", {
 })
 
 surface.CreateFont("health.diff.label", {
-	font = "Blender Pro Medium",
+	font = "Tahoma",
 	extended = true,
 	size = ix.UI.Scale(16),
 	weight = 500,

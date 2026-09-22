@@ -1,7 +1,4 @@
 local PANEL = {}
-local AnimatedBG = Material("autonomous/ui/terminal/cmb_bg_animated")
-local BG = Material("autonomous/ui/terminal/bg.png")
-local C24 = Material("autonomous/c24_logo.png")
 
 
 AccessorFunc(PANEL, "page", "Page", FORCE_STRING)
@@ -18,7 +15,8 @@ PANEL.Pages = {
 			local logo = panel:Add("Panel")
 			logo:SetSize(logoSize, logoSize)
 			logo.Paint = function(_, w, h)
-				ix.DX.DrawMaterial(0, 0, 0, w, h, ix.Palette.combinegreen:Alpha(200), C24)
+				surface.SetDrawColor(ix.Palette.combinegreen); surface.DrawOutlinedRect(w*0.2,h*0.2,w*0.6,h*0.6,2)
+ draw.SimpleText("//", "cmb.terminal.title", w/2,h/2,ix.Palette.combinegreen,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
 			end
 			logo:Center()
 			logo:AlignTop(16)
@@ -179,13 +177,8 @@ end
 local gray = Color(255, 255, 255, 150)
 function PANEL:Paint(w, h)
 	ix.DX.Draw(0, 0, 0, w, h, nil, ix.DX.BLUR)
-	ix.DX.DrawMaterial(0, 0, 0, w, h, gray, BG)
-
-	render.OverrideBlend(true, BLEND_SRC_ALPHA, BLEND_ONE, BLENDFUNC_MAX, BLEND_ONE, BLEND_ZERO, BLENDFUNC_ADD)
-		surface.SetMaterial(AnimatedBG)
-		surface.SetDrawColor(color_white)
-		surface.DrawTexturedRect(0, 0, w, h)
-	render.OverrideBlend(false)
+ surface.SetDrawColor(10,13,16,245); surface.DrawRect(0,0,w,h)
+ surface.SetDrawColor(80,130,120,10); for row=0,h,6 do surface.DrawRect(0,row,w,1) end
 
 	surface.SetDrawColor(ix.Palette.combineblue)
 

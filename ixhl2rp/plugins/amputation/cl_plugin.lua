@@ -4,6 +4,7 @@ local PLUGIN = PLUGIN
 -- Окно закрывается само по таймауту и считается отказом, чтобы игрок, отошедший
 -- от клавиатуры, не оказался «согласившимся» молча.
 net.Receive("ixAmputationRequest", function()
+	local requestID = net.ReadUInt(32)
 	local surgeonName = net.ReadString()
 	local key = net.ReadString()
 
@@ -17,6 +18,7 @@ net.Receive("ixAmputationRequest", function()
 		answered = true
 
 		net.Start("ixAmputationConsent")
+			net.WriteUInt(requestID, 32)
 			net.WriteBool(consent)
 		net.SendToServer()
 	end

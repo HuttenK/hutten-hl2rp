@@ -1,0 +1,10 @@
+ITEM.name = "ПКП Печенег"
+ITEM.description = "Пулемёт «Печенег» с ленточным питанием для длительной огневой поддержки."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_pk.mdl"
+ITEM.class = "arc9_eft_pkp"
+ITEM.weaponCategory = "primary"
+ITEM.width = 4
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = true

@@ -1,0 +1,10 @@
+ITEM.name = "MP7A1"
+ITEM.description = "Компактный пистолет-пулемёт с выдвижным прикладом и складной передней рукояткой."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_mp7.mdl"
+ITEM.class = "arc9_eft_mp7a1"
+ITEM.weaponCategory = "primary"
+ITEM.width = 4
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = true

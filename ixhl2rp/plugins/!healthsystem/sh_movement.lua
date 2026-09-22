@@ -92,100 +92,7 @@ local function CheckJump(ply, mv)
 		end
 	end
 end
-/*
-hook.Add("Move", "rp.damage.speed2", function(ply, mv, cmd)
-	local mod = ply:GetStopModifier()
-	local speedFactor = 1
-	local speedx = ply:GetNWFloat("speed_debuff")
 
-	if speedx <= 1 then
-		speedFactor = speedx
-	end
-
-	if ply:OnGround() then
-		if mod < 1 then
-			mod = mod + 0.01
-
-			ply:SetStopModifier(mod)
-
-			local velocity = mv:GetVelocity()
-			mv:SetVelocity(velocity * mod)
-		elseif mod > 1 and mod != 1 then
-			ply:SetStopModifier(1)
-		end
-	end
-	
-	speedFactor = speedFactor * mod
-
-
-	
-	local velLength = ply:GetVelocity():Length2DSqr()
-
-	CalcAthletics(ply)
-
-	if bit.band(mv:GetButtons(), IN_JUMP) != 0 then
-		CheckJump(ply, mv )
-	else
-		local buttons = bit.band(mv:GetOldButtons(), bit.bnot(IN_JUMP))
-		mv:SetOldButtons(buttons)
-	end
-
-	local faction = ply:Team()
-
-
-	if ply:GetNetVar("brth", false) or bit.band(mv:GetButtons(), IN_DUCK) != 0 or ply:IsProne() then
-		if ply:GetSprintMove() then
-			ply:SetSprintMove(false)
-			ply:SetSprintSpeed(0)
-		end
-
-		mv:SetMaxClientSpeed(ply:GetWalkSpeed())
-		return
-	end
-
-
-	if mv:KeyReleased(IN_SPEED) or mv:KeyDown(IN_SPEED) and velLength < .25 then
-		ply:SetRunFading(true)
-	end
-
-	if mv:KeyDown(IN_MOVELEFT) or mv:KeyDown(IN_MOVERIGHT) then
-		ply:SetRunFading(true)
-		mv:SetSideSpeed(mv:GetSideSpeed() * .35)
-	end
-
-	local speedx = FrameTime() * 128
-
-	if mv:KeyDown(IN_SPEED) and velLength > .25 or ply:GetSprintMove() and !ply:GetRunFading() then
-		if !ply:GetSprintMove() then
-			ply:SetRunFading(false)
-			ply:SetSprintMove(true)
-			ply:SetSprintSpeed(ply:GetWalkSpeed())
-		end
-
-		ply:SetSprintSpeed(math.Approach(ply:GetSprintSpeed(), ply.runSpeed, speedx))
-
-		local speed = ply:GetSprintSpeed()
-		mv:SetMaxClientSpeed(speed)
-		mv:SetMaxSpeed(speed)
-	elseif ply:GetSprintMove() and ply:GetRunFading() then
-		local walk_Speed = ply:GetWalkSpeed()
-
-		ply:SetSprintSpeed(math.Approach(ply:GetSprintSpeed(), walk_Speed, speedx))
-
-		local speed = ply:GetSprintSpeed()
-		mv:SetMaxClientSpeed(speed)
-		mv:SetMaxSpeed(speed)
-
-		if speed == walk_Speed then
-			ply:SetRunFading(false)
-			ply:SetSprintMove(false)
-			ply:SetSprintSpeed(0)
-		end
-	end
-
-	mv:SetMaxClientSpeed(mv:GetMaxClientSpeed() * speedFactor)
-end)
-*/
 
 
 function PLUGIN:SetupMove(ply, mv, cmd)
@@ -269,6 +176,18 @@ function PLUGIN:SetupMove(ply, mv, cmd)
 	end
 	
 	speedFactor = speedFactor * mod * ply.movementPenalty
+
+	-- Evaluate analgesic expiry on each move, not only when the injury cache changes.
+ if ix.Medicine and ix.Medicine.HasFracture(hp, "leg") then
+  mv:SetButtons(bit.band(mv:GetButtons(), bit.bnot(IN_SPEED)))
+  ply:SetSprintMove(false)
+  ply:SetSprintSpeed(0)
+  ply:SetRunFading(false)
+  local limited = speedx * speedFactor * .55
+  mv:SetMaxClientSpeed(limited)
+  mv:SetMaxSpeed(limited)
+  return
+ end
 
 	local velLength = ply:GetVelocity():Length2DSqr()
 

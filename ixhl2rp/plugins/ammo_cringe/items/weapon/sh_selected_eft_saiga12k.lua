@@ -1,0 +1,10 @@
+ITEM.name = "Saiga-12K"
+ITEM.description = "Самозарядное ружьё с коробчатым магазином и складным прикладом."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_saiga12k.mdl"
+ITEM.class = "arc9_eft_saiga12k"
+ITEM.weaponCategory = "primary"
+ITEM.width = 4
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = true

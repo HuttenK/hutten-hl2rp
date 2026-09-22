@@ -115,7 +115,7 @@ TEMPLATE.stages = {
 function TEMPLATE:OnTick(health)
 	self.severity = self.severity + 0.005
 
-	if self.severity > 1 then
+	if self.severity >= 0.99 then
 		self:Remove()
 
 		self.severity = 0
@@ -147,12 +147,9 @@ function TEMPLATE:OnTick(health)
 
 	if self.severity > 1 then
 		local client = health:GetPlayer()
-
-		client.KilledBySystem = true
-		client:Kill()
-
-		health.bloodloss = nil
-		self.severity = 0
+		-- Keep a rescue window instead of killing from a passive blood tick.
+		self.severity = 0.99
+		if IsValid(client) and client:Alive() then client:SetCriticalState(true) end
 	elseif self.severity <= 0 and rate < 0.1 then
 		self:Remove()
 		health.bloodloss = nil
@@ -351,8 +348,7 @@ function TEMPLATE:OnUpdate(newStage)
 			elseif stage.id == 3 then
 				client:SetLocalVar("drunk", 1)
 			elseif stage.id == 5 then
-				client.KilledBySystem = true
-				client:Kill()
+				client:SetCriticalState(true)
 			end
 		else
 			if client == LocalPlayer() then

@@ -12,9 +12,9 @@ ITEM.rarity = 3
 ITEM.description = "item.torso_citizen.desc"
 ITEM.equip_inv = 'head'
 ITEM.equip_slot = nil
--ITEM.bodyGroups = {
--	[1] = 1
--}
+ITEM.bodyGroups = {
+	[1] = 1
+}
 
 
 ITEM.displayID = ix.Appearance:New("citizen_shirt", {

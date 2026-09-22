@@ -1,0 +1,11 @@
+ITEM.name = "M18 — жёлтый дым"
+ITEM.description = "Ручная дымовая граната, создающая жёлтую дымовую завесу."
+ITEM.model = "models/weapons/arc9/darsu_eft/w_m18_unthrowed.mdl"
+ITEM.class = "arc9_eft_m18y"
+ITEM.weaponCategory = "utility"
+ITEM.width = 1
+ITEM.height = 1
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = false
+ITEM.isGrenadeARC9 = true

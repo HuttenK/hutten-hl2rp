@@ -10,3 +10,5 @@ ITEM.bodyGroups = {
 ITEM.equip_inv = 'mask'
 ITEM.equip_slot = nil
 ITEM.isGasmask = true
+
+ITEM.immersionLens = true

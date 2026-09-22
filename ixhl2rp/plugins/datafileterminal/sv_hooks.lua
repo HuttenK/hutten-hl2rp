@@ -1,9 +1,6 @@
 local PLUGIN = PLUGIN
 
 util.AddNetworkString("ixDfBrowserOpen")
-util.AddNetworkString("ixDfPdaQuery") -- КПК: открыть досье по введённому CID (как /datafile)
-util.AddNetworkString("ixDfPdaClose") -- закрыли меню КПК -> опустить устройство
-util.AddNetworkString("ixPdaToggle")  -- клавиша G: включить/выключить КПК
 
 PLUGIN.useRadius = 130
 PLUGIN.pdaClass  = "pdaremake1" -- класс SWEP'а КПК (lua/weapons/pdaremake1.lua)
@@ -24,113 +21,8 @@ function PLUGIN:IsNearTerminal(client)
 	return false
 end
 
--- Есть ли у игрока ПРЕДМЕТ КПК в инвентаре (доступ только при наличии предмета).
-function PLUGIN:HasPDAItem(client)
-	return IsValid(client) and client.HasItem and client:HasItem("pda") or false
-end
-
--- Держит ли игрок ПОДНЯТЫЙ КПК (сетевой флаг PDAEquipped из SWEP) И имеет предмет.
-function PLUGIN:IsHoldingRaisedPDA(client)
-	if !self:HasPDAItem(client) then return false end
-	local wep = IsValid(client) and client:GetActiveWeapon()
-	if !IsValid(wep) or wep:GetClass() != self.pdaClass then return false end
-	return (wep.GetPDAEquipped and wep:GetPDAEquipped()) or false
-end
-
--- Включить КПК: достаём оружие-вьюмодель и поднимаем (нужен предмет в инвентаре).
-function PLUGIN:PdaOn(client)
-	if !self:HasPDAItem(client) then
-		client:Notify("Нужен КПК в инвентаре.")
-		return
-	end
-
-	local wep = client:GetActiveWeapon()
-	if IsValid(wep) and wep:GetClass() == self.pdaClass then return end -- уже включён
-
-	client.ixPdaPrev = IsValid(wep) and wep:GetClass() or nil
-
-	if !client:HasWeapon(self.pdaClass) then client:Give(self.pdaClass) end
-	client:SelectWeapon(self.pdaClass)
-
-	-- Поднимаем как можно раньше (короткая задержка только чтобы Deploy успел
-	-- отработать и не сбросил флаг). Меньше задержка = отзывчивее открытие.
-	timer.Simple(0.05, function()
-		if !IsValid(client) then return end
-		local w = client:GetWeapon(self.pdaClass)
-		if IsValid(w) and w.CustomEquip then w:CustomEquip(true) end
-	end)
-end
-
--- Выключить КПК: опускаем, возвращаем прежнее оружие и убираем оружие-КПК
--- (доступ к устройству снова только через предмет).
-function PLUGIN:PdaOff(client)
-	local w = client:GetWeapon(self.pdaClass)
-	-- Прячем мгновенно (звук + сброс флага), без дёрганой holster-анимации.
-	if IsValid(w) then
-		w:EmitSound("Stalker2.PDAUnequip")
-		if w.SetPDAEquipped then w:SetPDAEquipped(false) end
-	end
-
-	timer.Simple(0.1, function()
-		if !IsValid(client) then return end
-		local prev = client.ixPdaPrev
-		if prev and prev != "" and client:HasWeapon(prev) then
-			client:SelectWeapon(prev)
-		end
-		timer.Simple(0.1, function()
-			if IsValid(client) and client:HasWeapon(self.pdaClass) then
-				client:StripWeapon(self.pdaClass)
-			end
-		end)
-	end)
-end
-
--- Клавиша G (с клиента): переключить КПК.
-net.Receive("ixPdaToggle", function(len, client)
-	if !IsValid(client) or !client:Alive() then return end
-	if (client.ixNextPdaToggle or 0) > CurTime() then return end
-	client.ixNextPdaToggle = CurTime() + 0.3
-
-	local wep = client:GetActiveWeapon()
-	if IsValid(wep) and wep:GetClass() == PLUGIN.pdaClass then
-		PLUGIN:PdaOff(client)
-	else
-		PLUGIN:PdaOn(client)
-	end
-end)
-
--- Доступ к базе досье: рядом с терминалом ЛИБО поднят КПК.
-function PLUGIN:HasDatafileAccess(client)
-	return self:IsNearTerminal(client) or self:IsHoldingRaisedPDA(client)
-end
-
--- КПК: игрок ввёл CID -> открываем РЕДАКТИРУЕМОЕ досье ровно как команда /datafile.
-net.Receive("ixDfPdaQuery", function(len, client)
-	local cid = string.Trim(net.ReadString() or "")
-
-	if !PLUGIN:IsHoldingRaisedPDA(client) then return end
-	if (client.ixNextDfPda or 0) > CurTime() then return end
-	client.ixNextDfPda = CurTime() + 0.4
-	if cid == "" then return end
-
-	-- Переиспользуем логику команды /datafile (поиск по CID/имени + slow-path в БД).
-	local cmd = ix.command.list and ix.command.list["datafile"]
-	if cmd and cmd.OnRun then
-		cmd:OnRun(client, cid)
-	else
-		-- запасной путь: прямой вызов с CID-таблицей
-		local dfp = ix.plugin.list["datafile"]
-		if dfp and dfp.HandleDatafile then
-			dfp:HandleDatafile(client, {cid})
-		end
-	end
-end)
-
--- Меню КПК закрыли на клиенте -> полностью убираем устройство (опускаем, возвращаем
--- прежнее оружие, снимаем оружие-КПК).
-net.Receive("ixDfPdaClose", function(len, client)
-	if IsValid(client) then PLUGIN:PdaOff(client) end
-end)
+-- Stationary archives remain independent of FIELDLINK.
+function PLUGIN:HasDatafileAccess(client) return self:IsNearTerminal(client) end
 
 -- Собрать список доступных игроку досье.
 -- Возвращает: nil  -> нет доступа вообще (нет карты/прав)
@@ -326,15 +218,6 @@ netstream.Hook("ixDfBrowserSelect", function(client, datafileID)
 	if !datafileID then return end
 	if !PLUGIN:HasDatafileAccess(client) then return end
 
-	-- С поднятого КПК открываем РЕДАКТИРУЕМОЕ досье (/datafile -> cwFullDatafile),
-	-- где можно добавлять/править записи. Терминал по-прежнему показывает read-only.
-	if PLUGIN:IsHoldingRaisedPDA(client) then
-		local dfp = ix.plugin.list["datafile"]
-		if dfp and dfp.HandleDatafile then
-			dfp:HandleDatafile(client, datafileID)
-		end
-		return
-	end
 
 	local d = df()
 	if !d or !istable(d.stored) then return end

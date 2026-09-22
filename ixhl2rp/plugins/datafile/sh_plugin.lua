@@ -61,12 +61,9 @@ do
 	end
 
 	function COMMAND:OnRun(client, citizenid, regid)
-		-- Доступ к базе досье — только при наличии предмета КПК в инвентаре, как и
-		-- через сам КПК. Иначе /datafile был бы лазейкой в обход устройства.
-		local pda = ix.plugin.list["datafileterminal"]
-
-		if (IsValid(client) and (!pda or !pda:HasPDAItem(client))) then
-			return "У вас нет КПК для доступа к базе досье."
+		local terminal = ix.plugin.list["datafileterminal"]
+		if not terminal or not terminal:IsNearTerminal(client) then
+			return "Доступ к архиву — у стационарного терминала."
 		end
 
 		local query     = citizenid .. (isstring(regid) and (" " .. regid) or "")

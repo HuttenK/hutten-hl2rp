@@ -1,0 +1,11 @@
+ITEM.name = "Сигнальный огонь — красный"
+ITEM.description = "Одноразовое сигнальное устройство красного огня для обозначения позиции."
+ITEM.model = "models/weapons/arc9/darsu_eft/w_rsp30.mdl"
+ITEM.class = "arc9_eft_rsp30_red"
+ITEM.weaponCategory = "utility"
+ITEM.width = 1
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = false
+ITEM.isDisposableEFT = true

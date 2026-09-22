@@ -1,0 +1,10 @@
+ITEM.name = "M4A1"
+ITEM.description = "Модульный карабин с автоматическим режимом огня и широким выбором сменных узлов."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_m4a1.mdl"
+ITEM.class = "arc9_eft_m4a1"
+ITEM.weaponCategory = "primary"
+ITEM.width = 4
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = true

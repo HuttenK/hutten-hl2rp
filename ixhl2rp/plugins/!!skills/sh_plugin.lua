@@ -221,6 +221,14 @@ do
 			return stats
 		end,
 		OnValidate = function(self, value, data, client)
+			-- Values are spent points, not displayed SPECIAL levels (zero is valid).
+			if not istable(value) then return false, "unknownError" end
+			for key, points in pairs(value) do
+				if not ix.specials.list[key] or not isnumber(points) or points ~= points or
+					points == math.huge or points < 0 or points ~= math.floor(points) then
+					return false, "unknownError"
+				end
+			end
 			if (value != nil) then
 				if (istable(value)) then
 					local faction = ix.faction.indices[data.faction]
@@ -412,7 +420,7 @@ function PLUGIN:AdjustStaminaRegeneration(client, offset)
 	local character = client:GetCharacter()
 	local food, water = character:GetHunger(), character:GetThirst()
 
-	local factor = math.min(math.Remap(((food + water) / 2), 0, 50, 0.25, 1), 0.25, 1)
+	local factor = math.Clamp(math.Remap(((food + water) / 2), 0, 50, 0.25, 1), 0.25, 1)
 	local isCrouch = client:Crouching() or client:IsProne()
 
 	return (isCrouch and ix.config.Get("staminaCrouchRegeneration", 2) or ix.config.Get("staminaRegeneration", 1.75)) * factor

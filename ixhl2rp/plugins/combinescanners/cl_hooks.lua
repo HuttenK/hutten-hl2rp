@@ -36,7 +36,7 @@ function PLUGIN:InputMouseApply(command, x, y, angle)
 end
 
 surface.CreateFont("ixScannerFont", {
-	font = "Lucida Sans Typewriter",
+	font = "Consolas",
 	antialias = false,
 	outline = true,
 	weight = 800,

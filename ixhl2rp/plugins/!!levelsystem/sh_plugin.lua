@@ -138,7 +138,8 @@ ix.command.Add("Dice", {
 		dices = dices or 1
         sides = sides or 20
 
-        dices = math.min(dices, 20)
+        dices = math.Clamp(math.floor(dices), 1, 20)
+        sides = math.Clamp(math.floor(sides), 1, 1000000)
 
         local max = 0
         local totalValue = 0
@@ -172,34 +173,7 @@ ix.command.Add("CharSetLevel", {
 		ix.type.number
 	},
 	OnRun = function(self, client, target, targetValue)
-		local lastLVL = target:GetLevel()
-		targetValue = math.Clamp(targetValue, 1, PLUGIN.maxLevel)
-
-		target:SetLevel(targetValue)
-
-		local points = 0
-		for i = lastLVL, targetValue, (targetValue > lastLVL and 1 or -1) do
-			if i == targetValue and (targetValue < lastLVL) then continue end
-			if i == 1 then continue end
-
-			points = points + PLUGIN:GetPointsAtLevel(i)
-		end
-		points = (targetValue < lastLVL) and -points or points
-		target:SetSkillPoints(target:GetSkillPoints() + points)
-
-		if targetValue > lastLVL then
-			target:SetData("levelup", true)
-			ix.chat.Send(nil, "level", "", nil, {target:GetPlayer()}, {
-				t = 1,
-			})
-		else
-			ix.chat.Send(nil, "level", "", nil, {target:GetPlayer()}, {
-				t = 3,
-			})
-
-			target:SetData("levelup", true)
-		end
-
+		target:SetProgressionLevel(targetValue, true)
 		return "@cmd.notify.lvlChanged"
 	end
 })
@@ -213,32 +187,7 @@ ix.command.Add("CharAddLevel", {
 		ix.type.number
 	},
 	OnRun = function(self, client, target, targetValue)
-		local lastLVL = target:GetLevel()
-		targetValue = math.Clamp(lastLVL + targetValue, 1, PLUGIN.maxLevel)
-
-		target:SetLevel(targetValue)
-
-		local points = 0
-		for i = lastLVL, targetValue, (targetValue > lastLVL and 1 or -1) do
-			if i == targetValue and (targetValue < lastLVL) then continue end
-			if i == 1 then continue end
-
-			points = points + PLUGIN:GetPointsAtLevel(i)
-		end
-		points = (targetValue < lastLVL) and -points or points
-		target:SetSkillPoints(target:GetSkillPoints() + points)
-
-		if targetValue > lastLVL then
-			target:SetData("levelup", true)
-			ix.chat.Send(nil, "level", "", nil, {target:GetPlayer()}, {
-				t = 1,
-			})
-		else
-			ix.chat.Send(nil, "level", "", nil, {target:GetPlayer()}, {
-				t = 3,
-			})
-		end
-
+		target:SetProgressionLevel(target:GetLevel() + targetValue, true)
 		return "@cmd.notify.lvlAdded"
 	end
 })

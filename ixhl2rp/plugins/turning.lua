@@ -15,9 +15,11 @@ local whitelist = {
 }
 
 function PLUGIN:TranslateActivity(client, act)
+	-- NPC turn gestures must not twist a body currently using ARC9's MP stance.
+	if ix.anim.CanUseARC9NativePose and ix.anim.CanUseARC9NativePose(client, client:GetActiveWeapon()) then return end
 	local modelClass = client.ixAnimModelClass or "player"
 
-	if not whitelist[act] then
+	if not support[modelClass] or not whitelist[act] then
 		return
 	end
 
@@ -32,8 +34,10 @@ function PLUGIN:TranslateActivity(client, act)
 			gesture = ACT_GESTURE_TURN_LEFT45
 		end
 
+		local sequence = client:SelectWeightedSequence(gesture)
+		if sequence < 0 then return end
 		client:AnimRestartGesture(GESTURE_SLOT_CUSTOM, gesture, true)
-		client.NextTurn = CurTime() + client:SequenceDuration(client:SelectWeightedSequence(gesture))
+		client.NextTurn = CurTime() + client:SequenceDuration(sequence)
 	end
 end
 
@@ -101,9 +105,10 @@ if CLIENT then
 		
 		local animID = net.ReadUInt(4)
 
-		if anims[client.ixAnimModelClass] then
-			local d = client:LookupSequence(anims[client.ixAnimModelClass][animID])
-			client:AddVCDSequenceToGestureSlot(GESTURE_SLOT_ATTACK_AND_RELOAD, d, 0, true)
+		local names = anims[client.ixAnimModelClass]
+		if names and names[animID] then
+			local d = client:LookupSequence(names[animID])
+			if d >= 0 then client:AddVCDSequenceToGestureSlot(GESTURE_SLOT_ATTACK_AND_RELOAD, d, 0, true) end
 		end
 	end)
 else
@@ -118,6 +123,7 @@ else
 	end
 
 	function PLUGIN:PostPlayerSay(client, chatType, message, anonymous)
+		if not chatTypes[chatType] then return end
 		local ct = CurTime()
 
 		if !client.nextTalkAnim or (client.nextTalkAnim and ct > client.nextTalkAnim) then
@@ -127,6 +133,7 @@ else
 				local animID = math.random(1, #typex)
 				local anim = typex[animID]
 				local d = client:LookupSequence(anim)
+				if d < 0 then client.nextTalkAnim = ct + 5 return end
 				local a = client:SequenceDuration(d)
 
 				net.Start("anim.talk")

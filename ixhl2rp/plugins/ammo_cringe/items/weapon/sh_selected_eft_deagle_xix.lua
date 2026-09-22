@@ -1,0 +1,10 @@
+ITEM.name = "Desert Eagle Mark XIX"
+ITEM.description = "Крупный самозарядный пистолет Desert Eagle Mark XIX с газоотводной автоматикой."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_deagle.mdl"
+ITEM.class = "arc9_eft_deagle_xix"
+ITEM.weaponCategory = "sidearm"
+ITEM.width = 2
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = false

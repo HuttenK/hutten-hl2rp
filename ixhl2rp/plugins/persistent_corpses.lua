@@ -47,6 +47,9 @@ if (SERVER) then
 	end
 
 	function PLUGIN:PlayerSpawn(client)
+		client.ixCorpseCreated = nil
+		client.ixDeathCorpse = nil
+		client:SetShouldServerRagdoll(false)
 		client:SetLocalVar("ragdoll", nil)
 	end
 
@@ -60,21 +63,13 @@ if (SERVER) then
 
 	function PLUGIN:CleanupCorpses(maxCorpses)
 		maxCorpses = maxCorpses or ix.config.Get("corpseMax", 8)
-		local toRemove = {}
-
-		if (#self.corpses > maxCorpses) then
-			for k, v in ipairs(self.corpses) do
-				if (!IsValid(v)) then
-					toRemove[#toRemove + 1] = k
-				elseif (#self.corpses - #toRemove > maxCorpses) then
-					v:Remove()
-					toRemove[#toRemove + 1] = k
-				end
-			end
+		for i = #self.corpses, 1, -1 do
+			if (!IsValid(self.corpses[i])) then table.remove(self.corpses, i) end
 		end
-
-		for k, _ in ipairs(toRemove) do
-			table.remove(self.corpses, k)
+		-- Detach first: Remove invokes a callback which also updates this list.
+		while (#self.corpses > math.max(0, maxCorpses)) do
+			local corpse = table.remove(self.corpses, 1)
+			if (IsValid(corpse)) then corpse:Remove() end
 		end
 	end
 
@@ -89,11 +84,14 @@ if (SERVER) then
 	end
 
 	function PLUGIN:DoPlayerDeath(client, attacker, damageinfo)
+		-- A downed body becomes a corpse once. Repeated death notifications must
+		-- not create a second body or transfer the inventory a second time.
+		if (client.ixCorpseCreated) then return end
 		if (!ix.config.Get("persistentCorpses", true)) then
 			return
 		end
 
-		if (hook.Run("ShouldSpawnPlayerCorpse") == false) then
+		if (hook.Run("ShouldSpawnPlayerCorpse", client, attacker, damageinfo) == false) then
 			return
 		end
 
@@ -105,6 +103,13 @@ if (SERVER) then
 		end
 
 		local entity = IsValid(client.ixRagdoll) and client.ixRagdoll or client:CreateServerRagdoll()
+		if (!IsValid(entity)) then return end
+		client.ixCorpseCreated = true
+		client.ixDeathCorpse = entity
+		entity.ixPersistentCorpse = true
+		entity:SetNetVar("ixCorpse", true)
+		entity:SetCollisionGroup(COLLISION_GROUP_WEAPON)
+		entity:SetNotSolid(false)
 
 		-- Гарантия «одно тело на смерть». Обычно даунед-рэгдолл переиспользуется как
 		-- труп (строка выше), но при гонках (авто-подъём по таймеру SetRagdolled,
@@ -129,7 +134,8 @@ if (SERVER) then
 				ix.storage.Close(ragdoll.ixInventory)
 			end
 
-			if (IsValid(client) and !client:Alive()) then
+			if (IsValid(client) and !client:Alive() and client.ixDeathCorpse == ragdoll) then
+				client.ixDeathCorpse = nil
 				client:SetLocalVar("ragdoll", nil)
 			end
 
@@ -164,6 +170,7 @@ if (SERVER) then
 
 		-- remove reference to ragdoll so it isn't removed on spawn when SetRagdolled is called
 		client.ixRagdoll = nil
+		timer.Remove("ixUnRagdoll" .. client:SteamID())
 		-- remove reference to the player so no more damage can be dealt
 		entity.ixPlayer = nil
 

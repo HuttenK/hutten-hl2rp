@@ -18,7 +18,7 @@ end
 
 if SERVER then
 	function ENT:Initialize()
-		self:SetModel(self.Model)
+		self:SetModel(util.IsValidModel(self.Model) and self.Model or "models/props_c17/FurnitureTable001a.mdl")
 		self:SetSolid(SOLID_VPHYSICS)
 		self:PhysicsInit(SOLID_VPHYSICS)
 		self:SetUseType(SIMPLE_USE)
@@ -44,21 +44,7 @@ if SERVER then
 
 		client.nextGunsmithUse = ct + 1
 
-		local weapon = client:GetActiveWeapon()
-
-		if !IsValid(weapon) or !weapon.ArcCW then
-			client:NotifyLocalized("gunsmith.needWeapon")
-			return
-		end
-
-		-- Open the ArcCW customization menu on the client. The attach/detach
-		-- gate in sv_plugin.lua authorises the actual changes by proximity to
-		-- this bench and charges resin per modification.
-		net.Start("arccw_togglecustomize")
-			net.WriteBool(true)
-		net.Send(client)
-
-		client:NotifyLocalized("gunsmith.opened")
+		if ix.gunsmith then ix.gunsmith:Open(client, self) end
 	end
 
 	function ENT:UpdateTransmitState()

@@ -246,9 +246,12 @@ do
 			return character.vars.primaryStat[value]
 		end,
 		OnValidate = function(self, primaryStats, data, client)
+			if not istable(primaryStats) then return false, "unknownError" end
+			local count = 0
 			for k, v in pairs(primaryStats) do
-				if !ix.specials.list[k] then
-					return false
+				count = count + 1
+				if not ix.specials.list[k] or v ~= true or count > 2 then
+					return false, "unknownError"
 				end
 			end
 
@@ -278,7 +281,7 @@ do
 				local face = value[1]
 				local hair = value[2]
 
-				net.WriteUInt(value, 4)
+				net.WriteUInt(face, 4)
 				net.WriteUInt(hair, 4)
 			end,
 			Read = function(character)

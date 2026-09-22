@@ -1,7 +1,7 @@
 --[[
 	Радиальное меню взаимодействия с персонажем.
 
-	При нажатии E на другого игрока вместо стандартного списка опций
+	При нажатии H, в том числе при наведении на другого игрока вместо стандартного списка опций
 	открывается круговое меню с плавной анимацией. Содержит наиболее
 	полезные действия: передать деньги (/GiveMoney), обыскать (/CharSearch),
 	запомнить (как F3), посмотреть профиль, а также любые контекстные
@@ -13,9 +13,10 @@ local PLUGIN = PLUGIN
 
 PLUGIN.name = "Радиальное меню"
 PLUGIN.author = ""
-PLUGIN.description = "Круговое меню взаимодействия при нажатии E на персонажа."
+PLUGIN.description = "Единое меню H: снаряжение, лечение и взаимодействие."
 
 if (!CLIENT) then
+	for _,name in ipairs({"hover","select","open"}) do resource.AddFile("sound/ix/ui/radial_"..name..".wav") end
 	return
 end
 
@@ -207,58 +208,7 @@ end
 -- предмета (бинт, аптечка, пакет крови и т.п.). Радиальное меню открывается
 -- только при взгляде на другого персонажа, поэтому применение всегда идёт на
 -- цель — через функцию inject базового предмета medical.
-local function BuildMedicalOptions(target)
-	local client = LocalPlayer()
-	if (!client.GetItems) then return {} end
-
-	local groups = {}
-	local order = {}
-
-	-- Признак «медицинский предмет» — наличие функции inject (её определяет
-	-- только база medical: bandage/bloodbag/healthkit и т.п.). Поле .base тут
-	-- ненадёжно — предметы используют кастомный фреймворк class("ItemMedical").
-	for _, item in ipairs(client:GetItems()) do
-		if (!istable(item) or !item.functions or !item.functions.inject) then continue end
-
-		local uid = item.uniqueID
-		local g = groups[uid]
-
-		if (g) then
-			g.count = g.count + 1
-		else
-			g = {
-				item = item,
-				count = 1,
-				name = (item.GetName and item:GetName()) or item.name or uid
-			}
-
-			groups[uid] = g
-			order[#order + 1] = g
-		end
-	end
-
-	table.sort(order, function(a, b) return a.name < b.name end)
-
-	local options = {}
-
-	for _, g in ipairs(order) do
-		local item = g.item
-		local label = (g.count > 1) and string.format("%s (x%d)", g.name, g.count) or g.name
-
-		options[#options + 1] = {
-			label = label,
-			icon = "icon16/heart.png",
-			callback = function()
-				if (IsValid(target)) then
-					RunItemFunction(item, "inject")
-				end
-			end
-		}
-	end
-
-	return options
-end
-
+local limbNames = {"Голова", "Торс", "Живот", "Левая рука", "Правая рука", "Левая нога", "Правая нога"}
 -- Строит список опций для радиального меню по цели.
 --  target     — игрок (для живого — он сам, для лежачего — владелец prop_ragdoll).
 --  menuEntity — сущность для контекстных опций и проверок валидности
@@ -317,7 +267,7 @@ local function BuildOptions(target, menuEntity, isRagdoll)
 	-- Медикаменты — применить носимый медпрепарат на цель. Работает и по лежачему:
 	-- функция inject на сервере резолвит prop_ragdoll → игрока по прицелу.
 	-- Ампутация и пришивание — это тоже медицина, поэтому лежат внутри «Лечить».
-	local medical = BuildMedicalOptions(target)
+	local medical = {{label="Осмотр и лечение",callback=function() ix.Medicine.OpenExamination(target) end}}
 
 	-- Резать и шить можно только стоящего: серверные проверки всё равно
 	-- трассируют прицел в живого игрока, а не в его рэгдолл.
@@ -389,362 +339,176 @@ local function BuildOptions(target, menuEntity, isRagdoll)
 	return options
 end
 
---[[ Панель радиального меню ]]
-local PANEL = {}
-
+-- Stable geometry: hover changes light and contrast, never the clickable position.
+local function EquipmentOptions(headOnly)
+ local result={}
+ for _, item in pairs(LocalPlayer():GetItems()) do
+  local head=({head=true,mask=true,glasses=true,ears=true})[item.equip_inv or item.equip_slot]
+  if (headOnly and head) or (not headOnly and item.isWeapon) then
+   local equipped=item.IsEquipped and item:IsEquipped() or item:GetData("equip",false)
+   local key=equipped and "unequip" or "equip"
+   if item.functions and item.functions[key] then
+    result[#result+1]={label=item:GetName(), detail=equipped and "Убрать / снять" or "Экипировать",
+     callback=function() RunItemFunction(item,key) end}
+   end
+  end
+ end
+ table.sort(result,function(a,b) return a.label<b.label end)
+ return result
+end
+local function Category(label, children, detail)
+ return {label=label,children=#children>0 and children or nil,disabled=#children==0,
+  detail=#children>0 and detail or "Нет подходящих предметов"}
+end
+local function PersonalOptions(target, entity, ragdoll)
+ local options={
+  Category("Оружие",EquipmentOptions(false),"Экипировать / убрать"),
+  {label="Лечение себя",detail="Осмотреть тело и выбрать лечение",callback=function() ix.Medicine.OpenExamination(LocalPlayer()) end},
+  Category("Голова и лицо",EquipmentOptions(true),"Надеть / снять снаряжение")
+ }
+ if IsValid(target) and target~=LocalPlayer() then
+  options[#options+1]=Category("Взаимодействие",BuildOptions(target,entity,ragdoll),"Персонаж перед вами")
+ end
+ return options
+end
+surface.CreateFont("ixRadialLabel",{font="Consolas",size=18,weight=500,extended=true})
+surface.CreateFont("ixRadialSmall",{font="Consolas",size=14,weight=400,extended=true})
+local red=Color(246,83,99)
+local pale=Color(220,195,194)
+local PANEL={}
 function PANEL:Init()
-	self:SetSize(ScrW(), ScrH())
-	self:SetPos(0, 0)
-
-	self.options = {}
-	self.hovered = 0
-	self.openFrac = 0
-	self.bClosing = false
-	self.scales = {}
-	self.menuStack = {} -- для вложенных меню (Медикаменты → предметы)
-
-	self:SetMouseInputEnabled(true)
-	self:SetKeyboardInputEnabled(true)
-	self:MakePopup()
-
-	if (IsValid(LocalPlayer())) then
-		LocalPlayer():EmitSound("Helix.Rollover")
-	end
+ self:SetSize(ScrW(),ScrH()); self:SetPos(0,0)
+ self.options={}; self.menuStack={}; self.hovered=0; self.openFrac=0
+ self:MakePopup()
+ self.centerName="БЫСТРЫЕ ДЕЙСТВИЯ"
+ self.started=SysTime()
+ self.hoverFade={}
+ self:SetAlpha(0); self:AlphaTo(255,.2,0)
+ surface.PlaySound("ix/ui/radial_open.wav")
 end
-
-function PANEL:SetTarget(target, menuEntity, isRagdoll)
-	self.target = target
-	self.menuEntity = menuEntity or target
-	self.isRagdoll = isRagdoll or false
-	self.options = BuildOptions(target, self.menuEntity, self.isRagdoll)
-
-	for i = 1, #self.options do
-		self.scales[i] = 1
-	end
-
-	self.centerName = hook.Run("GetCharacterName", target, "ic") or "Цель"
+function PANEL:SetTarget(target,entity,ragdoll,personal)
+ self.character=LocalPlayer():GetCharacter()
+ self.target=target or LocalPlayer(); self.menuEntity=entity or self.target; self.isRagdoll=ragdoll
+ self.personal=personal
+ self.fullOptions=personal and PersonalOptions(target,entity,ragdoll) or BuildOptions(target,entity,ragdoll)
+ self.centerName=personal and "БЫСТРЫЕ ДЕЙСТВИЯ" or "ВЗАИМОДЕЙСТВИЕ"
+ self.page=1; self:PageOptions()
 end
-
--- Сброс состояния под новый набор опций + повтор анимации «выезда» кольца.
-function PANEL:ResetForLevel()
-	self.hovered = 0
-	self.scales = {}
-
-	for i = 1, #self.options do
-		self.scales[i] = 1
-	end
-
-	self.openFrac = 0
-
-	if (IsValid(LocalPlayer())) then
-		LocalPlayer():EmitSound("Helix.Rollover")
-	end
+function PANEL:PageOptions()
+ self.options={}
+ local count=#self.fullOptions
+ local size=count>6 and 4 or 6
+ local pages=math.max(1,math.ceil(count/size))
+ self.page=math.Clamp(self.page or 1,1,pages)
+ for i=(self.page-1)*size+1,math.min(self.page*size,count) do self.options[#self.options+1]=self.fullOptions[i] end
+ if pages>1 then
+  self.options[#self.options+1]={label="Предыдущие",pageDelta=-1,disabled=self.page==1,detail=self.page.." / "..pages}
+  self.options[#self.options+1]={label="Следующие",pageDelta=1,disabled=self.page==pages,detail=self.page.." / "..pages}
+ end
+ if #self.menuStack>0 then self.options[#self.options+1]={label="Назад",isBack=true} end
+ self.hovered=0; self.hoverFade={}
+ self:SetAlpha(145); self:AlphaTo(255,.14,0)
 end
-
--- Открыть вложенное меню. Опция «Назад» добавляется автоматически.
-function PANEL:PushOptions(options, centerName)
-	self.menuStack[#self.menuStack + 1] = {
-		options = self.options,
-		centerName = self.centerName
-	}
-
-	local newOptions = {}
-
-	for _, opt in ipairs(options) do
-		newOptions[#newOptions + 1] = opt
-	end
-
-	newOptions[#newOptions + 1] = {
-		label = "Назад",
-		icon = "icon16/arrow_left.png",
-		isBack = true
-	}
-
-	self.options = newOptions
-	self.centerName = centerName or self.centerName
-	self:ResetForLevel()
+function PANEL:PushOptions(options,name)
+ self.menuStack[#self.menuStack+1]={options=self.fullOptions,name=self.centerName,page=self.page}
+ self.fullOptions=options; self.centerName=name; self.page=1; self:PageOptions()
 end
-
--- Вернуться на уровень выше. Возвращает false, если мы уже в корне.
 function PANEL:PopOptions()
-	local entry = self.menuStack[#self.menuStack]
-	if (!entry) then return false end
-
-	self.menuStack[#self.menuStack] = nil
-	self.options = entry.options
-	self.centerName = entry.centerName
-	self:ResetForLevel()
-
-	return true
+ local entry=table.remove(self.menuStack)
+ if not entry then return false end
+ self.fullOptions=entry.options; self.centerName=entry.name; self.page=entry.page; self:PageOptions()
+ return true
 end
-
+function PANEL:Geometry()
+ local r=math.min(ScrH()*.29,310)
+ return ScrW()*.5,ScrH()*.5,r,r*.43
+end
 function PANEL:Think()
-	-- Закрываемся, если цель пропала, либо лежачий встал/исчез его рэгдолл.
-	if (!IsValid(self.target) or (self.isRagdoll and !IsValid(self.menuEntity))) then
-		self:CloseMenu(true)
-		return
-	end
-
-	if (input.IsKeyDown(KEY_ESCAPE)) then
-		self:CloseMenu(true)
-		return
-	end
-
-	local target = self.bClosing and 0 or 1
-	self.openFrac = math.Approach(self.openFrac, target, FrameTime() * 6)
-
-	if (self.bClosing and self.openFrac <= 0.01) then
-		local action = self.pendingAction
-		self:Remove()
-
-		if (action) then
-			action()
-		end
-
-		return
-	end
-
-	-- Определяем наведённый сектор.
-	local count = #self.options
-	local cx, cy = ScrW() * 0.5, ScrH() * 0.5
-	local mx, my = gui.MousePos()
-	local dx, dy = mx - cx, my - cy
-	local dist = math.sqrt(dx * dx + dy * dy)
-
-	local outerR = ScrH() * 0.21
-	local innerR = outerR * 0.46
-
-	local newHover = 0
-
-	if (count > 0 and dist >= innerR and dist <= outerR * 1.15) then
-		local sweep = 360 / count
-		local ang = math.deg(math.atan2(dy, dx))
-
-		for i = 1, count do
-			local centerAng = -90 + (i - 1) * sweep
-
-			if (math.abs(NormDiff(ang, centerAng)) <= sweep * 0.5) then
-				newHover = i
-				break
-			end
-		end
-	end
-
-	if (newHover != self.hovered) then
-		self.hovered = newHover
-
-		if (newHover > 0 and IsValid(LocalPlayer())) then
-			LocalPlayer():EmitSound("Helix.Rollover")
-		end
-	end
-
-	-- Плавный «выезд» наведённого сектора.
-	for i = 1, count do
-		local want = (i == self.hovered) and 1.08 or 1
-		self.scales[i] = Lerp(FrameTime() * 12, self.scales[i] or 1, want)
-	end
+ if not IsValid(LocalPlayer()) or not LocalPlayer():Alive() or not self.character or LocalPlayer():GetCharacter()~=self.character then self:Remove() return end
+ if not self.personal and (not IsValid(self.target) or not IsValid(self.menuEntity)) then self:Remove() return end
+ if input.IsKeyDown(KEY_ESCAPE) then self:Remove() return end
+ self.openFrac=EaseOut((SysTime()-self.started)/.24)
+ local cx,cy,r,inner=self:Geometry()
+ local mx,my=gui.MousePos(); local dx,dy=mx-cx,my-cy
+ local distance=math.sqrt(dx*dx+dy*dy)
+ local hover=0
+ if #self.options>0 and distance>=inner and distance<=r then
+  local angle=math.deg(math.atan2(dy,dx))
+  for i=1,#self.options do
+   if math.abs(NormDiff(angle,-90+(i-1)*360/#self.options))<=180/#self.options then hover=i break end
+  end
+ end
+ if hover~=self.hovered and hover>0 then surface.PlaySound("ix/ui/radial_hover.wav") end
+ self.hovered=hover
+ for i=1,#self.options do self.hoverFade[i]=Lerp(math.min(FrameTime()*12,1),self.hoverFade[i] or 0,i==hover and 1 or 0) end
 end
-
--- Заливка кольцевого сектора (одним проходом DrawPoly по квадам-сегментам).
-local function FillSector(cx, cy, rin, rout, a0, a1, segments)
-	for s = 0, segments - 1 do
-		local ra = math.rad(Lerp(s / segments, a0, a1))
-		local rb = math.rad(Lerp((s + 1) / segments, a0, a1))
-
-		surface.DrawPoly({
-			{x = cx + math.cos(ra) * rin, y = cy + math.sin(ra) * rin},
-			{x = cx + math.cos(ra) * rout, y = cy + math.sin(ra) * rout},
-			{x = cx + math.cos(rb) * rout, y = cy + math.sin(rb) * rout},
-			{x = cx + math.cos(rb) * rin, y = cy + math.sin(rb) * rin}
-		})
-	end
+local function Arc(cx,cy,inner,outer,start,finish)
+ for i=0,23 do
+  local a,b=math.rad(Lerp(i/24,start,finish)),math.rad(Lerp((i+1)/24,start,finish))
+  surface.DrawPoly({{x=cx+math.cos(a)*inner,y=cy+math.sin(a)*inner},
+   {x=cx+math.cos(a)*outer,y=cy+math.sin(a)*outer},
+   {x=cx+math.cos(b)*outer,y=cy+math.sin(b)*outer},
+   {x=cx+math.cos(b)*inner,y=cy+math.sin(b)*inner}})
+ end
 end
-
--- Заливка круга (триангл-фан из центра).
-local function FillCircle(cx, cy, r, segments)
-	for s = 0, segments - 1 do
-		local ra = math.rad((s / segments) * 360)
-		local rb = math.rad(((s + 1) / segments) * 360)
-
-		surface.DrawPoly({
-			{x = cx, y = cy},
-			{x = cx + math.cos(ra) * r, y = cy + math.sin(ra) * r},
-			{x = cx + math.cos(rb) * r, y = cy + math.sin(rb) * r}
-		})
-	end
+function PANEL:Paint(w,h)
+ local cx,cy,r,inner=self:Geometry()
+ local a=self.openFrac
+ surface.SetDrawColor(4,3,6,90*a); surface.DrawRect(0,0,w,h)
+ draw.NoTexture()
+ local count=#self.options
+ for i,opt in ipairs(self.options) do
+  local center=-90+(i-1)*360/count
+  local from,to=center-180/count+1.2,center+180/count-1.2
+  local selected=i==self.hovered and not opt.disabled
+  local glow=opt.disabled and 0 or (self.hoverFade[i] or 0)
+  surface.SetDrawColor(0,0,0,110*a); Arc(cx,cy+4,inner-5,r+6,from,to)
+  surface.SetDrawColor(14+44*glow,10,13+7*glow,235*a)
+  Arc(cx,cy,inner,r,from,to)
+  surface.SetDrawColor(246,83,99,(55+175*glow)*a); Arc(cx,cy,r-2,r,from,to)
+  if glow>.01 then
+   surface.SetDrawColor(246,83,99,24*a*glow); Arc(cx,cy,r+2,r+8,from,to)
+  end
+  local angle=math.rad(center); local mid=(inner+r)*.5
+  local x,y=cx+math.cos(angle)*mid,cy+math.sin(angle)*mid
+  local lines=WrapTextSafe(opt.label,math.min(r*.48,150),"ixRadialLabel")
+  local color=opt.disabled and Color(115,98,100) or (selected and red or pale)
+  for n,line in ipairs(lines) do
+   draw.SimpleTextOutlined(line,"ixRadialLabel",x,y+(n-(#lines+1)*.5)*20,color,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,Color(0,0,0,220))
+  end
+  draw.SimpleText(string.format("%02d",i),"ixRadialSmall",x,y-(#lines*10)-12,Color(170,78,91),TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
+ end
+ surface.SetDrawColor(8,5,8,230*a); Arc(cx,cy,0,inner-8,0,360)
+ surface.SetDrawColor(246,83,99,90*a); Arc(cx,cy,inner-9,inner-8,0,360)
+ local selected=self.options[self.hovered]
+ local label=selected and selected.label or self.centerName
+ local lines=WrapTextSafe(label,inner*1.5,"ixRadialLabel")
+ for i,line in ipairs(lines) do draw.SimpleText(line,"ixRadialLabel",cx,cy+(i-(#lines+1)*.5)*20-8,red,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER) end
+ draw.SimpleText(selected and selected.disabled and "НЕДОСТУПНО" or "ВЫБРАТЬ", "ixRadialSmall",cx,cy+inner*.5,pale,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
+ draw.SimpleText(selected and selected.detail or "", "ixRadialLabel",cx,cy+r+30,pale,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
+ draw.SimpleText("ЛКМ — ВЫБОР    /    ПКМ — НАЗАД    /    ESC — ЗАКРЫТЬ", "ixRadialSmall",cx,cy+r+58,Color(160,136,139),TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
 end
-
-function PANEL:Paint(width, height)
-	local frac = EaseOut(self.openFrac)
-	if (frac <= 0.001) then return end
-
-	local count = #self.options
-	if (count == 0) then return end
-
-	local cx, cy = width * 0.5, height * 0.5
-	local baseR  = ScrH() * 0.22
-	local outerR = baseR * frac
-	local innerR = baseR * 0.5 * frac
-	local sweep  = 360 / count
-	local gap    = count > 1 and 2.5 or 0
-
-	local accent = ix.config.Get("color")
-	local a      = frac
-
-	-- Размытый затемнённый фон — фирменный вид меню Helix.
-	ix.util.DrawBlur(self, 4 * frac)
-	surface.SetDrawColor(0, 0, 0, 110 * a)
-	surface.DrawRect(0, 0, width, height)
-
-	draw.NoTexture()
-
-	-- Сектора.
-	for i = 1, count do
-		local centerAng = -90 + (i - 1) * sweep
-		local a0 = centerAng - sweep * 0.5 + gap * 0.5
-		local a1 = centerAng + sweep * 0.5 - gap * 0.5
-		local scale = self.scales[i] or 1
-		local bHover = (i == self.hovered)
-		local rout = outerR * scale
-
-		if (bHover) then
-			surface.SetDrawColor(accent.r, accent.g, accent.b, 235 * a)
-		else
-			surface.SetDrawColor(0, 0, 0, 170 * a)
-		end
-
-		FillSector(cx, cy, innerR, rout, a0, a1, 22)
-
-		-- Тонкая акцентная дуга по внешнему краю наведённого сектора.
-		if (bHover) then
-			surface.SetDrawColor(accent.r, accent.g, accent.b, 255 * a)
-			FillSector(cx, cy, rout - 2, rout, a0, a1, 22)
-		end
-	end
-
-	-- Подписи (заглавными, шрифтом меню Helix — как в стандартном меню).
-	-- Длинные названия переносим по строкам, чтобы текст не вылезал за сектор.
-	local lblFont = "ixMenuButtonFontSmall"
-	surface.SetFont(lblFont)
-	local _, lblLineH = surface.GetTextSize("Ag")
-	local lblMaxW = outerR * 0.7
-
-	for i = 1, count do
-		local opt = self.options[i]
-		local centerAng = math.rad(-90 + (i - 1) * sweep)
-		local scale = self.scales[i] or 1
-		local midR = (innerR + outerR * scale) * 0.5
-		local lx = cx + math.cos(centerAng) * midR
-		local ly = cy + math.sin(centerAng) * midR
-		local bHover = (i == self.hovered)
-		local col = bHover and color_white or ColorAlpha(color_white, 200 * a)
-
-		local lines = WrapTextSafe(opt.label:utf8upper(), lblMaxW, lblFont)
-		local ty = ly - (#lines - 1) * lblLineH * 0.5
-
-		for _, line in ipairs(lines) do
-			draw.SimpleText(line, lblFont, lx, ty, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-			ty = ty + lblLineH
-		end
-	end
-
-	draw.NoTexture()
-
-	-- Центральная ступица.
-	surface.SetDrawColor(0, 0, 0, 210 * a)
-	FillCircle(cx, cy, innerR * 0.94, 40)
-
-	-- Тонкое акцентное кольцо вокруг ступицы.
-	surface.SetDrawColor(accent.r, accent.g, accent.b, 220 * a)
-	FillSector(cx, cy, innerR * 0.94 - 1.5, innerR * 0.94, 0, 360, 48)
-
-	draw.NoTexture()
-
-	-- Центр: наведённый пункт, иначе имя/описание цели. Имя нераспознанного —
-	-- это длинное физ-описание, поэтому переносим по строкам и держим ВНУТРИ
-	-- ступицы, чтобы текст не вылезал на кнопки.
-	local title = self.hovered > 0 and self.options[self.hovered].label or (self.centerName or "")
-	title = title:utf8upper()
-
-	if (utf8.len(title) > 64) then
-		title = utf8.sub(title, 1, 61) .. "..."
-	end
-
-	local titleFont = "ixMenuButtonFontSmall"
-	local maxW = innerR * 1.45
-
-	surface.SetFont(titleFont)
-	local _, lineH = surface.GetTextSize("Ag")
-	local lines = WrapTextSafe(title, maxW, titleFont)
-
-	local gap = math.max(4, lineH * 0.3)
-	local totalH = (#lines + 1) * lineH + gap -- +1 строка под подсказку
-	local y = cy - totalH * 0.5 + lineH * 0.5
-
-	local titleCol = self.hovered > 0 and ColorAlpha(color_white, 255 * a) or ColorAlpha(accent, 255 * a)
-
-	for _, line in ipairs(lines) do
-		draw.SimpleText(line, titleFont, cx, y, titleCol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-		y = y + lineH
-	end
-
-	y = y + gap
-	local hint = (#self.menuStack > 0) and "ПКМ — НАЗАД" or "ЛКМ — ВЫБОР"
-	draw.SimpleText(hint, titleFont, cx, y, ColorAlpha(color_white, 150 * a),
-		TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-end
-
 function PANEL:OnMousePressed(code)
-	if (self.bClosing) then return end
-
-	if (code == MOUSE_LEFT) then
-		local opt = self.hovered > 0 and self.options[self.hovered]
-
-		if (opt) then
-			if (IsValid(LocalPlayer())) then
-				LocalPlayer():EmitSound("Helix.Press")
-			end
-
-			if (opt.isBack) then
-				self:PopOptions()
-			elseif (opt.children) then
-				self:PushOptions(opt.children, opt.label)
-			else
-				self:CloseMenu(false, opt.callback)
-			end
-		else
-			self:CloseMenu(true)
-		end
-	elseif (code == MOUSE_RIGHT) then
-		-- ПКМ — на уровень выше; в корне — закрыть меню.
-		if (self:PopOptions()) then
-			if (IsValid(LocalPlayer())) then
-				LocalPlayer():EmitSound("Helix.Press")
-			end
-		else
-			self:CloseMenu(true)
-		end
-	end
+ if code==MOUSE_RIGHT then if not self:PopOptions() then self:Remove() end return end
+ if code~=MOUSE_LEFT then return end
+ local opt=self.options[self.hovered]
+ if not opt or opt.disabled then return end
+ surface.PlaySound("ix/ui/radial_select.wav")
+ if opt.isBack then self:PopOptions()
+ elseif opt.pageDelta then self.page=self.page+opt.pageDelta; self:PageOptions()
+ elseif opt.children then self:PushOptions(opt.children,opt.label)
+ else
+  local callback=opt.callback
+  self:Remove()
+  if callback then callback() end
+ end
 end
-
-function PANEL:CloseMenu(bCancel, action)
-	if (self.bClosing) then return end
-
-	self.bClosing = true
-	self.pendingAction = (!bCancel) and action or nil
-
-	self:SetMouseInputEnabled(false)
-	self:SetKeyboardInputEnabled(false)
-	gui.EnableScreenClicker(false)
+function PANEL:CloseMenu() self:Remove() end
+function PANEL:OnKeyCodePressed(code)
+ if code==KEY_ESCAPE then self:Remove() end
 end
-
-function PANEL:OnRemove()
-	if (ix.gui.charRadial == self) then
-		ix.gui.charRadial = nil
-	end
-end
-
-vgui.Register("ixCharRadialMenu", PANEL, "EditablePanel")
+function PANEL:OnRemove() if ix.gui.charRadial==self then ix.gui.charRadial=nil end end
+vgui.Register("ixCharRadialMenu",PANEL,"EditablePanel")
 
 -- По сущности под прицелом возвращает (target, menuEntity, isRagdoll) либо nil.
 -- Живой игрок — он сам. prop_ragdoll лежачего/мертвого игрока — резолвим владельца
@@ -788,7 +552,7 @@ function PLUGIN:OpenRadialOn(entity)
 	end
 
 	local panel = vgui.Create("ixCharRadialMenu")
-	panel:SetTarget(target, menuEntity, isRagdoll)
+	panel:SetTarget(target, menuEntity, isRagdoll, true)
 
 	ix.gui.charRadial = panel
 
@@ -798,24 +562,40 @@ end
 -- Перехват стандартного меню сущности (живые персонажи + рэгдоллы, которым плагины
 -- выдали GetEntityMenu).
 function PLUGIN:ShowEntityMenu(entity)
-	return self:OpenRadialOn(entity)
+ -- Character interactions now share H with self actions. Keep E for world use.
+ if ResolveTarget(entity) then return true end
 end
+hook.Remove("KeyRelease", "ixRadialRagdoll")
+hook.Remove("PlayerButtonDown", "ixRadialHotkey")
 
--- Лежачие/мертвые игроки — это prop_ragdoll БЕЗ GetEntityMenu (рассылка меню в
--- !healthsystem отключена), поэтому штатный E-поток (KeyRelease → ShowEntityMenu)
--- их не ловит. Ловим E здесь сами и открываем радиальное меню по рэгдоллу.
-hook.Add("KeyRelease", "ixRadialRagdoll", function(client, key)
-	if (key != IN_USE or client != LocalPlayer()) then return end
-	if (ix.menu.IsOpen() or IsValid(ix.gui.charRadial)) then return end
-
-	local data = {}
-		data.start = client:GetShootPos()
-		data.endpos = data.start + client:GetAimVector() * 96
-		data.filter = client
-
-	local entity = util.TraceLine(data).Entity
-
-	if (IsValid(entity) and entity:GetClass() == "prop_ragdoll") then
-		PLUGIN:OpenRadialOn(entity)
-	end
+-- H is a default convenience key; +ix_radial can be rebound independently.
+concommand.Add("ix_radial",function()
+ local client=LocalPlayer()
+ if not IsValid(client) or not client:GetCharacter() or not client:Alive() then return end
+ if IsValid(ix.gui.charRadial) then ix.gui.charRadial:Remove() return end
+ if ix.Medicine and IsValid(ix.Medicine.examination) then ix.Medicine.examination:Remove() end
+ if ix.menu.IsOpen() or gui.IsGameUIVisible() then return end
+ local focus=vgui.GetKeyboardFocus()
+ if IsValid(focus) and (focus:GetClassName()=="TextEntry" or focus:GetName()=="DTextEntry") then return end
+ local tr=util.TraceLine({start=client:GetShootPos(),endpos=client:GetShootPos()+client:GetAimVector()*96,filter=client})
+ local target,entity,ragdoll=ResolveTarget(tr.Entity)
+ local panel=vgui.Create("ixCharRadialMenu")
+ panel:SetTarget(target,entity,ragdoll,true)
+ ix.gui.charRadial=panel
+end)
+concommand.Add("+ix_radial",function() RunConsoleCommand("ix_radial") end)
+concommand.Add("-ix_radial",function() end)
+local defaultKey=CreateClientConVar("ix_radial_default_h","1",true,false,"Open quick actions with H; disable to use your own bind.")
+-- Client polling also works in single-player, where predicted PlayerButtonDown
+-- does not run clientside. One edge per press; the panel never closes on that
+-- same key event. An explicit H bind owns input to avoid toggling twice.
+local wasDown=input.IsKeyDown(KEY_H)
+hook.Add("Think","ixRadialHotkey",function()
+ local down=input.IsKeyDown(KEY_H)
+ local pressed=down and not wasDown
+ wasDown=down
+ if not pressed or not defaultKey:GetBool() then return end
+ local binding=input.LookupKeyBinding and input.LookupKeyBinding(KEY_H)
+ if binding and binding:find("ix_radial",1,true) then return end
+ RunConsoleCommand("ix_radial")
 end)

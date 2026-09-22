@@ -1,0 +1,10 @@
+ITEM.name = "Обрез MP-43"
+ITEM.description = "Укороченная двустволка с горизонтальным расположением стволов. Два выстрела перед перезарядкой."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_mr43.mdl"
+ITEM.class = "arc9_eft_mr43_sawedoff"
+ITEM.weaponCategory = "primary"
+ITEM.width = 4
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = true

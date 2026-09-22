@@ -1,0 +1,10 @@
+ITEM.name = "Glock 17"
+ITEM.description = "Самозарядный пистолет с полимерной рамкой и ударниковым механизмом."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_glock.mdl"
+ITEM.class = "arc9_eft_glock17"
+ITEM.weaponCategory = "sidearm"
+ITEM.width = 2
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = false

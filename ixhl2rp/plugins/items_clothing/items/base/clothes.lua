@@ -43,6 +43,20 @@ local EQUIP_INV_TO_APPEARANCE_SLOT = {
 function ItemCloth:Init()
 	ix.meta.ItemEquipable.Init(self)
 
+	-- Radial unequip uses the same transfer as inventory. A full backpack must
+	-- not make the client remove the still-equipped head/face item visually.
+	self.functions.unequip.OnRun = function(item)
+		local old = ix.Inventory:Get(item.inventory_id)
+		local target = item.player:GetInventory("main")
+		if not old or not target then return false end
+		local x, y = item.x, item.y
+		local w, h = old:GetItemSize(item)
+		local success, reason = old:Transfer(item.id, target)
+		if success then target:SendDeltaTransfer(item.id, old, x, y, w, h)
+		else old:SyncTo(item.player); item.player:NotifyLocalized(reason or "unknownError") end
+		return false
+	end
+
 	self.category = "item.category.clothing"
 
 	self:AddData("filter", {

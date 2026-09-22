@@ -10,3 +10,6 @@ ITEM.bodyGroups = {
 ITEM.equip_inv = 'mask'
 ITEM.equip_slot = nil
 ITEM.isGasmask = true
+
+-- Enclosed lenses; respirators without eye protection intentionally omit this.
+ITEM.immersionLens = true

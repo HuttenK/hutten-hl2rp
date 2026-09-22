@@ -11,12 +11,12 @@ surface.CreateFont("ixNewsSmall",  { font = "Consolas", size = 13, weight = 500,
 surface.CreateFont("ixNewsTiny",   { font = "Consolas", size = 11, weight = 500, antialias = true })
 
 -- «Комбайновские» шрифты (как у citizen terminal; если Blender Pro не установлен — подменится дефолтным)
-surface.CreateFont("ixNewsCmbTitle", { font = "Blender Pro Heavy",  extended = true, size = 26, weight = 700, antialias = true })
-surface.CreateFont("ixNewsCmbHead",  { font = "Blender Pro Bold",   extended = true, size = 20, weight = 600, antialias = true })
-surface.CreateFont("ixNewsCmbItem",  { font = "Blender Pro Medium", extended = true, size = 19, weight = 500, antialias = true })
-surface.CreateFont("ixNewsCmbBody",  { font = "Blender Pro Book",   extended = true, size = 17, weight = 500, antialias = true })
-surface.CreateFont("ixNewsCmbSmall", { font = "Blender Pro Medium", extended = true, size = 14, weight = 500, antialias = true })
-surface.CreateFont("ixNewsCmbTick",  { font = "Blender Pro Bold",   extended = true, size = 15, weight = 600, antialias = true })
+surface.CreateFont("ixNewsCmbTitle", { font = "Tahoma",  extended = true, size = 26, weight = 700, antialias = true })
+surface.CreateFont("ixNewsCmbHead",  { font = "Tahoma",   extended = true, size = 20, weight = 600, antialias = true })
+surface.CreateFont("ixNewsCmbItem",  { font = "Tahoma", extended = true, size = 19, weight = 500, antialias = true })
+surface.CreateFont("ixNewsCmbBody",  { font = "Tahoma",   extended = true, size = 17, weight = 500, antialias = true })
+surface.CreateFont("ixNewsCmbSmall", { font = "Tahoma", extended = true, size = 14, weight = 500, antialias = true })
+surface.CreateFont("ixNewsCmbTick",  { font = "Tahoma",   extended = true, size = 15, weight = 600, antialias = true })
 
 -- ==== Палитра ГО ====
 PLUGIN.Colors = {

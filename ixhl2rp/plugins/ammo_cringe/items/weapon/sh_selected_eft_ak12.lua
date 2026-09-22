@@ -1,0 +1,10 @@
+ITEM.name = "AK-12"
+ITEM.description = "Современный автомат с регулируемым прикладом и направляющими для прицелов и навесного оборудования."
+ITEM.model = "models/weapons/arc9/darsu_eft/c_ak12.mdl"
+ITEM.class = "arc9_eft_ak12"
+ITEM.weaponCategory = "primary"
+ITEM.width = 4
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = true
