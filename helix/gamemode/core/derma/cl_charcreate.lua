@@ -352,7 +352,7 @@ function PANEL:Populate()
 		self.factionButtons = {}
 
 		for _, v in SortedPairs(ix.faction.teams) do
-			if (ix.faction.HasWhitelist(v.index)) then
+			if (ix.faction.CanCreate(v.index) and ix.faction.HasWhitelist(v.index)) then
 				local button = self.factionButtonsPanel:Add("ixMenuSelectionButton")
 				button:SetBackgroundColor(v.color or color_white)
 				button:SetText(L(v.name):utf8upper())

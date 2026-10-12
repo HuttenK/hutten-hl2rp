@@ -174,6 +174,7 @@ if (SERVER) then
 
 
 	function ENT:Use(act, call, type, val)
+        if ix.DevicePower and ix.DevicePower.IsDisabled(self) then return end
 		-- Нет питания: в обесточенной зоне блэкаута поле нельзя переключать (иначе
 		-- комбайн сменой режима снова включил бы его прямо в темноте). Авторитетная
 		-- проверка, не зависящая от порядка хуков PlayerUse.

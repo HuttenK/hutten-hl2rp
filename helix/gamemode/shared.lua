@@ -144,6 +144,7 @@ ix.util.Include("game/ui/tabmenu.frame.lua", "client")
 ix.util.Include("game/ui/tabmenu.lua", "client")
 ix.util.Include("game/ui/civic.dashboard.lua", "client")
 ix.util.Include("game/ui/civic.workspace.lua", "client")
+ix.util.Include("game/cl_interface_os.lua", "client")
 ix.util.Include("game/ui/legends.workspace.lua", "client")
 ix.util.Include("core/libs/sh_character.lua")
 
@@ -175,6 +176,8 @@ ix.Net:AddPlayerVar("canShoot", false, nil, ix.Net.Type.Bool)
 ix.Net:AddPlayerVar("raised", false, nil, ix.Net.Type.Bool)
 ix.Net:AddPlayerVar("restricted", false, nil, ix.Net.Type.Bool)
 ix.Net:AddPlayerVar("char", false, nil, ix.Net.Type.CharacterID)
+-- Public, automatically synchronized for observers and late joiners.
+ix.Net:AddPlayerVar("ixWeaponSlots", false, nil, ix.Net.Type.Table)
 
 ix.Net:AddEntityVar("data", nil, ix.Net.Type.Table)
 ix.Net:AddEntityVar("owner", nil, ix.Net.Type.CharacterID)

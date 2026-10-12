@@ -7,7 +7,7 @@ function ix.act.Sequence(entity, candidates)
 			return entity:GetSequenceName(id), id
 		end
 	end
- -- Only consult shared static poses after exhausting the model's own clips.
+ -- Only consult shared roleplay clips after exhausting the model's own clips.
  if ix.sharedPoses then
   for _,candidate in ipairs(candidates) do
    local pose=ix.sharedPoses.Resolve(entity,candidate)

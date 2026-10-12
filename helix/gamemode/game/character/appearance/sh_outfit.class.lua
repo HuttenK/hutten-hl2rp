@@ -378,9 +378,10 @@ if SERVER then
 
 			-- добавляем настройки бг из кастомизации + применяем маски от слоев на главный слой
 			if layer == 1 then
+
 				if charGen and charGen._bodygroups then
 					for g, v in pairs(charGen._bodygroups) do
-						bodyGroups[g] = v
+						if bodyGroups[g] == nil then bodyGroups[g] = v end
 					end
 				end
 				
@@ -415,6 +416,12 @@ if SERVER then
 				part:SetNoDraw(layer != 1) -- тело всегда видно
 			end
 
+   -- Model skins are independent of equipment bodygroups.
+   if layer == 1 and self.character and self.character.GetSdSkin and
+    part:GetModel() == fallbackModel and fallbackModel:lower():match("^models/sd/citizens/citizen_[%a]+_%d+_hair%d+%.mdl$") then
+    local skin = math.Clamp(self.character:GetSdSkin() or 0, 0, math.max(0, part:SkinCount()-1))
+    if part:GetSkin() ~= skin then part:SetSkin(skin) end
+   end
 			for i = 0, part:GetNumBodyGroups() do
 				local val = bodyGroups[i] or 0
 

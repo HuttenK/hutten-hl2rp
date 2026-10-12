@@ -8,14 +8,13 @@ end
 
 ix.command.Add("StartEndingNoText", {
 	description    = "",
-	-- ВНИМАНИЕ: ключ пишется именно superAdminOnly (заглавная A). Было
-	-- superadminOnly — Lua регистрозависим, поэтому helix читал nil и
-	-- регистрировал CAMI-привилегию с MinAccess = "user" (см. helix
-	-- gamemode/core/libs/sh_command.lua:197). Команду мог запустить ЛЮБОЙ
-	-- игрок: заморозка всех на сервере и сброс здоровья.
-	superAdminOnly = true,
+	OnCheckAccess = function(self, client)
+		return IsValid(client) and client:IsAdmin()
+	end,
 
 	OnRun = function(self, client)
+		if not SERVER or not IsValid(client) or not client:IsAdmin() then return end
+
 		local players = player.GetAll()
 
 		-- Действие необратимое и затрагивает весь сервер — оставляем след в логе.

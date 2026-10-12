@@ -56,7 +56,7 @@ if (CLIENT) then
 	-- luacheck: globals g_ContextMenu
 	function PLUGIN:PostDrawHUD()
 		local client = LocalPlayer()
-		if (!client:GetCharacter() or !client:Alive()) then
+		if (!IsValid(client) or !client:GetCharacter() or !client:Alive() or client:GetLocalVar("knocked", false)) then
 			return
 		end
 
@@ -67,13 +67,19 @@ if (CLIENT) then
 		end
 
 		local wep = client:GetActiveWeapon()
+		-- ARC9's crosshair calls player-only methods on GetOwner(). The active
+		-- weapon can outlive its clientside owner during strip/drop/respawn.
+		if (IsValid(wep) and wep.ARC9) then
+			local owner = wep:GetOwner()
+			if (!IsValid(owner) or !owner:IsPlayer() or owner != client) then return end
+		end
 		local bShouldDraw = hook.Run("ShouldDrawCrosshair", client, wep)
 
 		if (bShouldDraw == false or !IsValid(wep) or wep.DrawCrosshair == false) then
 			return
 		end
 
-		if (bShouldDraw == false or g_ContextMenu:IsVisible() or
+		if (bShouldDraw == false or (IsValid(g_ContextMenu) and g_ContextMenu:IsVisible()) or
 			(IsValid(ix.gui.characterMenu) and !ix.gui.characterMenu:IsClosing())) then
 			return
 		end

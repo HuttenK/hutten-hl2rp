@@ -651,11 +651,11 @@ function PANEL:Init()
 	self:AddFunction("menu", "Button", function(id)
 		self:MenuClick(tonumber(id))
 
-		LocalPlayer():EmitSound("Helix.Press")
+		ix.Legends.PlayUISound("click")
 	end)
 
 	self:AddFunction("menu", "Hover", function()
-		LocalPlayer():EmitSound("Helix.Rollover")
+		ix.Legends.PlayUISound("hover")
 	end)
 
 	cvars.AddChangeCallback("gmod_language", function()
@@ -801,7 +801,7 @@ function PANEL:MenuClick(id)
 			self:Dim(parent.loadCharacterPanel)
 		end
 	elseif id == 3 then
-		gui.OpenURL("https://steamcommunity.com/sharedfiles/filedetails/?id=3680347522")
+		gui.OpenURL("https://steamcommunity.com/sharedfiles/filedetails/?id=3806222048")
 	elseif id == 4 then
 		gui.OpenURL("https://discord.gg/M8FRCsKHSU")
 	elseif id == 5 then

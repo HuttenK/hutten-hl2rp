@@ -1,0 +1,11 @@
+ITEM.name = "Огнемёт M2"
+ITEM.description = "Ранцевый огнемёт для термической зачистки заражения. Непрерывная подача огня без расхода топлива и принудительного охлаждения."
+ITEM.model = "models/weapons/tfa_codww2/flamethrower/w_flamethrower.mdl"
+ITEM.class = "arc9_codww2_flamethrower"
+ITEM.weaponCategory = "primary"
+ITEM.width = 4
+ITEM.height = 2
+ITEM.noBusiness = true
+ITEM.bDropOnDeath = true
+ITEM.twoHanded = true
+ITEM.isFlamethrower = true

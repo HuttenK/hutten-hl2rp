@@ -1,0 +1,13 @@
+VertexLitGeneric
+{
+    $basetexture "models/arctic_nvgs/aviators/item_equipment_glasses_aviator_diff"
+
+    $bumpmap "models/arctic_nvgs/aviators/item_equipment_glasses_aviator_nrm"
+    $basemapalphaphongmask "0"
+    $phong 1
+    $phongfresnelranges "[0 0.5 1]"
+
+    $envmapmask "models/arctic_nvgs/aviators/item_equipment_glasses_aviator_gloss"
+    $envmap "env_cubemap"
+    $envmaptint "[0.05 0.05 0.05]"
+}

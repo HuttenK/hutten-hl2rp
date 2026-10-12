@@ -33,6 +33,7 @@ function Item:MigrateLegacyRow(row, data)
  if resolvedID == row.unique_id then return data end
  data = istable(data) and table.Copy(data) or {}
  data.equip = false
+ if resolvedID=="card" then data.access={} end
  data.ammo, data.ammo2 = 0, 0
  data.arc9_atts, data.attachments, data.arc9Spent = nil, nil, nil
  local migration = mysql:Update("ix_items")
@@ -178,7 +179,7 @@ end
 if SERVER then
 	util.AddNetworkString("item.sync")
 	util.AddNetworkString("item.sync.batch")
-	util.AddNetworkString("item.data")
+	util.AddNetworkString("item.data.v2")
 	util.AddNetworkString("item.action")
 	util.AddNetworkString("item.entity.action")
 	util.AddNetworkString('item.combine')
@@ -245,8 +246,23 @@ if SERVER then
 	end
 
 	function Item:GenerateID()
+		-- SQLite allocation must consult the saved high-water mark even when
+		-- DatabaseConnected was missed or this library was refreshed in-game.
+		if mysql.module == "sqlite" then
+			local rows = sql.Query("SELECT COALESCE(MAX(item_id), 0) AS max_id FROM ix_items")
+			if not istable(rows) or not rows[1] or not tonumber(rows[1].max_id) then
+				ErrorNoHalt("[Helix] Item allocation refused: database ID lookup failed.\n")
+				return
+			end
+			self.instance_count = math.max(self.instance_count or 0, tonumber(rows[1].max_id))
+		elseif not self.idsReady then
+			self:LoadInstanceCount()
+			if not self.idsReady then return end
+		end
+		for id in pairs(self.instances) do
+			self.instance_count = math.max(self.instance_count or 0, tonumber(id) or 0)
+		end
 		self.instance_count = self.instance_count + 1
-
 		return self.instance_count
 	end
 
@@ -282,6 +298,13 @@ if SERVER then
 
 						local x, y = tonumber(item.x), tonumber(item.y)
 						local itemID = tonumber(item.item_id)
+						-- Another asynchronous load may already have restored or moved this instance.
+						-- Expose its current state; an older SQL row must never hydrate it again.
+						local live = self.instances[itemID]
+						if live then
+							if itemCallback then itemCallback(live) end
+							continue
+						end
 						local data = util.JSONToTable(item.data or "[]")
                         data = self:MigrateLegacyRow(item, data)
 
@@ -351,6 +374,8 @@ if SERVER then
 	end
 
 	function Item:LoadInstanceCount()
+		if self.idsLoading then return end
+		self.idsLoading = true
 		local query = mysql:Select("ix_items")
 			query:Select("item_id")
 			query:Callback(function(result)
@@ -358,11 +383,13 @@ if SERVER then
 					local count = 0
 
 					for k, v in ipairs(result) do
-						count = math.max(count, v.item_id)
+						count = math.max(count, tonumber(v.item_id) or 0)
 					end
 
-					self.instance_count = count
+					self.instance_count = math.max(self.instance_count or 0, count)
 				end
+				self.idsLoading = nil
+				self.idsReady = result ~= false
 			end)
 		query:Execute()
 	end
@@ -371,6 +398,16 @@ if SERVER then
 		uniqueID = uniqueID and self:ResolveID(uniqueID)
 		if !uniqueID or self.stored[uniqueID] then
 			local itemID = forcedID or self:GenerateID()
+			if not itemID then return end
+			if self.instances[itemID] then
+				ErrorNoHalt("[Helix] Refused to overwrite live item #" .. tostring(itemID) .. "\n")
+				return
+			end
+			if forcedID and mysql.module == "sqlite" then
+				if not isnumber(forcedID) or forcedID < 1 or forcedID ~= math.floor(forcedID) then return end
+				local rows = sql.Query("SELECT item_id FROM ix_items WHERE item_id = " .. forcedID)
+				if rows == false or (istable(rows) and rows[1]) then return end
+			end
 			local item = self:New(uniqueID, itemID)
 
 			if item then
@@ -383,7 +420,8 @@ if SERVER then
 					item:OnInstanced(true)
 				end
 
-				local query = mysql:InsertReplace("ix_items")
+				-- Never replace an existing item row when creating a new instance.
+				local query = mysql:Insert("ix_items")
 					query:Insert("item_id", item.id)
 					query:Insert("unique_id", item.uniqueID)
 					query:Insert("data", util.TableToJSON(item.data))
@@ -821,6 +859,7 @@ if SERVER then
         local slot = source:GetSlot(x, y)
         local item = istable(slot) and Item.instances[slot[1]]
         if not item or not item.stackable_legacy or item.inventory_id ~= fromID then return end
+        if ix.Inventory.pendingTransfers and ix.Inventory.pendingTransfers['item_' .. item.id] then return end
         local value = math.floor(item:GetValue())
         if value <= 0 then return end
         local amount = split and (count == 0 and math.floor(value / 2) or count) or value
@@ -830,6 +869,9 @@ if SERVER then
         data.stack = amount
         local created = ix.Item:Instance(item.uniqueID, data, nil, item.characterID, item.playerID)
         if not created then return end
+        -- Custom OnInstanced handlers may initialize a full box. A split must
+        -- move exactly the amount deducted from its source, before insertion.
+        created:SetData('stack', amount)
         created.rotated = rotated
         local success = target:AddItem(created, targetX, targetY)
         if not success then

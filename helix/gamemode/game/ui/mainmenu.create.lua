@@ -493,7 +493,7 @@ function PANEL:OnCursorEntered()
 		end
 	})
 
-	LocalPlayer():EmitSound("Helix.Rollover")
+	ix.Legends.PlayUISound("hover")
 end
 
 function PANEL:OnCursorExited()
@@ -513,7 +513,7 @@ function PANEL:OnMousePressed(code)
 		return
 	end
 
-	LocalPlayer():EmitSound("Helix.Press")
+	ix.Legends.PlayUISound("click")
 
 	if code == MOUSE_LEFT and self.DoClick then
 		self:DoClick(self)
@@ -712,7 +712,7 @@ function PANEL:OnCursorEntered()
 		end
 	})
 
-	LocalPlayer():EmitSound("Helix.Rollover")
+	ix.Legends.PlayUISound("hover")
 end
 
 function PANEL:OnCursorExited()
@@ -743,7 +743,7 @@ end
 function PANEL:OnMousePressed(code)
 	if self:GetDisabled() then return end
 
-	LocalPlayer():EmitSound("Helix.Press")
+	ix.Legends.PlayUISound("click")
 
 	if code == MOUSE_LEFT then
 		local bool = !self.checked
@@ -787,7 +787,7 @@ function PANEL:OnCursorEntered()
 
 	self:SetTextColor(self.style.hover)
 
-	LocalPlayer():EmitSound("Helix.Rollover")
+	ix.Legends.PlayUISound("hover")
 end
 
 function PANEL:OnCursorExited()
@@ -822,7 +822,7 @@ end
 function PANEL:OnMousePressed(code)
 	if self:GetDisabled() then return end
 
-	LocalPlayer():EmitSound("Helix.Press")
+	ix.Legends.PlayUISound("click")
 
 	if code == MOUSE_LEFT and self.DoClick then
 		self:DoClick(self)
@@ -947,7 +947,7 @@ function PANEL:OnCursorEntered()
 
 	self:SetTextColor(self.selected_color)
 
-	LocalPlayer():EmitSound("Helix.Rollover")
+	ix.Legends.PlayUISound("hover")
 end
 
 function PANEL:OnCursorExited()
@@ -982,7 +982,7 @@ end
 function PANEL:OnMousePressed(code)
 	if self:GetDisabled() then return end
 
-	LocalPlayer():EmitSound("Helix.Press")
+	ix.Legends.PlayUISound("click")
 
 	if code == MOUSE_LEFT and self.DoClick then
 		self:DoClick(self)

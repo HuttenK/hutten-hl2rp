@@ -1,15 +1,9 @@
 ITEM.name = "item.crackers"
 ITEM.description = "item.crackers.desc"
-ITEM.model = "models/food/crackers_box_1.mdl"
+ITEM.model = "models/mosi/fallout4/props/food/cottoncandy.mdl"
 ITEM.cost = 12
 ITEM.width = 1
 ITEM.height = 1
-ITEM.iconCam = {
-	pos = Vector(244.9188079834, 93.88484954834, 24.179893493652),
-	ang = Angle(4.6706433296204, 200.94166564941, 0),
-	fov = 1.7740823105499,
-}
-
 ITEM.volume = 200
 ITEM.portion_amount = 40
 

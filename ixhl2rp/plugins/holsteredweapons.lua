@@ -160,6 +160,7 @@ end
 
 if SERVER then
 	function PLUGIN:Think()
+        if ix.WeaponSlots then return end
 		if (self.nextHolsterSync or 0) > CurTime() then return end
 		self.nextHolsterSync = CurTime() + 0.25
 		for _, client in ipairs(player.GetAll()) do
@@ -196,6 +197,11 @@ local eftHip = {
 	bodyFrame = true
 }
 
+function PLUGIN:HolsterProfile(class, hip)
+	if hip and class:sub(1, 9) == "arc9_eft_" then return eftHip end
+	return HOLSTER_DRAWINFO[class] or defaults[hip and "hip" or "back"]
+end
+
 -- Bone local axes differ between model rigs. Build a body-facing frame from
 -- the torso's actual direction instead of copying the bone's authored rotation.
 function PLUGIN:HolsterBoneFrame(client, boneName, matrix)
@@ -214,6 +220,7 @@ function PLUGIN:HolsterBoneFrame(client, boneName, matrix)
 end
 
 function PLUGIN:ClearHolsters(client)
+ if ix.WeaponSlots and ix.WeaponSlots.ClearHolsters then ix.WeaponSlots.ClearHolsters(client) end
 	if ix.WeaponAssembly and client.GetWeapons then
 		for _, weapon in ipairs(client:GetWeapons()) do ix.WeaponAssembly.Remove(weapon) end
 	end
@@ -234,6 +241,7 @@ end
 function PLUGIN:PostPlayerDraw(client)
 	if not self:CanDrawHolsters(client) then self:ClearHolsters(client) return end
 	if client == LocalPlayer() and not client:ShouldDrawLocalPlayer() then return end
+	if ix.WeaponSlots and ix.WeaponSlots.DrawHolsters then ix.WeaponSlots.DrawHolsters(self, client) return end
 	local active = client:GetActiveWeapon()
 	local characterID = client:GetCharacter():GetID()
 	local used = {}

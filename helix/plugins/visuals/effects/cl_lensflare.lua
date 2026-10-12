@@ -75,5 +75,6 @@ local function DrawFlare()
 end
 
 hook.Add("RenderScreenspaceEffects", "autonomous.lensflare", function()
+ if ix.FieldVisuals and ix.FieldVisuals.DrawSun then return end
  if ix.CinematicFX and ix.CinematicFX.Visible() and ix.option.Get("cinematicLens",false) then DrawFlare() end
 end)

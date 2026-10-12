@@ -1,2 +1,2 @@
 ITEM.description = "item.empty_book6.desc"
-ITEM.skin = 5
+ITEM.skin = 0

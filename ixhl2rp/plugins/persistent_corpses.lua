@@ -74,6 +74,7 @@ if (SERVER) then
 	end
 
 	function PLUGIN:RemoveEquippableItem(client, item)
+        if ix.WeaponSlots and item.isWeapon then ix.WeaponSlots.Suspend(client, item) return end
 		if (item.Unequip) then
 			item:Unequip(client)
 		elseif (item.RemoveOutfit) then

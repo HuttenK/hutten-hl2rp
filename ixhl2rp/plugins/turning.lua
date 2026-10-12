@@ -15,6 +15,7 @@ local whitelist = {
 }
 
 function PLUGIN:TranslateActivity(client, act)
+	if ix.ActionAnimations and ix.ActionAnimations.BlockAutomatic(client) then return end
 	-- NPC turn gestures must not twist a body currently using ARC9's MP stance.
 	if ix.anim.CanUseARC9NativePose and ix.anim.CanUseARC9NativePose(client, client:GetActiveWeapon()) then return end
 	local modelClass = client.ixAnimModelClass or "player"
@@ -90,6 +91,7 @@ if CLIENT then
 		if !IsValid(a) then
 			return
 		end
+		if ix.ActionAnimations and ix.ActionAnimations.BlockAutomatic(a) then return end
 
 		local b = net.ReadInt(32)
 
@@ -102,6 +104,7 @@ if CLIENT then
 		if !IsValid(client) then
 			return
 		end
+		if ix.ActionAnimations and ix.ActionAnimations.BlockAutomatic(client) then return end
 		
 		local animID = net.ReadUInt(4)
 
@@ -116,6 +119,7 @@ else
 	util.AddNetworkString("anim.talk")
 
 	function PLUGIN:PlayerUse(client, entity)
+		if ix.ActionAnimations and ix.ActionAnimations.BlockAutomatic(client) then return end
 		if entity:IsDoor() and client:KeyPressed(IN_USE) and (!client.lastDoorAnim or (client.lastDoorAnim and CurTime() >= client.lastDoorAnim)) then
 			client:DoCustomAnimEvent(888, 0)
 			client.lastDoorAnim = CurTime() + 1
@@ -124,6 +128,7 @@ else
 
 	function PLUGIN:PostPlayerSay(client, chatType, message, anonymous)
 		if not chatTypes[chatType] then return end
+		if ix.ActionAnimations and ix.ActionAnimations.BlockAutomatic(client) then return end
 		local ct = CurTime()
 
 		if !client.nextTalkAnim or (client.nextTalkAnim and ct > client.nextTalkAnim) then

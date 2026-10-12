@@ -14,8 +14,10 @@ local targetMultiply = 1
 local multiply = 1
 
 hook.Add("RenderScreenspaceEffects", "autonomous.dirtylens", function()
+ if ix.FieldVisuals and ix.FieldVisuals.DrawSun then return end
  if not ix.CinematicFX or not ix.CinematicFX.Visible() or not ix.option.Get("cinematicLens",false) then return end
- if mat_Bloom:IsError() then return end
+ if mat_Bloom:IsError() or mat_Downsample:IsError() or
+    not file.Exists("materials/" .. lens_texture .. ".vtf", "GAME") then return end
 	if !render.SupportsPixelShaders_2_0() then return end
 
 	local sun = util.GetSunInfo()

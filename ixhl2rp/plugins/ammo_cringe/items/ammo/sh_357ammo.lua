@@ -1,5 +1,5 @@
 ITEM.name = "Патроны .357 Магнум"
-ITEM.model = "models/items/synapse/357ammo.mdl"
+ITEM.model = "models/ultimate_items_re9/re9_requiem_127x55mm_ammo.mdl"
 ITEM.base = "ammo"
 ITEM.ammo = "357" -- type of the ammo
 ITEM.ammoAmount = 12 -- amount of the ammo

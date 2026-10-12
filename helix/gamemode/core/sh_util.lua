@@ -431,7 +431,7 @@ if (CLIENT) then
 	function ix.util.DrawBlur(panel, amount, passes, alpha)
 		amount = amount or 5
 
-		if (ix.option.Get("cheapBlur", false)) then
+		if (blur:IsError() or ix.option.Get("cheapBlur", false)) then
 			surface.SetDrawColor(50, 50, 50, alpha or (amount * 20))
 			surface.DrawRect(0, 0, panel:GetWide(), panel:GetTall())
 		else
@@ -468,7 +468,7 @@ if (CLIENT) then
 	function ix.util.DrawBlurAt(x, y, width, height, amount, passes, alpha)
 		amount = amount or 5
 
-		if (ix.option.Get("cheapBlur", false)) then
+		if (blur:IsError() or ix.option.Get("cheapBlur", false)) then
 			surface.SetDrawColor(30, 30, 30, amount * 20)
 			surface.DrawRect(x, y, width, height)
 		else

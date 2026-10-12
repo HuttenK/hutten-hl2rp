@@ -17,6 +17,7 @@ function ITEM:OnPlace(client, pos, angle)
 	ent:SetPos(pos)
 	ent:SetAngles(angle)
 	ent:Spawn()
+	if not IsValid(ent) then return end
 
 	local phys = ent:GetPhysicsObject()
 
@@ -26,4 +27,5 @@ function ITEM:OnPlace(client, pos, angle)
 
 	ent:SetNetVar("owner", client:GetCharacter():GetID())
 	-- Persisted by the arccw_item_atts plugin's SaveData (ents.FindByClass("ix_gunsmith")).
+	return ent
 end

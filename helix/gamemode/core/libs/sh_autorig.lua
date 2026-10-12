@@ -6,6 +6,18 @@ local candidates = {"citizen_male", "citizen_female", "metrocop", "overwatch", "
 	"cellarMale", "cellarFemale", "cellarMaleMPF", "cellarFemaleMPF", "cellarOTA"}
 local movement = {ACT_MP_STAND_IDLE, ACT_MP_WALK, ACT_MP_RUN, ACT_MP_CROUCH_IDLE, ACT_MP_CROUCHWALK}
 
+local function stockCellarClass(model)
+	if model == "models/police.mdl" then
+		return "cellarMaleMPF"
+	end
+	if model == "models/combine_soldier.mdl" or model == "models/combine_super_soldier.mdl" or
+		model == "models/combine_soldier_prisonguard.mdl" then
+		return "cellarOTA"
+	end
+	if model:match("^models/humans/group%d+%a?/male_%d+%.mdl$") or model:match("^models/player/group%d+%a?/male_%d+%.mdl$") then return "cellarMale" end
+	if model:match("^models/humans/group%d+%a?/female_%d+%.mdl$") or model:match("^models/player/group%d+%a?/female_%d+%.mdl$") then return "cellarFemale" end
+end
+
 function ix.anim.DetectModelClass(entity, model)
 	model = string.lower(model or (IsValid(entity) and entity:GetModel()) or "")
 	if cache[model] then return cache[model].class, cache[model] end
@@ -26,6 +38,14 @@ function ix.anim.DetectModelClass(entity, model)
 		local result = {class = class, reason = reason, score = score}
 		cache[model] = result
 		return class, result
+	end
+	-- Only opt known stock families into Cellar when the mounted bridge exposes
+	-- its movement and crawl sequences. Other native playermodels retain Sandbox.
+	local stock = stockCellarClass(model)
+	if stock and ix.anim[stock] and has("cidle_normal") and has("cwalk_normal") and
+		has("pwalk_all") and has("pidle_normal") and
+		has(stock == "cellarOTA" and "combatidle1_fists" or "idle_fists") then
+		return accept(stock, "stock model with mounted Cellar animations", 1)
 	end
 	-- Genuine playermodels should use Sandbox's complete weapon animation handling,
 	-- even when their path lacks /player or contains misleading NPC names.
@@ -72,4 +92,20 @@ end
 function ix.anim.ClearModelDetectionCache()
 	for model in pairs(cache) do cache[model] = nil end
 	if ix.anim.ClearARC9PoseCache then ix.anim.ClearARC9PoseCache() end
+end
+
+if concommand then
+	concommand.Add(SERVER and "ix_cellar_status" or "ix_cellar_status_cl", function(client)
+		if CLIENT then client = LocalPlayer() end
+		if not IsValid(client) then return end
+		ix.anim.ClearModelDetectionCache()
+		local model = client:GetModel() or ""
+		local _, result = ix.anim.DetectModelClass(client, model)
+		local text = "[Cellar bridge " .. (SERVER and "server" or "client") .. "] " .. model ..
+			" | class=" .. tostring(ix.anim.GetModelClass(model, client)) ..
+			" | reason=" .. tostring(result and result.reason) ..
+			" | idle=" .. tostring(client:LookupSequence("pidle_normal")) ..
+			" | crawl=" .. tostring(client:LookupSequence("pwalk_all"))
+		if SERVER then client:PrintMessage(HUD_PRINTCONSOLE, text) else print(text) end
+	end)
 end

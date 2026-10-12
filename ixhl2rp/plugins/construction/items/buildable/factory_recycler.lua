@@ -14,9 +14,11 @@ ITEM.preview_model = "models/props_mining/elevator_winch_empty.mdl"
 
 function ITEM:OnPlace(client, pos, angle)
 	local prop = ents.Create("ix_factory_recycler")
+	if not IsValid(prop) then return end
 	prop:SetPos(pos)
 	prop:SetAngles(angle)
 	prop:Spawn()
+	if not IsValid(prop) then return end
 	prop:SetFuelAmount(0)
 
 	local phys = prop:GetPhysicsObject()
@@ -25,4 +27,5 @@ function ITEM:OnPlace(client, pos, angle)
 	end
 
 	prop:SetNetVar("owner", client:GetCharacter():GetID())
+	return prop
 end

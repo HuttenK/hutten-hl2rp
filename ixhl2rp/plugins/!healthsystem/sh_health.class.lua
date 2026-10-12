@@ -443,6 +443,9 @@ function HEALTH:GetConsciousness()
 		end
 	end
 
+	if ix.Medicine and ix.Medicine.ConsciousnessSupported(self) then
+		return math.max(self.cachedConscious, 0.5)
+	end
 	return self.cachedConscious
 end
 
@@ -517,11 +520,11 @@ if SERVER then
 
 		if alive then
 			if consciousness <= 0.3 then
-				if !IsValid(client.ixRagdoll) then
+				if !client:InCriticalState() then client:SetCriticalState(true) end
+				if not (ix.Downed and ix.Downed.CrawlWindow and ix.Downed.CrawlWindow(client)) and !IsValid(client.ixRagdoll) then
 					client:SetRagdolled(true)
 					client:SetLocalVar("knocked", true)
 				end
-				if !client:InCriticalState() then client:SetCriticalState(true) end
 			elseif consciousness >= 0.4 and client:GetLocalVar("knocked") and
 				(not ix.Downed or ix.Downed.CanRecover(self)) then
 				local ratio = self:GetPercent()

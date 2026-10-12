@@ -8,7 +8,8 @@ end
 function PLAYER:GetIDCard()
 	local itemID = self:GetFirstAtSlot(1, 1, "cid")
 
-	return ix.Item.instances[itemID]
+	local item=ix.Item.instances[itemID]
+	return item and item.isKeycard and not item:GetData("revoked",false) and item or nil
 end
 
 function PLAYER:GetIDData(data, default)
@@ -22,13 +23,10 @@ function PLAYER:GetIDData(data, default)
 end
 
 function PLAYER:HasIDAccess(access)
-	if self:IsOTA() then
-		return true
-	end
 	
 	local cid = self:GetIDCard()
 
-	if !cid then 
+	if !cid or cid:GetData("name","")=="" or cid:GetData("cid","")=="" or cid:GetData("cid","")=="000-00" then 
 		return false 
 	end
 

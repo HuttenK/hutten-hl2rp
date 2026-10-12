@@ -6,10 +6,21 @@ ix.BuildCharacterModelChoices = function(models, chargen)
 		local path = istable(entry) and entry[1] or entry
 		if isstring(path) then byPath[path:lower()] = index end
 	end
+ local sdGroups = {}
+ for index, entry in ipairs(models) do
+  local path = istable(entry) and entry[1] or entry
+  local family = isstring(path) and path:lower():match("^(models/sd/citizens/citizen_[%a]+_%d+)_hair%d+%.mdl$")
+  if family then
+   local choice = sdGroups[family]
+   if not choice then choice={index=index,entry=entry,variants={}}; sdGroups[family]=choice; result[#result+1]=choice end
+   choice.variants[#choice.variants+1]={index=index}
+   assigned[index]=true
+  end
+ end
 	for index, entry in ipairs(models) do
 		local path = istable(entry) and entry[1] or entry
 		local group = isstring(path) and chargen and chargen:GetHairGroup(path)
-		if group then
+		if group and not assigned[index] then
 			local choice = {index = index, entry = entry, variants = {}}
 			for _, variant in ipairs(group) do
 				local variantIndex = byPath[variant.model:lower()]

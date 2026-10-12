@@ -1,0 +1,252 @@
+{
+  "source": "E:/map",
+  "version": "3.0.0",
+  "note": "Private terminal integration; original NikNaks copyright headers preserved. No original autorun/HUD/editor/network files imported.",
+  "files": [
+    {
+      "file": "ix_foundation_map3d/vendor/shared/sh_enums.lua",
+      "sourceSha256": "e9484cb32dd6dcfd23b6c6c6249d160ca759196a09698cee7c9d60273cb31323",
+      "sha256": "4c349bd863b6a21eb21aae5ddceac38a1fdac82ba31fa058779714403f60a32e"
+    },
+    {
+      "file": "ix_foundation_map3d/vendor/shared/sh_util.lua",
+      "sourceSha256": "eda4cf67d0c39049a333d2f5786185d6dc6d0c3c21092592ffd93a030d0577c4",
+      "sha256": "c7d952b06b55c9a3cd9384ecc4770725e0fed709e828f6e099519e85fe769fc2"
+    },
+    {
+      "file": "ix_foundation_map3d/vendor/shared/sh_themes.lua",
+      "sourceSha256": "d86d3c6b0271f4fdec63485cc58be792344d7fe3e1f49224e00136ba8e2cbb2a",
+      "sha256": "4b405b3eab06a7619842e08fc0d263d6d5c18939d7a1b0775fc549d8dd2b9188"
+    },
+    {
+      "file": "ix_foundation_map3d/vendor/shared/sh_mapdata.lua",
+      "sourceSha256": "1867f6f3ea210e9162516be445202d585e090ddd0ec6f7eeb537018c4e3daca0",
+      "sha256": "22e5ed5c38f10873b618e9223c01263bdc63c25ca2d6dc8940b3e6d3b5517b0d"
+    },
+    {
+      "file": "ix_foundation_map3d/vendor/client/geometry/cl_materials.lua",
+      "sourceSha256": "c829c3aa8fea4db3825d93b5315eaf5d4011fd42e089a8d98b3b9c51eb5a53ea",
+      "sha256": "f393621359ca5d16ae488b804dc6fb9a1c8319d07bb1248fb7c7e45496cf5781"
+    },
+    {
+      "file": "ix_foundation_map3d/vendor/client/geometry/cl_surface_colours.lua",
+      "sourceSha256": "371362a0174281ba3b6290812e3811f9e3f87157dd58e42b335ecb7eb2e90c50",
+      "sha256": "c2e52b846275d35ef5ad08f83196d2c44c439f53a5df47db459f2b891af11e0d"
+    },
+    {
+      "file": "ix_foundation_map3d/vendor/client/geometry/cl_water.lua",
+      "sourceSha256": "2ca35bff90da254c4ed99ae05fb29d3e53366fa3ce03c3e611791640ba2e28ae",
+      "sha256": "511be2fcbe64b9a87d577e5d6166969385354d07c4814004d9cb2ce573fcf58a"
+    },
+    {
+      "file": "ix_foundation_map3d/vendor/client/geometry/cl_extract.lua",
+      "sourceSha256": "f079b8aba82f0ca52788f4cb85b6e0b394ac9bd2b83ad10d666bcd2dbe12dee3",
+      "sha256": "e2beeb04f95bc7c61320956160f27bb301d984f6cc74106c24ac9c38471cb1d6"
+    },
+    {
+      "file": "ix_foundation_map3d/vendor/client/geometry/cl_relief.lua",
+      "sourceSha256": "a80b14caaa2dbab614d5a4fc9c9316c2b994c5772963e06bf04fc03715be99b7",
+      "sha256": "1de72bdb7a40e06a66c5da653d2eb72cf54ffbd1d1f3d648361a6a4518bd97e6"
+    },
+    {
+      "file": "ix_foundation_map3d/vendor/client/geometry/cl_spatial.lua",
+      "sourceSha256": "4c35f3d5bcabc4dcbef08c20fc79241e00726215a3f9f30394eedf1aa7712eb4",
+      "sha256": "3dc82e9202ab0b1731a6b464be8295a0aed464b2ce7fcf25915884322bdfe028"
+    },
+    {
+      "file": "ix_foundation_map3d/vendor/client/geometry/cl_surface_query.lua",
+      "sourceSha256": "d889d4f431e2c0bb0a2367d1eb52d01097a39ab3277943085a84953630977049",
+      "sha256": "823d9b06b1a950193d5035fc43c6f1f84ba416231ba642007944562490723cde"
+    },
+    {
+      "file": "ix_foundation_map3d/vendor/client/geometry/cl_props.lua",
+      "sourceSha256": "c6e73c037a55777f48ba9924f7613f9e36a4d1afad20714e07af5700bd2e43f7",
+      "sha256": "c69b7d3ee91a6de918ed605345fb7adb049aa6cb634a0bb770494eef4e0454d3"
+    },
+    {
+      "file": "ix_foundation_map3d/vendor/client/geometry/cl_bake_cache.lua",
+      "sourceSha256": "87c8cbb74d929ff99bad1aaec4ca52f2cdd4f3c85492a0a1818b79e3f40d7caf",
+      "sha256": "9418f863218e5724bc50ce1d7a1114e95a15d5b8f5e31589f0fbe346bb85f16a"
+    },
+    {
+      "file": "ix_foundation_map3d/vendor/client/geometry/cl_bake.lua",
+      "sourceSha256": "08e971c88277a7394360c89292df536c8f82ddf3cb8ab83e869aff182c8dcf42",
+      "sha256": "28d1af5c69449ed1eba119c22af913633ac398164946dde540ce65b9f7dd68c7"
+    },
+    {
+      "file": "ix_foundation_map3d/vendor/client/render/cl_camera.lua",
+      "sourceSha256": "3d09263a6077e8a05bafc6a1123dbc46709c95478a6f8fb700fce11faa013120",
+      "sha256": "be5bc3140b56ad7631ebff418bb7010eae0d31dad393d47c20dbd944378708c5"
+    },
+    {
+      "file": "ix_foundation_map3d/vendor/client/render/cl_native_props.lua",
+      "sourceSha256": "cdad61ace1516aeb75cbe0311a0cfda866624b49f963a1b011a5d55dab5cefd0",
+      "sha256": "3f7749c451d6b2ff73361043b8d589297ee3f1119ca16ab4f5e1f16200300377"
+    },
+    {
+      "file": "ix_foundation_map3d/vendor/client/render/cl_renderer.lua",
+      "sourceSha256": "65f8d3e945b88a28199fb111f9c5ee0f8d770da6e560cbe37548b31be10ab9a3",
+      "sha256": "45ee12439d4d572b044e14a7a07053c686e0087ce899ef3e4795c6b442ab7eac"
+    },
+    {
+      "file": "ix_foundation_map3d/config.lua",
+      "sourceSha256": "2e9a99141e48e962dc1bbac0f704b1e3c534244578953ae25116264f5d528952",
+      "sha256": "2e9a99141e48e962dc1bbac0f704b1e3c534244578953ae25116264f5d528952"
+    },
+    {
+      "file": "niknaks/modules/sh_bitbuffer.lua",
+      "sourceSha256": "74f6058b7515b361ff0ecee180e4e8ea3db5bd2ce46f69ff17c2e5261354420e",
+      "sha256": "74f6058b7515b361ff0ecee180e4e8ea3db5bd2ce46f69ff17c2e5261354420e"
+    },
+    {
+      "file": "niknaks/modules/sh_uuid.lua",
+      "sourceSha256": "dd17cd6c9bbcd2ca090cc16570f7faa816b10c178f6be7b8740f67d9f2bc1725",
+      "sha256": "dd17cd6c9bbcd2ca090cc16570f7faa816b10c178f6be7b8740f67d9f2bc1725"
+    },
+    {
+      "file": "niknaks/modules/sh_bsp_trace.lua",
+      "sourceSha256": "fc4c5e5edceae0bbfdfdbfcdc64a6659991e68bb467bd641be902ee63ab42607",
+      "sha256": "fc4c5e5edceae0bbfdfdbfcdc64a6659991e68bb467bd641be902ee63ab42607"
+    },
+    {
+      "file": "niknaks/modules/sh_model_extended.lua",
+      "sourceSha256": "63ee46b66aef8f5506000ecb7ba9a2f086fa75dc5319a97e218c0420779a0609",
+      "sha256": "63ee46b66aef8f5506000ecb7ba9a2f086fa75dc5319a97e218c0420779a0609"
+    },
+    {
+      "file": "niknaks/modules/sh_bsp_brushes.lua",
+      "sourceSha256": "da65b4fc44f6b8844f052bc4bd0bb455e0f34f85cf0fb594723e1c78e3e73efe",
+      "sha256": "da65b4fc44f6b8844f052bc4bd0bb455e0f34f85cf0fb594723e1c78e3e73efe"
+    },
+    {
+      "file": "niknaks/modules/sh_timedelta.lua",
+      "sourceSha256": "4e5214d308f5afbef20b040fad7bab1b5df164eaed65c0e6a8ff674bd8362841",
+      "sha256": "4e5214d308f5afbef20b040fad7bab1b5df164eaed65c0e6a8ff674bd8362841"
+    },
+    {
+      "file": "niknaks/modules/sh_bsp_pvspas.lua",
+      "sourceSha256": "5c4528b88a5e75109d66d14cbce5b9cdab9ae521b63c36c13b17391871ac7b61",
+      "sha256": "5c4528b88a5e75109d66d14cbce5b9cdab9ae521b63c36c13b17391871ac7b61"
+    },
+    {
+      "file": "niknaks/modules/sh_sound_module.lua",
+      "sourceSha256": "41561afb73586922972aab21fb52f37e3bc4e384e9d5404ee3e510d54d1a664e",
+      "sha256": "41561afb73586922972aab21fb52f37e3bc4e384e9d5404ee3e510d54d1a664e"
+    },
+    {
+      "file": "niknaks/modules/sh_datetime.lua",
+      "sourceSha256": "1c3b3b351d78152cb6129c3cecdd57c2d3f265af69fc31d2ffae46a8595f39b9",
+      "sha256": "1c3b3b351d78152cb6129c3cecdd57c2d3f265af69fc31d2ffae46a8595f39b9"
+    },
+    {
+      "file": "niknaks/modules/sh_bsp_staticprops.lua",
+      "sourceSha256": "ef3760895e701d9296b4d42e090ff8caf7149cda3abc18372b91404fdd1d46da",
+      "sha256": "ef3760895e701d9296b4d42e090ff8caf7149cda3abc18372b91404fdd1d46da"
+    },
+    {
+      "file": "niknaks/modules/sh_util_extended.lua",
+      "sourceSha256": "3bc33d4995a4a5e691326a165881adc673c28530b9b2385b7713ef6f18cc40a8",
+      "sha256": "3bc33d4995a4a5e691326a165881adc673c28530b9b2385b7713ef6f18cc40a8"
+    },
+    {
+      "file": "niknaks/modules/sh_bsp_module.lua",
+      "sourceSha256": "4d9573160fc4f43e03e0e7fded6fe56c248ea56a779c4ca05c0e92d317fa78c9",
+      "sha256": "4d9573160fc4f43e03e0e7fded6fe56c248ea56a779c4ca05c0e92d317fa78c9"
+    },
+    {
+      "file": "niknaks/modules/sh_bsp_entities.lua",
+      "sourceSha256": "15e056cb2247e5788ed04a6cb80b8c57265e50d077d6ba7e726c195de78d7855",
+      "sha256": "15e056cb2247e5788ed04a6cb80b8c57265e50d077d6ba7e726c195de78d7855"
+    },
+    {
+      "file": "niknaks/modules/sh_hooks.lua",
+      "sourceSha256": "945654708b7a37e593da17505966bd0b25586cf21870125f9bc368244ac98541",
+      "sha256": "945654708b7a37e593da17505966bd0b25586cf21870125f9bc368244ac98541"
+    },
+    {
+      "file": "niknaks/modules/sh_color_extended.lua",
+      "sourceSha256": "614d9a8e7417de4cae74ce548b190491452f5993451bbbbc39e23a56c11b17d8",
+      "sha256": "614d9a8e7417de4cae74ce548b190491452f5993451bbbbc39e23a56c11b17d8"
+    },
+    {
+      "file": "niknaks/modules/sh_randomizer.lua",
+      "sourceSha256": "d2b840f58a012cb54edc54e6e4edad510407160e1e2e1c31d731d6d0752b9ffe",
+      "sha256": "d2b840f58a012cb54edc54e6e4edad510407160e1e2e1c31d731d6d0752b9ffe"
+    },
+    {
+      "file": "niknaks/modules/sh_bsp_worldlights.lua",
+      "sourceSha256": "7160390c7a935d64d5d6c4370cba91520ad14d196557077580d3e220c56253bc",
+      "sha256": "7160390c7a935d64d5d6c4370cba91520ad14d196557077580d3e220c56253bc"
+    },
+    {
+      "file": "niknaks/modules/sh_linq_module.lua",
+      "sourceSha256": "763db75a00a804bbccfa2456345d2c319a76c5655352db780a643ea9af646dc8",
+      "sha256": "763db75a00a804bbccfa2456345d2c319a76c5655352db780a643ea9af646dc8"
+    },
+    {
+      "file": "niknaks/modules/sh_bsp_leafs.lua",
+      "sourceSha256": "9d97be384da4743be7b70bf5907478b2c8ac4b3d3781b3a9b809f02000ffe4be",
+      "sha256": "9d97be384da4743be7b70bf5907478b2c8ac4b3d3781b3a9b809f02000ffe4be"
+    },
+    {
+      "file": "niknaks/modules/sh_enums.lua",
+      "sourceSha256": "1f5eaad0a4e2588b86a6ef1e0aa9caad71341d8ad4eb8ab94bb84445c63a464e",
+      "sha256": "1f5eaad0a4e2588b86a6ef1e0aa9caad71341d8ad4eb8ab94bb84445c63a464e"
+    },
+    {
+      "file": "niknaks/modules/sh_file_extended.lua",
+      "sourceSha256": "2d107cfe8f362f3bd38e4645631e9ddb1befe4b7187b2d157fbd2643b4923680",
+      "sha256": "2d107cfe8f362f3bd38e4645631e9ddb1befe4b7187b2d157fbd2643b4923680"
+    },
+    {
+      "file": "niknaks/modules/sh_datapackage.lua",
+      "sourceSha256": "ac2834279824a187d5087dcc6ac5fa9d85eb6ad49a421aacc4b2bca4b6f60151",
+      "sha256": "ac2834279824a187d5087dcc6ac5fa9d85eb6ad49a421aacc4b2bca4b6f60151"
+    },
+    {
+      "file": "niknaks/modules/sh_bignumber.lua",
+      "sourceSha256": "e7c3b18526771aa7c87fb821db8582222fa447e0357b6ec381b9aa54efeb3793",
+      "sha256": "e7c3b18526771aa7c87fb821db8582222fa447e0357b6ec381b9aa54efeb3793"
+    },
+    {
+      "file": "niknaks/modules/sh_bsp_faces.lua",
+      "sourceSha256": "5fd5bb24b40e10539576be119579b614818959572d2b2e0fe11492ea5eb73366",
+      "sha256": "5fd5bb24b40e10539576be119579b614818959572d2b2e0fe11492ea5eb73366"
+    },
+    {
+      "file": "niknaks/submodules/ai/sh_map.lua",
+      "sourceSha256": "c57fe46c7d985778631a3e6c4b85c54d049efaf4c00083a22257a5fafb0460f1",
+      "sha256": "c57fe46c7d985778631a3e6c4b85c54d049efaf4c00083a22257a5fafb0460f1"
+    },
+    {
+      "file": "niknaks/submodules/ai/sh_pathfinder.lua",
+      "sourceSha256": "66d1af9524942cca45dff1e7641fa97d42026fd0a67d22ffd4cd37fd429ff84e",
+      "sha256": "66d1af9524942cca45dff1e7641fa97d42026fd0a67d22ffd4cd37fd429ff84e"
+    },
+    {
+      "file": "niknaks/submodules/ai/sh_node.lua",
+      "sourceSha256": "923bb0f1f4b0f8818ae38c6b6c7ec451997a2784c91aa4c71bd48db72d954b49",
+      "sha256": "923bb0f1f4b0f8818ae38c6b6c7ec451997a2784c91aa4c71bd48db72d954b49"
+    },
+    {
+      "file": "niknaks/submodules/ai/sh_file.lua",
+      "sourceSha256": "fb85cc615bbf46368d73d33e89ffb4a28f0a0c97d4ce927fb9d1771f1213f29f",
+      "sha256": "fb85cc615bbf46368d73d33e89ffb4a28f0a0c97d4ce927fb9d1771f1213f29f"
+    },
+    {
+      "file": "niknaks/submodules/sh_submodules.lua",
+      "sourceSha256": "44c3834e19752d2b44469dc2cfebd4aeb79774ed60df5a20407a4628111ccd31",
+      "sha256": "44c3834e19752d2b44469dc2cfebd4aeb79774ed60df5a20407a4628111ccd31"
+    },
+    {
+      "file": "niknaks/framework/sh_localbsp.lua",
+      "sourceSha256": "d532485ef002b26f8fd8a2bb77831de56d6c02f2a7f76894654c9ebdad524d7d",
+      "sha256": "d532485ef002b26f8fd8a2bb77831de56d6c02f2a7f76894654c9ebdad524d7d"
+    },
+    {
+      "file": "includes/modules/niknaks.lua",
+      "sourceSha256": "f039f531728faa4c162a75f972e0eeae17de8c47617b23d4f41d38d389798bd8",
+      "sha256": "f039f531728faa4c162a75f972e0eeae17de8c47617b23d4f41d38d389798bd8"
+    }
+  ]
+}

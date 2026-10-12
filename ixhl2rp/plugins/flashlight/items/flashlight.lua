@@ -5,5 +5,6 @@ ITEM.height = 1
 ITEM.description = "item.flashlight.desc"
 
 function ITEM:OnDrop(client)
+	client:SetNWBool("ixFieldFlashlight", false)
 	client:Flashlight(false)
 end

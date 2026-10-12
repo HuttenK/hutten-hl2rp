@@ -1,28 +1,28 @@
 ix.Locale:Build("fr")
 
 
-item.cid_ca         = "Carte CID employé Administration de la Cité"
-item.cid_ca_head    = "Carte CID Administrateur de la Cité"
-item.cid_cmb        = "Carte CID Commandement Protection Civile"
-item.cid_cwu        = "Carte CID employé Syndicat des Travailleurs Civils"
-item.cid_cwu_head   = "Carte CID Directeur du Syndicat"
-item.cid_mpf        = "Carte CID agent Protection Civile"
-item.cid_mpf_epu    = "Carte CID officier Protection Civile"
+item.cid_ca = "Удостоверение сотрудника администрации"
+item.cid_ca_head = "Удостоверение руководителя администрации"
+item.cid_cmb = "Удостоверение руководителя службы безопасности"
+item.cid_cwu = "Удостоверение технического сотрудника"
+item.cid_cwu_head = "Удостоверение руководителя технической службы"
+item.cid_mpf = "Служебное удостоверение охраны"
+item.cid_mpf_epu = "Удостоверение старшего сотрудника охраны"
 
-item.ota_access     = "Carte d'accès OTA"
+item.ota_access = "Удостоверение оперативного сотрудника"
 
-cidCitizenIdLabel   = "Citizen ID : #%s"
+cidCitizenIdLabel   = "Identity document : #%s"
 cidCardIdLabel      = "Card ID : #%s"
 
-cideditor.title = "Éditeur Citizen ID (Admin)"
+cideditor.title = "Éditeur Identity document (Admin)"
 cideditor.assignedTo = "Assigné à : "
 cideditor.cidLabel = "CID : "
-cideditor.generateCid = "GÉNÉRER UN CITIZEN ID"
+cideditor.generateCid = "GÉNÉRER UN DOCUMENT NUMBER"
 cideditor.regidLabel = "RegID : "
 cideditor.generateRegid = "GÉNÉRER UN REGISTRATION ID"
 cideditor.availableAccesses = "Accès disponibles : "
 cideditor.addAccess = "Ajouter un accès"
-cideditor.addAccessTitle = "Ajouter un accès Citizen ID"
+cideditor.addAccessTitle = "Ajouter un accès Identity document"
 cideditor.removeAccess = "Supprimer l'accès"
 cideditor.applyChanges = "APPLIQUER LES MODIFICATIONS"
 

@@ -540,7 +540,7 @@ do
 			return faction and faction.index or 0
 		end,
 		OnValidate = function(self, index, data, client)
-			if (index and client:HasWhitelist(index)) then
+			if (index and ix.faction.CanCreate(index) and client:HasWhitelist(index)) then
 				return index
 			end
 

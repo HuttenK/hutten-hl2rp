@@ -65,7 +65,7 @@ if (SERVER) then
 			-- асинхронно, а SaveContainer вызывается сразу (PlayerSpawnedProp ->
 			-- CreateInventory -> SaveContainer, ContainerRemoved и т.д.). Пропускаем
 			-- такие, иначе inventory:GetItems() падает с nil.
-			if inventory and hook.Run("CanSaveContainer", v, inventory) != false then
+			if inventory and not v.furnishingID and hook.Run("CanSaveContainer", v, inventory) != false then
 				for _, item in pairs(inventory:GetItems() or {}) do
 					item:Save()
 				end

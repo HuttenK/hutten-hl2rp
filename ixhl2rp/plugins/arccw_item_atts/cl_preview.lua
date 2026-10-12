@@ -92,7 +92,12 @@ function PANEL:OnRemove() self:ClearModels() end
 function PANEL:SetWeapon(data)
  self:ClearModels(); self.data=data; self.choice=nil; self.address=nil
  self.source=data and Entity(data.weapon or -1)
- if not IsValid(self.source) or not self.source.ARC9 or not data.tree then return end
+ if data and data.class and data.tree then
+  -- A newly selected identical gun may not have reached Entity() on this client
+  -- yet. The server snapshot fully describes the isolated preview.
+  self.source = {GetClass=function() return data.class end,
+   Clip1=function() return data.clip1 or 0 end, Clip2=function() return data.clip2 or 0 end}
+ elseif not IsValid(self.source) or not self.source.ARC9 or not data.tree then return end
  self.current=PLUGIN:CreatePreviewWeapon(self.source,data.tree)
  if IsValid(self.current) then
   local mn,mx=self.current.CModel[1]:GetRenderBounds()

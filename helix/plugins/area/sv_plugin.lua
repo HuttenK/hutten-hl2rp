@@ -23,28 +23,37 @@ end
 function ix.area.Create(name, type, startPosition, endPosition, bNoReplicate, properties)
 	local min, max = SortVector(startPosition, endPosition)
 
-	ix.area.stored[name] = {
+	local info = {
 		type = type or "area",
 		startPosition = min,
 		endPosition = max,
 		bNoReplicate = bNoReplicate,
-		properties = properties
+		properties = properties or {}
 	}
+	local allowed, reason = hook.Run("AreaDefinitionCreating", name, info)
+	if (allowed == false) then return false, reason end
+	if ix.area.stored[name] then hook.Run("AreaDefinitionRemoved", name) end
+	ix.area.stored[name] = info
+	hook.Run("AreaDefinitionCreated", name, info)
 
 	-- network to clients if needed
 	if (!bNoReplicate) then
 		net.Start("ixAreaAdd")
 			net.WriteString(name)
-			net.WriteString(type)
-			net.WriteVector(startPosition)
-			net.WriteVector(endPosition)
-			net.WriteTable(properties)
+			net.WriteString(info.type)
+			net.WriteVector(info.startPosition)
+			net.WriteVector(info.endPosition)
+			net.WriteTable(info.properties)
 		net.Broadcast()
 	end
+	return true
 end
 
 function ix.area.Remove(name, bNoReplicate)
+	local info = ix.area.stored[name]
+	hook.Run("AreaDefinitionRemoved", name)
 	ix.area.stored[name] = nil
+	hook.Run("AreaDefinitionDeleted", name, info)
 
 	-- network to clients if needed
 	if (!bNoReplicate) then

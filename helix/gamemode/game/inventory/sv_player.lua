@@ -19,14 +19,19 @@ do
 		self:SyncInventories()
 		
 		self:LoadInventories(function()
+			hook.Run("PlayerInventoriesLoaded", self)
 			self:SyncInventories()
 		end)
 	end
 
 	function PLAYER:LoadInventories(callback)
-		local item_ids = self:GetCharacter():GetSavedItems()
+		local character = self:GetCharacter()
+		local inventories = self.inventories
+		local item_ids = character:GetSavedItems()
+		local function current() return IsValid(self) and self:GetCharacter() == character and self.inventories == inventories end
 
 		ix.Item:LoadInstanceByID(item_ids, function(item)
+			if not current() then return end
 			if item.inventory_type then
 				local x, y = item.x, item.y
 				local inventory_type = item.inventory_type
@@ -46,7 +51,7 @@ do
 
 				inventory:AddItem(item, x, y, nil, true)
 			end
-		end, callback)
+		end, function() if current() and callback then callback() end end)
 	end
 
 	function PLAYER:DeleteInventories()

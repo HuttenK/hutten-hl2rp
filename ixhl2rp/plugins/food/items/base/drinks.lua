@@ -81,7 +81,10 @@ function ItemDrink:Init()
 			end
 
 			if item.reagents.volume <= 0.1 then
+				hook.Run("PlayerConsumedItem", client, item, "drink", sipAmount, true)
 				item:OnDepleted()
+			else
+				hook.Run("PlayerConsumedItem", client, item, "drink", sipAmount, false)
 			end
 		end,
 		OnCanRun = function(item)
@@ -126,6 +129,7 @@ function ItemDrink:Init()
 				item:CustomEffect(client, remaining)
 			end
 
+			hook.Run("PlayerConsumedItem", client, item, "drink", remaining, true)
 			item:OnDepleted()
 		end,
 		OnCanRun = function(item)

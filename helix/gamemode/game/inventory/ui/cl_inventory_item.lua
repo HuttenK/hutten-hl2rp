@@ -72,10 +72,10 @@ function PANEL:Paint(w, h)
 	end
 
 
-	surface.SetDrawColor(10, 30, 43, 225)
+	surface.SetDrawColor(34, 10, 17, 210)
 	surface.DrawRect(0, 0, w, h)
 
-	surface.SetDrawColor(61, 117, 136, 200)
+	surface.SetDrawColor(150, 43, 57, 200)
 		surface.DrawOutlinedRect(0, 0, w, h)
 	
 	if self.item_data then

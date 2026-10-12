@@ -65,7 +65,6 @@ ix.LootContainer:Add("garbage", { -- garbage tier 0
 			{ id = "mat_charcoal", weight = 50, min = 1, max = 2 },
 			{ id = "prewar_canned_food", weight = 14 },
 			{ id = "old_fast_food", weight = 14 },
-			{ id = "baked_beans", weight = 14 },
 			{ id = "olive_oil", weight = 14 },
 			{ id = "old_soda", weight = 14 },
 			{ id = "spoiled_whiskey", weight = 14 },
@@ -330,8 +329,6 @@ ix.LootContainer:Add("food_box", { -- rnp - food package
 		crate = {
 			{ id = "resin", weight = 20 },
 			{ id = "prewar_canned_food", weight = 50 },
-			{ id = "baked_beans", weight = 50 },
-			{ id = "union_branded_instant_potatoes", weight = 50 },
 			{ id = "union_branded_chinese_takeout", weight = 50 },
 			{ id = "donuts", weight = 50 },
 			{ id = "union_branded_bran_flakes", weight = 50 },

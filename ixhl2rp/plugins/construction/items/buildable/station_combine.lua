@@ -16,6 +16,7 @@ function ITEM:OnPlace(client, pos, angle)
 	ent:SetPos(pos)
 	ent:SetAngles(angle)
 	ent:Spawn()
+	if not IsValid(ent) then return end
 
 	local phys = ent:GetPhysicsObject()
 
@@ -25,4 +26,5 @@ function ITEM:OnPlace(client, pos, angle)
 
 	ent:SetNetVar("owner", client:GetCharacter():GetID())
 	-- Persisted by the ixcraft plugin's SaveStations (ents.FindByClass("ix_station_*")).
+	return ent
 end

@@ -1,0 +1,13 @@
+{
+  "title": "D-Class Clothing - SD Companion",
+  "type": "model",
+  "tags": [
+    "roleplay"
+  ],
+  "ignore": [
+    "*.md",
+    "*.json",
+    "workshop-thumbnail.png",
+    "clothing-preview.png"
+  ]
+}

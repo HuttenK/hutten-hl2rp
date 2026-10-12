@@ -51,6 +51,7 @@ local CITIZEN_MODELS = {
 function ix.faction.LoadFromDir(directory)
 	for _, v in ipairs(file.Find(directory.."/*.lua", "LUA")) do
 		local niceName = v:sub(4, -5)
+		if not (Schema and Schema.factionAllowlist) or Schema.factionAllowlist[niceName] then
 
 		FACTION = ix.faction.teams[niceName] or {index = table.Count(ix.faction.teams) + 1, isDefault = false}
 			if (PLUGIN) then
@@ -96,6 +97,7 @@ function ix.faction.LoadFromDir(directory)
 			ix.faction.indices[FACTION.index] = FACTION
 			ix.faction.teams[niceName] = FACTION
 		FACTION = nil
+		end
 	end
 end
 
@@ -107,6 +109,14 @@ end
 -- > "Citizen"
 function ix.faction.Get(identifier)
 	return ix.faction.indices[identifier] or ix.faction.teams[identifier]
+end
+
+-- Creation eligibility is separate from whitelist permission to load/transfer
+-- an existing character. Apply this on the server as well as in creation UIs.
+function ix.faction.CanCreate(index)
+	local faction = ix.faction.indices[index]
+	if not faction or faction.showCreationMenu == false then return false end
+	return not (Schema and Schema.creationFactions) or Schema.creationFactions[faction.uniqueID] == true
 end
 
 --- Retrieves a faction index.

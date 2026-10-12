@@ -1,0 +1,15 @@
+"VertexLitGeneric"
+{
+ "$basetexture" "models/weapons/sweps/stalker2/pda/mi_dev_pda_rgb"
+ "$bumpmap" "models/weapons/sweps/stalker2/pda/mi_dev_pda_n"
+ "$phongexponenttexture" "models/weapons/sweps/stalker2/pda/mi_dev_pda_e"
+ "$phong" "1"
+ "$phongboost" "0.5"
+ "$phongfresnelranges" "[0.2 0.5 1]"
+ "$rimlight" "1"
+ "$rimlightexponent" "4"
+ "$rimlightboost" "0.25"
+ "$normalmapalphaenvmapmask" "1"
+ "$envmap" "env_cubemap"
+ "$envmaptint" "[0.06 0.06 0.06]"
+}

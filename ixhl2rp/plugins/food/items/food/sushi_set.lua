@@ -1,15 +1,9 @@
 ITEM.name = "item.sushi_set"
 ITEM.description = "item.sushi_set.desc"
-ITEM.model = "models/nt/props_street/sushiplate.mdl"
+ITEM.model = "models/mosi/fallout4/props/food/iguanaonastick.mdl"
 ITEM.cost = 25
 ITEM.width = 1
 ITEM.height = 1
-
-ITEM.iconCam = {
-	pos = Vector(258.35522460938, 2.8817327022552, 135.67057800293),
-	ang = Angle(27.432516098022, 180.63893127441, 0),
-	fov = 2.2723911223566,
-}
 
 ITEM.volume = 400
 ITEM.portion_amount = 80

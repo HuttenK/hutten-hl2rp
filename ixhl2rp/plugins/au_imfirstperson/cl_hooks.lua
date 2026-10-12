@@ -2,6 +2,11 @@ local PLUGIN = PLUGIN
 
 -- Called when the player's view needs to be calculated.
 function PLUGIN:CalcView(client, origin, angles, fov)
+	-- The movement camera composes with the weapon view without delaying aim.
+	if (ix.Immersion and ix.Immersion.CameraEnabled and ix.Immersion.CameraEnabled()) then
+		CurView = nil
+		return
+	end
 	local view = {}
 	local eyeAtt = client:GetAttachment(client:LookupAttachment("eyes"))
 	local forwardVec = client:GetAimVector()

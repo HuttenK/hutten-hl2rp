@@ -1,5 +1,5 @@
 ITEM.name = "Патроны для автоматов"
-ITEM.model = "models/items/synapse/boxmrounds.mdl"
+ITEM.model = "models/ultimate_items_re9/re9_requiem_rifle_ammo_box.mdl"
 ITEM.base = "ammo"
 ITEM.ammo = "XBowBolt" -- type of the ammo
 ITEM.ammoAmount = 180 -- amount of the ammo

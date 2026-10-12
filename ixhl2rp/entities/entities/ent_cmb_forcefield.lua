@@ -157,6 +157,7 @@ function ENT:OnTakeDamage( damage )
 end
 
 function ENT:SetForcefield( iMode )
+ if SERVER and ix.DevicePower and not ix.DevicePower.applying and ix.DevicePower.IsDisabled(self) then return end
 	if not IsValid( self.eRightSide ) or not IsValid( self ) then return end
 	if iMode > #ix.ForcefieldModes then
 		iMode = 1
@@ -188,6 +189,7 @@ function ENT:Think()
 end
 
 function ENT:Use( pPlayer )
+ if ix.DevicePower and ix.DevicePower.IsDisabled(self) then return end
 
 	if self:GetBroken() then return end
 	if ( self.iNextUse or 0 ) > CurTime() then return end

@@ -238,12 +238,26 @@ function PLUGIN:Snapshot(client, session, weapon, message, opening)
  session.signature=IsValid(weapon) and ix.arc9Inventory and PLUGIN:TreeSignature(weapon.Attachments) or nil
  local data = {opening=opening or false, token=session.token, revision=session.revision, bench=session.bench:EntIndex(), weapons={}, slots={},
   resin=self:Resin(client), cost=self.cost, message=message, policy=flag("arc9_atts_anarchy") or flag("arc9_atts_nocustomize") or false}
- for _, candidate in ipairs(self:Weapons(client)) do
-  if #data.weapons >= 32 then break end
-  data.weapons[#data.weapons+1] = {id=candidate:EntIndex(), name=tostring(candidate.PrintName or candidate:GetClass())}
+ if ix.WeaponSlots then
+  for slot = 1, ix.WeaponSlots.count do
+   local item = ix.WeaponSlots.Item(client, slot)
+   if item and ix.WeaponSlots.Accepts(item, slot) and ix.arc9Inventory.IsClass(item.class) then
+    local live = ix.WeaponSlots.Live(client, item)
+    data.weapons[#data.weapons+1] = {id=IsValid(live) and live:EntIndex() or 0,
+     name="[" .. slot .. "] " .. item:GetName(), item=item.id, slot=slot}
+   end
+  end
+ else
+  for _, candidate in ipairs(self:Weapons(client)) do
+   if #data.weapons >= 32 then break end
+   data.weapons[#data.weapons+1] = {id=candidate:EntIndex(), name=tostring(candidate.PrintName or candidate:GetClass())}
+  end
  end
  if IsValid(weapon) then
   data.weapon = weapon:EntIndex()
+  data.class = weapon:GetClass()
+  data.clip1, data.clip2 = weapon:Clip1(), weapon:Clip2()
+  data.item = weapon.ixItem and weapon.ixItem.id
   data.tree = ix.arc9Inventory.AttachmentTree(weapon.Attachments)
   local ok, slots = self:Stock(client,function()
    local slots = {}
@@ -272,6 +286,15 @@ function PLUGIN:Open(client, bench)
  local choices = self:Weapons(client)
  local weapon = choices[1]
  for _, candidate in ipairs(choices) do if candidate == client:GetActiveWeapon() then weapon=candidate end end
+ if not IsValid(weapon) and ix.WeaponSlots then
+  for slot = 1, ix.WeaponSlots.count do
+   local item = ix.WeaponSlots.Item(client, slot)
+   if item and ix.WeaponSlots.Accepts(item, slot) and ix.arc9Inventory.IsClass(item.class) then
+    weapon = ix.WeaponSlots.Activate(client, item, true)
+    break
+   end
+  end
+ end
  self:Snapshot(client,session,weapon,nil,true)
 end
 net.Receive("ixGunsmithClose",function(_,client)
@@ -289,6 +312,16 @@ net.Receive("ixGunsmithRequest",function(length,client)
  local weapon = Entity(entity)
  local expectedRevision=revision
  if action==0 then expectedRevision=nil end -- read-only recovery after a lost response
+ -- Select an equipped ITEM, including an identical gun without a live SWEP.
+ -- Validate the session before materializing it; a forged menu cannot draw guns.
+ if action == 0 and value:sub(1,5) == "slot:" then
+  if not ix.WeaponSlots or not PLUGIN:Validate(client,token,expectedRevision) then return end
+  local slot, id = value:match("^slot:([123]):(%d+)$")
+  local item = slot and ix.WeaponSlots.Item(client, tonumber(slot))
+  if not item or item.id ~= tonumber(id) or not ix.arc9Inventory.IsClass(item.class) then return end
+  weapon = ix.WeaponSlots.Activate(client, item, true)
+  if not IsValid(weapon) then return end
+ end
  local session = PLUGIN:Validate(client,token,expectedRevision,weapon)
  if not session then return end
  if (session.nextRequest or 0) > CurTime() then return end

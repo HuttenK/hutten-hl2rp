@@ -1,0 +1,28 @@
+local DM=ix.FoundationMap3D
+DM.settings={
+ ["ix_ftmap_cl_bake_fps"]=120,
+ ["ix_ftmap_cl_chunk_size"]=2048,
+ ["ix_ftmap_cl_clip_invert"]=false,
+ ["ix_ftmap_cl_hud_zoom"]=1,
+ ["ix_ftmap_cl_map_textures"]=false,
+ ["ix_ftmap_cl_material_colours"]=false,
+ ["ix_ftmap_cl_npcs"]=false,
+ ["ix_ftmap_cl_props"]=true,
+ ["ix_ftmap_cl_rotate"]=true,
+ ["ix_ftmap_cl_skip_ceilings"]=true,
+ ["ix_ftmap_cl_smooth"]=12,
+ ["ix_ftmap_sv_camera_back"]=90,
+ ["ix_ftmap_sv_camera_fov"]=70,
+ ["ix_ftmap_sv_camera_height"]=900,
+ ["ix_ftmap_sv_face_shading"]=0.55,
+ ["ix_ftmap_sv_foliage"]=true,
+ ["ix_ftmap_sv_height_invert"]=false,
+ ["ix_ftmap_sv_height_shading"]=0.25,
+ ["ix_ftmap_sv_ortho"]=false,
+ ["ix_ftmap_sv_prop_lod"]=1,
+ ["ix_ftmap_sv_theme"]="standard",
+ ["ix_ftmap_sv_topdown_lock"]=false,
+ ["ix_ftmap_sv_water"]=true,
+ ["ix_ftmap_sv_worldmap_lock"]=false,
+}
+DM.Config={Get=function(key) return DM.settings[key] end}

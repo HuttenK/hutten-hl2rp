@@ -1,0 +1,9 @@
+// Companion alias to textures supplied by the original SD pack.
+"VertexLitGeneric"
+{
+ "$basetexture" "models/sectorialdistrict/aliens/vortigaunt/bag"
+ "$bumpmap" "models/sectorialdistrict/aliens/vortigaunt/bag_n"
+ "$model" "1"
+ "$nocull" "1"
+ "$halflambert" "1"
+}

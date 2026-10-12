@@ -1,14 +1,8 @@
 local Item = class("ItemBook"):implements("Item")
 
-Item.model = "models/n_models/n_book.mdl"
+Item.model = "models/props_se/office_foldier.mdl"
 Item.stackable = true
 Item.max_stack = 8
-Item.iconCam = {
-	pos = Vector(70.421997070313, 0.21755240857601, 41.372787475586),
-	ang = Angle(30.566345214844, 180.11782836914, 0),
-	fov = 10.598704422945,
-}
-
 function Item:Init()
 	self.category = "item.category.book"
 	self.name = "item.emptybook"

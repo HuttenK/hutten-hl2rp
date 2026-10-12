@@ -4,7 +4,7 @@
 -- исчезает.
 ITEM.name = "Контейнер для биоматериала"
 ITEM.description = "Прочный мешок для сбора заражённой флоры (10 зарядов). Держите его при себе и нажимайте E на флоре в зоне заражения."
-ITEM.model = Model("models/hlvr/combine_hazardprops/combinehazardprops_clothe.mdl")
+ITEM.model = Model(util.IsValidModel("models/hlvr/combine_hazardprops/combinehazardprops_clothe.mdl") and "models/hlvr/combine_hazardprops/combinehazardprops_clothe.mdl" or "models/props_junk/garbage_bag001a.mdl")
 ITEM.width = 2
 ITEM.height = 2
 ITEM.category = "Снаряжение"

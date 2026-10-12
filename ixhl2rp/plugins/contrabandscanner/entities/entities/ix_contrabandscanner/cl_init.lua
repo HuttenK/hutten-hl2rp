@@ -23,7 +23,7 @@ function ENT:UpdateBounds()
 		Vector(hd + 8, hw + 8, h + 8)
 	)
 
-	self.boundsKey = hw + h + hd
+	self.boundsW, self.boundsH, self.boundsD = hw, h, hd
 end
 
 local function beam(a, b, width, color)
@@ -39,12 +39,13 @@ function ENT:Draw()
 	if (hw <= 0 or h <= 0) then return end
 
 	-- пересчитать границы, если размер изменился
-	if (self.boundsKey != (hw + h + self:GetScanDepth() * 0.5)) then
+	if (self.boundsW != hw or self.boundsH != h or self.boundsD != self:GetScanDepth() * .5) then
 		self:UpdateBounds()
 	end
 
 	local alarm = self:GetAlarming()
-	local col = alarm and COLOR_ALARM or COLOR_IDLE
+	local disabled = self:GetDisabled()
+ local col = disabled and Color(45, 40, 42) or (alarm and COLOR_ALARM or COLOR_IDLE)
 
 	-- мигание при тревоге
 	if (alarm) then
@@ -70,7 +71,9 @@ function ENT:Draw()
 	-- слабая нижняя планка по полу
 	beam(BL, BR, 2, ColorAlpha(col, 120))
 
-	-- сканирующая линия СНИЗУ ВВЕРХ
+	if disabled then return end
+
+ -- сканирующая линия СНИЗУ ВВЕРХ
 	local zt = (CurTime() * SWEEP_V) % 1
 	local z = zt * h
 	local sA = self:LocalToWorld(Vector(0, -hw, z))

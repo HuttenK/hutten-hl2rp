@@ -1,0 +1,10 @@
+ENT.Type="anim"
+ENT.Base="ix_cctv_device"
+ENT.PrintName="CCTV / Монитор"
+ENT.Category="Foundation"
+ENT.SubCategory="CCTV"
+ENT.IconOverride="icon16/monitor.png"
+ENT.CCTVKind="monitor"
+ENT.Spawnable=true
+ENT.AdminOnly=true
+ENT.bNoPersist=true

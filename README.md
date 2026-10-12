@@ -1,3 +1,28 @@
+## Current SCP schema snapshot (2026-10-12)
+
+The `scp-schema` branch contains the current Helix framework, SCP schema, and
+companion addons used by this version.
+
+Installation:
+
+1. Copy `helix` and `ixhl2rp` into `garrysmod/gamemodes`.
+2. Copy the folders inside `addons` into `garrysmod/addons` on the server and
+   clients. Follow the included addon READMEs for dependency and mount details.
+3. Keep the required Workshop collection below installed; the companion addons
+   do not replace all Workshop dependencies.
+4. Restart the server and clients after updating Lua or animation content.
+
+Recent changes include blackout lighting and physical power connections,
+multi-screen devices, weapon equipment slots and ARC9/SD animation support,
+helmet cameras, and one-handed dragging of downed players. While dragging,
+press E on the carried body to release it, or hold R to raise/lower the weapon;
+reloading is disabled until the body is released.
+
+Local diagnostics, deployment backups, and copied stock gamemodes are not part
+of this snapshot.
+
+---
+
 DESCRIPTION - WIP
 Numerous features/plugins/changes and addon dependencies haven't been listed/described/explained yet
 

@@ -39,7 +39,7 @@ end
 
 
 ITEM.name = "item.book"
-ITEM.model = "models/n_models/n_book.mdl"
+ITEM.model = "models/props_se/office_foldier.mdl"
 ITEM.stackable = true
 ITEM.max_stack = 5
 ITEM.width = 2
@@ -81,7 +81,7 @@ ITEM.functions.View = {
 }
 
 function ITEM:GetSkin()
-	return tonumber(self:GetData("S", 0))
+	return 0 -- document folder has no legacy book-cover skins
 end
 
 function ITEM:GetTitle()

@@ -1,15 +1,2 @@
-RECIPE.name = "recipe.tailoring.legs_tier2"
-RECIPE.category = "recipe.category.armor_legs"
-RECIPE.requirements = {
-	mat_kevlar = 4,
-	mat_leather = 2,
-	mat_cloth_reclaimed = 2,
-	mat_resine = 1,
-}
-RECIPE.results = {
-	legs_nato_tier2 = 1
-}
-RECIPE.skill = {"tailoring", 7}
-RECIPE.tools = {"tool_welding", "tool_scissors"}
-RECIPE.station = "station_tailor"
-RECIPE.xp = 150
+-- Recipe retired with its armor item.
+RECIPE.disabled = true

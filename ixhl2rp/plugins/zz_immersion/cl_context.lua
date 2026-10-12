@@ -119,7 +119,7 @@ hook.Add("RenderScreenspaceEffects","ixContextualImmersion",function()
  if not I.Active() then return end
  local p=LocalPlayer(); local w,h=ScrW(),ScrH()
  local exposure=I.Exposure(state.light,state.adapted or state.light)*I.Strength("immersionExposure")
- if math.abs(exposure)>0.0001 then grade['$pp_colour_brightness']=exposure; DrawColorModify(grade) end
+ if not ArcticNVGs_Enabled and not p:GetNetVar("ixInToxicZone",false) and math.abs(exposure)>0.0001 then grade['$pp_colour_brightness']=exposure; DrawColorModify(grade) end
  local lens=state.lens and I.Strength("immersionEquipment") or 0
  local impact=state.impact
  local pulse=impact and math.max(0,1-(RealTime()-impact.time)/0.85)^2*impact.strength*I.Strength("immersionImpact") or 0

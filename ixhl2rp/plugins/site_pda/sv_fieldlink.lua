@@ -14,18 +14,20 @@ end
 function PLUGIN:HasPDAItem(p) return IsValid(p) and p.HasItem and p:HasItem("pda") end
 function PLUGIN:RegisterPDA(p,device,card)
  if not IsValid(p) or not p:Alive() or not p:GetCharacter() or not p.HasItemByID then return false end
- if not device or device.uniqueID~="pda" or device:GetData("fieldlinkIdentity") or not card or card.equip_inv~="cid" then return false end
+ if not device or device.uniqueID~="pda" or not card or not card.isKeycard then return false end
  local hasDevice,ownedDevice=p:HasItemByID(device:GetID())
  local hasCard,ownedCard=p:HasItemByID(card:GetID())
  if not hasDevice or ownedDevice~=device or not hasCard or ownedCard~=card then return false end
  local identity=F.CardIdentity(card)
  if not identity then p:Notify("CID не содержит действительных регистрационных данных."); return false end
+ local existing=device:GetData("fieldlinkIdentity")
+ if istable(existing) and existing.id==identity.id then return false end
  self.state.clearances=self.state.clearances or {}
- local clearance=tonumber(self.state.clearances[identity.id]) or 0
+ local clearance=card.clearanceLevel or 0
  if clearance~=clearance then clearance=0 end
  identity.clearance=math.Clamp(math.floor(clearance),0,4); identity.registered=os.time()
  device:SetData("fieldlinkIdentity",identity)
- device:SetData("fieldlinkNotes","")
+ if not existing then device:SetData("fieldlinkNotes","") end
  if self.MediaDevice then self:MediaDevice(device); self:SaveMedia() end
  p:Notify("КПК зарегистрирован: "..identity.name.." / CID "..identity.cid)
  p:EmitSound("fieldlink/ui/register.wav",55,100,.5)
@@ -73,6 +75,8 @@ function PLUGIN:Snapshot(p)
  incidents={},directives={},records={},notes=item:GetData("fieldlinkNotes",""),map=game.GetMap(),time=os.time()}
  if not identity then data.alert={level=1,message="Регистрация не выполнена"}; return data end
  if self.MediaSnapshot then self:MediaSnapshot(p,data) end
+ local utilities=ix.plugin.list.facility_utilities
+ if utilities then data.maintenance=utilities:JobRows(p) end
  for _,v in ipairs(self.state.incidents) do if F.CanReadIncident(p,v) then data.incidents[#data.incidents+1]=v end end
  for _,v in ipairs(self.state.directives) do if level>=v.level then data.directives[#data.directives+1]=v end end
  for _,v in ipairs(F.records) do if level>=v.level then data.records[#data.records+1]=v end end
@@ -80,9 +84,20 @@ function PLUGIN:Snapshot(p)
 end
 function PLUGIN:Send(p,message)
  if not F.Ready(p) then return end
- local data=self:Snapshot(p); data.message=message
- local encoded=util.Compress(util.TableToJSON(data))
- if not encoded or #encoded>60000 then return end
+ local ok,encoded=xpcall(function()
+  local data=self:Snapshot(p); data.message=message
+  return util.Compress(util.TableToJSON(data))
+ end,debug.traceback)
+ if not ok then ErrorNoHalt("[FIELDLINK] Snapshot failed: "..tostring(encoded).."\n") end
+ if not ok or not encoded or #encoded>60000 then
+  -- This is a failure envelope, never an authenticated snapshot. Keep the
+  -- diagnostic on the server and let the existing periodic sync retry.
+  local c=p:GetCharacter(); local item=F.DeviceItem(p)
+  if not c or not item then return end
+  encoded=util.Compress(util.TableToJSON({recipient=c:GetID(),device=item:GetID(),
+   error=ok and "Данные не переданы: пакет слишком большой. Сообщите администратору." or "Ошибка синхронизации сервера. Повторная попытка…"}))
+  if not encoded or #encoded>60000 then return end
+ end
  net.Start("ixFieldlinkSnapshot"); net.WriteUInt(#encoded,16); net.WriteData(encoded,#encoded); net.Send(p)
 end
 local function Find(list,id)
@@ -98,6 +113,12 @@ function PLUGIN:Handle(p,action,payload)
  local identity=F.Identity(p); local item=F.DeviceItem(p); local level=F.Clearance(p)
  if action=="sync" then self:Send(p); return true end
  if not identity or tonumber(payload.device)~=item:GetID() then return false end
+ if action=="maintenance" then
+  local utilities=ix.plugin.list.facility_utilities;if not utilities then return false end
+  local ok,message=utilities:JobAction(p,payload);self:Send(p,message);return true
+ end
+ local weapon=p:GetActiveWeapon()
+ if IsValid(weapon) and weapon.SetNW2Float then weapon:SetNW2Float("fieldlinkTap",CurTime()) end
  if action=="message" or action=="photo" or action=="savePhoto" or action=="deletePhoto" or action=="deleteMessage" then
   return self.MediaAction and self:MediaAction(p,action,payload) or false
  end
@@ -171,7 +192,7 @@ timer.Create("ixFieldlinkAccess",0.5,0,function()
  end
 end)
 ix.command.Add("PDASetClearance",{
- description="Назначить допуск FIELDLINK по экипированной CID-карте персонажа (0–4).",adminOnly=true,
+ description="Назначить допуск FIELDLINK по экипированной ключ-карте персонажа (0–4).",adminOnly=true,
  arguments={ix.type.character,ix.type.number},
  OnRun=function(self,p,target,value)
   if value~=value or value%1~=0 or value<0 or value>4 then return "Укажите целый допуск от 0 до 4." end
@@ -179,9 +200,8 @@ ix.command.Add("PDASetClearance",{
   local inventory=IsValid(owner) and owner:GetCharacter()==target and owner:GetInventory("cid")
   local card=inventory and inventory:GetItems()[1]
   local identity=F.CardIdentity(card)
-  if not identity then return "Персонаж должен экипировать заполненную CID-карту." end
+  if not identity then return "Персонаж должен экипировать заполненную ключ-карту." end
   PLUGIN.state.clearances=PLUGIN.state.clearances or {}
-  PLUGIN.state.clearances[identity.id]=value; PLUGIN:SaveData()
-  return "Допуск FIELDLINK для "..identity.name..": "..value
+  return "Допуск определяется уровнем ключ-карты. Выдайте карту нужного уровня через меню предметов и используйте /CardImprint."
  end
 })

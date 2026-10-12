@@ -1,4 +1,8 @@
 local PLUGIN = PLUGIN
+if PLUGIN.CleanupRuntime then PLUGIN:CleanupRuntime() end
+PLUGIN.unloading = false
+PLUGIN.collections = {}
+PLUGIN.wasteGeneration = (PLUGIN.wasteGeneration or 0) + 1
 
 -- Учёт спавненных сущностей по зонам: [имя зоны] = { [ent] = true }
 PLUGIN.zombies = PLUGIN.zombies or {}
@@ -106,6 +110,7 @@ local function spawnZombie(name, area)
 	zombie:Spawn()
 	zombie:Activate()
 
+	zombie.bNoPersist = true
 	zombie.ixInfectionZone = name
 
 	PLUGIN.zombies[name] = PLUGIN.zombies[name] or {}
@@ -129,7 +134,7 @@ local function spawnFlora(name, area)
 	ang:RotateAroundAxis(ang:Right(), -90)
 	ang:RotateAroundAxis(normal, math.random(0, 360))
 
-	local model = PLUGIN.floraModels[math.random(#PLUGIN.floraModels)]
+	local model = PLUGIN.validFloraModels[math.random(#PLUGIN.validFloraModels)]
 
 	local prop = ents.Create("prop_physics")
 	if (!IsValid(prop)) then return end
@@ -160,6 +165,7 @@ local function spawnFlora(name, area)
 
 	-- большой engine-HP, чтобы движок сам не ломал — «здоровье» считаем вручную
 	prop:SetHealth(1000000)
+	prop.bNoPersist = true
 	prop.ixFloraHP = PLUGIN.defaults.floraHealth
 	prop.ixInfectionFlora = name
 
@@ -168,6 +174,7 @@ local function spawnFlora(name, area)
 end
 
 function PLUGIN:CleanFlora(name)
+ if name == "__waste" then self.wasteGeneration = self.wasteGeneration + 1 end
 	removeAll(self.flora[name])
 	self.flora[name] = {}
 end
@@ -181,6 +188,7 @@ end
 -- Используется при «распаковке» отходов. name — ключ группы (для зон это имя зоны,
 -- для свободной флоры из отходов — "__waste", чтобы сбор не трогал логику зон).
 function PLUGIN:SpawnFloraAt(pos, normal, name)
+ if self.unloading or (name == "__waste" and countValid(self.flora[name]) >= 48) then return end
 	normal = normal or vector_up
 
 	local ang = normal:Angle()
@@ -190,7 +198,7 @@ function PLUGIN:SpawnFloraAt(pos, normal, name)
 	local prop = ents.Create("prop_physics")
 	if (!IsValid(prop)) then return end
 
-	prop:SetModel(self.floraModels[math.random(#self.floraModels)])
+	prop:SetModel(self.validFloraModels[math.random(#self.validFloraModels)])
 	prop:SetPos(pos - normal * 2)
 	prop:SetAngles(ang)
 	prop:Spawn()
@@ -208,12 +216,14 @@ function PLUGIN:SpawnFloraAt(pos, normal, name)
 	prop:SetModelScale(0.01, 0)
 	prop:SetModelScale(1, self.defaults.floraGrowTime)
 	prop:SetHealth(1000000)
+	prop.bNoPersist = true
 	prop.ixFloraHP = self.defaults.floraHealth
 	prop.ixInfectionFlora = name
 
 	-- помечаем распакованные «отходные» пропы — клиент рисует у них постоянный дым
 	if (name == "__waste") then
 		prop:SetNWBool("ixInfectWaste", true)
+        prop.ixWasteExpires = CurTime() + 300
 	end
 
 	self.flora[name] = self.flora[name] or {}
@@ -239,7 +249,11 @@ end
 -- а через несколько секунд — вторая волна пропов вокруг. Все пропы помечаются
 -- "__waste" и собираются обычными пустыми контейнерами (без привязки к зоне).
 function PLUGIN:UnpackWaste(client)
-	if (!IsValid(client) or !client:Alive()) then return end
+	if self.unloading or not IsValid(client) or not client:Alive() or not client:GetCharacter() then return false end
+ if CurTime() < (client.ixNextWaste or 0) or countValid(self.flora.__waste) >= 48 then
+  client:Notify("Подождите: слишком много заражённых отходов поблизости.")
+  return false
+ end
 
 	local forward = client:GetForward()
 	forward.z = 0
@@ -252,7 +266,10 @@ function PLUGIN:UnpackWaste(client)
 	normal = normal or vector_up
 
 	-- основной проп
-	self:SpawnFloraAt(center, normal, "__waste")
+	local primary = self:SpawnFloraAt(center, normal, "__waste")
+ if not IsValid(primary) then return false end
+ client.ixNextWaste = CurTime() + 5
+ local generation = self.wasteGeneration
 
 	-- облако ядовитого газа (визуально) для тех, кто рядом
 	net.Start("ixInfectionGasBurst")
@@ -261,6 +278,7 @@ function PLUGIN:UnpackWaste(client)
 
 	-- вторая волна через несколько секунд: пропы по кругу вокруг основного
 	timer.Simple(self.defaults.wasteWaveDelay, function()
+        if self.unloading or generation ~= self.wasteGeneration or not IsValid(primary) then return end
 		for i = 1, self.defaults.wasteWaveCount do
 			local a = math.rad(math.random(0, 360))
 			local dist = math.Rand(48, self.defaults.wasteWaveRadius)
@@ -268,7 +286,8 @@ function PLUGIN:UnpackWaste(client)
 			local gpos, gnorm = groundAt(spot)
 
 			if (gpos) then
-				self:SpawnFloraAt(gpos, gnorm, "__waste")
+				local growth = self:SpawnFloraAt(gpos, gnorm, "__waste")
+                if IsValid(growth) then growth.ixNoWasteYield = true end
 			end
 		end
 
@@ -276,6 +295,7 @@ function PLUGIN:UnpackWaste(client)
 			net.WriteVector(center)
 		net.SendPVS(center)
 	end)
+ return true
 end
 
 -- Игрок собрал один проп флоры контейнером: проп исчезает, в мире появляется
@@ -287,18 +307,17 @@ function PLUGIN:CollectFlora(prop, client)
 	local name = prop.ixInfectionFlora
 	local pos = prop:GetPos()
 
-	if (self.flora[name]) then
-		self.flora[name][prop] = nil
-	end
-
-	prop:Remove()
-
-	-- предмет-результат появляется в мире (его подбирают в инвентарь)
-	local instance = ix.Item:Instance("trashbag")
-
-	if (instance) then
-		ix.Item:Spawn(pos + Vector(0, 0, 6), Angle(0, math.random(0, 360), 0), instance)
-	end
+    if not IsValid(client) or not client:Alive() or not client:GetCharacter() or not client:HasItem("hazard_bag") then return false end
+    -- Commit collection only after the reward exists. Secondary waste is safely
+    -- neutralised without yielding more bags.
+    if not prop.ixNoWasteYield then
+        local instance = ix.Item:Instance("trashbag")
+        if not instance then return false end
+        local reward = ix.Item:Spawn(pos + Vector(0, 0, 6), Angle(0, math.random(0, 360), 0), instance)
+        if not IsValid(reward) then instance:Remove(); return false end
+    end
+    if self.flora[name] then self.flora[name][prop] = nil end
+    prop:Remove()
 
 	-- Неразрушимую зону нельзя зачистить: пул не расходуется, счётчик не показываем.
 	local zoneArea = ix.area.stored[name]
@@ -379,44 +398,55 @@ function PLUGIN:CheckCleared(name)
 end
 
 -- Нажатие E по флоре с контейнером в инвентаре запускает сбор (прогресс-бар).
+function PLUGIN:CancelCollection(client)
+    if not self.collections[client] then return end
+    self.collections[client] = nil
+    if IsValid(client) then client.ixCollectingFlora = nil; client:SetAction() end
+end
+
+function PLUGIN:PlayerActionChanged(client)
+    -- Do not erase the replacement action's UI; this hook runs before it starts.
+    self.collections[client] = nil
+    client.ixCollectingFlora = nil
+end
+
 function PLUGIN:PlayerUse(client, entity)
-	if (!IsValid(entity) or !entity.ixInfectionFlora) then return end
-	if (!client:Alive() or !client:GetCharacter()) then return end
+    if not IsValid(entity) or not entity.ixInfectionFlora then return end
+    if not client:Alive() or not client:GetCharacter() then return false end
+    if self.collections[client] then return false end
+    if not client:HasItem("hazard_bag") then
+        if (client.ixBagNotify or 0) < CurTime() then
+            client.ixBagNotify = CurTime() + 3
+            client:Notify("Нужен контейнер для биоматериала.")
+        end
+        return false
+    end
+    client:SetAction(false)
+    client:SetAction("Сбор заражённой флоры...", self.defaults.collectTime)
+    client.ixCollectingFlora = entity
+    self.collections[client] = {entity = entity, character = client:GetCharacter(), finish = CurTime() + self.defaults.collectTime}
+    return false
+end
 
-	-- уже что-то собираем — не запускаем второй сбор
-	if (client.ixCollectingFlora) then return false end
+function PLUGIN:CollectionTick()
+    for client, action in pairs(self.collections) do
+        local prop = action.entity
+        if not IsValid(client) or not client:Alive() or client:GetCharacter() ~= action.character
+            or not IsValid(prop) or not client:HasItem("hazard_bag") or not client:KeyDown(IN_USE)
+            or client:GetPos():DistToSqr(prop:GetPos()) > self.defaults.collectRange ^ 2
+            or client:GetEyeTrace().Entity ~= prop then
+            self:CancelCollection(client)
+        elseif CurTime() >= action.finish then
+            self:CancelCollection(client)
+            self:CollectFlora(prop, client)
+        end
+    end
+end
 
-	if (!client:HasItem("hazard_bag")) then
-		if ((client.ixBagNotify or 0) < CurTime()) then
-			client.ixBagNotify = CurTime() + 3
-			client:Notify("Нужен контейнер для биоматериала, чтобы собрать флору.")
-		end
-
-		return false
-	end
-
-	local prop = entity
-	client.ixCollectingFlora = prop
-
-	client:SetAction("Сбор заражённой флоры...", self.defaults.collectTime, function(ply)
-		ply.ixCollectingFlora = nil
-
-		if (!IsValid(ply) or !ply:Alive()) then return end
-		if (!IsValid(prop) or !prop.ixInfectionFlora) then return end
-		if (!ply:HasItem("hazard_bag")) then return end
-
-		-- не отошёл ли игрок от пропа за время сбора
-		local range = self.defaults.collectRange
-
-		if (ply:GetPos():DistToSqr(prop:GetPos()) > range * range) then
-			ply:Notify("Вы отошли слишком далеко от флоры.")
-			return
-		end
-
-		self:CollectFlora(prop, ply)
-	end)
-
-	return false
+function PLUGIN:AreaDefinitionRemoved(name)
+    self:CleanFlora(name); self:PurgeZombies(name)
+    self.flora[name], self.zombies[name], self.remaining[name] = nil, nil, nil
+    self.suppressed[name], self.nextSpawn[name] = nil, nil
 end
 
 -- Урон по флоре: любой урон уменьшает её «здоровье»; уничтожение игроком
@@ -453,6 +483,19 @@ function PLUGIN:EntityTakeDamage(target, dmginfo)
 	end
 
 	target:Remove()
+
+	-- Burning destroys the contamination instead of generating collectible loot.
+	-- Clearing all exposed growth also sterilizes the zone's dormant growth pool.
+	if dmginfo:IsDamageType(DMG_BURN) or dmginfo:IsDamageType(DMG_SLOWBURN) then
+		local area = ix.area.stored[name]
+		if area and area.type == "infection" and not (area.properties or {}).indestructible then
+			local pool = self.remaining[name] or tonumber((area.properties or {}).infestationTotal) or self.defaults.infestationTotal
+			self.remaining[name] = math.max(0, pool - 1)
+			if countValid(self.flora[name]) == 0 then self.remaining[name] = 0 end
+			self:CheckCleared(name)
+			self:SaveData()
+		end
+	end
 end
 
 -- Сообщения о самочувствии по мере отравления (порог -> текст). Отправляются
@@ -529,6 +572,18 @@ function PLUGIN:UpdateToxicExposure(ply, inside, now)
 end
 
 function PLUGIN:InfectionTick()
+    local controller = ix.plugin.list["scp610_control"]
+    local control = controller and controller.settings or {}
+    local names = {}
+    for _, group in ipairs({self.flora, self.zombies, self.remaining}) do for name in pairs(group) do names[name] = true end end
+    for name in pairs(names) do
+        local area = ix.area.stored[name]
+        if name ~= "__waste" and (not area or area.type ~= "infection") then self:AreaDefinitionRemoved(name) end
+    end
+    for ent in pairs(self.flora.__waste or {}) do
+        if IsValid(ent) and CurTime() >= (ent.ixWasteExpires or 0) then ent:Remove() end
+    end
+    countValid(self.flora.__waste)
 	local now = CurTime()
 	local inToxic = {}
 
@@ -536,24 +591,24 @@ function PLUGIN:InfectionTick()
 		if (area.type != "infection") then continue end
 
 		local props = area.properties or {}
-		local zombieMax = props.zombieMax or self.defaults.zombieMax
-		local zombieInterval = props.zombieInterval or self.defaults.zombieInterval
-		local floraMax = props.floraMax or self.defaults.floraMax
-		local floraInterval = props.floraInterval or self.defaults.floraInterval
+		local zombieMax = math.Clamp(tonumber(props.zombieMax) or self.defaults.zombieMax, 0, 32)
+		local zombieInterval = math.Clamp(tonumber(props.zombieInterval) or self.defaults.zombieInterval, 1, 3600)
+		local floraMax = math.Clamp(tonumber(props.floraMax) or self.defaults.floraMax, 0, 128)
+		local floraInterval = math.Clamp(tonumber(props.floraInterval) or self.defaults.floraInterval, 1, 3600)
 
 		self.nextSpawn[name] = self.nextSpawn[name] or {zombie = 0, flora = 0, lastNear = 0}
 		local ns = self.nextSpawn[name]
 
 		-- сколько ещё нужно собрать в этой зоне (засеваем при первом тике/после загрузки)
 		if (self.remaining[name] == nil) then
-			self.remaining[name] = props.infestationTotal or self.defaults.infestationTotal
+			self.remaining[name] = math.Clamp(tonumber(props.infestationTotal) or self.defaults.infestationTotal, 1, 10000)
 		end
 
 		local remaining = self.remaining[name]
 
 		-- кто сейчас внутри этой зоны (для смога)
 		for _, ply in ipairs(player.GetAll()) do
-			if (ply:Alive() and (ply:GetPos() + ply:OBBCenter()):WithinAABox(area.startPosition, area.endPosition)) then
+			if (control.zoneGas ~= false and ply:Alive() and (ply:GetPos() + ply:OBBCenter()):WithinAABox(area.startPosition, area.endPosition)) then
 				inToxic[ply] = true
 			end
 		end
@@ -562,7 +617,7 @@ function PLUGIN:InfectionTick()
 			ns.lastNear = now
 
 			local suppressed = self.suppressed[name]
-			local canGrow = (!suppressed or now >= suppressed)
+			local canGrow = not control.paused and control.zoneGrowth ~= false and (!suppressed or now >= suppressed)
 
 			-- флора разрастается, но не больше, чем осталось собрать (remaining):
 			-- по мере сбора пул сокращается, и в итоге зона зачищается полностью.
@@ -576,7 +631,7 @@ function PLUGIN:InfectionTick()
 			end
 
 			-- поддерживаем популяцию зомби
-			if (now >= ns.zombie and countValid(self.zombies[name]) < zombieMax) then
+			if (not control.paused and control.zoneNPCs ~= false and now >= ns.zombie and countValid(self.zombies[name]) < zombieMax) then
 				spawnZombie(name, area)
 				ns.zombie = now + zombieInterval
 			end
@@ -602,13 +657,18 @@ function PLUGIN:InfectionTick()
 end
 
 function PLUGIN:InfectionInit()
+    self.validFloraModels = {}
+    for _, model in ipairs(self.floraModels) do
+        if util.IsValidModel(model) then self.validFloraModels[#self.validFloraModels + 1] = model end
+    end
+    if #self.validFloraModels == 0 then self.validFloraModels[1] = "models/props_junk/garbage_bag001a.mdl" end
 	-- прекэшим модели флоры и предметов сбора
-	for _, model in ipairs(self.floraModels) do
+	for _, model in ipairs(self.validFloraModels) do
 		util.PrecacheModel(model)
 	end
 
-	util.PrecacheModel(self.bagModel)
-	util.PrecacheModel(self.trashModel)
+	if util.IsValidModel(self.bagModel) then util.PrecacheModel(self.bagModel) end
+	if util.IsValidModel(self.trashModel) then util.PrecacheModel(self.trashModel) end
 
 	-- подчищаем возможный мусор от прошлой сессии/перезагрузки
 	for _, ent in ipairs(ents.GetAll()) do
@@ -645,3 +705,25 @@ timer.Create("ixInfectionTick", 1, 0, function()
 		PLUGIN:InfectionTick()
 	end
 end)
+
+function PLUGIN:PlayerLoadedCharacter(client)
+    self:CancelCollection(client)
+    client.ixToxic, client.ixToxicMsg = 0, nil
+    client:SetNWFloat("ixToxicLevel", 0); client:SetNWBool("ixToxicChoke", false)
+end
+function PLUGIN:PlayerDeath(client) self:PlayerLoadedCharacter(client) end
+function PLUGIN:PlayerDisconnected(client) self:CancelCollection(client) end
+function PLUGIN:CleanupRuntime()
+    self.unloading = true
+    timer.Remove("ixInfectionTick"); timer.Remove("ixInfectionCollect")
+    for client in pairs(self.collections or {}) do self:CancelCollection(client) end
+    for _, group in pairs(self.flora or {}) do removeAll(group) end
+    for _, group in pairs(self.zombies or {}) do removeAll(group) end
+    for _, client in ipairs(player.GetAll()) do
+        client.ixToxic, client.ixToxicMsg = 0, nil
+        client:SetNWFloat("ixToxicLevel", 0); client:SetNWBool("ixToxicChoke", false)
+        client:SetNetVar("ixInToxicZone", false)
+    end
+end
+function PLUGIN:OnUnload() self:SaveData(); self:CleanupRuntime() end
+ timer.Create("ixInfectionCollect", .1, 0, function() PLUGIN:CollectionTick() end)

@@ -1,6 +1,6 @@
 ITEM.name = "КПК FIELDLINK"
 ITEM.description = "Полевой терминал. Активируйте в инвентаре, выберите КПК в списке оружия и удерживайте R, чтобы поднять или опустить его."
-ITEM.model = "models/v_item_pda.mdl"
+ITEM.model = "models/lt_c/tech/cellphone.mdl"
 ITEM.width = 1
 ITEM.height = 1
 ITEM.category = "Устройства"
@@ -11,8 +11,8 @@ function ITEM:OnRegistered()
 end
 function ITEM:GetDescription()
  local identity=self:GetData("fieldlinkIdentity")
- return identity and ("Зарегистрирован: "..identity.name.." / CID "..identity.cid..". Доступ следует за устройством.") or
-  "Не зарегистрирован. Перетащите CID-карту на КПК в инвентаре, затем выберите регистрацию. Карта не расходуется."
+ return identity and ("Зарегистрирован: "..identity.name.." / CID "..identity.cid..". Для доступа нужна соответствующая экипированная ключ-карта.") or
+  "Не зарегистрирован. Перетащите ключ-карту на КПК в инвентаре, затем выберите регистрацию. Карта не расходуется."
 end
 ITEM.functions.Activate = {
  name="Активировать", icon="icon16/television.png",

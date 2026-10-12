@@ -212,6 +212,7 @@ local ITEM_TAKE_ACTION = {
 		end
 		
 		if bSuccess then
+			hook.Run("PlayerPickedUpInventoryItem", item.player, item)
 			item.entity:Delete()
 			item.player:EmitSound('npc/zombie/foot_slide' .. math.random(1, 3) .. '.wav', 75, math.random(90, 120), 1)
 
@@ -371,12 +372,14 @@ end
 do
 	if SERVER then
 		function net.WriteItemData(item, key, value)
-			value = value or item.data[key]
+			if value == nil then value = item.data[key] end
 
 			local data = item.vars[key]
 
 			net.WriteUInt(item:GetID(), 32)
-			net.WriteUInt(data.index, item.var_max_bits)
+			-- Stable key and explicit codec: no dependency on realm registration order.
+			net.WriteString(key)
+			net.WriteBool(isfunction(data.Write))
 
 			if isfunction(data.Write) then 
 				data.Write(item, value)
@@ -394,13 +397,16 @@ do
 			return
 		end
 
-		local index = net.ReadUInt(item.var_max_bits)
-		local key = item.vars_id[index]
+		local key = net.ReadString()
+		local custom = net.ReadBool()
 		local data = item.vars[key]
 		local value
 
 		if data then
-			if isfunction(data.Read) then 
+			if custom then
+				-- A client missing a custom codec must discard this update, never
+				-- interpret a custom payload as a net.WriteType stream.
+				if not isfunction(data.Read) then return end
 				value = data.Read(item)
 			else
 				value = net.ReadType()
@@ -412,12 +418,14 @@ do
 end
 
 function ITEM:AddData(key, data)
+	local previous = self.vars[key]
+	local index = previous and previous.index or (table.Count(self.vars) + 1)
 	self.vars[key] = data
 
 	self.var_max = table.Count(self.vars)
 	self.var_max_bits = net.ChooseOptimalBits(self.var_max)
 
-	data.index = self.var_max
+	data.index = index
 
 	self.vars_id[data.index] = key
 
@@ -454,7 +462,7 @@ function ITEM:AddData(key, data)
 				end
 
 				::send::
-				net.Start("item.data")
+				net.Start("item.data.v2")
 					net.WriteItemData(self, key)
 				if receivers then
 					net.Send(receivers)
@@ -482,7 +490,7 @@ function ITEM:AddData(key, data)
 
 				::send::
 				if receivers then
-					net.Start("item.data")
+					net.Start("item.data.v2")
 						net.WriteItemData(self, key)
 					net.Send(receivers)
 				end
@@ -907,7 +915,7 @@ else
 		end
 	end)
 
-	net.Receive('item.data', function(len)
+	net.Receive('item.data.v2', function(len)
 		local item, key, value = net.ReadItemData()
 
 		if item and key then

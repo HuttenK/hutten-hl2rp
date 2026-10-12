@@ -1,0 +1,116 @@
+[
+  {
+    "name": "models/cellar/male_anims.mdl",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "d15b2d7655fa307b4f0a00dd5170accf940621d8218edf0bbd3417c182e3ca3e"
+  },
+  {
+    "name": "models/humans/male_postures_old.mdl",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "6f1fd8320494e3a920629450f6fbd188835e0b12f6efada1f02837feb157d041"
+  },
+  {
+    "name": "models/humans/male_postures.ani",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "6e9e22369c9c3018773c65cb91df78c911cb5c08c8074dbeccc6b4487fa7712e"
+  },
+  {
+    "name": "models/cellar/male_stance_anims.mdl",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "bc819e8cbd4e7844c93393912c9c01415e2a69f8ceb076224a7bd80ff3b9e3b2"
+  },
+  {
+    "name": "models/cellar/male_stance_anims.ani",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "64e9535cd95f66c49156d1aeb13c670086f9981e27e0b2e43a6634d2cf27531b"
+  },
+  {
+    "name": "models/cellar/male_shield_anims.mdl",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "28fc4f7bd9ffa1a231a46002cd4d57e9d7844f6d0b1efd0d4eced300066ad099"
+  },
+  {
+    "name": "models/cellar/female_anims.mdl",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "90edc554c5f9ea1c181257d39882ffb2ffecae22fc02f39ca48760f02349f99f"
+  },
+  {
+    "name": "models/humans/female_shared_old.mdl",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "3d72be469a23ead6e5c2187e74aa0c90d2fbc5c076aba48dc5dfdd941d10a27b"
+  },
+  {
+    "name": "models/humans/female_shared.ani",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "4c8b0306c9d722da3be0e4cd03c38a1fedad4682c167e197e35a0d74b6f68613"
+  },
+  {
+    "name": "models/cellar/female_stance_anims.mdl",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "6ebd4691fd4341989c5c94d4ff49e91d8e0fbe0ac80621ff5c332551af3fd83a"
+  },
+  {
+    "name": "models/cellar/female_stance_anims.ani",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "c728bac05033c42209a7ff0ad33ed3fc7f8658a160ffdd3243608086132e304c"
+  },
+  {
+    "name": "models/cellar/female_shield_anims.mdl",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "488935cca0d40825980746c8a2b6981503e948b0cbc51d73fd5de90d0154836d"
+  },
+  {
+    "name": "models/cellar/police_anims.mdl",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "82f81a9a18a1916a05932f868a71b64166f5bac977e54218b47f4cebb98e49f5"
+  },
+  {
+    "name": "models/police_animations_old.mdl",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "0515f4c0fe933d7086ad040e172d2f50eda2ecfba89550214362af84914032d3"
+  },
+  {
+    "name": "models/police_animations.ani",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "9aa4671e7cc2529c961a9c3253a66543f29bfe0700804151743cb51199275693"
+  },
+  {
+    "name": "models/cellar/combine_anims.mdl",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "d69719d945f76282e6790fdbce67edcc73215434ff8844b211adfe73558c7230"
+  },
+  {
+    "name": "models/combine_soldier_anims_old.mdl",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "18c9d205a60254592da24d9c719a620e3e807752707f443ed5310cf1d07eca24"
+  },
+  {
+    "name": "models/combine_soldier_anims.ani",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "02df15a61b20726ed5def657c205cbf3f49b7746c4a74a1281dde38fbf368ca4"
+  },
+  {
+    "name": "models/combine_soldier_anims_old.mdl",
+    "workshop": "1773817848",
+    "title": "IX Extended Animations",
+    "sha256": "18c9d205a60254592da24d9c719a620e3e807752707f443ed5310cf1d07eca24"
+  }
+]

@@ -1,5 +1,5 @@
-ITEM.name = "item.mat_armor_plate"
-ITEM.description = "item.mat_armor_plate.desc"
+ITEM.name = "Бронепластина"
+ITEM.description = "Сменная бронепластина. Вставляется через меню осмотра плитоносца; каждая целая пластина даёт 25% защиты."
 ITEM.category = "item.category.crafted"
 ITEM.model = "models/combine_helicopter/bomb_debris_3.mdl"
 ITEM.width = 2
@@ -38,6 +38,7 @@ ITEM.combine.repair = {
 		return
 	end,
 	OnCanRun = function(item, targetItem)
+		if ix.field and ix.field.Capacity(targetItem)~=nil then return false end
 		if !targetItem.armor or targetItem.noRepair then
 			return false
 		end
@@ -51,3 +52,4 @@ ITEM.combine.repair = {
 		return true
 	end
 }
+ITEM:AddData("plateHealth", {Transmit=ix.transmit.owner})

@@ -90,6 +90,9 @@ function A.Bind(item, weapon, client)
 		return false
 	end
 	weapon.ixItem = item
+	-- The addon otherwise refills an empty tank on its first deploy. The saved
+	-- inventory clip is authoritative, including a completely empty tank.
+	if item.isFlamethrower then weapon.ARC9CODWW2FuelInitialized = true end
 	-- Disposable launchers carry exactly one round in the item, never reserve ammo.
 	if item.isDisposableEFT and not weapon.ixDisposableTakeAmmo then
 		weapon.ixDisposableTakeAmmo = weapon.TakeAmmo

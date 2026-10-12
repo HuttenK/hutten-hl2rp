@@ -42,10 +42,10 @@ function SWEP:PrimaryAttack()
 	if (!IsValid(owner)) then return end
 
 	-- 30-секундный кулдаун между успешными взломами.
-	if (self.ixNextHack and CurTime() < self.ixNextHack) then
+	if (owner.ixNextEMPHack and CurTime() < owner.ixNextEMPHack) then
 		if (SERVER) then
 			owner:EmitSound("items/suitchargeno1.wav")
-			owner:Notify("Устройство перезаряжается: " .. math.ceil(self.ixNextHack - CurTime()) .. " сек.")
+			owner:Notify("Устройство перезаряжается: " .. math.ceil(owner.ixNextEMPHack - CurTime()) .. " сек.")
 		end
 
 		return
@@ -66,10 +66,10 @@ function SWEP:PrimaryAttack()
 	end
 
 	owner:EmitSound("ambient/energy/newspark0" .. math.random(1, 8) .. ".wav", 80)
-	plugin:HackTarget(target, owner)
+	if not plugin:HackTarget(target, owner) then return end
 
 	-- Кулдаун запускается только при удачном взломе (промах не блокирует на 30 с).
-	self.ixNextHack = CurTime() + self.Cooldown
+	owner.ixNextEMPHack = CurTime() + self.Cooldown
 end
 
 function SWEP:SecondaryAttack()

@@ -29,7 +29,7 @@ end
 
 
 function ENT:OnRemove()
-	if self.bPickedUp then return end
+	if self.bPickedUp or (PLUGIN and PLUGIN.shuttingDown) then return end
 	local pos = self:GetPos()
 	if self.cassetteInstanceID then
 		local item = ix.Item.instances[self.cassetteInstanceID]
@@ -41,7 +41,16 @@ function ENT:OnRemove()
 	end
 end
 
+local function CanUse(ent,client)
+ return IsValid(client) and client:IsPlayer() and client:GetCharacter() and not ent.loadingItems
+  and client:GetPos():DistToSqr(ent:GetPos())<=128*128
+end
+local function SavePlayers()
+ if PLUGIN and PLUGIN.SaveData and not PLUGIN.shuttingDown then PLUGIN:SaveData() end
+end
+
 function ENT:OnSelectInsertCassette(client, data)
+ if not CanUse(self,client) then return end
 	local instanceID = tonumber(data)
 	if not instanceID then return end
 	if (self.nextUse or 0) > CurTime() then return end
@@ -61,8 +70,12 @@ function ENT:OnSelectInsertCassette(client, data)
 		client:Notify("У вас нет этой кассеты.")
 		return
 	end
-	inv:TakeItemByID(instanceID)
-	inv:Sync()
+	local candidate=item:GetData("track", "")
+ if candidate=="" then candidate=item.track or "" end
+ if not ix.BroadcastMedia.ValidSource(candidate) then client:Notify("Кассета пуста или содержит неверный путь."); return end
+ if not inv:TakeItemByID(instanceID) then return end
+ item:Save()
+ inv:Sync()
 	-- Поддержка пустых кассет: кастомный трек и название хранятся как item data.
 	local customTrack  = item:GetData("track", "")
 	local trackPath    = (customTrack != "" and customTrack) or item.track or ""
@@ -74,64 +87,47 @@ function ENT:OnSelectInsertCassette(client, data)
 	self:SetNetVar("boombox_stime",    CurTime())
 	self:EmitSound("buttons/button14.wav", 70, 100)
 	client:Notify("Вставлена: " .. cassetteName)
+ SavePlayers()
 end
 
+function ENT:ReturnCassette(client,inv)
+ local id=self.cassetteInstanceID
+ if not id then return true end
+ local item=ix.Item.instances[id]
+ if not item then client:Notify("Запись кассеты недоступна. Повторите позже."); return false end
+ local added=inv and inv:AddItemByID(id)
+ if not added then
+  local dropped=ix.Item:Spawn(self:GetPos()+Vector(0,0,10),Angle(0,0,0),item)
+  if not IsValid(dropped) then return false end
+  client:Notify("Инвентарь полон — кассета упала рядом.")
+ end
+ self.cassetteInstanceID=nil
+ self:SetNetVar("boombox_cassette",""); self:SetNetVar("boombox_sound",""); self:SetNetVar("boombox_stime",0)
+ item:Save()
+ if inv then inv:Sync() end
+ return true
+end
 function ENT:OnSelectEjectCassette(client)
-	if (self.nextUse or 0) > CurTime() then return end
-	self.nextUse = CurTime() + 0.5
-	local cassetteID = self.cassetteInstanceID
-	if not cassetteID then
-		client:Notify("В плеере нет кассеты.")
-		return
-	end
-	local item = ix.Item.instances[cassetteID]
-	self.cassetteInstanceID = nil
-	self:SetNetVar("boombox_cassette", "")
-	self:SetNetVar("boombox_sound",    "")
-	self:SetNetVar("boombox_stime",    0)
-	self:EmitSound("buttons/button10.wav", 70, 100)
-	if not item then return end
-	local inv = client:GetInventory("main")
-	if inv and inv:AddItemByID(cassetteID) then
-		inv:Sync()
-		client:Notify("Кассета извлечена.")
-	else
-		ix.Item:Spawn(client:GetPos() + Vector(0, 0, 10), Angle(0, 0, 0), item)
-		if inv then inv:Sync() end
-		client:Notify("Инвентарь полон — кассета упала рядом.")
-	end
+ if not CanUse(self,client) or (self.nextUse or 0)>CurTime() then return end
+ self.nextUse=CurTime()+0.5
+ if self:ReturnCassette(client,client:GetInventory("main")) then
+  self:EmitSound("buttons/button10.wav",70,100); SavePlayers()
+ end
 end
-
 function ENT:OnSelectPickUp(client)
-	if (self.nextUse or 0) > CurTime() then return end
-	self.nextUse = CurTime() + 0.5
-	local inv = client:GetInventory("main")
-	if not inv then return end
-
-	-- Вернуть кассету игроку ДО удаления сущности. Не вызываем OnSelectEjectCassette:
-	-- он отбрасывается собственным дебаунсом nextUse (мы только что его выставили),
-	-- из-за чего кассета терялась при поднятии плеера.
-	if self.cassetteInstanceID then
-		local cassette = ix.Item.instances[self.cassetteInstanceID]
-		if cassette then
-			if not inv:AddItemByID(self.cassetteInstanceID) then
-				-- Инвентарь полон — роняем кассету рядом, чтобы её не потерять.
-				ix.Item:Spawn(self:GetPos() + Vector(0, 0, 10), Angle(0, 0, 0), cassette)
-			end
-		end
-		self.cassetteInstanceID = nil
-		self:SetNetVar("boombox_cassette", "")
-		self:SetNetVar("boombox_sound",    "")
-		self:SetNetVar("boombox_stime",    0)
-	end
-	local placed = false
-	local boomboxID = self.boomboxItemID
-	if boomboxID and ix.Item.instances[boomboxID] then
-		if inv:AddItemByID(boomboxID) then placed = true end
-	end
-	if not placed then inv:GiveItem("item_boombox") end
-	inv:Sync()
-	client:Notify("Плеер поднят.")
-	self.bPickedUp = true
-	self:Remove()
+ if not CanUse(self,client) or (self.nextUse or 0)>CurTime() then return end
+ self.nextUse=CurTime()+0.5
+ local inv=client:GetInventory("main")
+ if not inv then return end
+ local item=self.boomboxItemID and ix.Item.instances[self.boomboxItemID]
+ if self.boomboxItemID and not item then client:Notify("Запись плеера недоступна. Повторите позже."); return end
+ -- Map-spawned players without an item get exactly one persistent instance.
+ if not item then item=ix.Item:Instance("item_boombox"); self.boomboxItemID=item.id end
+ if not inv:AddItemByID(item.id) then client:Notify("Недостаточно места для плеера."); SavePlayers(); return end
+ if not self:ReturnCassette(client,inv) then
+  inv:TakeItemByID(item.id); inv:Sync(); item:Save(); return
+ end
+ item:Save(); inv:Sync()
+ self.bPickedUp=true; self:Remove(); SavePlayers()
+ client:Notify("Плеер поднят.")
 end

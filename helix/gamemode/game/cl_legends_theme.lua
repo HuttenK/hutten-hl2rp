@@ -1,6 +1,16 @@
 -- Native VGUI art direction. No DHTML, remote assets or workshop UI fonts.
 ix.Legends = ix.Legends or {}
 local U = ix.Legends
+-- Share the PDA sound player (including its rate limiting) once it is loaded.
+local nextUISound = {}
+function U.PlayUISound(name)
+ if name ~= "click" and name ~= "hover" then return end
+ if ix.Fieldlink and ix.Fieldlink.Sound then return ix.Fieldlink.Sound(name) end
+ local now = RealTime()
+ if now < (nextUISound[name] or 0) then return end
+ nextUISound[name] = now + (name == "hover" and .12 or .07)
+ surface.PlaySound("fieldlink/ui/" .. name .. ".wav")
+end
 U.Scale = ix.Civic.Scale
 local S = U.Scale
 U.ink = Color(246, 104, 113)
@@ -86,7 +96,7 @@ function U.Button(parent, text, action, primary)
 	end
 	p.DoClick = function(this)
 		if this:GetDisabled() then return end
-		surface.PlaySound("buttons/lightswitch2.wav"); action(this)
+		ix.Legends.PlayUISound("click"); action(this)
 	end
 	return p
 end
@@ -94,7 +104,7 @@ function U.HoverSound()
 	local now = RealTime()
 	if now < (U.nextHoverSound or 0) then return end
 	U.nextHoverSound = now + 0.065
-	surface.PlaySound("garrysmod/ui_hover.wav")
+	ix.Legends.PlayUISound("hover")
 end
 function U.Scroll(parent)
 	local p = parent:Add("DScrollPanel")
@@ -185,6 +195,25 @@ function U.Backdrop(w, h)
  U.BorderGlitch(w, h)
 end
 
+-- Active characters use the replicated player appearance, not the logout cache.
+function U.ApplyCharacterAppearance(entity,character)
+ local player=LocalPlayer()
+ if IsValid(player) and player:GetCharacter()==character and player:GetModel()==entity:GetModel() then
+  entity:SetSkin(player:GetSkin())
+  for id=0,entity:GetNumBodyGroups()-1 do entity:SetBodygroup(id,player:GetBodygroup(id)) end
+  return
+ end
+ entity:SetSkin(character:GetData("skin",0))
+ for id=0,entity:GetNumBodyGroups()-1 do entity:SetBodygroup(id,0) end
+ local groups=character:GetData("bgcache",character:GetData("groups",{}))
+ if istable(groups) then
+  for key,value in pairs(groups) do
+   local id=tonumber(key) or entity:FindBodygroupByName(key)
+   if id and id>=0 and id<entity:GetNumBodyGroups() then entity:SetBodygroup(id,tonumber(value) or 0) end
+  end
+ end
+end
+
 local PANEL = {}
 function PANEL:Init()
 	self:SetFOV(32); self:SetMouseInputEnabled(true)
@@ -193,6 +222,7 @@ function PANEL:Init()
 	self:SetDirectionalLight(BOX_LEFT, Color(191, 78, 104)); self.yaw = 12
 end
 function PANEL:Present(model, skin, groups)
+ self.character=nil
 	if not isstring(model) or model == "" then self:SetVisible(false) return end
 	self:SetVisible(true); self:SetModel(model)
 	local entity = self:GetEntity()
@@ -208,6 +238,11 @@ function PANEL:Present(model, skin, groups)
 	if sequence >= 0 then entity:ResetSequence(sequence) end
 	entity:SetIK(false)
 end
+function PANEL:PresentCharacter(character)
+ self:Present(character:GetModel(),character:GetData("skin",0),{})
+ self.character=character
+ if IsValid(self:GetEntity()) then U.ApplyCharacterAppearance(self:GetEntity(),character) end
+end
 function PANEL:SetPortraitFocus(face)
 	self.faceFocus = face
 	local height, floor = self.modelHeight, self.modelFloor
@@ -216,6 +251,19 @@ function PANEL:SetPortraitFocus(face)
 	self:SetCamPos(Vector(height * (face and 0.55 or 1.85), height * 0.13, floor + height * (face and 0.89 or 0.57)))
 end
 function PANEL:LayoutEntity(entity)
+ if self.character then
+  local player=LocalPlayer()
+  local model=self.character:GetModel()
+  if IsValid(player) and player:GetCharacter()==self.character then model=player:GetModel() end
+  if entity:GetModel()~=model then
+   local character=self.character
+   self:Present(model,0,{})
+   self.character=character
+   entity=self:GetEntity()
+   if not IsValid(entity) then return end
+  end
+  U.ApplyCharacterAppearance(entity,self.character)
+ end
 	if self.dragX then self.yaw = self.startYaw + (gui.MouseX() - self.dragX) * 0.4 end
 	entity:SetAngles(Angle(0, self.yaw, 0)); self:RunAnimation()
 end

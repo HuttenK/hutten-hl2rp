@@ -181,7 +181,7 @@ function PANEL:OnMousePressed(code)
 		return
 	end
 
-	LocalPlayer():EmitSound("Helix.Press")
+	ix.Legends.PlayUISound("click")
 
 	if code == MOUSE_LEFT then
 		self:DoClick(self)
@@ -1238,6 +1238,14 @@ local buttons = {
 					hands:MoveBelow(head, 16)
 					hands:MoveLeftOf(vest or torso, 5)
 					hands:SetTitle(L("tab_slot_hands"))
+ local armInventory = client:GetInventory("armprotection")
+ if armInventory then
+  local pads = armInventory:CreatePanel(parent)
+  pads:SetSlotSize(slot_size_small); pads:Rebuild(); pads:SizeToContents()
+  pads:SetY(hands:GetY()); pads:MoveLeftOf(hands, 5)
+  pads:SetTitle(L("equip.armprotection"))
+ end
+
 
 					local cid = client:GetInventory("cid"):CreatePanel(parent)
 					cid:SetSlotSize(slot_size_small)
@@ -1328,7 +1336,7 @@ local buttons = {
 
 					for _, data in pairs(options) do
 						local key = data.key
-						local row = panel:AddRow(data.type, category)
+						local row = panel:AddRow(data.type, category, data.keybind)
 						local value = ix.util.SanitizeType(data.type, ix.option.Get(key))
 
 						row:SetText(L(data.phrase))

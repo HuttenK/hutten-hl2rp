@@ -28,6 +28,9 @@ if SERVER then
 
         -- Store the original item instance ID so pickup can restore it exactly.
         ent.boomboxItemID = self.id
+        self:Save()
+        local plugin=ix.plugin.list.cassette_player
+        if plugin then plugin:SaveData() end
 
         owner:EmitSound("physics/cardboard/cardboard_box_impact_soft3.wav", 70, 100)
 

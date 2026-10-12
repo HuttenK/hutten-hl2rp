@@ -13,6 +13,7 @@ function PLAYER:SetCriticalState(state)
 	if state then
 		if !self:Alive() then return end
 		local alreadyCritical = self:InCriticalState()
+		local persistedCritical = character:GetData("crit", false)
 		if !alreadyCritical and self.LeaveSequence and self:GetNetVar("forcedSequence") then self:LeaveSequence() end
 		self:SetHealth(1)
 		self:SetNetVar("crit", true)
@@ -20,16 +21,24 @@ function PLAYER:SetCriticalState(state)
 		character:SetData("crit", true)
 		character:SetData("critTime", nil)
 		if !alreadyCritical then self:SetNetVar("downedSince", CurTime()) end
-
-		if !IsValid(self.ixRagdoll) then
-			self:SetRagdolled(true)
+		if !alreadyCritical and ix.Downed and ix.Downed.BeginCrawl then
+			ix.Downed.BeginCrawl(self, persistedCritical)
 		end
-		if IsValid(self.ixRagdoll) then self.ixRagdoll.ixGrace = nil end
-		self:SetLocalVar("knocked", true)
+
+		if not (ix.Downed and ix.Downed.CrawlWindow and ix.Downed.CrawlWindow(self)) then
+			if !IsValid(self.ixRagdoll) then
+				self:SetRagdolled(true)
+			end
+			if IsValid(self.ixRagdoll) then self.ixRagdoll.ixGrace = nil end
+			self:SetLocalVar("knocked", true)
+		end
 	else
 		if self:Alive() then self:SetHealth(100) end
 		self:SetNetVar("crit", nil)
 		self:SetNetVar("downedSince", nil)
+		self:SetNetVar("criticalCrawlUntil", nil)
+		character:SetData("criticalCrawlDeadline", nil)
+		if ix.Downed and ix.Downed.RestoreCrawl then ix.Downed.RestoreCrawl(self) end
 		self.ixGiveUpRequest = nil
 
 		character:SetData("crit", nil)
@@ -130,14 +139,14 @@ net.Receive("crit.apply", function(len, client)
 
 			local traceEnt = client:GetEyeTraceNoCursor().Entity
 
-			if !IsValid(target) or !target:Alive() or (!isSlay and !target:InCriticalState()) or
+			if !IsValid(target) or !target:Alive() or !target:InCriticalState() or
 				(traceEnt != (IsValid(target.ixRagdoll) and target.ixRagdoll or target)) then
 				return false
 			end
 
 			return true
 		end, function(success)
-			if success then
+			if success and ix.Downed and ix.Downed.FinishAction(target, client, isSlay and "rob" or "finish") then
 				local character = target:GetCharacter()
 				local targetLevel = character:GetLevel()
 				local bonusXP = 0
@@ -146,11 +155,6 @@ net.Receive("crit.apply", function(len, client)
 					bonusXP = 50 * targetLevel
 				end
 				
-				-- Finishing ends this life and uses respawn, not a character ban.
-				target.KilledByRP = false
-				target.KilledBySystem = false
-				target:Kill()
-
 				client:RewardXP(((10 * targetLevel) + bonusXP) * (isSlay and 1 or 1.25), isSlay and "ограбление" or "убийство")
 
 				ix.chat.Send(nil, "dmgAdminMsg", "", nil, nil, {

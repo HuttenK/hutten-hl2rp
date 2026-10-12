@@ -66,7 +66,12 @@ function PANEL:Init()
  self.balance=strip:Add("DLabel"); self.balance:Dock(RIGHT); self.balance:SetWide(230); self.balance:SetFont("ixWorkshopBody"); self.balance:SetTextColor(C.red); self.balance:SetContentAlignment(6)
  self.weaponPick=strip:Add("DComboBox"); self.weaponPick:Dock(FILL); self.weaponPick:DockMargin(0,0,18,0); self.weaponPick:SetFont("ixWorkshopBody"); self.weaponPick:SetTextColor(C.text)
  self.weaponPick.Paint=function(_,w,h) surface.SetDrawColor(C.panel); surface.DrawRect(0,0,w,h); surface.SetDrawColor(C.line); surface.DrawOutlinedRect(0,0,w,h) end
- self.weaponPick.OnSelect=function(_,_,_,id) if self.refreshing then return end; self:Request(0,id,0,""); self.slot=nil end
+ self.weaponPick.OnSelect=function(_,_,_,choice)
+  if self.refreshing then return end
+  if istable(choice) then self:Request(0,choice.id,0,"slot:" .. choice.slot .. ":" .. choice.item)
+  else self:Request(0,choice,0,"") end
+  self.slot=nil
+ end
  self.status=self:Add("DLabel"); self.status:Dock(BOTTOM); self.status:SetTall(46); self.status:SetFont("ixWorkshopSmall"); self.status:SetTextColor(C.muted); self.status:SetWrap(true)
  self.preview=self:Add("ixARC9AssemblyPreview"); self.preview:Dock(TOP); self.preview:DockMargin(0,0,0,12)
  self.preview.OnSelectSlot=function(_,address)
@@ -232,7 +237,10 @@ function PANEL:Receive(data)
  self.balance:SetText(T("RESIN / ","СМОЛА / ")..data.resin)
  self.refreshing=true
  self.weaponPick:Clear()
- for _,weapon in ipairs(data.weapons) do self.weaponPick:AddChoice(phrase(weapon.name),weapon.id,weapon.id==data.weapon) end
+ for _,weapon in ipairs(data.weapons) do
+  self.weaponPick:AddChoice(phrase(weapon.name),weapon.slot and weapon or weapon.id,
+   weapon.slot and weapon.item == data.item or not weapon.slot and weapon.id == data.weapon)
+ end
  self.refreshing=false
  if #data.weapons==0 then self.weaponPick:SetValue(T("No equipped ARC9 weapons","Нет экипированного оружия ARC9")) end
  for _,slot in ipairs(data.slots) do
@@ -274,6 +282,6 @@ function PLUGIN:Think()
  local client=LocalPlayer()
  if not IsValid(client) then return end
  local weapon=client:GetActiveWeapon()
- if IsValid(weapon) and weapon.ARC9 and weapon:GetCustomize() then weapon:ToggleCustomize(false) end
+ self:BlockNativeCustomization(weapon)
  if IsValid(self.window) and (not client:Alive() or not client:GetCharacter()) then self.window:Remove() end
 end

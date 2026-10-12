@@ -74,7 +74,7 @@ function PLUGIN:HUDPaint()
 		return
 	end
 
-	local id = LocalPlayer():GetArea()
+	local id = self:GetEditableAreas()[1]
 	local area = ix.area.stored[id]
 	local height = ScrH()
 
@@ -121,7 +121,7 @@ function PLUGIN:PostDrawTranslucentRenderables(bDepth, bSkybox)
 
 	-- draw currently edited area
 	if (self.editStart) then
-		local center, min, max = self:GetLocalAreaPosition(self.editStart, self:GetPlayerAreaTrace().HitPos)
+		local center, min, max = self:GetLocalAreaPosition(self.editStart, self.editEnd or self:GetPlayerAreaTrace().HitPos)
 		local color = Color(255, 255, 255, 25 + (1 + math.sin(SysTime() * 6)) * 115)
 
 		render.DrawWireframeBox(center, angle_zero, min, max, color)
@@ -138,6 +138,7 @@ end
 function PLUGIN:EditRightClick()
 	if (self.editStart) then
 		self.editStart = nil
+		self.editEnd = nil
 	else
 		self:StopEditing()
 	end
@@ -148,6 +149,7 @@ function PLUGIN:EditClick()
 		self.editStart = LocalPlayer():GetEyeTraceNoCursor().HitPos
 	elseif (self.editStart and !self.editProperties) then
 		self.editProperties = true
+		self.editEnd = self:GetPlayerAreaTrace().HitPos
 
 		local panel = vgui.Create("ixAreaEdit")
 		panel:MakePopup()
@@ -159,21 +161,28 @@ function PLUGIN:EditReload()
 		return
 	end
 
-	local id = LocalPlayer():GetArea()
-	local area = ix.area.stored[id]
-
-	if (!area) then
-		return
-	end
-
-	Derma_Query(L("areaDeleteConfirm", id), L("areaDelete"),
+	local areas = self:GetEditableAreas()
+	local function Confirm(id)
+		if (hook.Run("AreaEditShowOptions", id, ix.area.stored[id]) == true) then return end
+		Derma_Query(L("areaDeleteConfirm", id), L("areaDelete"),
 		L("no"), nil,
 		L("yes"), function()
 			net.Start("ixAreaRemove")
 				net.WriteString(id)
 			net.SendToServer()
 		end
-	)
+		)
+	end
+	if (#areas == 1) then
+		Confirm(areas[1])
+	elseif (#areas > 1) then
+		local menu = DermaMenu()
+		for _, id in ipairs(areas) do
+			local info = ix.area.stored[id]
+			menu:AddOption(id .. " (" .. L(info.type) .. ")", function() Confirm(id) end)
+		end
+		menu:Open(ScrW() * 0.5, ScrH() * 0.5)
+	end
 end
 
 function PLUGIN:ShouldDisplayArea(id)

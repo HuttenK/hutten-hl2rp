@@ -90,7 +90,9 @@ local function DropTwoHandedWeapons(client)
 		if !item:GetData("equip") then continue end
 		if !Amputation.IsTwoHanded(item) then continue end
 
-		if item.Unequip then
+		if ix.WeaponSlots then
+            ix.WeaponSlots.Suspend(client, item)
+        elseif item.Unequip then
 			item:Unequip(client, false)
 		end
 
@@ -418,6 +420,7 @@ end)
 
 -- Потеря ноги: шанс потерять равновесие на ходу.
 function PLUGIN:PlayerTick(client, mv)
+	if ix.Downed and ix.Downed.Crawling and ix.Downed.Crawling(client) then return end
 	local character = client:GetCharacter()
 	if !character then return end
 

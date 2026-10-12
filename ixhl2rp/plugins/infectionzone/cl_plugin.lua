@@ -1,4 +1,14 @@
 local PLUGIN = PLUGIN
+if PLUGIN.OnUnload then PLUGIN:OnUnload() end
+local particleTokens, particleTime = 60, CurTime()
+local function addParticle(emitter, material, pos)
+    local now = CurTime()
+    particleTokens = math.min(60, particleTokens + math.max(0, now - particleTime) * 60)
+    particleTime = now
+    if not emitter or particleTokens < 1 then return end
+    particleTokens = particleTokens - 1
+    return emitter:Add(material, pos)
+end
 
 -- сглаженная «сила» эффекта 0..1
 local toxic = 0
@@ -80,17 +90,25 @@ hook.Add("HUDPaintBackground", "ixInfectionToxicHaze", function()
 
 	surface.SetDrawColor(120, 140, 20, edge)
 
-	surface.SetMaterial(gradLeft)
-	surface.DrawTexturedRect(0, 0, thickness, h)
+	if not gradLeft:IsError() then
+        surface.SetMaterial(gradLeft)
+        surface.DrawTexturedRect(0, 0, thickness, h)
+    end
 
-	surface.SetMaterial(gradRight)
-	surface.DrawTexturedRect(w - thickness, 0, thickness, h)
+	if not gradRight:IsError() then
+        surface.SetMaterial(gradRight)
+        surface.DrawTexturedRect(w - thickness, 0, thickness, h)
+    end
 
-	surface.SetMaterial(gradUp)
-	surface.DrawTexturedRect(0, 0, w, thickness)
+	if not gradUp:IsError() then
+        surface.SetMaterial(gradUp)
+        surface.DrawTexturedRect(0, 0, w, thickness)
+    end
 
-	surface.SetMaterial(gradDown)
-	surface.DrawTexturedRect(0, h - thickness, w, thickness)
+	if not gradDown:IsError() then
+        surface.SetMaterial(gradDown)
+        surface.DrawTexturedRect(0, h - thickness, w, thickness)
+    end
 end)
 
 -- Жёлтый дым, клубящийся вокруг игрока, пока он находится в зоне заражения.
@@ -116,6 +134,7 @@ hook.Add("Think", "ixInfectionToxicSmoke", function()
 	end
 
 	-- держим эмиттер у игрока, чтобы частицы корректно отсекались по дальности
+	if not smokeEmitter then return end
 	smokeEmitter:SetPos(origin)
 
 	if (CurTime() < nextSmoke) then return end
@@ -124,7 +143,7 @@ hook.Add("Think", "ixInfectionToxicSmoke", function()
 	-- появляемся в случайной точке вокруг игрока, в пределах его роста
 	local pos = origin + Vector(math.Rand(-45, 45), math.Rand(-45, 45), math.Rand(-5, 65))
 
-	local particle = smokeEmitter:Add(string.format("particle/smokesprites_%04d", math.random(1, 9)), pos)
+	local particle = addParticle(smokeEmitter, string.format("particle/smokesprites_%04d", math.random(1, 9)), pos)
 	if (!particle) then return end
 
 	particle:SetVelocity(VectorRand() * 6 + Vector(0, 0, 4))
@@ -220,11 +239,12 @@ hook.Add("Think", "ixInfectionPerimeterSmoke", function()
 	end
 
 	if (!edgeEmitter) then edgeEmitter = ParticleEmitter(eye, false) end
+	if not edgeEmitter then return end
 	edgeEmitter:SetPos(eye)
 
 	for _, z in ipairs(near) do
 		for i = 1, 2 do
-			local p = edgeEmitter:Add(string.format("particle/smokesprites_%04d", math.random(1, 9)), wallPoint(z[1], z[2]))
+			local p = addParticle(edgeEmitter, string.format("particle/smokesprites_%04d", math.random(1, 9)), wallPoint(z[1], z[2]))
 			if (!p) then continue end
 
 			p:SetVelocity(Vector(math.Rand(-4, 4), math.Rand(-4, 4), math.Rand(6, 16)))
@@ -289,7 +309,7 @@ net.Receive("ixInfectionGasBurst", function()
 		local off = VectorRand() * math.Rand(0, 55)
 		off.z = math.abs(off.z) * 0.6
 
-		local p = emitter:Add(string.format("particle/smokesprites_%04d", math.random(1, 9)), pos + off)
+		local p = addParticle(emitter, string.format("particle/smokesprites_%04d", math.random(1, 9)), pos + off)
 		if (!p) then continue end
 
 		p:SetVelocity(VectorRand() * 18 + Vector(0, 0, 26))
@@ -318,14 +338,22 @@ hook.Add("HUDPaintBackground", "ixInfectionPoisonVignette", function()
 
 	surface.SetDrawColor(8, 22, 8, a)
 
-	surface.SetMaterial(gradLeft)
-	surface.DrawTexturedRect(0, 0, thick, h)
-	surface.SetMaterial(gradRight)
-	surface.DrawTexturedRect(w - thick, 0, thick, h)
-	surface.SetMaterial(gradUp)
-	surface.DrawTexturedRect(0, 0, w, thick)
-	surface.SetMaterial(gradDown)
-	surface.DrawTexturedRect(0, h - thick, w, thick)
+	if not gradLeft:IsError() then
+        surface.SetMaterial(gradLeft)
+        surface.DrawTexturedRect(0, 0, thick, h)
+    end
+	if not gradRight:IsError() then
+        surface.SetMaterial(gradRight)
+        surface.DrawTexturedRect(w - thick, 0, thick, h)
+    end
+	if not gradUp:IsError() then
+        surface.SetMaterial(gradUp)
+        surface.DrawTexturedRect(0, 0, w, thick)
+    end
+	if not gradDown:IsError() then
+        surface.SetMaterial(gradDown)
+        surface.DrawTexturedRect(0, h - thick, w, thick)
+    end
 end)
 
 -- Постоянный жёлтый дым у распакованных пропов отходов (помечены NWBool на сервере).
@@ -357,7 +385,7 @@ hook.Add("Think", "ixInfectionWasteSmoke", function()
 		local base = e:WorldSpaceCenter()
 		local pos = base + Vector(math.Rand(-10, 10), math.Rand(-10, 10), math.Rand(-4, 16))
 
-		local p = wasteEmitter:Add(string.format("particle/smokesprites_%04d", math.random(1, 9)), pos)
+		local p = addParticle(wasteEmitter, string.format("particle/smokesprites_%04d", math.random(1, 9)), pos)
 		if (!p) then continue end
 
 		p:SetVelocity(Vector(math.Rand(-4, 4), math.Rand(-4, 4), math.Rand(8, 18)))
@@ -383,3 +411,15 @@ hook.Add("Think", "ixInfectionWasteSmoke", function()
 		end
 	end
 end)
+
+function PLUGIN:OnUnload()
+ for event, names in pairs({
+  RenderScreenspaceEffects = {"ixInfectionToxic", "ixInfectionPoison"},
+  HUDPaintBackground = {"ixInfectionToxicHaze", "ixInfectionPoisonVignette"},
+  Think = {"ixInfectionToxicSmoke", "ixInfectionPerimeterSmoke", "ixInfectionWasteSmoke"}
+ }) do for _, name in ipairs(names) do hook.Remove(event, name) end end
+ if smokeEmitter then smokeEmitter:Finish(); smokeEmitter = nil end
+ if edgeEmitter then edgeEmitter:Finish(); edgeEmitter = nil end
+ if wasteEmitter then wasteEmitter:Finish(); wasteEmitter = nil end
+ net.Receive("ixInfectionGasBurst", function() end)
+end

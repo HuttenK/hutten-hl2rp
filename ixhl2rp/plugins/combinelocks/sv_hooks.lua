@@ -13,6 +13,7 @@ end
 -- судим о питании и по позиции самой двери, а не только по позиции замка.
 function PLUGIN:PlayerUse(client, entity)
 	if (!IsValid(entity) or entity:GetClass() != "ix_combinelock") then return end
+ if ix.Facility and ix.Facility.EntityBackup(entity) then return end
 
 	local blackout = ix.plugin.list["blackout"]
 	if (!blackout or !blackout.IsPosBlackedOut) then return end

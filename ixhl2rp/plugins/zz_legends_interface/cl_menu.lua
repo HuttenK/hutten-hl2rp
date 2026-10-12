@@ -1,4 +1,4 @@
-local U, S = ix.Legends, ix.Legends.Scale
+local U, S = ix.InterfaceOS or ix.Legends, ix.Legends.Scale
 local T = U.T
 local PANEL = {}
 local chapters = {{"Origin", "Происхождение"}, {"Identity", "Личность"},
@@ -36,6 +36,7 @@ function PANEL:Init()
  self.scene:SetVisible(false); self.previewToggle:SetVisible(false)
  self.back:SetVisible(false); self.next:SetVisible(false)
  self:InitializeForPlayer()
+ if U.Boot then U.Boot(self) end
 end
 
 -- The character-list net message can precede a usable LocalPlayer entity.
@@ -64,48 +65,68 @@ function PANEL:PerformLayout(w, h)
 	local pad = math.max(S(40), w * 0.045)
 	self.scene:SetPos(w * 0.48, S(86)); self.scene:SetSize(w * 0.5, h - S(160))
 	self.previewToggle:SetPos(w-S(320), S(170)); self.previewToggle:SetSize(S(240), S(40))
-	self.content:SetPos(pad, S(176)); self.content:SetSize(w * 0.48 - pad, h - S(290))
+	if self.view=="home" then
+  self.content:SetPos(pad,h*.73); self.content:SetSize(w-pad*2,h*.27-S(42))
+ else
+  self.content:SetPos(pad,S(176)); self.content:SetSize(w*.44-pad,h-S(290))
+ end
 	self.back:SetPos(pad, h - S(80)); self.back:SetSize(S(170), S(48))
 	self.next:SetPos(w - pad - S(290), h - S(80)); self.next:SetSize(S(290), S(48))
 end
 
-function PANEL:Paint(w, h)
-	U.Backdrop(w, h)
-	local pad = math.max(S(40), w * 0.045)
-	U.Text("[ SCP ]  /  INTERNAL NETWORK", "Heading", pad, S(35))
-	U.Text("SECURE TERMINAL  /  " .. T("CHARACTER ARCHIVE", "АРХИВ ПЕРСОНАЖЕЙ"), "Mono", w - pad, S(46), U.muted, TEXT_ALIGN_RIGHT)
-	U.Rect(pad, S(86), w - pad * 2, 1, U.line)
-	U.Text(self.heading or "", "Title", pad, S(110))
-	if self.view == "create" then
-		for i, chapter in ipairs(chapters) do
-			local x = w * 0.51 + (i - 1) * w * 0.088
-			U.Text(string.format("%02d", i), "Mono", x, S(112), i == self.step and U.accent or U.muted)
-			U.Rect(x, S(140), w * 0.065, S(2), i <= self.step and U.accent or U.line)
-		end
-	end
-	if self.view == "home" then
-  local x,y,bw,bh = w*0.55,S(186),w*0.38,h-S(340)
-  U.Plate(x,y,bw,bh,Color(9,6,10,225),U.line)
-  U.Rect(x+S(20),y+S(22),S(5),S(5),U.accent)
-  U.Text("SECURITY DIRECTIVE / 001", "Mono", x+S(36),y+S(17),U.accent)
-  U.Rect(x+S(20),y+S(48),bw-S(40),1,U.line)
-  U.Text(T("AUTHORIZED ACCESS", "СЛУЖЕБНЫЙ ДОСТУП"), "Heading",x+S(24),y+S(76),U.ink)
-  local rows = {
-   T("01 / SELECT PERSONNEL RECORD", "01 / ВЫБЕРИТЕ ЛИЧНОЕ ДЕЛО"),
-   T("02 / VERIFY IDENTITY", "02 / ПОДТВЕРДИТЕ ЛИЧНОСТЬ"),
-   T("03 / ENTER FACILITY", "03 / ВОЙДИТЕ НА ОБЪЕКТ")}
-  for i,row in ipairs(rows) do
-   U.Text(row,"Small",x+S(24),y+S(112+i*34),U.muted)
+function PANEL:Paint(w,h)
+ U.Rect(0,0,w,h,Color(10,3,8))
+ local pad=math.max(S(40),w*.045)
+ U.Signal(w,h,false)
+ -- A broadcast composition, with the action deck below the central signal.
+ U.Rect(pad,S(38),S(4),S(37),U.accent)
+ U.Text("SCiPNET","Title",pad+S(19),S(30),U.ink)
+ U.Text("FOUNDATION / RESTRICTED NETWORK","Mono",pad+S(20),S(66),U.muted)
+ U.Text("SECURE. CONTAIN. PROTECT.","Mono",w-pad,S(39),U.accent,TEXT_ALIGN_RIGHT)
+ U.Rect(pad,S(97),w-pad*2,1,U.line)
+ if self.view=="home" then
+  local size=math.min(h*.39,w*.26)
+  local cx,cy=w*.5,h*.36
+  -- Sparse framing leaves the emblem breathing room; text is never distorted.
+  U.TransmissionLogo(cx-size/2,cy-size/2,size,Color(207,77,99,205))
+  U.Text("L E G E N D S","Display",w*.5,h*.565,U.ink,TEXT_ALIGN_CENTER)
+  U.Text(self.activeBrief or T("SELECT AN ACCESS PROTOCOL","ВЫБЕРИТЕ ПРОТОКОЛ ДОСТУПА"),"Mono",w*.5,h*.68,U.accent,TEXT_ALIGN_CENTER)
+  local tx=pad; local ty=h*.25
+  U.Text("01 / SCiPNET","Mono",tx,ty,U.accent)
+  U.Text(T("PERSONNEL ACCESS","ДОСТУП ПЕРСОНАЛА"),"Heading",tx,ty+S(26))
+  U.Rect(tx,ty+S(63),S(190),1,U.line)
+  U.Text("SCP ROLEPLAY","Mono",tx,ty+S(83),U.muted)
+  U.Text("INTERNAL / CLASSIFIED","Mono",tx,ty+S(107),U.muted)
+  U.Text("[ SIGNAL MONITOR ]","Mono",w-pad,h*.25,U.accent,TEXT_ALIGN_RIGHT)
+  for i=1,9 do
+   local t=ix.option.Get("disableAnimations",false) and 0 or RealTime()
+   local length=S(30)+S(90)*(.5+.5*math.sin(t*.8+i*1.7))
+   U.Rect(w-pad-length,h*.25+S(32+i*8),length,2,Color(164,41,67,90))
   end
-  U.Rect(x+S(24),y+bh-S(80),bw-S(48),1,U.line)
-  U.Text(T("ALL ACCESS IS SUBJECT TO REVIEW", "ДОСТУП ПОДЛЕЖИТ КОНТРОЛЮ"),"Mono",x+S(24),y+bh-S(57),U.accent)
-  U.Text("SECURE / CONTAIN / PROTECT", "Mono",x+S(24),y+bh-S(32),U.muted)
+ else
+  U.Text(self.heading or "","Title",pad,S(114))
+  U.Rect(pad,S(157),w*.42,1,U.line)
+  if self.view=="create" then
+   for i,chapter in ipairs(chapters) do
+    local x=w*.51+(i-1)*w*.088
+    U.Text(string.format("%02d",i),"Mono",x,S(112),i==self.step and U.accent or U.muted)
+    U.Rect(x,S(140),w*.065,S(2),i<=self.step and U.accent or U.line)
+   end
+  end
  end
- U.Rect(pad, h - S(98), w - pad * 2, 1, U.line)
-	U.Text(T("SECURE. CONTAIN. PROTECT.", "ОБЕЗОПАСИТЬ. УДЕРЖАТЬ. СОХРАНИТЬ."), "Mono", w * 0.5, h - S(25), U.muted, TEXT_ALIGN_CENTER)
+ U.Text("SCiPNET / PERSONNEL DIVISION","Mono",pad,h-S(25),U.muted)
 end
 
 function PANEL:PaintOver(w, h)
+ if IsValid(self.terminalIntro) then return end
+ if self.pendingChoose or self.awaitingResponse or not self.playerReady then
+  local bw=S(330); local x=w-bw-S(45); local y=h-S(156)
+  U.Plate(x,y,bw,S(46),Color(24,6,15,245))
+  U.Text(T("AWAITING CHARACTER SERVICE","ОЖИДАНИЕ АРХИВА ПЕРСОНАЖЕЙ"),"Mono",x+S(14),y+S(13),U.cyan)
+  local phase=ix.option.Get("disableAnimations",false) and .5 or ((RealTime()*.65)%1)
+  U.Rect(x,y+S(44),bw,2,U.line)
+  U.Rect(x+(bw-S(70))*phase,y+S(44),S(70),2,U.cyan)
+ end
 	if self.noticeText and RealTime() < self.noticeUntil then
 		U.Rect(w * 0.51, h - S(155), w * 0.44, S(45), U.panel)
 		U.Text(ix.Civic.Fit(self.noticeText, "Body", w * 0.42), "Small", w * 0.52, h - S(141), U.accent)
@@ -128,27 +149,46 @@ function PANEL:Close()
 	self.bClosing = true; self:Remove()
 end
 function PANEL:OnRemove()
+	self.musicRequest = nil
 	if IsValid(self.channel) then self.channel:Stop() end
+	self.channel = nil
 	if ix.gui.characterMenu == self then gui.EnableScreenClicker(false) end
 end
 function PANEL:PlayMusic()
-	if self.musicStarted then return end
-	self.musicStarted = true
-	local path = ix.config.Get("music", "")
-	if path == "" then return end
-	local url = path:match("^https?://")
-	local play = url and sound.PlayURL or sound.PlayFile
-	play(url and path or "sound/" .. path, "noplay", function(channel)
+	if self.bClosing or self.musicRequest or IsValid(self.channel) then return end
+	-- Restore the SCiPNet menu theme independently of the manual in-game channel.
+	local path = "maintheme.mp3"
+	if not file.Exists("sound/" .. path, "GAME") and file.Exists("sound/music/" .. path, "GAME") then
+		path = "music/" .. path
+	end
+	local request = {}
+	self.musicRequest = request
+	sound.PlayFile("sound/" .. path, "noplay", function(channel)
+		if not IsValid(self) or self.bClosing or self.musicRequest ~= request then
+			if IsValid(channel) then channel:Stop() end
+			return
+		end
+		self.musicRequest = nil
 		if not IsValid(channel) then return end
-		if not IsValid(self) then channel:Stop(); return end
-		self.channel = channel; channel:SetVolume(0.25); channel:Play()
+		self.channel = channel
+		self.volume = 0
+		channel:SetVolume(0)
+		channel:EnableLooping(true)
+		channel:Play()
+		self:CreateAnimation(2, {
+			index = 10,
+			target = {volume = 0.25},
+			Think = function(_, panel)
+				if IsValid(panel.channel) then panel.channel:SetVolume(panel.volume) end
+			end
+		})
 	end)
 end
 
 function PANEL:PresentCharacter(character)
 	if not character then return end
 	self.selected = character
-	self.scene:Present(character:GetModel(), character:GetData("skin", 0), character:GetData("bgcache", character:GetData("groups", {})))
+	self.scene:PresentCharacter(character)
 end
 function PANEL:BeginView(view, title, nextText)
 	self.view = view; self.heading = title; self.nextText = nextText
@@ -158,24 +198,41 @@ function PANEL:BeginView(view, title, nextText)
 	self.content:Clear(); self.next:SetDisabled(false); self.next:SetVisible(view ~= "home")
 	self.back:SetVisible(view ~= "home")
 	self.content:GetVBar():SetScroll(0)
+ self:InvalidateLayout(true)
+ if not ix.option.Get("disableAnimations",false) then
+  self.content:SetAlpha(0); self.content:AlphaTo(255,.22,0)
+  self.scene:SetAlpha(0); self.scene:AlphaTo(255,.3,0)
+ end
 end
 function PANEL:ShowHome()
-	self:BeginView("home", T("RESTRICTED ACCESS", "ДОСТУП ОГРАНИЧЕН"), T("Continue", "Продолжить"))
-	U.Label(self.content, "FOUNDATION /", "Heading", U.muted)
-	U.Label(self.content, T("ACCESS NODE", "УЗЕЛ ДОСТУПА"), "Display", U.ink)
-	U.Label(self.content, T("Authorized personnel only. All activity is monitored.",
-		"Только для уполномоченного персонала. Все действия протоколируются."), "Heading", U.muted)
-	DockButton(self.content, T("Your characters", "Ваши персонажи"), function() self:ShowRoster() end, true)
-	DockButton(self.content, T("Create a personnel file", "Создать личное дело"), function() self:BeginCreation() end)
-	DockButton(self.content, T("Workshop content", "Контент Workshop"), function() gui.OpenURL("https://steamcommunity.com/sharedfiles/filedetails/?id=3680347522") end)
-	DockButton(self.content, T("Community", "Сообщество"), function() gui.OpenURL("https://discord.gg/M8FRCsKHSU") end)
-	DockButton(self.content, self.bUsingCharacter and T("Return to facility", "Вернуться на объект") or T("Disconnect", "Отключиться"), function()
-		if self.bUsingCharacter then self:Close() else RunConsoleCommand("disconnect") end
-	end)
-	local character = LocalPlayer():GetCharacter() or ix.char.loaded[(ix.characters or {})[1]]
-	if character then self:PresentCharacter(character) end
-	self.scene:SetVisible(false)
+ self:BeginView("home", "SCiPNET", T("Continue","Продолжить"))
+ local entries={
+  {"identity",T("Enter facility","Вход на объект"),T("ACCESS YOUR PERSONNEL RECORD","ОТКРЫТЬ ЛИЧНОЕ ДЕЛО"),function() self:ShowRoster() end},
+  {"assignments",T("New record","Новое дело"),T("REGISTER A NEW IDENTITY","РЕГИСТРАЦИЯ НОВОГО ПЕРСОНАЖА"),function() self:BeginCreation() end},
+  {"equipment",T("Resources","Материалы"),T("REQUIRED WORKSHOP CONTENT","НЕОБХОДИМЫЙ КОНТЕНТ WORKSHOP"),function() gui.OpenURL("https://steamcommunity.com/sharedfiles/filedetails/?id=3806222048") end},
+  {"journal",T("Community","Сообщество"),T("OPEN COMMUNITY CHANNEL","ОТКРЫТЬ КАНАЛ СООБЩЕСТВА"),function() gui.OpenURL("https://discord.gg/M8FRCsKHSU") end},
+  {"system",self.bUsingCharacter and T("Resume","Продолжить") or T("Disconnect","Отключиться"),T("CLOSE THIS TERMINAL","ЗАКРЫТЬ ТЕРМИНАЛ"),function() if self.bUsingCharacter then self:Close() else RunConsoleCommand("disconnect") end end}
+ }
+ local deck=self.content:Add("Panel"); deck:Dock(TOP); deck:SetTall(S(142))
+ local buttons={}
+ for i,entry in ipairs(entries) do
+  local b=U.Button(deck,entry[2],entry[4],i==1); buttons[i]=b
+  b.Paint=function(this,w,h)
+   U.ButtonFace(this,w,h,i==1,false)
+   if this:IsHovered() or this:HasFocus() then self.activeBrief=entry[3] end
+   U.Text("0"..i,"Mono",S(15),S(13),U.muted)
+   U.Icon(entry[1],S(15),S(38),S(29),U.accent)
+   U.Text(entry[2],"Body",S(15),h-S(46),U.ink)
+   U.Text("[ SELECT ]","Mono",S(15),h-S(22),U.muted)
+  end
+ end
+ deck.PerformLayout=function(_,w,h)
+  local gap=S(10); local width=(w-gap*4)/5
+  for i,b in ipairs(buttons) do b:SetPos((i-1)*(width+gap),0); b:SetSize(width,h) end
+ end
+ self.scene:SetVisible(false)
 end
+
 function PANEL:ShowRoster()
 	self:BeginView("roster", T("PERSONNEL ARCHIVE", "АРХИВ ЛИЧНЫХ ДЕЛ"), T("Enter facility", "Войти на объект"))
 	local found = false
@@ -188,7 +245,7 @@ function PANEL:ShowRoster()
 			button:SetTall(S(110))
 			button.Paint = function(this, w, h)
 				local selected = self.selected == character
-				U.Plate(0, 0, w, h, selected and Color(65, 15, 25, 240) or U.panel, selected and U.cyan or U.line)
+				U.Plate(0, 0, w, h, selected and Color(74,13,31,230) or U.panel, selected and U.cyan or U.line)
 				if selected then U.Rect(0, 0, S(3), h, U.accent) end
 				U.Text(ix.Civic.Fit(character:GetName(), "Heading", w - S(40)), "Heading", S(20), S(20))
 				U.Text((faction and L(faction.name) or "") .. "  /  " .. T("LEVEL ", "УРОВЕНЬ ") .. tostring(character:GetLevel()), "Mono", S(20), S(64), U.muted)
@@ -211,10 +268,10 @@ function PANEL:BeginCreation()
 end
 function PANEL:SelectFaction(index)
 	local faction = ix.faction.indices[index]
-	if not faction or not LocalPlayer():HasWhitelist(index) then return end
+	if not faction or not ix.faction.CanCreate(index) or not LocalPlayer():HasWhitelist(index) then return end
 	self.draft.faction = index; self.draft.gender = (faction.genders or {1, 2})[1]
 	self.draft.genetic[3] = faction.ageSelector and 1 or 25
-	self.draft.model = 1; self.draft.face = {1, 1}
+	self.draft.model = 1; self.draft.sdSkin = 0; self.draft.face = {1, 1}
 	if faction.GenerateName then self.draft.name = faction:GenerateName(self.draft.gender) or "" end
 	self:PresentDraft()
 end
@@ -227,7 +284,9 @@ function PANEL:PresentDraft()
 	if istable(entry) and isstring(entry[3]) then
 		for i = 1, #entry[3] do groups[i - 1] = tonumber(entry[3]:sub(i, i)) or 0 end
 	end
-	self.scene:Present(Path(entry), istable(entry) and entry[2] or 0, groups)
+	local skin = istable(entry) and entry[2] or 0
+ if faction.sdSkinCounts and faction.sdSkinCounts[Path(entry)] then skin = self.draft.sdSkin or 0 end
+	self.scene:Present(Path(entry), skin, groups)
 end
 function PANEL:ShowStep()
 	self:BeginView("create", string.format("%02d / ", self.step) .. T(unpack(chapters[self.step])),
@@ -242,13 +301,14 @@ end
 function PANEL:Origin()
 	U.Label(self.content, T("Where does your story begin?", "Где начинается ваша история?"), "Heading")
 	for index, faction in ipairs(ix.faction.indices) do
-		local allowed = LocalPlayer():HasWhitelist(index)
+		local allowed = ix.faction.CanCreate(index) and LocalPlayer():HasWhitelist(index)
+		if not allowed then continue end
 		local button = DockButton(self.content, L(faction.name), function() self:SelectFaction(index); self:ShowStep() end, self.draft.faction == index)
 		button:SetDisabled(not allowed)
 		if not allowed then button:SetTooltip(T("Whitelist required", "Требуется доступ к фракции")) end
 	end
 	local faction = ix.faction.indices[self.draft.faction]
-	if faction then U.Label(self.content, L(faction.description or ""), "Body", U.muted) end
+
 end
 function PANEL:Identity()
 	U.Field(self.content, T("FULL NAME", "ПОЛНОЕ ИМЯ"), self.draft.name, function(value) self.draft.name = value end)
@@ -266,7 +326,7 @@ function PANEL:Appearance()
 	local genders = {}
 	for _, value in ipairs(faction.genders or {1, 2}) do genders[#genders + 1] = {value = value, label = value == 1 and T("Male", "Мужской") or T("Female", "Женский")} end
 	U.Choice(self.content, T("BODY TYPE", "ТИП ТЕЛА"), genders, self.draft.gender, function(value)
-		self.draft.gender = value; self.draft.model = 1; self:ShowStep()
+		self.draft.gender = value; self.draft.sdSkin = 0; self.draft.model = 1; self:ShowStep()
 	end)
 	local models = faction:GetModels(LocalPlayer(), self.draft.gender) or {}
 	local grid = self.content:Add("DIconLayout")
@@ -282,7 +342,7 @@ function PANEL:Appearance()
 		local icon = grid:Add("SpawnIcon"); icon:SetSize(S(72), S(84))
 		icon:SetModel(Path(entry), istable(entry) and entry[2] or 0, istable(entry) and entry[3] or nil)
 		icon:SetTooltip(T("Appearance ", "Облик ") .. string.format("%02d", ordinal))
-		icon.DoClick = function() self.draft.model = index; self:ShowStep() end
+		icon.DoClick = function() self.draft.sdSkin = 0; self.draft.model = index; self:ShowStep() end
 		icon.PaintOver = function(_, w, h)
 			if selected then surface.SetDrawColor(U.accent); surface.DrawOutlinedRect(0, 0, w, h, S(2)) end
 		end
@@ -293,9 +353,21 @@ function PANEL:Appearance()
 			hairstyles[#hairstyles + 1] = {value = variant.index, label = T("Hairstyle ", "Причёска ") .. ordinal}
 		end
 		U.Choice(self.content, T("HAIRSTYLE", "ПРИЧЁСКА"), hairstyles, self.draft.model, function(index)
-			self.draft.model = index; self:PresentDraft()
+			self.draft.model = index
+   local count = faction.sdSkinCounts and faction.sdSkinCounts[Path(models[index])]
+   if count and (self.draft.sdSkin or 0) >= count then self.draft.sdSkin = 0 end
+   self:ShowStep()
 		end)
 	end
+ local path = Path(models[self.draft.model])
+ local count = faction.sdSkinCounts and faction.sdSkinCounts[path]
+ if count then
+  local features = {}
+  for value = 0, count-1 do features[#features+1]={value=value,label=T("Variant ","Вариант ")..value} end
+  U.Choice(self.content,T("SKIN / FACE APPEARANCE","СКИН / ВНЕШНОСТЬ ЛИЦА"),features,self.draft.sdSkin or 0,function(value)
+   self.draft.sdSkin=value; self:PresentDraft()
+  end)
+ end
 	local function numeric(label, slot, low, high)
 		U.Label(self.content, label, "Mono", U.muted)
 		local slider = self.content:Add("DNumSlider")
@@ -379,7 +451,7 @@ function PANEL:Advance()
 		net.Start("ixCharacterChoose"); net.WriteUInt(self.selected:GetID(), 32); net.SendToServer()
 	elseif self.step == 5 then self:Submit()
 	else
-		local checks = {{"faction"}, {"name", "description", "languages"}, {"gender", "model", "genetic", "face"}, {"specials", "primaryStat"}}
+		local checks = {{"faction"}, {"name", "description", "languages"}, {"gender", "model", "genetic", "face", "sdSkin"}, {"specials", "primaryStat"}}
 		if not self:Validate(checks[self.step]) then return end
 		self.step = self.step + 1; self:ShowStep()
 	end

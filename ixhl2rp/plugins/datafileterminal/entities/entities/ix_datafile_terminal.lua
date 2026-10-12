@@ -1,9 +1,9 @@
 ENT.Type        = "anim"
-ENT.PrintName   = "Datafile Terminal"
-ENT.Category    = "HL2 RP"
+ENT.PrintName   = "Терминал SCiPNet"
+ENT.Category    = "SCP / FIELDLINK"
 ENT.Spawnable   = true
 ENT.AdminOnly   = true
-ENT.Model       = Model("models/hls/alyxports/monitor_medium.mdl")
+ENT.Model       = Model("models/props_lab/reciever01b.mdl")
 ENT.bNoPersist  = true
 
 if SERVER then
@@ -80,7 +80,7 @@ if CLIENT then
 		if !IsValid(ent) or ent:GetClass() != "ix_datafile_terminal" then return end
 		if ply:GetPos():DistToSqr(ent:GetPos()) > (140 * 140) then return end
 
-		draw.SimpleTextOutlined("[E] Просмотр базы досье", "ixGenericFont",
+		draw.SimpleTextOutlined("[E] SCiPNet / Проверка допуска", "ixGenericFont",
 			ScrW() * 0.5, ScrH() * 0.62, Color(220, 220, 220),
 			TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, Color(0, 0, 0, 220))
 	end)

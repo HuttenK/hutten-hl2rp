@@ -1,16 +1,4 @@
-ITEM.name = "item.cid_mpf_epu"
-ITEM.model = Model("models/vintagethief/cellarproject/cid_card.mdl")
-ITEM.width = 1
-ITEM.height = 1
-ITEM.iconCam = {
-	pos = Vector(0, 0, 12),
-	ang = Angle(90, 0, -45),
-	fov = 45,
-}
-ITEM.cardType = 3
-ITEM.access = {
-	["DATAFILE_FULL"] = true,
-	["cmbCit*"] = true,
-	["cmbCwu*"] = true,
-	["cmbMpf*"] = true,
-}
+-- Compatibility alias: saved identity details survive; only one document is registered.
+ix.Item.legacyIDs=ix.Item.legacyIDs or {}
+ix.Item.legacyIDs["card_mpf_epu"]="card"
+function ITEM:Register() end

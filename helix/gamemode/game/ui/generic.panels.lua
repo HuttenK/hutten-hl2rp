@@ -115,7 +115,7 @@ function PANEL:OnCursorEntered()
 		end
 	})
 
-	LocalPlayer():EmitSound("Helix.Rollover")
+	ix.Legends.PlayUISound("hover")
 end
 
 function PANEL:OnCursorExited()
@@ -135,7 +135,7 @@ function PANEL:OnMousePressed(code)
 		return
 	end
 
-	LocalPlayer():EmitSound("Helix.Press")
+	ix.Legends.PlayUISound("click")
 
 	if code == MOUSE_LEFT and self.DoClick then
 		self:DoClick(self)

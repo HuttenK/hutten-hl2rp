@@ -33,6 +33,7 @@ local EQUIP_INV_TO_APPEARANCE_SLOT = {
 	-- Броня носится поверх одежды, поэтому у неё собственные слоты Appearance:
 	-- иначе бронежилет вытеснил бы рубашку (13), а поножи — штаны (14).
 	vest           = 15, -- equip_inv 'vest' (бронежилеты)
+	armprotection  = 18, -- separate from gloves
 	legprotection  = 16, -- equip_inv 'legprotection' (защита ног)
 
 	-- Очки носятся отдельным слотом от 'mask' (маски/противогазы), поэтому у них
@@ -198,7 +199,7 @@ function ItemCloth:OnRegistered()
 		-- citizen models. If the item defines bodyGroupsMPF, expose it as an
 		-- "mpf" variant so Outfit:Update applies those indices on a uniformed
 		-- character instead of the citizen bodygroups (and never clobbers them).
-		if self.bodyGroupsMPF and next(self.bodyGroupsMPF) then
+		if istable(self.bodyGroupsMPF) then
 			info.variants = {
 				mpf = { bodyGroups = self.bodyGroupsMPF }
 			}

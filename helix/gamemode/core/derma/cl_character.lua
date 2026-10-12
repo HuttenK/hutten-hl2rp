@@ -383,33 +383,11 @@ function PANEL:Init()
 end
 
 function PANEL:PlayMusic()
-	local path = "sound/" .. ix.config.Get("music")
-	local url = path:match("http[s]?://.+")
-	local play = url and sound.PlayURL or sound.PlayFile
-	path = url and url or path
-
-	play(path, "noplay", function(channel, error, message)
-		if (!IsValid(self) or !IsValid(channel)) then
-			return
-		end
-
-		channel:SetVolume(self.volume or 0)
-		channel:Play()
-
-		self.channel = channel
-
-		self:CreateAnimation(audioFadeInTime, {
-			index = 10,
-			target = {volume = 1},
-
-			Think = function(animation, panel)
-				if (IsValid(panel.channel)) then
-					panel.channel:SetVolume(self.volume * 0.5)
-				end
-			end
-		})
-	end)
+ -- Soundtracks are started explicitly with /MusicPlay only.
+ if self.mainPanel and IsValid(self.mainPanel.html) then self.mainPanel.html:Show() end
+ if IsValid(self.channel) then self.channel:Stop(); self.channel=nil end
 end
+
 
 function PANEL:ShowNotice(type, text)
 	self.notice:SetType(type)

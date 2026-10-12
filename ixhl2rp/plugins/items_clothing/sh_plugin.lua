@@ -25,21 +25,25 @@ end
 ix.lang.AddTable("ru", {
 	["equip.vest"] = "БРОНЕЖИЛЕТ",
 	["equip.legprotection"] = "ЗАЩИТА НОГ",
+	["equip.armprotection"] = "ЗАЩИТА РУК",
 	["equip.glasses"] = "ОЧКИ",
 })
 ix.lang.AddTable("en", {
 	["equip.vest"] = "VEST",
 	["equip.legprotection"] = "LEG PROTECTION",
+	["equip.armprotection"] = "ARM PROTECTION",
 	["equip.glasses"] = "GLASSES",
 })
 ix.lang.AddTable("fr", {
 	["equip.vest"] = "GILET",
 	["equip.legprotection"] = "PROTECTION DES JAMBES",
+	["equip.armprotection"] = "PROTECTION DES BRAS",
 	["equip.glasses"] = "LUNETTES",
 })
 ix.lang.AddTable("es-es", {
 	["equip.vest"] = "CHALECO",
 	["equip.legprotection"] = "PROTECCIÓN DE PIERNAS",
+	["equip.armprotection"] = "PROTECCIÓN DE BRAZOS",
 	["equip.glasses"] = "GAFAS",
 })
 
@@ -99,7 +103,7 @@ end
 function PLUGIN:CreatePlayerInventories(client, inventories)
 	if !inventories then return end
 
-	for _, slotType in ipairs({"vest", "legprotection", "glasses"}) do
+	for _, slotType in ipairs({"vest", "legprotection", "armprotection", "glasses"}) do
 		local slot = ix.meta.Inventory:New()
 		slot.type = slotType
 		slot.multislot = false
@@ -176,6 +180,7 @@ if SERVER then
 			end
 
 			oldcharacter:SetData("bgcache", bgs)
+			oldcharacter:SetData("skin", client:GetSkin())
 		end
 	end
 

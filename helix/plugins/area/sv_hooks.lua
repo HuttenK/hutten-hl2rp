@@ -2,6 +2,7 @@
 function PLUGIN:LoadData()
 	hook.Run("SetupAreaProperties")
 	ix.area.stored = self:GetData() or {}
+	ix.area.loaded = true
 
 	timer.Create("ixAreaThink", ix.config.Get("areaTickTime"), 0, function()
 		self:AreaThink()
@@ -49,7 +50,8 @@ function PLUGIN:AreaThink()
 		local position = client:GetPos() + client:OBBCenter()
 
 		for id, info in pairs(ix.area.stored) do
-			if (position:WithinAABox(info.startPosition, info.endPosition)) then
+			local options = ix.area.typeOptions[info.type] or {}
+			if (!options.nonLocation and position:WithinAABox(info.startPosition, info.endPosition)) then
 				overlappingBoxes[#overlappingBoxes + 1] = id
 			end
 		end
@@ -109,7 +111,11 @@ net.Receive("ixAreaAdd", function(length, client)
 		properties[k] = ix.util.SanitizeType(ix.area.properties[k].type, v)
 	end
 
-	ix.area.Create(id, type, startPosition, endPosition, nil, properties)
+	local created, reason = ix.area.Create(id, type, startPosition, endPosition, nil, properties)
+	if (created == false) then
+		client:Notify(reason or "Unable to create area.")
+		return
+	end
 	ix.log.Add(client, "areaAdd", id)
 end)
 

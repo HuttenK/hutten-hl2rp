@@ -279,9 +279,8 @@ if SERVER then
 			
 			xp = xp * self:GetSkillScale(client, skill, level)
 
-			-- DoAction возвращает РЕАЛЬНО начисленный опыт (урезанный голодом и лимитом
-			-- «памяти навыка»); берём его, чтобы сообщение в чате совпадало с фактом.
-			xp = character:DoAction("craft_"..skill, xp) or 0
+			-- Award skill XP silently; DoAction still applies hunger and memory limits.
+			character:DoAction("craft_"..skill, xp)
 		end
 
 		local inventory = client:GetInventory("main")
@@ -533,11 +532,6 @@ if SERVER then
 			end
 		end
 
-		if recipe.skill then
-			local activityKey = recipe.isBreakdown and "craft.breakdown" or "craft.creation"
-			client:NotifyLocalized("craft.xpGained", math.Round(xp), L(activityKey, client))
-		end
-		
 		return true
 	end
 

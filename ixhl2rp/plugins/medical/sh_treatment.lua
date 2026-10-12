@@ -27,6 +27,17 @@ end
 M.GuardLegacyWeapons()
 hook.Add("InitPostEntity","ixMedicineLegacySWEPs",M.GuardLegacyWeapons)
 
+-- A separate effect ensures Propital/L1 never inherit revival from their
+-- existing generic epinephrine status. Check time on every call, not cached HP.
+function M.ConsciousnessSupported(health, now)
+ now = now or os.time()
+ for _, diff in health:GetHediffs() do
+  if diff.uniqueID == "epinephrine_revival" and diff:GetSeverity() > 0 and
+   (diff.tended_time or 0) > 0 and now < (diff.tended_start or 0) + diff.tended_time then return true end
+ end
+ return false
+end
+
 function M.PainSuppressed(health, now)
  now = now or os.time()
  for _, diff in health:GetHediffs() do
@@ -144,6 +155,7 @@ for id, def in pairs(M.Catalog) do
    self:SendWeaponAnim(activity)
    vm:SetSkin(def.skin or 0)
    vm:SetPlaybackRate(session.rate)
+   if self.medStep==1 then M.AnnounceTreatment(owner,session) end
    self.medNext = CurTime() + math.max(.1, vm:SequenceDuration(sequence) / session.rate)
    if self.medStep == 1 and (def.model == "afak" or def.model == "automedkit" or def.model == "grizzly" or def.model == "alusplint") then
     timer.Simple((def.model == "alusplint" and 1.5 or .5) / session.rate, function()

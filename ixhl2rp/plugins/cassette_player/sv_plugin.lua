@@ -9,11 +9,16 @@ util.AddNetworkString("cassette.record.response")  -- client → server: dialog 
 
 -- Receive recording result from client.
 net.Receive("cassette.record.response", function(len, client)
-	local itemID   = net.ReadInt(32)
+	if len > 20000 or (client.ixCassetteRecordAt or 0)>CurTime() then return end
+ client.ixCassetteRecordAt=CurTime()+1
+ local itemID   = net.ReadInt(32)
 	local newName  = net.ReadString()
 	local newTrack = net.ReadString()
 
-	-- Item must exist.
+	if #newName>160 or newName:find("[%c]") or not ix.BroadcastMedia.ValidSource(newTrack) then
+  client:Notify("Недопустимое название или путь к звуку."); return
+ end
+ -- Item must exist.
 	local item = ix.Item.instances[itemID]
 	if not item then return end
 
@@ -74,36 +79,32 @@ end
 -- from the database so the player can still eject and reclaim it.
 
 function PLUGIN:LoadData()
-	local boomboxes = self:GetData() or {}
-	for _, v in ipairs(boomboxes) do
-		local ent = ents.Create("ix_boombox")
-		if not IsValid(ent) then continue end
-
-		ent:SetPos(v.pos)
-		ent:SetAngles(v.ang)
-		ent:Spawn()
-		ent:Activate()
-
-		-- Restore boombox item reference so pickup returns the original item.
-		if v.boomboxItemID then
-			ent.boomboxItemID = v.boomboxItemID
-		end
-
-		-- Restore cassette NetVars immediately so audio starts on the client.
-		if v.cassetteName != "" then
-			ent:SetNetVar("boombox_cassette", v.cassetteName)
-			ent:SetNetVar("boombox_sound",    v.track)
-			ent:SetNetVar("boombox_stime",    CurTime())
-
-			-- Reload the cassette item from DB so it can be ejected properly.
-			if v.cassetteInstanceID then
-				local savedEnt = ent  -- capture for async callback
-				ix.Item:LoadInstanceByID(v.cassetteInstanceID, function(item)
-					if item and IsValid(savedEnt) then
-						savedEnt.cassetteInstanceID = item.id
-					end
-				end)
-			end
-		end
-	end
+ if self.boomboxesLoaded then return end
+ self.boomboxesLoaded=true
+ for _,v in ipairs(self:GetData() or {}) do
+  local ent=ents.Create("ix_boombox")
+  if IsValid(ent) then
+   ent:SetPos(v.pos); ent:SetAngles(v.ang); ent:Spawn(); ent:Activate()
+   ent.boomboxItemID=v.boomboxItemID
+   ent.cassetteInstanceID=v.cassetteInstanceID
+   ent.loadingItems=true
+   local pending=0
+   local function restore(id)
+    if not id or ix.Item.instances[id] then return end
+    pending=pending+1
+    ix.Item:LoadInstanceByID(id,nil,function()
+     pending=pending-1
+     if IsValid(ent) and pending==0 then ent.loadingItems=false end
+    end)
+   end
+   restore(v.boomboxItemID); restore(v.cassetteInstanceID)
+   ent.loadingItems=pending>0
+   if v.cassetteInstanceID then
+    ent:SetNetVar("boombox_cassette",v.cassetteName or "Кассета")
+    ent:SetNetVar("boombox_sound",ix.BroadcastMedia.ValidSource(v.track) and v.track or "")
+    ent:SetNetVar("boombox_stime",CurTime())
+   end
+  end
+ end
 end
+function PLUGIN:ShutDown() self.shuttingDown=true end

@@ -9,12 +9,23 @@ function Item:Init()
 	self.equip_inv = 'radio'
 	self.equip_slot = nil
 
-	self.model = self.model or "models/cellar/items/handheld_radio.mdl"
+	self.model = "models/cultist/items/danradio/w_radio.mdl"
 
 	self.frequency = self.frequency or "main"
 	self.frequencyID = self.frequencyID or "freq_main"
 
 	self.category = "item.category.comm"
+
+ self.functions.voiceKey = {
+  name = "Задать кнопку использования",
+  icon = "icon16/keyboard.png",
+  OnClick = function()
+   if ix.voice and ix.voice.OpenKeySettings then ix.voice.OpenKeySettings() end
+   return false
+  end,
+  OnRun = function() return false end,
+  OnCanRun = function(item) return not IsValid(item.entity) end
+ }
 
 	self.functions.toggle = {
 		name = "use.toggle",

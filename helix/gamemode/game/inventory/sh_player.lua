@@ -2,7 +2,8 @@ do
 	local PLAYER = FindMetaTable("Player")
 
 	function PLAYER:GetInventory(inv_type)
-		return self.inventories[inv_type]
+		-- Players exist before their character inventories finish loading.
+		return self.inventories and self.inventories[inv_type]
 	end
 
 	function PLAYER:GetInventories()
@@ -44,7 +45,8 @@ do
 	end
 
 	function PLAYER:GetFirstAtSlot(x, y, inv_type)
-		return self:GetInventory(inv_type):GetFirstAtSlot(x, y)
+		local inventory = self:GetInventory(inv_type)
+		return inventory and inventory:GetFirstAtSlot(x, y)
 	end
 
 	function PLAYER:GetItemsCount(id, inv_type)
@@ -143,7 +145,7 @@ do
 		local weapon = self:GetActiveWeapon()
 
 		if IsValid(weapon) then
-			return self:GetItemFromWeapon(weapon:GetClass())
+			return weapon.ixItem or (ix.WeaponSlots and ix.Item.instances[weapon:GetNWInt("ixWeaponItem", 0)]) or self:GetItemFromWeapon(weapon:GetClass())
 		end
 	end
 

@@ -1,0 +1,10 @@
+ENT.Type="anim"
+ENT.Base="ix_cctv_device"
+ENT.PrintName="CCTV / Камера"
+ENT.Category="Foundation"
+ENT.SubCategory="CCTV"
+ENT.IconOverride="icon16/camera.png"
+ENT.CCTVKind="camera"
+ENT.Spawnable=true
+ENT.AdminOnly=true
+ENT.bNoPersist=true

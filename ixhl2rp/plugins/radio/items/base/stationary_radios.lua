@@ -1,7 +1,7 @@
 local Item = class("ItemStationRadio"):implements("Item")
 
 function Item:Init()
-	self.model = self.model or "models/props_lab/citizenradio.mdl"
+	self.model = "models/cultist/items/danradio/w_radio.mdl"
 
 	self.tuningEnabled = self.tuningEnabled or false
 	self.frequencyID = self.frequencyID or "freq_0000"

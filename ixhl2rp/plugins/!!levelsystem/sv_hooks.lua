@@ -89,6 +89,9 @@ function PLUGIN:OnCharacterCreated(client, character)
 end
 
 function PLUGIN:PlayerMessageSend(speaker, chatType, text, bAnonymous, receivers, rawText)
+	-- Item narration and private admin scene descriptions are not conversation.
+	if chatType == "itpm" or (IsValid(speaker) and speaker.ixContextualEmote) then return end
+
 	if IsValid(speaker) and !self.SocialXPConfig.blacklist[chatType] then
 		-- lazy init
 		if !self.socialXP then

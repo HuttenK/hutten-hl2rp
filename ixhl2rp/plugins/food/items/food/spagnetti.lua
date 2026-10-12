@@ -1,15 +1,9 @@
 ITEM.name = "item.spagnetti"
 ITEM.description = "item.spagnetti.desc"
-ITEM.model = "models/bowlofspaghetti01/bowlofspaghetti01.mdl"
+ITEM.model = "models/mosi/fallout4/props/food/noodles.mdl"
 ITEM.cost = 20
 ITEM.width = 1
 ITEM.height = 1
-
-ITEM.iconCam = {
-	pos = Vector(108.04824066162, 90.791046142578, 67.745834350586),
-	ang = Angle(23.76210975647, 219.99313354492, 0),
-	fov = 3.7165093482008,
-}
 
 ITEM.volume = 400
 ITEM.portion_amount = 40

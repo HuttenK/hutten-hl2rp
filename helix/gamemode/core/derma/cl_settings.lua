@@ -578,9 +578,9 @@ function PANEL:AddCategory(name)
 	end
 end
 
-function PANEL:AddRow(type, category)
+function PANEL:AddRow(type, category, keybind)
 	category = self.categories[category]
-	local id = panelMap[type]
+	local id = keybind and "ixSettingsRowKey" or panelMap[type]
 
 	if (!id) then
 		ErrorNoHalt("attempted to create row with unimplemented type '" .. tostring(ix.type[type]) .. "'\n")
@@ -717,7 +717,7 @@ hook.Add("CreateMenuButtons", "ixSettings", function(tabs)
 
 				for _, data in pairs(options) do
 					local key = data.key
-					local row = panel:AddRow(data.type, category)
+					local row = panel:AddRow(data.type, category, data.keybind)
 					local value = ix.util.SanitizeType(data.type, ix.option.Get(key))
 
 					row:SetText(L(data.phrase))

@@ -171,8 +171,10 @@ function Inventory:GetItemsID()
 end
 
 function Inventory:GetSlot(x, y)
-	if x <= self.width and y <= self.height then
-		return self.slots[y][x]
+	if not isnumber(x) or not isnumber(y) or x ~= math.floor(x) or y ~= math.floor(y) then return end
+	if x >= 1 and y >= 1 and x <= self.width and y <= self.height then
+		local row = self.slots and self.slots[y]
+		return row and row[x]
 	end
 end
 
@@ -273,7 +275,9 @@ function Inventory:FindStack(item, w, h)
 end
 
 function Inventory:CanStack(item, stack_item)
+	if not item or not stack_item then return false end
 	local slot = self:GetSlot(stack_item.x, stack_item.y)
+	if not istable(slot) or not table.HasValue(slot, stack_item.id) then return false end
 
 	if stack_item and stack_item.uniqueID == item.uniqueID and item.stackable and #slot < item.max_stack then
 		return true
@@ -311,7 +315,8 @@ end
 function Inventory:IsSlotsEmpty(x, y, w, h)
 	for i = y, y + h - 1 do
 		for k = x, x + w - 1 do
-			if !table.IsEmpty(self.slots[i][k]) then
+			local slot = self:GetSlot(k, i)
+			if not istable(slot) or !table.IsEmpty(slot) then
 				return false
 			end
 
@@ -328,7 +333,7 @@ function Inventory:OverlapsStack(item, x, y, w, h)
 	for i = y, y + h - 1 do
 		for k = x, x + w - 1 do
 			local slot = self:GetSlot(k, i)
-			local stack_item = ix.Item.instances[slot[1]]
+			local stack_item = slot and ix.Item.instances[slot[1]]
 
 			if stack_item and self:CanStack(item, stack_item) and !table.HasValue(slot, item.id) then
 				return true, stack_item.x, stack_item.y, stack_item.rotated != item.rotated
@@ -664,7 +669,7 @@ if SERVER then
 	function Inventory:Transfer(instance_id, inventory, x, y, was_rotated)
 		local item = ix.Item.instances[instance_id]
 
-		if !item then 
+		if !item or item.inventory_id ~= self.id then 
 			return false, 'invalidItem'
 		end
 
@@ -758,8 +763,14 @@ if SERVER then
 	function Inventory:MoveStack(instance_ids, x, y, was_rotated)
 		local instance_id = instance_ids[1]
 		local item = ix.Item.instances[instance_id]
+		if not item or item.inventory_id ~= self.id then return false, 'invalidItem' end
 		local old_x, old_y = item.x, item.y
 		local slot = self:GetSlot(old_x, old_y)
+		if not istable(slot) or not table.HasValue(slot, instance_id) then return false, 'invalidItem' end
+		for _, id in ipairs(instance_ids) do
+		 local other=ix.Item.instances[id]
+		 if not other or other.inventory_id~=self.id or other.x~=old_x or other.y~=old_y or not table.HasValue(slot,id) then return false,'invalidItem' end
+		end
 		local w, h = self:GetItemSize(item)
 
 		if !table.equal(instance_ids, slot) and self:OverlapsItself(instance_id, x, y, w, h) then
@@ -1740,6 +1751,7 @@ else
 	end
 
 	local EquipmentTypes = {
+        weapon1 = true, weapon2 = true, weapon3 = true,
 		["head"] = true,
 		["mask"] = true,
 		["torso"] = true,
@@ -1753,6 +1765,7 @@ else
 		-- added by the ixhl2rp items_clothing plugin (body armour / leg armour / glasses)
 		["vest"] = true,
 		["legprotection"] = true,
+		["armprotection"] = true,
 		["glasses"] = true,
 	}
 

@@ -1,218 +1,193 @@
 local PLUGIN = PLUGIN
 
 PLUGIN.zones    = PLUGIN.zones    or {} -- list of { min = Vector, max = Vector }
-PLUGIN.darkness = PLUGIN.darkness or 0  -- current eased effect strength (0..1)
+PLUGIN.darkness = 0 -- clear the old full-screen veil on auto-refresh
 
-net.Receive("ixBlackoutSync", function()
-	local count = net.ReadUInt(8)
+net.Receive("ixBlackoutSync3", function()
+	local count = net.ReadUInt(16)
 	local zones = {}
 
 	for i = 1, count do
 		local mn = net.ReadVector()
 		local mx = net.ReadVector()
-		zones[i] = { min = mn, max = mx }
+		zones[i] = { min = mn, max = mx, darkness = net.ReadUInt(7), softness = net.ReadUInt(8),
+            fadeMin = net.ReadVector(), fadeMax = net.ReadVector() }
 	end
 
 	PLUGIN.zones = zones
 end)
 
--- Uniform: 1 if the point is inside any zone, 0 otherwise. Inside is just "lights
--- out" everywhere; the from-outside mask handles the spatial look.
-local function BlackoutFactor(pos)
-	for _, z in ipairs(PLUGIN.zones) do
-		if (pos:WithinAABox(z.min, z.max)) then
-			return 1
-		end
-	end
+-- Two stencil bits: bit 0 is one box's depth parity; bit 1 is the union.
+-- Z-fail parity also works with the camera inside the box: only scene surfaces
+-- inside it are shaded. Never darken the entire view based on the eye position.
+-- Submit a closed volume once with an explicitly two-sided material. Parity
+-- needs every boundary exactly once; two DrawBox calls with global cull state
+-- leave that dependent on the helper/material's own culling behaviour.
+local volumeMaterial=CreateMaterial("ixBlackoutVolume_v1","UnlitGeneric",{
+ ["$basetexture"]="color/white",["$nocull"]="1",["$ignorez"]="0",
+ ["$translucent"]="0",["$vertexcolor"]="0",["$vertexalpha"]="0"})
+if PLUGIN.boxVolume then PLUGIN.boxVolume:Destroy();PLUGIN.boxVolume=nil end
+local function boxVolume()
+ if PLUGIN.boxVolume then return PLUGIN.boxVolume end
+ local points={Vector(0,0,0),Vector(1,0,0),Vector(1,1,0),Vector(0,1,0),
+  Vector(0,0,1),Vector(1,0,1),Vector(1,1,1),Vector(0,1,1)}
+ local vertices={}
+ for _,face in ipairs({{1,4,3,2},{5,6,7,8},{1,2,6,5},{4,8,7,3},{1,5,8,4},{2,3,7,6}}) do
+  for _,i in ipairs({1,2,3,1,3,4}) do
+   vertices[#vertices+1]={pos=points[face[i]],normal=Vector(0,0,1),u=0,v=0}
+  end
+ end
+ local mesh=Mesh();mesh:BuildFromTriangles(vertices);PLUGIN.boxVolume=mesh
+ return mesh
+end
+local function screenRect()
+ cam.Start2D()
+  surface.DrawRect(0, 0, ScrW(), ScrH())
+ cam.End2D()
+end
+local function markBox(mn, mx)
+ render.SetStencilWriteMask(1)
+ render.SetStencilTestMask(1)
+ render.SetStencilReferenceValue(0)
+ render.SetStencilCompareFunction(STENCILCOMPARISONFUNCTION_ALWAYS)
+ render.SetStencilPassOperation(STENCILOPERATION_KEEP)
+ render.SetStencilZFailOperation(STENCILOPERATION_INVERT)
+ render.OverrideDepthEnable(true, false)
+ render.SetMaterial(volumeMaterial)
+ local matrix=Matrix();matrix:SetTranslation(mn);matrix:SetScale(mx-mn)
+ cam.PushModelMatrix(matrix)
+ boxVolume():Draw()
+ cam.PopModelMatrix()
+ render.OverrideDepthEnable(false)
 
-	return 0
+ -- Copy parity into the union, preserving already marked overlapping zones.
+ render.SetStencilWriteMask(2)
+ render.SetStencilReferenceValue(3)
+ render.SetStencilCompareFunction(STENCILCOMPARISONFUNCTION_EQUAL)
+ render.SetStencilPassOperation(STENCILOPERATION_REPLACE)
+ render.SetStencilZFailOperation(STENCILOPERATION_KEEP)
+ screenRect()
+ -- Clear only the temporary bit for the next zone; retain the union.
+ render.SetStencilWriteMask(1)
+ render.SetStencilReferenceValue(0)
+ render.SetStencilCompareFunction(STENCILCOMPARISONFUNCTION_ALWAYS)
+ screenRect()
 end
 
--- Ease the inside-darkness strength toward the target, in both directions.
--- math.Approach даёт ПОСТОЯННУЮ скорость, поэтому переход длится предсказуемое
--- время (1 / speed секунд) и не «залипает» на хвосте, как это делает Lerp.
--- This is driven from the render hook below using the same EyePos() as the mask,
--- so the inside/outside decision is always consistent (no one-frame gap).
-local function updateDarkness(eye)
-	local target = BlackoutFactor(eye)
-	local speed = (target > PLUGIN.darkness) and PLUGIN.fadeInSpeed or PLUGIN.fadeOutSpeed
-
-	PLUGIN.darkness = math.Approach(PLUGIN.darkness, target, FrameTime() * speed)
+-- Equal opacity increments avoid the three conspicuous wide bands used before.
+-- Cache the world-space fade geometry on sync; every camera uses its own depth.
+local cacheZones,cacheCount,cacheQuality,cacheDefault,fadeLayers
+local function inverseSmooth(t)
+ local low,high=0,1
+ for _=1,12 do
+  local x=(low+high)*.5
+  if x*x*(3-2*x)<t then low=x else high=x end
+ end
+ return (low+high)*.5
+end
+function PLUGIN:BuildFadeLayers()
+ local layers=math.Clamp(math.floor(self.maskLayers or 48),1,64)
+ local maxOpacity=0
+ for _,zone in ipairs(self.zones) do maxOpacity=math.max(maxOpacity,math.Clamp(zone.darkness or (self.maskDarkness or 220)/2.55,0,100)/100) end
+ local result={};if maxOpacity<=0 then return result end
+ local previous=0
+ for layer=1,layers do
+  local target=maxOpacity*layer/layers
+  local opacity=math.Clamp(math.Round(255*(target-previous)/math.max(1-previous,.000001)),0,255)
+  previous=previous+(1-previous)*opacity/255
+  local row={alpha=opacity,boxes={}}
+  for index,zone in ipairs(self.zones) do
+   local strength=math.Clamp(zone.darkness or (self.maskDarkness or 220)/2.55,0,100)/100
+   if strength>=target-.000001 then
+    local mn,mx=zone.fadeMin or zone.min,zone.fadeMax or zone.max
+    local size=mx-mn
+    local width=zone.softness or self.maskSoftness or 24
+    local frac=layers==1 and 0 or inverseSmooth(math.Clamp(target/math.max(strength,.000001),0,1))
+    local side=math.Clamp(width,0,math.max(math.min(size.x,size.y)*.5-1,0))*frac
+    local top=math.Clamp(width,0,math.max(size.z-1,0))*frac
+    -- Keep the floor solid. Fading up from the bottom would brighten every floor
+    -- when the selected volume ends just below it. Fragment joins do not feather.
+    local low=Vector(math.max(zone.min.x,mn.x+side),math.max(zone.min.y,mn.y+side),zone.min.z)
+    local high=Vector(math.min(zone.max.x,mx.x-side),math.min(zone.max.y,mx.y-side),math.min(zone.max.z,mx.z-top))
+    if low.x<high.x and low.y<high.y and low.z<high.z then row.boxes[#row.boxes+1]={min=low,max=high,index=index} end
+   end
+  end
+  if #row.boxes>0 and opacity>0 then result[#result+1]=row end
+ end
+ return result
 end
 
---
--- From-outside presence via a STENCIL VOLUME MASK. We mark the screen pixels
--- whose scene geometry lies inside a zone's box (z-fail stencil volume test),
--- then darken only those pixels. So looking THROUGH an opening you see the room's
--- real surfaces go dark; solid walls occlude the box geometry, so there's no
--- x-ray and no floating sheet. Depth-correct by construction.
---
--- Drawn in the OPAQUE pass: solid geometry (world + players + props + NPCs) is
--- darkened, but translucent effects (fire, particles, sprites, glows) render in
--- the later translucent pass and so stay fully lit -- no exception list needed.
---
-
--- Shortest distance (squared) from a point to an AABB; 0 if the point is inside.
-local function distToBox2(pos, mn, mx)
-	local cx = math.Clamp(pos.x, mn.x, mx.x)
-	local cy = math.Clamp(pos.y, mn.y, mx.y)
-	local cz = math.Clamp(pos.z, mn.z, mx.z)
-
-	return pos:DistToSqr(Vector(cx, cy, cz))
+function PLUGIN:FadeVisible(zone,view)
+ if not view or not view.origin or not view.angles or view.ortho or view.offcenter then return true end
+ local center=(zone.min+zone.max)*.5
+ local radius=(zone.max-zone.min):Length()*.5
+ local delta=center-view.origin
+ local depth=delta:Dot(view.angles:Forward())
+ local far=tonumber(view.zfar) or 0
+ if depth+radius<0 or (far>0 and depth-radius>far) then return false end
+ local horizontal=math.tan(math.rad(math.Clamp(view.fov or 100,1,179)*.5))
+ local vertical=horizontal/math.max(view.aspect or 1,.01)
+ return math.abs(delta:Dot(view.angles:Right()))<=depth*horizontal+radius*math.sqrt(1+horizontal*horizontal)
+  and math.abs(delta:Dot(view.angles:Up()))<=depth*vertical+radius*math.sqrt(1+vertical*vertical)
 end
 
-local ANG0  = Angle(0, 0, 0)
-local VZERO = Vector(0, 0, 0)
-
--- Mark one zone box into the stencil with a z-fail volume count. Two passes on
--- opposite face sets: INCR on z-fail for one, DECR for the other. A pixel ends
--- non-zero exactly when its scene geometry sits between the box's front and back
--- faces (i.e. inside the box). NOTEQUAL-0 later is winding-independent.
-local function markZoneBox(mn, mx)
-	local maxs = mx - mn
-
-	render.SetStencilZFailOperation(STENCILOPERATION_INCR)
-	render.CullMode(MATERIAL_CULLMODE_CW)
-	render.DrawBox(mn, ANG0, VZERO, maxs, color_white)
-
-	render.SetStencilZFailOperation(STENCILOPERATION_DECR)
-	render.CullMode(MATERIAL_CULLMODE_CCW)
-	render.DrawBox(mn, ANG0, VZERO, maxs, color_white)
+local function drawBlackout(depth, sky, sky3D)
+ -- The main world can have sky=true when a 2D skybox is visible. Only the
+ -- separate 3D-skybox pass uses a different space and must be excluded.
+ if depth or sky3D then return end
+ -- Draw physical addon geometry once, before sampling/shading the world. This
+ -- explicit phase avoids undefined ordering between PostDrawOpaque hooks.
+ hook.Run("ixBlackoutWorldGeometry", depth, sky, sky3D)
+ if #PLUGIN.zones == 0 then return end
+ if cacheZones~=PLUGIN.zones or cacheCount~=#PLUGIN.zones or cacheQuality~=PLUGIN.maskLayers or cacheDefault~=PLUGIN.maskDarkness then
+  fadeLayers=PLUGIN:BuildFadeLayers();cacheZones=PLUGIN.zones;cacheCount=#PLUGIN.zones
+  cacheQuality=PLUGIN.maskLayers;cacheDefault=PLUGIN.maskDarkness
+ end
+ local visible,any={},false
+ -- RenderView can leave the generic setup pointing at an auxiliary camera.
+ -- Use the player setup for the main framebuffer, and the current setup only
+ -- while drawing an auxiliary target such as a CCTV feed.
+ local target=render.GetRenderTarget and render.GetRenderTarget()
+ local auxiliary=target and not string.StartWith(target:GetName():lower(),"_rt_fullframefb") or false
+ local view=render.GetViewSetup and render.GetViewSetup(auxiliary)
+ for index,zone in ipairs(PLUGIN.zones) do
+  visible[index]=PLUGIN:FadeVisible(zone,view)
+  any=any or visible[index]
+ end
+ if not any or #fadeLayers==0 then return end
+ local beam=PLUGIN.CaptureFlashlight and PLUGIN:CaptureFlashlight(view)
+ local col=PLUGIN.maskColor or color_black
+ render.SetStencilEnable(true)
+ render.SetStencilFailOperation(STENCILOPERATION_KEEP)
+ for _,layer in ipairs(fadeLayers) do
+  render.SetStencilWriteMask(255)
+  render.ClearStencil()
+  render.OverrideColorWriteEnable(true,false)
+  render.OverrideAlphaWriteEnable(true,false)
+  surface.SetDrawColor(255,255,255,255)
+  for _,box in ipairs(layer.boxes) do if visible[box.index] then markBox(box.min,box.max) end end
+  render.OverrideColorWriteEnable(false)
+  render.OverrideAlphaWriteEnable(false)
+  render.SetStencilWriteMask(0)
+  render.SetStencilTestMask(2)
+  render.SetStencilReferenceValue(2)
+  render.SetStencilCompareFunction(STENCILCOMPARISONFUNCTION_EQUAL)
+  render.SetStencilPassOperation(STENCILOPERATION_KEEP)
+  surface.SetDrawColor(col.r,col.g,col.b,layer.alpha)
+  screenRect()
+ end
+ render.SetStencilWriteMask(255)
+ render.SetStencilTestMask(255)
+ render.SetStencilEnable(false)
+ if beam then PLUGIN:RestoreFlashlight(beam) end
 end
 
-local lastFrame = -1
-
-hook.Add("PostDrawOpaqueRenderables", "ixBlackoutStencil", function(bDepth, bSkybox, bSkybox3D)
-	if (bDepth or bSkybox or bSkybox3D) then return end
-	if (#PLUGIN.zones == 0) then PLUGIN.darkness = 0 return end
-
-	local eye = EyePos()
-
-	-- Advance the eased darkness once per frame (this hook can fire several times
-	-- per frame for reflections/RTs), using this same eye -> no boundary gap/flash.
-	local fn = FrameNumber()
-	if (fn ~= lastFrame) then
-		lastFrame = fn
-		updateDarkness(eye)
-	end
-
-	-- Inside view: if the eye is inside a zone, darken the whole frame here in the
-	-- opaque pass (so translucent effects render over it and stay lit). Drawn before
-	-- the mask so it still runs when the only zone is the one you're standing in.
-	local d = PLUGIN.darkness
-	if (d > 0.01) then
-		local a = math.floor((d ^ PLUGIN.veilPower) * PLUGIN.veilAlpha)
-		if (a > 0) then
-			cam.Start2D()
-				surface.SetDrawColor(0, 0, 0, a)
-				surface.DrawRect(0, 0, ScrW(), ScrH())
-			cam.End2D()
-		end
-	end
-
-	-- Drawable zones: within range, and the eye is NOT inside (inside is handled by
-	-- the veil just above, and z-fail is cleanest when the camera is outside).
-	--
-	-- Маска красит ЛЮБУЮ геометрию, попавшую внутрь коробки — включая наружную
-	-- грань стены, если коробка её пересекает. Снаружи это читается как чёрный
-	-- прямоугольник, налепленный на стену. Поэтому силу маски привязываем к
-	-- РАССТОЯНИЮ ДО ГРАНИЦЫ зоны, а не до наблюдателя:
-	--   • внутри зоны (dist = 0) — полная сила (но её и так перекрывает veil);
-	--   • сразу за границей — начинает гаснуть;
-	--   • дальше maskFadeDist от границы — маски нет вовсе.
-	-- Так издалека прямоугольник не виден, а на подходе к зоне темнота плавно
-	-- проявляется. Вблизи снаружи он всё ещё есть — иначе на самой границе был бы
-	-- резкий скачок при входе.
-	local fade = math.max(PLUGIN.maskFadeDist, 1)
-
-	local list
-	for _, z in ipairs(PLUGIN.zones) do
-		local mn, mx = z.min, z.max
-
-		if (eye:WithinAABox(mn, mx)) then continue end
-
-		-- Расстояние от глаза до ближайшей грани коробки (0 = внутри).
-		local dist = math.sqrt(distToBox2(eye, mn, mx))
-		if (dist > fade) then continue end
-
-		local strength = 1 - math.Clamp(dist / fade, 0, 1)
-		local alpha = math.floor(PLUGIN.maskDarkness * strength)
-
-		if (alpha > 0) then
-			list = list or {}
-			list[#list + 1] = {zone = z, alpha = alpha}
-		end
-	end
-
-	if (not list) then return end
-
-	-- Grow the mask box a touch so walls sitting just outside the zone still darken.
-	local pad  = PLUGIN.maskPadding
-	local vpad = Vector(pad, pad, pad)
-
-	local layers = math.max(PLUGIN.maskLayers, 1)
-	local col    = PLUGIN.maskColor
-
-	render.SetStencilEnable(true)
-	render.SetStencilWriteMask(0xFF)
-	render.SetStencilTestMask(0xFF)
-	render.SetStencilFailOperation(STENCILOPERATION_KEEP)
-	render.SetStencilPassOperation(STENCILOPERATION_KEEP)
-
-	-- Каждую зону рисуем отдельным набором проходов: у них разная дистанция, а
-	-- значит и разная сила затемнения, которую не выразить одной общей маской.
-	for _, entry in ipairs(list) do
-		local z = entry.zone
-		local mn, mx = z.min - vpad, z.max + vpad
-
-		-- Сколько можно сузить коробку, не схлопнув её. По вертикали двигаем только
-		-- верхнюю грань, поэтому запас там — вся высота, а не половина.
-		local size = mx - mn
-		local softness = math.Clamp(PLUGIN.maskSoftness, 0, math.max(math.min(size.x, size.y) * 0.5 - 1, 0))
-		local softnessTop = math.Clamp(PLUGIN.maskSoftnessTop, 0, math.max(size.z - 1, 0))
-
-		-- Альфа одного слоя: столько, чтобы `layers` слоёв, наложенных друг на
-		-- друга, дали ровно entry.alpha. Обычное альфа-смешение перемножает
-		-- «пропускание» (1 - a), отсюда корень степени layers.
-		local layerAlpha = 255 * (1 - (1 - entry.alpha / 255) ^ (1 / layers))
-
-		for layer = 1, layers do
-			-- Слой 1 — полная коробка, дальше сужаем внутрь. Пиксель у самого края
-			-- попадает в один слой, в глубине зоны — во все. Пол (min.z) неподвижен.
-			local frac = (layers > 1) and ((layer - 1) / (layers - 1)) or 0
-			local inset = softness * frac
-			local minInset = Vector(inset, inset, 0)
-			local maxInset = Vector(inset, inset, softnessTop * frac)
-
-			-- 1) Mask: stencil != 0 where scene geometry is inside this shell.
-			render.ClearStencil()
-			render.SetStencilReferenceValue(0)
-			render.SetStencilCompareFunction(STENCILCOMPARISONFUNCTION_ALWAYS)
-
-			render.OverrideColorWriteEnable(true, false) -- mark only, write no colour
-			render.OverrideDepthEnable(true, false)      -- keep depth TEST, write no depth
-			render.SetColorMaterial()
-
-			markZoneBox(mn + minInset, mx - maxInset)
-
-			render.OverrideColorWriteEnable(false)
-			render.OverrideDepthEnable(false)
-			render.CullMode(MATERIAL_CULLMODE_CCW)
-
-			-- 2) Darken the masked pixels (the real surfaces inside the shell).
-			render.SetStencilCompareFunction(STENCILCOMPARISONFUNCTION_NOTEQUAL)
-			render.SetStencilReferenceValue(0)
-			render.SetStencilZFailOperation(STENCILOPERATION_KEEP)
-
-			cam.Start2D()
-				surface.SetDrawColor(col.r, col.g, col.b, layerAlpha)
-				surface.DrawRect(0, 0, ScrW(), ScrH())
-			cam.End2D()
-		end
-	end
-
-	render.SetStencilEnable(false)
-end)
+-- Apply darkness before additive particles (fire, sparks and muzzle flashes).
+-- Ordinary late-rendered prop models and viewmodels are handled separately.
+hook.Remove("PostDrawTranslucentRenderables", "ixBlackoutStencil")
+hook.Remove("PostDrawOpaqueRenderables", "ixBlackoutStencilFallback")
+PLUGIN.drawsWorldGeometry = true
+hook.Add("PostDrawOpaqueRenderables", "ixBlackoutStencil", drawBlackout)
 
 -- Обесточенное оборудование не открывает своё меню. Сервер всё равно отклонит
 -- взаимодействие в PlayerUse, но без этого игрок увидел бы меню на долю секунды.
@@ -220,4 +195,16 @@ function PLUGIN:ShowEntityMenu(entity)
 	if (self:IsEntityBlackedOut(entity)) then
 		return true -- «меню показано» — Helix не открывает своё
 	end
+end
+
+function PLUGIN:OnUnload()
+ if self.boxVolume then self.boxVolume:Destroy();self.boxVolume=nil end
+ self.drawsWorldGeometry = false
+ if self.ClearLighting then self:ClearLighting() end
+ if IsValid(self.heightEditor) then self.heightEditor:Remove() end
+ hook.Remove("PostDrawOpaqueRenderables", "ixBlackoutStencil")
+ hook.Remove("PostDrawOpaqueRenderables", "ixBlackoutStencilFallback")
+ hook.Remove("PostDrawTranslucentRenderables", "ixBlackoutStencil")
+ self.zones = {}; self.darkness = 0
+ net.Receive("ixBlackoutSync3", function() end)
 end

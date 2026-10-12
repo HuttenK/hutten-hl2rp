@@ -4,25 +4,32 @@ local PLUGIN = PLUGIN
 -- proper dispatch). The OnRun bodies only ever execute server-side, where the
 -- PLUGIN:* helpers in sv_plugin.lua are defined.
 
+local function OpenAreaEditor(client)
+	client:SetWepRaised(false)
+	net.Start("ixAreaEditStart")
+	net.Send(client)
+	return "Выберите два угла и тип «Зона электроснабжения». Запас границ добавится автоматически."
+end
+
 ix.command.Add("BlackoutCorner", {
-	description = "Mark a blackout box corner at the point you are looking at.",
+	description = "Open /AreaEdit to draw a power zone visually.",
 	privilege = "Manage Blackouts",
 	adminOnly = true,
 	OnRun = function(self, client)
-		return PLUGIN:MarkCorner(client)
+		return OpenAreaEditor(client)
 	end
 })
 
 ix.command.Add("BlackoutCreate", {
-	description = "Create a blackout zone from your two marked corners. Height extends the box upward (default 512).",
+	description = "Open /AreaEdit to draw a power zone visually.",
 	privilege = "Manage Blackouts",
 	adminOnly = true,
 	arguments = {
-		ix.type.string,
+		bit.bor(ix.type.string, ix.type.optional),
 		bit.bor(ix.type.number, ix.type.optional)
 	},
 	OnRun = function(self, client, name, height)
-		return PLUGIN:CreateZone(client, name, height)
+		return OpenAreaEditor(client)
 	end
 })
 

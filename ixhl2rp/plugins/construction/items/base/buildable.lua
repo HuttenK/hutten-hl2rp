@@ -237,31 +237,55 @@ else
 	util.AddNetworkString("build.place")
 	util.AddNetworkString("build.stop")
 
-	net.Receive("build.stop", function(len, client)
-		local item = client.build_item
-		if item and item.user == client then
-			item.user = nil
-		end
-	end)
 
-	net.Receive("build.place", function(len, client)
-		local angle = net.ReadAngle()
-		local pos = net.ReadVector()
-		local item = client.build_item
+ local function clearBuild(client)
+  local item=client.build_item
+  if item and item.user==client then item.user=nil end
+  client.build_item=nil;client.buildCharacter=nil;client.buildExpires=nil
+ end
+ net.Receive("build.stop",function(_,client) clearBuild(client) end)
+ hook.Add("PlayerDisconnected","ixBuildableCleanup",clearBuild)
+ hook.Add("PlayerLoadedCharacter","ixBuildableCleanup",clearBuild)
+ hook.Add("PlayerDeath","ixBuildableCleanup",clearBuild)
+ timer.Create("ixBuildableExpiry",1,0,function()
+  for _,client in ipairs(player.GetAll()) do if client.buildExpires and client.buildExpires<=CurTime() then clearBuild(client) end end
+ end)
+ net.Receive("build.place",function(length,client)
+  if length>256 or (client.ixBuildNext or 0)>CurTime() then return end
+  client.ixBuildNext=CurTime()+.2
+  local item=client.build_item;local character=client:GetCharacter()
+  if not item or item.user~=client or not character or not client:Alive() or client:IsRestricted() or client:InVehicle()
+   or client.buildCharacter~=character:GetID() or (client.buildExpires or 0)<=CurTime()
+   or item:GetOwner()~=client or IsValid(item:GetEntity()) or (item.factionLock and not item.factionLock[client:Team()])
+   or (ix.Inventory.pendingTransfers and ix.Inventory.pendingTransfers['item_'..item.id]) then clearBuild(client);return end
+  local ang,pos=net.ReadAngle(),net.ReadVector()
+  local function finite(v) return isnumber(v) and v==v and math.abs(v)<1000000 end
+  if not isangle(ang) or not isvector(pos) or not finite(pos.x) or not finite(pos.y) or not finite(pos.z)
+   or not finite(ang.p) or not finite(ang.y) or not finite(ang.r) or not util.IsInWorld(pos)
+   or client:GetShootPos():DistToSqr(pos)>220^2 then return end
+  local line=util.TraceLine({start=client:GetShootPos(),endpos=pos,filter=client,mask=MASK_SOLID})
+  if line.Hit and line.HitPos:DistToSqr(pos)>100 then return end
+  local probe=ents.Create("prop_physics");if not IsValid(probe) then return end
+  probe:SetModel(item.preview_model);local mins,maxs=probe:GetModelBounds();probe:Remove()
+  local tr
+  if item.wallMount then
+   tr=client:GetEyeTrace()
+   if not tr.Hit or tr.HitSky or tr.HitPos:DistToSqr(pos)>(maxs-mins):Length()^2+64 then return end
+  else
+   if math.abs(ang.p)>.01 or math.abs(ang.r)>.01 then return end
+   tr=util.TraceHull({start=pos+Vector(0,0,3),endpos=pos-Vector(0,0,8),mins=mins,maxs=maxs,filter=client,mask=MASK_SOLID})
+   if not tr.Hit or tr.AllSolid or tr.HitSky or tr.HitNormal.z<.7 then return end
+  end
+  if item.CheckTrace and item:CheckTrace(tr)==false then return end
+  local entity=item:OnPlace(client,pos,ang)
+  if not IsValid(entity) then return end
+  clearBuild(client);item:Remove(true)
+ end)
 
-		--print("[Server] Получены данные для размещения: позиция =", pos, ", угол =", angle)
-
-		if item and item.user == client then
-			--print("[Server] Начинаем размещение.")
-			item:OnPlace(client, pos, angle)
-			item:Remove()
-		else
-			--print("[Server] Ошибка: item или user невалиден.")
-		end
-	end)
 end
 
-function Item:Init()
+function Item:Init(uniqueID)
+	ix.meta.Item.Init(self,uniqueID or self.uniqueID)
 	self.category = "item.category.construction"
 	self.preview_model = self.preview_model or ""
 	self.isEntity = self.isEntity or false
@@ -278,101 +302,44 @@ function Item:Init()
 				end
 			end
 			
+			if ix.furnish and ix.furnish.Supported and ix.furnish.Supported(item) then
+				ix.furnish.BeginPlace(item.player, item)
+				return false
+			end
 			if item.preview_model then
 				net.Start("build.place")
 					net.WriteString(item.preview_model)
 					net.WriteString(item.uniqueID)
 				net.Send(item.player)
 
+				if item.player.build_item then item.player.build_item.user=nil end
+				item.player.buildCharacter=item.player:GetCharacter():GetID()
+				item.player.buildExpires=CurTime()+180
 				item.player.build_item = item
 				item.user = item.player
 			end
 		end,
 		OnCanRun = function(item)
-			return IsValid(item.player) and not IsValid(item.entity) and not item.player:IsRestricted() and not IsValid(item.user)
+			return IsValid(item.player) and item.player:GetCharacter() and item.player:Alive() and not item.player:InVehicle() and item:GetOwner()==item.player and not IsValid(item:GetEntity()) and not item.player:IsRestricted() and not IsValid(item.user) and (not item.factionLock or item.factionLock[item.player:Team()]==true)
 		end
 	}
 end
 
-function Item:OnPlace(client, pos, angle)
-	-- Проверяет, есть ли данные для контейнера
-	local data = ix.container.stored[self.preview_model:lower()]
-
-	if data then
-		-- Создаем контейнер
-		local container = ents.Create("ix_container")
-		container:SetPos(pos)
-		container:SetAngles(angle)
-		container:SetModel(self.preview_model)
-		container:Spawn()
-
-		if IsValid(container) then
-			container:SetNetVar("owner", client:GetCharacter():GetID())
-			
-			local phys = container:GetPhysicsObject()
-
-			if IsValid(phys) then
-				phys:EnableMotion(false)  -- Замораживаем физику контейнера
-			end
-			
-			container:CreateInventory(data)
-		   -- print("[Server] Контейнер успешно создан.")
-		else
-		   -- print("[Server] Ошибка: контейнер невалиден.")
-		end
-	else
-		-- Если это не контейнер, проверяем, можно ли создать Энтити или NPC
-		local entityClass = modelToEntity[self.preview_model]
-		
-		if entityClass then
-			-- Создаем Энтити или NPC
-		   --print("[Server] Создаем Энтити или NPC: ", entityClass)
-			local ent = ents.Create(entityClass)
-			if IsValid(ent) then
-				ent:SetPos(pos)
-				ent:SetAngles(angle)
-				ent:Spawn()
-
-				-- Если это не NPC, замораживаем физику
-				if ent:GetClass() != "combine_mine" and (not ent:IsNPC()) then
-					local phys = ent:GetPhysicsObject()
-					if IsValid(phys) then
-						phys:EnableMotion(false)  -- Замораживаем физику энтити
-					end
-				else
-					ent:SetKeyValue("spawnflags", 8192) -- Пример настройки флага для NPC
-				end
-
-				ent:SetNetVar("owner", client:GetCharacter():GetID())
-
-				PLUGIN:AddConstructionToSave(ent)
-				--print("[Server] Энтити или NPC успешно создан.")
-			else
-				--print("[Server] Ошибка: Энтити или NPC невалиден.")
-			end
-		else
-			-- Если это не Энтити или NPC, пробуем создать как обычный проп
-			--print("[Server] Создаем проп: ", self.preview_model)
-			local prop = ents.Create("prop_physics")
-			prop:SetModel(self.preview_model)
-			prop:SetPos(pos)
-			prop:SetAngles(angle)
-			prop:Spawn()
-
-			local phys = prop:GetPhysicsObject()
-			if IsValid(phys) then
-				phys:EnableMotion(false)  -- Замораживаем физику пропа
-			end
-
-			prop:SetNetVar("owner", client:GetCharacter():GetID())
-
-			-- НЕ используем SetPersistent (сэндбокс-персист): он плодит дубликаты
-			-- пропов при каждом рестарте. Сохраняем через детерминированную
-			-- SaveData плагина construction (как контейнеры/турели) — 1:1, без дублей.
-			PLUGIN:AddConstructionToSave( prop )
-			--print("[Server] Проп успешно создан.")
-		end
-	end
+function Item:OnPlace(client,pos,ang)
+ if not isstring(self.preview_model) or not util.IsValidModel(self.preview_model) then return end
+ local data=ix.container.stored[self.preview_model:lower()]
+ local entityClass=modelToEntity[self.preview_model]
+ local entity=ents.Create(data and "ix_container" or entityClass or "prop_physics")
+ if not IsValid(entity) then return end
+ if not entityClass or data then entity:SetModel(self.preview_model) end
+ entity:SetPos(pos);entity:SetAngles(ang);entity:Spawn()
+ if not IsValid(entity) then return end
+ entity:SetNetVar("owner",client:GetCharacter():GetID())
+ if entity:GetClass()~="combine_mine" and not entity:IsNPC() then
+  local phys=entity:GetPhysicsObject();if IsValid(phys) then phys:EnableMotion(false) end
+ else entity:SetKeyValue("spawnflags",8192) end
+ if data then entity:CreateInventory(data) else PLUGIN:AddConstructionToSave(entity) end
+ return entity
 end
 
 if CLIENT then

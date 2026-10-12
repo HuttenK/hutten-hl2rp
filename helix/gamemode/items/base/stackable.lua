@@ -21,7 +21,8 @@ function Item:Init()
 end
 
 function Item:OnInstanced(isCreated)
-	if isCreated then
+	-- A split or transfer already supplies its exact quantity.
+	if isCreated and self:GetData("stack") == nil then
 		self:SetData("stack", self.default_stack)
 	end
 end

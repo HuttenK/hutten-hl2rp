@@ -1,10 +1,12 @@
 local PLUGIN = PLUGIN
 PLUGIN.stored = PLUGIN.stored or {}
+-- SaveData also runs during shutdown, including before LoadData has run.
+PLUGIN.datafiles_save = PLUGIN.datafiles_save or {}
 
 -- Обновляет stored из item-инстансов и бэкфиллит NULL-cid в БД
 local function BackfillCIDFromItems(stored)
 	for _, item in pairs(ix.Item.instances) do
-		if !item.GetData then continue end
+		if !item.GetData or not item.isKeycard or item:GetData("revoked",false) then continue end
 		local dID = tonumber(item:GetData("datafileID"))
 		if !dID or dID == 0 then continue end
 		local cid = item:GetData("cid", "")
@@ -71,13 +73,16 @@ function PLUGIN:LoadData()
 			timer.Simple(1, function()
 				local q = mysql:Select("ix_items")
 				q:Select("data")
+                q:Select("unique_id")
 				q:Callback(function(rows)
 					if !istable(rows) then return end
 					for _, row in ipairs(rows) do
-						local raw = row.data
+						local template=ix.Item:Get(row.unique_id)
+                        if not template or not template.isKeycard then continue end
+                        local raw = row.data
 						if !raw or !raw:find("datafileID", 1, true) then continue end
 						local d = util.JSONToTable(raw)
-						if !d then continue end
+						if !d or d.revoked then continue end
 						local dID = tonumber(d.datafileID)
 						local cid  = d.cid
 						if !dID or dID == 0 or !isstring(cid) or cid == "" then continue end
@@ -112,7 +117,7 @@ function PLUGIN:OnWipeTables()
 end
 
 function PLUGIN:SaveData()
-
+	self.datafiles_save = self.datafiles_save or {}
 	local saved = {}
 	for k, id in ipairs(self.datafiles_save) do
 		if saved[id] then continue end
@@ -120,6 +125,7 @@ function PLUGIN:SaveData()
 		saved[id] = true
 
 		local v = self.stored[id]
+		if !istable(v) or !istable(v[4]) or !istable(v[5]) then continue end
 		local query = mysql:Update("ix_datafiles")
 			query:Where("datafile_id", id)
 			query:Update("character_name", v[1])
@@ -191,52 +197,61 @@ function PLUGIN:CreateDatafile(name, cid, regid, access, callback)
 end
 
 function PLUGIN:OnIDCardInstanced(item)
-	if item:GetData("datafileID", 0) == 0 then
-		-- Отозванная карта отвязана намеренно — НЕ заводим ей новое досье, иначе при
-		-- следующей загрузке она бы «ожила» с чистым досье.
-		if item:GetData("revoked") then return end
-
-		local name = item:GetData("name", "")
-		local cid = item:GetData("cid", "")
-		local regid = item:GetData("number", "")
-		local access = item:GetData("access", {})
-
-		self:CreateDatafile(name, cid, regid, access, function(id)
-			print("Datafile created for ", item, id)
-			item:SetData("datafileID", id)
-		end)
-	else
-		-- Синхронизируем stored с item-данными (cid мог быть NULL в старых записях БД)
-		local id = tonumber(item:GetData("datafileID", 0))
-		if id and id > 0 then
-			if !self.stored[id] then self.stored[id] = {} end
-			self.stored[id][1] = item:GetData("name", "")
-			self.stored[id][2] = item:GetData("cid", "")
-			self.stored[id][3] = item:GetData("number", "")
-			self.stored[id][6] = item:GetData("access", {})
-		end
-		print("Datafile loaded for ", item)
-	end
+ if item.isKeycard and item:GetData("datafileID",0)>0 then self:OnIDCardUpdated(item) end
 end
-
 function PLUGIN:OnIDCardUpdated(item)
-	if item:GetData("datafileID", 0) != 0 then
-		local id = tonumber(item:GetData("datafileID", 0))
-
-		if self.stored[id] then
-			local name = item:GetData("name", "")
-			local cid = item:GetData("cid", "")
-			local regid = item:GetData("number", "")
-			local access = item:GetData("access", {})
-
-			self.stored[id][1] = name
-			self.stored[id][2] = cid
-			self.stored[id][3] = regid
-			self.stored[id][6] = access
-		end
-
-		table.insert(self.datafiles_save, id)
-	end
+ if not item.isKeycard or item:GetData("revoked",false) then return end
+ local id=tonumber(item:GetData("datafileID",0))
+ if not id or id<=0 then return end
+ self.stored=self.stored or {}
+ self.pendingCardUpdates=self.pendingCardUpdates or {}
+ local pending=self.pendingCardUpdates[id]
+ if pending then pending.item=item; return end
+ pending={item=item}; self.pendingCardUpdates[id]=pending
+ local function readRecord(canCreate)
+  local query=mysql:Select("ix_datafiles")
+  for _,key in ipairs({"datafile_id","character_name","cid","regid","genericdata","datafile","access"}) do query:Select(key) end
+  query:Where("datafile_id",id)
+  query:Callback(function(rows)
+   local row=istable(rows) and rows[1]
+   if not row then
+    if not canCreate then self.pendingCardUpdates[id]=nil; return end
+    -- Another writer may insert between SELECT and INSERT. Ignore that race,
+    -- then read the winning row; never replace its history with defaults.
+    local create=mysql:InsertIgnore("ix_datafiles")
+    create:Insert("datafile_id",id)
+    create:Insert("genericdata",util.TableToJSON({bol=false,restricted=false,status="Personnel",last_seen=os.time()}))
+    create:Insert("datafile",util.TableToJSON({}))
+    create:Callback(function() readRecord(false) end)
+    create:Execute()
+    return
+   end
+   local entry={row.character_name,row.cid,row.regid,
+    util.JSONToTable(row.genericdata or "{}") or {},util.JSONToTable(row.datafile or "[]") or {},
+    util.JSONToTable(row.access or "{}") or {}}
+   -- Keep actual unsaved dossier edits, but distrust an unqueued cache entry:
+   -- an earlier failed INSERT may have left fabricated defaults in memory.
+   local cached=self.stored[id]
+   for _,dirtyID in ipairs(self.datafiles_save or {}) do
+    if dirtyID==id and istable(cached) and istable(cached[4]) and istable(cached[5]) then entry=cached; break end
+   end
+   self.pendingCardUpdates[id]=nil
+   local current=pending.item
+   if current:GetData("revoked",false) or tonumber(current:GetData("datafileID",0))~=id then return end
+   entry[1]=current:GetData("name",""); entry[2]=current:GetData("cid",""); entry[3]=current:GetData("number","")
+   entry[6]=current.access or {}
+   entry[4].credential=Schema:GetCredentialSnapshot(current)
+   self.stored[id]=entry
+   -- Persist identity separately: issuing a card must never rewrite dossier history.
+   local update=mysql:Update("ix_datafiles")
+   update:Where("datafile_id",id)
+   update:Update("character_name",entry[1]); update:Update("cid",entry[2]); update:Update("regid",entry[3])
+   update:Update("access",util.TableToJSON(entry[6]))
+   update:Update("genericdata",util.TableToJSON(entry[4])); update:Execute()
+  end)
+  query:Execute()
+ end
+ readRecord(true)
 end
 
 function PLUGIN:HandleDatafile(player, target)
@@ -252,7 +267,7 @@ function PLUGIN:HandleDatafile(player, target)
 		-- Fallback: сканируем все item-инстансы (карточки в хранилищах, на полу и т.д.)
 		if istable(target) then
 			for _, item in pairs(ix.Item.instances) do
-				if !item.GetData then continue end
+				if !item.GetData or not item.isKeycard or item:GetData("revoked",false) then continue end
 				if item:GetData("cid", "") == target[1] then
 					local dID = tonumber(item:GetData("datafileID"))
 					if dID and dID > 0 then

@@ -1,5 +1,5 @@
-ITEM.name = "item.junk_zippo"
-ITEM.description = "item.junk_zippo.desc"
+ITEM.name = "Зажигалка Zippo"
+ITEM.description = "Бензиновая зажигалка Zippo."
 ITEM.category = "loot.categoryJunk"
 ITEM.model = "models/mosi/fallout4/props/junk/lighter.mdl"
 ITEM.width = 1

@@ -46,6 +46,7 @@ function PLUGIN:PlayerDisconnected(client)
 end
 
 local function RemoveEquippableItem(client, item)
+    if ix.WeaponSlots and item.isWeapon then ix.WeaponSlots.Suspend(client, item) return end
 	if item.Unequip then
 		item:Unequip(client)
 	end
@@ -161,6 +162,7 @@ local function SelectArmorToHit(client, hit_group)
 	local elements = {}
 	for item, value in pairs(client.char_outfit.armor) do
 		if !value then continue end
+		if ix.field and ix.field.Capacity(item)~=nil then continue end
 		if !item.armor or !item.armor.coverage[hit_group] then continue end
 
 		local coverage = item.armor.coverage[hit_group]
@@ -355,19 +357,26 @@ local function ApplyDamageToPart(health, hit_group, info)
 	
 	local halfDamage = false
 	local target = health.character:GetPlayer()
+	if ix.field and not info.plateHandled then
+	 local reduced=ix.field.Absorb(target,hit_group,info,amount)
+	 if reduced~=nil then
+	  local protected=table.Copy(info); protected.amount=reduced; protected.plateHandled=true
+	  if ix.field.HasLimbPadding(target,hit_group) then
+	   -- Shoulder pads protect the arm after the carrier absorbs its share.
+	   info=protected; amount=reduced
+	  else
+	   local hediff,mul=SelectDamageHediff(health,hit_group,protected)
+	   if hediff then health:AddHediff(hediff,hit_group,{severity=reduced*mul}) end
+	   return reduced>0
+	  end
+	 end
+	end
 
 	hit_group, halfDamage = DamageToOuterParts(health, hit_group)
 
 	local item = SelectArmorToHit(target, hit_group)
 	local value = 0
 
-	if weapon and weapon.ixItem then
-		local durability = (weapon.ixItem:GetData("value") / weapon.ixItem.durability)
-
-		if durability < 0.66 then
-			amount = amount * math.Remap(durability, 0, 0.65, 0.4, 0.7)
-		end
-	end
 
 	if halfDamage then
 		amount = amount * 0.4
@@ -411,7 +420,9 @@ local function ApplyDamageToPart(health, hit_group, info)
 			end
 		end
 
+		if ix.field then ap_dmg = ix.field.LimbPaddingWear(item, info, ap_dmg) end
 		value = value - ap_dmg
+		if item.limbPadding and value <= 0.000001 and value >= -0.000001 then value = 0 end
 
 		item:SetData("value", math.max(value, 0))
 
@@ -442,6 +453,13 @@ local function ApplyStaminaDamage(health, hit_group, info)
 	local client = info.attacker
 	local target = info.target
 	local damage_class = info.class
+	if ix.field then
+	 local reduced=ix.field.Absorb(target,hit_group,info,physicalDamage)
+	 if reduced~=nil then
+	  local ratio=physicalDamage>0 and reduced/physicalDamage or 1
+	  physicalDamage=reduced; staminaDamage=staminaDamage*ratio
+	 end
+	end
 
 	local halfDamage = false
 
@@ -480,7 +498,9 @@ local function ApplyStaminaDamage(health, hit_group, info)
 		target:ConsumeStamina(staminaDamage)
 
 		if value < 0 and !IsValid(target.ixRagdoll) then
-			target:SetRagdolled(true, 60)
+			-- Heavy impacts used to bypass critical entry and ragdoll immediately.
+			-- Route through the same timed crawl state as head/torso failure.
+			target:SetCriticalState(true)
 		end
 	end
 
@@ -559,6 +579,9 @@ function PLUGIN:GetMeleeDamageDef(class)
 end
 
 function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
+	-- Block before weapon overrides, ragdoll forwarding and injury side effects.
+	-- This also runs if this plugin is dispatched before Downed Experience.
+	if ix.Downed and ix.Downed.BlockDamage(target, dmg) then return true end
 	-- Optional per-item melee damage overrides replace native damage with the value
 	-- defined in the ixhl2rp item (Info.Damage) and tag the proper melee damage
 	-- type so the wound system treats it as a slash (bleed) or club (bruise) hit.
@@ -695,7 +718,6 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 		return
 	end
 	if target:InCriticalState() and ix.Downed then
-		if ix.Downed.ShouldFinish(target, dmg) then ix.Downed.EndLife(target, false) end
 		dmg:SetDamage(0)
 		return true
 	end
@@ -992,7 +1014,12 @@ do
 					if (IsValid(self) and !entity.ixIgnoreDelete) then
 						if (entity.ixWeapons) then
 							for _, v in ipairs(entity.ixWeapons) do
-								if (v.class) then
+								if v.slotItem and ix.WeaponSlots then
+                                        local item = ix.Item.instances[v.slotItem]
+                                        if item and ix.WeaponSlots.Owns(self, item) and ix.WeaponSlots.Slot(item) then
+                                            ix.WeaponSlots.Activate(self, item, true)
+                                        end
+                                    elseif (v.class) then
 									local weapon = self:Give(v.class, true)
 
 									if !IsValid(weapon) then continue end
@@ -1033,7 +1060,11 @@ do
 				end
 
 				for _, v in ipairs(self:GetWeapons()) do
-					if (v.ixItem and v.ixItem.Equip and v.ixItem.Unequip) then
+					if ix.WeaponSlots and v.ixItem and ix.WeaponSlots.Slot(v.ixItem) then
+                        local item = v.ixItem
+                        entity.ixWeapons[#entity.ixWeapons + 1] = {slotItem = item.id}
+                        ix.WeaponSlots.Suspend(self, item)
+                    elseif (v.ixItem and v.ixItem.Equip and v.ixItem.Unequip) then
 						entity.ixWeapons[#entity.ixWeapons + 1] = {
 							item = v.ixItem,
 							invID = v.ixItem.invID,

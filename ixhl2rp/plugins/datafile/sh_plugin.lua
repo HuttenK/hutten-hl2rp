@@ -85,6 +85,7 @@ do
 		-- Медленный путь: запрашиваем ix_items напрямую (оффлайн-карточки)
 		local q = mysql:Select("ix_items")
 		q:Select("data")
+        q:Select("unique_id")
 		q:Callback(function(rows)
 			if !IsValid(client) then return end
 			if !istable(rows) then
@@ -93,10 +94,12 @@ do
 			end
 			local queryLow = query:lower()
 			for _, row in ipairs(rows) do
-				local raw = row.data
+				local template=ix.Item:Get(row.unique_id)
+                if not template or not template.isKeycard then continue end
+                local raw = row.data
 				if !raw or !raw:find("datafileID", 1, true) then continue end
 				local d = util.JSONToTable(raw)
-				if !d then continue end
+				if !d or d.revoked then continue end
 				local dID = tonumber(d.datafileID)
 				if !dID or dID == 0 then continue end
 				local itemCID  = tostring(d.cid  or "")
@@ -311,30 +314,8 @@ if SERVER then
 	local CHAR = ix.meta.character
 
 	function CHAR:ReturnDatafilePermission()
-		local cid = self:GetPlayer():GetIDCard()
-		if !cid then return 0 end
-
-		-- Отозванная карта не даёт допуска. Проверяем ДО отката к доступу из шаблона:
-		-- у отозванной карты access очищен, и без этого шаблон вернул бы допуск снова.
-		if cid:GetData("revoked") then return 0 end
-
-		local accesses = cid:GetData("access", {})
-		local hasFlag = accesses["DATAFILE_ELEVATED"] or accesses["DATAFILE_FULL"]
-			or accesses["DATAFILE_MEDIUM"] or accesses["DATAFILE_MINOR"]
-
-		if !hasFlag then
-			local template = ix.Item.stored[cid.uniqueID]
-			if template and istable(template.access) then
-				accesses = template.access
-			end
-		end
-
-		if accesses["DATAFILE_ELEVATED"] then return 4
-		elseif accesses["DATAFILE_FULL"] then return 3
-		elseif accesses["DATAFILE_MEDIUM"] then return 2
-		elseif accesses["DATAFILE_MINOR"] then return 1
-		end
-
-		return 0
-	end
+  local card=self:GetPlayer():GetIDCard()
+  return card and card.isKeycard and not card:GetData("revoked",false) and
+   card:GetData("name","")~="" and card:GetData("cid","")~="" and card:GetData("cid","")~="000-00" and (card.clearanceLevel or 0) or 0
+ end
 end

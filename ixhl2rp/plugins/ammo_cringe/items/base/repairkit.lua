@@ -13,6 +13,7 @@ function ItemRepairKit:Init()
 	self.combine.repair = {
 		name = "repairkit.repair",
 		OnRun = function(item, targetItem, items)
+            if targetItem.isWeapon then return false end
 			local client = item.player
 			local character = client:GetCharacter()
 			local uses = item:GetUses()
@@ -40,7 +41,7 @@ function ItemRepairKit:Init()
 			return
 		end,
 		OnCanRun = function(item, targetItem)
-			if item == targetItem then
+			if item == targetItem or targetItem.isWeapon then
 				return false
 			end
 

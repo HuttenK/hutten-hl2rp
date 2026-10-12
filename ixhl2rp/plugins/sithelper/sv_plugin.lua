@@ -1,11 +1,34 @@
 local PLUGIN = PLUGIN
 
 util.AddNetworkString("ixPlayerSit")
+util.AddNetworkString("ixSitCapabilities")
+-- Client Workshop content can expose donor poses absent on a dedicated server.
+-- Authorize the preview choices using the same resolver as the final sit request.
+net.Receive("ixSitCapabilities", function(len, player)
+ if len~=16 or not player:GetCharacter() then return end
+ local token=net.ReadUInt(16)
+ if player.ixNextSitCapabilities and player.ixNextSitCapabilities>CurTime() then return end
+ player.ixNextSitCapabilities=CurTime()+.25
+ local choices={}
+ for option=1,24 do
+  if PLUGIN:ResolvePose(player,option) then choices[#choices+1]=option end
+ end
+ net.Start("ixSitCapabilities")
+ net.WriteUInt(token,16)
+ net.WriteString(player:GetModel())
+ net.WriteUInt(#choices,5)
+ for _,option in ipairs(choices) do net.WriteUInt(option,5) end
+ net.Send(player)
+end)
+
 
 net.Receive("ixPlayerSit", function(len, player)
 	local pos = net.ReadVector()
 	local ang = net.ReadAngle()
 	local option = net.ReadUInt(5)
+ local _, remaining = net.BytesLeft()
+ local height = remaining and remaining >= 32 and net.ReadFloat() or 0
+ if not isnumber(height) or height~=height or height < -24 or height > 48 then return end
 	local faction = player:Team()
 	local character = player:GetCharacter()
 
@@ -27,7 +50,10 @@ net.Receive("ixPlayerSit", function(len, player)
 		return
 	end
 
-	if (!player.cwNextStance or CurTime() >= player.cwNextStance) then
+	if ix.PoseStudio and ix.PoseStudio.CheckPlacement then
+  if not ix.PoseStudio.CheckPlacement(player,pos,ang.y,height,PLUGIN:GetPoseOffset(player,option,character)) then return end
+ end
+ if (!player.cwNextStance or CurTime() >= player.cwNextStance) then
 		if (player:IsProne()) then
 			prone.Exit(player)
 		end
@@ -36,7 +62,7 @@ net.Receive("ixPlayerSit", function(len, player)
 
 		local sitOffset = PLUGIN:GetPoseOffset(player, option, character)
 
-		local finalPos = pos + ang:Forward() * sitOffset.x + Vector(0, 0, sitOffset.z)
+		local finalPos = pos + ang:Forward() * sitOffset.x + Vector(0, 0, sitOffset.z + height)
 		
 		if player:ForceSequence(sequence, nil, 0, nil) == false then return end
   player.latestSitCollision = player:GetCollisionGroup()

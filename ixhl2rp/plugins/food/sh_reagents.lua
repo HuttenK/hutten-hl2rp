@@ -19,23 +19,12 @@ Reagents:Register("water", {
 	hunger = 0,
 })
 
+-- Preserve the saved reagent ID and old loot without retaining contamination.
+-- New source water uses "water"; existing containers are equally safe.
 Reagents:Register("dirty_water", {
 	state = ix.Reagents.liquid,
-	thirst = 0.061,
+	thirst = 0.15,
 	hunger = 0,
-	OnConsume = function(self, client, consumed)
-		local character = client:GetCharacter()
-		if !character or client:Team() == FACTION_VORTIGAUNT then return end
-
-		local sipEquiv = consumed / 66
-		local rad = 5 * sipEquiv
-
-		if math.random(1, 10) == 1 then
-			rad = rad + 15 * sipEquiv
-		end
-
-		character:SetRadLevel(character:GetRadLevel() + rad)
-	end,
 })
 
 Reagents:Register("breens_water", {

@@ -342,6 +342,12 @@ end
 do
 	-- luacheck: globals hook
 	hook.ixCall = hook.ixCall or hook.Call
+	local function finishView(name, value, ...)
+		if CLIENT and name == "CalcView" and ix.PlayerControls and ix.PlayerControls.ApplyViewFOV then
+			return ix.PlayerControls.ApplyViewFOV(value, ...)
+		end
+		return value
+	end
 
 	function hook.Call(name, gm, ...)
 		local cache = HOOKS_CACHE[name]
@@ -351,7 +357,7 @@ do
 				local a, b, c, d, e, f = v(k, ...)
 
 				if (a != nil) then
-					return a, b, c, d, e, f
+					return finishView(name, a, ...), b, c, d, e, f
 				end
 			end
 		end
@@ -360,10 +366,14 @@ do
 			local a, b, c, d, e, f = Schema[name](Schema, ...)
 
 			if (a != nil) then
-				return a, b, c, d, e, f
+				return finishView(name, a, ...), b, c, d, e, f
 			end
 		end
 
+		if CLIENT and name == "CalcView" then
+			local a, b, c, d, e, f = hook.ixCall(name, gm, ...)
+			return finishView(name, a, ...), b, c, d, e, f
+		end
 		return hook.ixCall(name, gm, ...)
 	end
 

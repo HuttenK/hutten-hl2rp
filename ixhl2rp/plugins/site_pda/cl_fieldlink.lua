@@ -132,7 +132,7 @@ function PANEL:Init()
  self.page="overview"; self.data=nil; self.born=RealTime(); self.toast="Подключение к защищённому каналу…"
  self.sidebar=self:Add("DPanel"); self.sidebar:Dock(LEFT); self.sidebar:SetWide(Scale(88)); self.sidebar:DockMargin(Scale(18),Scale(76),0,Scale(48))
  self.sidebar.Paint=function(_,w,h) surface.SetDrawColor(C.line); surface.DrawLine(w-1,0,w-1,h) end
- local tabs={{"Домой","overview"},{"Камера","camera"},{"Галерея","gallery"},{"Связь","messenger"},{"Инциденты","incidents"},{"Директивы","directives"},{"Архив","library"},{"Блокнот","notes"},{"Система","system"}}
+ local tabs={{"Домой","overview"},{"Камера","camera"},{"Галерея","gallery"},{"Связь","messenger"},{"Инциденты","incidents"},{"Директивы","directives"},{"Работы","maintenance"},{"Архив","library"},{"Блокнот","notes"},{"Система","system"}}
  self.nav={}
  for _,tab in ipairs(tabs) do
   local title,page=tab[1],tab[2]
@@ -201,6 +201,7 @@ function PANEL:Navigate(page)
 end
 function PANEL:SetSnapshot(data)
  local old=self.data; self.data=data; self.lastSync=RealTime(); F.pendingAt=nil
+ self.syncError=nil
  if old and (old.device~=data.device or old.character~=data.character) then
   self.notesDraft=nil; self.formDrafts={}; self.compose=nil; self.photo=nil; self.message=nil; self.page="overview"; old=nil
  end
@@ -231,13 +232,29 @@ function PANEL:BuildPage()
  local d=self.data
  if not d then self:Header("AUTHENTICATING","Устанавливаем соединение","Проверка устройства и допуска персонажа."); return end
  if not d.registered then
-  self:Header("DEVICE / UNREGISTERED","Требуется CID-карта","Этот КПК ещё не зарегистрирован в сети FIELDLINK.")
-  Label(self.body,"01  Опустите КПК и откройте инвентарь.\n\n02  Перетащите CID-карту на этот КПК.\n\n03  Выберите «Зарегистрировать КПК по CID».","Heading",C.text)
+  self:Header("DEVICE / UNREGISTERED","Требуется ключ-карта","Этот КПК ещё не зарегистрирован в сети FIELDLINK.")
+  Label(self.body,"01  Опустите КПК и откройте инвентарь.\n\n02  Перетащите ключ-карту на этот КПК.\n\n03  Выберите «Зарегистрировать КПК по ключ-карте».","Heading",C.text)
   Label(self.body,"Карта не расходуется. Личность и блокнот сохраняются на устройстве. Любой, кто получит этот КПК, сможет действовать от имени зарегистрированного владельца.","Body",C.muted)
   Label(self.body,"СЕРИЙНЫЙ НОМЕР / FL-"..d.device,"Mono",C.red)
   return
  end
  if F.BuildMediaPage and F.BuildMediaPage(self,d,{Label=Label,Field=Field,Action=Action,Row=Row,Scale=Scale,C=C}) then return end
+ if self.page=="maintenance" then
+  self:Header("FACILITY / MAINTENANCE","Обслуживание","Заявки, назначение и место работы.")
+  Action(self.body,"Обновить",function() F.Request("sync") end)
+  if #(d.maintenance or {})==0 then Label(self.body,"Доступных работ нет.","Body",C.muted) end
+  for _,j in ipairs(d.maintenance or {}) do
+   Label(self.body,j.title,"Heading",C.text)
+   Label(self.body,j.ownerName and "Исполнитель: "..j.ownerName or "Свободная заявка","Body",C.muted)
+   local function request(command) F.Request("maintenance",{command=command,id=j.id}) end
+   if j.mine then
+    Action(self.body,"Показать место",function() if ix.Facility then ix.Facility.Track(j) end end)
+    Action(self.body,"Начать работу рядом с оборудованием",function() request("work") end)
+    Action(self.body,"Освободить заявку",function() request("release") end)
+   elseif j.status=="open" and j.available then Action(self.body,"Принять заявку",function() request("claim") end) end
+  end
+  return
+ end
  if self.page=="overview" then
   self:Home(d)
  elseif self.page=="system" then
@@ -259,8 +276,8 @@ function PANEL:BuildPage()
   self:Header(incident and "RESPONSE / QUEUE" or "OPERATIONS / ORDERS",incident and "Журнал инцидентов" or "Директивы смены",incident and "От наблюдения до подтверждённого решения." or "Примите назначение и отметьте результат после выполнения.")
   if incident or d.clearance>=3 then Action(self.body,incident and "+  Новый инцидент" or "+  Опубликовать директиву",function() self:Navigate(incident and "report" or "publish") end) end
   if not incident and d.clearance<3 then
-   Label(self.body,"Публикация требует допуска 3. Ваш допуск: "..d.clearance..". Тип CID-карты не назначает допуск автоматически.","Body",C.amber)
-   Label(self.body,"Администратор: /PDASetClearance \"Имя персонажа\" 3 — персонаж должен экипировать CID, которым зарегистрирован этот КПК. Затем синхронизируйте устройство.","Small",C.muted)
+   Label(self.body,"Публикация требует допуска 3. Ваш допуск: "..d.clearance..". Допуск определяется уровнем экипированной ключ-карты.","Body",C.amber)
+   Label(self.body,"Администратор: выдайте ключ-карту уровня 3 или 4 — персонаж должен экипировать ключ-карту, которой зарегистрирован этот КПК. Затем синхронизируйте устройство.","Small",C.muted)
   end
   local list=incident and d.incidents or d.directives
   if #list==0 then Label(self.body,"Записей пока нет. Здесь появятся сообщения и назначения персонала.","Body",C.muted) end
@@ -386,7 +403,7 @@ function PANEL:Home(d)
  local active,assigned=0,0
  for _,r in ipairs(d.incidents) do if r.status~="closed" then active=active+1 end end
  for _,r in ipairs(d.directives) do if r.status=="assigned" and r.ownerID==d.character then assigned=assigned+1 end end
- local apps={{"camera","Камера","Монохром / CID"},{"gallery","Галерея",#(d.photos or {}).." снимков"},{"messenger","Связь","Сообщения / вложения"},{"incidents","Инциденты",active.." открытых сообщений"},{"directives","Директивы",assigned.." ваших назначений"},{"library","Справочник",#d.records.." доступных документов"},{"notes","Блокнот","Личные записи"},{"system","Устройство","Канал / доступ / синхронизация"}}
+ local apps={{"camera","Камера","Монохром / карты"},{"gallery","Галерея",#(d.photos or {}).." снимков"},{"messenger","Связь","Сообщения / вложения"},{"incidents","Инциденты",active.." открытых сообщений"},{"directives","Директивы",assigned.." ваших назначений"},{"maintenance","Обслуживание",#(d.maintenance or {}).." доступных работ"},{"library","Справочник",#d.records.." доступных документов"},{"notes","Блокнот","Личные записи"},{"system","Устройство","Канал / доступ / синхронизация"}}
  for i=1,#apps,2 do
   local row=Row(self.body,83); row.Paint=function() end
   local children={}
@@ -432,7 +449,9 @@ function PANEL:Paint(w,h)
   draw.SimpleText(stage,"FieldlinkBody",w/2,h*.56,C.muted,TEXT_ALIGN_CENTER)
   surface.SetDrawColor(C.line); surface.DrawRect(w/2-110,h*.66,220,2)
   surface.SetDrawColor(C.accent); surface.DrawRect(w/2-110,h*.66,220*math.min(1,elapsed/math.max(.01,self.bootDuration)),2)
-  if elapsed>8 and not self.data then draw.SimpleText("Сервер не ответил. Ожидание повторной синхронизации…","FieldlinkSmall",w/2,h*.74,C.amber,TEXT_ALIGN_CENTER) end
+  if not self.data and (self.syncError or elapsed>8) then
+   draw.SimpleText(self.syncError or "Сервер не ответил. Ожидание повторной синхронизации…","FieldlinkSmall",w/2,h*.74,C.amber,TEXT_ALIGN_CENTER)
+  end
  end
 end
 function PANEL:PaintOver(w,h)
@@ -452,6 +471,11 @@ net.Receive("ixFieldlinkSnapshot",function()
  local p=LocalPlayer(); local c=IsValid(p) and p:GetCharacter()
  if not istable(data) or not c or data.recipient~=c:GetID() or data.device~=c:GetData("fieldlinkDevice") or not IsValid(ix.gui.fieldlink) then return end
  local panel=ix.gui.fieldlink
+ if isstring(data.error) then
+  panel.syncError=data.error; panel.toast=data.error; panel.toastUntil=RealTime()+6
+  F.pendingAt=nil
+  return
+ end
  if panel.awaitForm and (data.message=="Инцидент передан дежурному." or data.message=="Директива опубликована.") then
   panel.awaitForm=nil; if panel.formDrafts then panel.formDrafts[panel.page]=nil end; panel.page=panel.page=="report" and "incidents" or "directives"
  end

@@ -149,6 +149,14 @@ function PANEL:SetCharacter(client)
 	hands:MoveBelow(legprotection or legs, 16)
 	hands:AlignRight(0)
 	hands:SetTitle(L("equip.hands"))
+ local armInventory = client:GetInventory("armprotection")
+ if armInventory then
+  local pads = armInventory:CreatePanel(self)
+  pads:SetSlotSize(64); pads:Rebuild(); pads:SizeToContents()
+  pads:SetY(hands:GetY()); pads:MoveLeftOf(hands, 16)
+  pads:SetTitle(L("equip.armprotection"))
+ end
+
 
 	local backpack = client:GetInventory("backpack"):CreatePanel(self)
 	backpack:SetSlotSize(64)
@@ -157,6 +165,21 @@ function PANEL:SetCharacter(client)
 	backpack:AlignBottom()
 	backpack:AlignRight(0)
 	backpack:SetTitle(L("equip.backpack"))
+
+    local weaponSize = math.Clamp(math.floor((self:GetWide() - cid:GetWide() - backpack:GetWide() - 48) / 3), 32, 64)
+    for slot = 1, 3 do
+        local inventory = client:GetInventory("weapon" .. slot)
+        if inventory then
+            local panel = inventory:CreatePanel(self)
+            panel:SetSlotSize(weaponSize)
+            panel:Rebuild()
+            panel:SizeToContents()
+            panel:SetTitle(ix.WeaponSlots.Label(slot))
+            panel:SetTooltip(ix.WeaponSlots.Description(slot))
+            panel:SetX(self:GetWide() * 0.5 + (slot - 2) * (weaponSize + 8) - panel:GetWide() * 0.5)
+            panel:AlignBottom()
+        end
+    end
 end
 
 function PANEL:GetCharacter()

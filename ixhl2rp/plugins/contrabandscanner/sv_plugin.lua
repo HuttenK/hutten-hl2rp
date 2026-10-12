@@ -101,6 +101,8 @@ function PLUGIN:SaveData()
 end
 
 function PLUGIN:LoadData()
+ if self.loadedScanners then return end
+ self.loadedScanners = true
 	local data = self:GetData()
 
 	if (!data) then return end
@@ -113,8 +115,20 @@ function PLUGIN:LoadData()
 		scanner:SetPos(info.pos)
 		scanner:SetAngles(info.ang)
 		scanner:Spawn()
-		scanner:SetScanWidth(info.w or self.defaults.width)
-		scanner:SetScanHeight(info.h or self.defaults.height)
-		scanner:SetScanDepth(info.d or self.defaults.depth)
+		scanner:SetScanWidth(math.Clamp(tonumber(info.w) or self.defaults.width, 8, 1024))
+		scanner:SetScanHeight(math.Clamp(tonumber(info.h) or self.defaults.height, 8, 1024))
+		scanner:SetScanDepth(math.Clamp(tonumber(info.d) or self.defaults.depth, 4, 512))
 	end
+end
+
+function PLUGIN:PlayerDisconnected(client)
+ self.pendingPoint[client] = nil
+ for _, ent in ipairs(ents.FindByClass("ix_contrabandscanner")) do
+  ent.inside[client] = nil; ent.cooldown[client] = nil
+  if ent.samples then ent.samples[client] = nil end
+ end
+end
+function PLUGIN:OnUnload()
+ self:SaveData()
+ for _, ent in ipairs(ents.FindByClass("ix_contrabandscanner")) do ent:Remove() end
 end

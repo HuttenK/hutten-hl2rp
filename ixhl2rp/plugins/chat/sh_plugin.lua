@@ -4,6 +4,9 @@ PLUGIN.name = "Chat Counter"
 PLUGIN.author = "SchwarzKruppzo"
 PLUGIN.description = ""
 
+ix.util.Include("sh_commands.lua")
+ix.util.Include("sv_contextual.lua")
+
 if CLIENT then
 	function PLUGIN:LoadFonts(font, genericFont)
 		local baseSize = math.max(ScreenScale(7), 17) * ix.option.Get("chatFontScale", 1)

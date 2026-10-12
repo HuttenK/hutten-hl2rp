@@ -1,6 +1,7 @@
 ix.Fieldlink = ix.Fieldlink or {}
 local F=ix.Fieldlink
 F.class="pdaremake1"
+F.PDAActivity=nil
 F.alerts={"ШТАТНЫЙ РЕЖИМ","ПОВЫШЕННАЯ ГОТОВНОСТЬ","НАРУШЕНИЕ СОДЕРЖАНИЯ","ЭВАКУАЦИЯ"}
 F.categories={"Наблюдение","Медицинская помощь","Безопасность","Техническая неисправность"}
 function F.Text(value,limit)

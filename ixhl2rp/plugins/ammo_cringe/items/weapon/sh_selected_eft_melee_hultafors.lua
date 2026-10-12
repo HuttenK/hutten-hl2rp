@@ -7,6 +7,6 @@ ITEM.width = 2
 ITEM.height = 2
 ITEM.noBusiness = true
 ITEM.bDropOnDeath = true
-ITEM.twoHanded = false
+ITEM.twoHanded = true
 
 ITEM.craftingTools = {["wm_hammer"]=true,["wm_sledge"]=true,["wm_pickaxe"]=true}

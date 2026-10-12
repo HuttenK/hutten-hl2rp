@@ -26,6 +26,7 @@ function PLUGIN:NetworkEntityCreated(ent)
 end
 
 function PLUGIN:StartCommand(ply, cmd)
+	if ix.Downed and ix.Downed.CrawlCommand then ix.Downed.CrawlCommand(ply, cmd) end
 	if cmd:KeyDown(IN_JUMP) and ply:GetMoveType() != MOVETYPE_NOCLIP and ply:GetNetVar("brth", false) then
 		cmd:ClearButtons()
 	end
@@ -96,6 +97,7 @@ end
 
 
 function PLUGIN:SetupMove(ply, mv, cmd)
+	if ix.Downed and ix.Downed.CrawlMove and ix.Downed.CrawlMove(ply, mv) then return end
 	local character = ply:GetCharacter()
 
 	if !character then
@@ -186,8 +188,13 @@ function PLUGIN:SetupMove(ply, mv, cmd)
   local limited = speedx * speedFactor * .55
   mv:SetMaxClientSpeed(limited)
   mv:SetMaxSpeed(limited)
+  if ix.PushCart then ix.PushCart:LimitMovement(ply, mv, limited) end
   return
  end
+
+	-- Cart speed includes the same injury/landing modifiers as ordinary walking.
+	-- Resolve it here before sprint state can override another plugin's cap.
+	if ix.PushCart and ix.PushCart:LimitMovement(ply, mv, speedx * speedFactor) then return end
 
 	local velLength = ply:GetVelocity():Length2DSqr()
 

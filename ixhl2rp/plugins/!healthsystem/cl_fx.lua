@@ -151,52 +151,28 @@ do
 end
 
 do
-	local modify = {
-		["$pp_colour_addr"] = 0, 
-		["$pp_colour_addg"] = 0, 
-		["$pp_colour_addb"] = 0, 
-		["$pp_colour_brightness"] = 0, 
-		["$pp_colour_contrast"] = 1, 
-		["$pp_colour_colour"] = 1, 
-		["$pp_colour_mulr"] = 0, 
-		["$pp_colour_mulg"] = 0, 
-		["$pp_colour_mulb"] = 0
-	}
-
-	local oldST, dmg
-	dmg = 0
-
-	function PLUGIN:RenderScreenspaceEffects()
-		local delta = math.Clamp(FrameTime(), 0, 0.1)
-		local character = LocalPlayer():GetCharacter()
-
-		if character then
-			local health = character:Health()
-			local hp = health:GetPercent()
-
-			if hp < 1 then
-				local deltaX = 0.25 + (hp * 0.75)
-				local st = SysTime()
-
-				oldST = oldST or st
-				local delta = st - oldST
-				oldST = st
-				
-				modify["$pp_colour_colour"] = math.Clamp(deltaX, 0, 1)
-
-				DrawColorModify(modify)
-			end
-			
-			DrawBloom(0.2, dmg, 6, 16, 1, 0, 1, 1, 1)
-
-			if dmg > 0 then
-				dmg = Lerp(delta * 10, dmg, 0)
-			end
-		end
-	end
-
-	net.Receive("shock.pain", function()
-		local data = net.ReadUInt(3) or 1
-		dmg = dmg + data
-	end)
+ local damagePulse=0
+ -- Clear the old plugin callback when Lua is refreshed in an existing session.
+ PLUGIN.RenderScreenspaceEffects=nil
+ hook.Add("HUDPaintBackground","ixHealthDamageOverlay",function()
+  local client=LocalPlayer()
+  if not IsValid(client) then return end
+  local character=client:GetCharacter()
+  if not character then damagePulse=0; return end
+  local hp=math.Clamp(character:Health():GetPercent(),0,1)
+  damagePulse=Lerp(math.Clamp(FrameTime()*10,0,1),damagePulse,0)
+  local strength=math.Clamp((1-hp)*.45+damagePulse*.15,0,.8)
+  if strength<.001 then return end
+  -- Solid geometry cannot render a missing material or a broken framebuffer.
+  draw.NoTexture()
+  local w,h=ScrW(),ScrH()
+  for i=0,31 do
+   local edge=(1-i/32)^2
+   surface.SetDrawColor(45,0,5,edge*strength*170)
+   local y=i*h*.3/32
+   surface.DrawRect(0,y,w,math.ceil(h*.3/32))
+   surface.DrawRect(0,h-y-h*.3/32,w,math.ceil(h*.3/32))
+  end
+ end)
+ net.Receive("shock.pain",function() damagePulse=math.min(damagePulse+net.ReadUInt(3),3) end)
 end

@@ -1,213 +1,140 @@
--- ============================================================
---  СПИСОК ДОСЬЕ — стилистика "технологии Гражданской Обороны"
--- ============================================================
-
-surface.CreateFont("ixDfbTitle", { font = "Tahoma", size = 21, weight = 800, antialias = true })
-surface.CreateFont("ixDfbName",  { font = "Tahoma", size = 18, weight = 700, antialias = true })
-surface.CreateFont("ixDfbMono",  { font = "Consolas", size = 14, weight = 500, antialias = true })
-surface.CreateFont("ixDfbSmall", { font = "Consolas", size = 12, weight = 500, antialias = true })
-
-local C_BG     = Color(8, 12, 15, 248)
-local C_PANEL  = Color(14, 20, 24, 255)
-local C_ROW    = Color(18, 26, 31, 255)
-local C_ROW_H  = Color(26, 40, 48, 255)
-local C_LINE   = Color(0, 170, 210)
-local C_LINE_D = Color(0, 90, 115)
-local C_TEXT   = Color(196, 214, 220)
-local C_DIM    = Color(110, 140, 150)
-
-local STATUS_COLOR = {
-	["Anti-Citizen"] = Color(190, 55, 50),
-	["Citizen"]      = Color(185, 200, 210),
-	["Black"]        = Color(120, 125, 135),
-	["Brown"]        = Color(150, 110, 70),
-	["Orange"]       = Color(230, 140, 40),
-	["Red"]          = Color(230, 70, 60),
-	["Green"]        = Color(80, 200, 110),
-	["Blue"]         = Color(70, 140, 255),
-	["White"]        = Color(235, 240, 245),
-	["Gold"]         = Color(240, 200, 60),
-	["Platinum"]     = Color(210, 190, 255),
-}
-
-local function CornerBrackets(x, y, w, h, len, col)
-	surface.SetDrawColor(col)
-	surface.DrawRect(x, y, len, 2)            surface.DrawRect(x, y, 2, len)
-	surface.DrawRect(x + w - len, y, len, 2)  surface.DrawRect(x + w - 2, y, 2, len)
-	surface.DrawRect(x, y + h - 2, len, 2)    surface.DrawRect(x, y + h - len, 2, len)
-	surface.DrawRect(x + w - len, y + h - 2, len, 2)
-	surface.DrawRect(x + w - 2, y + h - len, 2, len)
-end
-
-local PANEL = {}
-
+local PANEL={}
+local function UI() return ix.InterfaceOS end
+local function value(v) return v and v~="" and tostring(v) or "Не указано" end
 function PANEL:Init()
-	self.startTime = SysTime()
-
-	self:SetSize(580, 660)
-	self:Center()
-	self:SetTitle("")
-	self:ShowCloseButton(false)
-	self:MakePopup()
-	self:SetDeleteOnClose(true)
-
-	self.data = {}
-	self.count = 0
-
-	self.close = self:Add("DButton")
-	self.close:SetText("")
-	self.close:SetSize(26, 26)
-	self.close.DoClick = function() self:Remove() end
-	self.close.Paint = function(p, w, h)
-		surface.SetDrawColor(p:IsHovered() and Color(210, 60, 50) or C_LINE_D)
-		surface.DrawRect(0, 0, w, h)
-		draw.SimpleText("X", "ixDfbMono", w * 0.5, h * 0.5 - 1, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-	end
-
-	self.search = self:Add("DTextEntry")
-	self.search:SetTall(30)
-	self.search:SetUpdateOnType(true)
-	self.search:SetFont("ixDfbMono")
-	if self.search.SetPlaceholderText then
-		self.search:SetPlaceholderText("Поиск по имени или CID...")
-	end
-	self.search.OnValueChange = function(_, val) self:Rebuild(val) end
-	self.search.Paint = function(p, w, h)
-		surface.SetDrawColor(C_ROW)
-		surface.DrawRect(0, 0, w, h)
-		surface.SetDrawColor(C_LINE)
-		surface.DrawRect(0, h - 2, w, 2)
-		p:DrawTextEntryText(C_TEXT, C_LINE, C_TEXT)
-	end
-
-	self.scroll = self:Add("DScrollPanel")
-	local bar = self.scroll:GetVBar()
-	bar:SetWide(6)
-	bar.Paint = function() end
-	bar.btnUp.Paint = function() end
-	bar.btnDown.Paint = function() end
-	bar.btnGrip.Paint = function(_, w, h)
-		surface.SetDrawColor(C_LINE)
-		surface.DrawRect(0, 0, w, h)
-	end
+ local U=UI()
+ self:SetSize(math.min(1220,ScrW()-32),math.min(850,ScrH()-32)); self:Center(); self:MakePopup()
+ self:SetTitle(""); self:ShowCloseButton(false); self:SetScreenLock(true)
+ self:DockPadding(22,110,22,42)
+ self.mode="cards"; self.payload={cards={},records={}}; self.boot=RealTime()
+ self:SetAlpha(0); self:AlphaTo(255,.24)
+ self.close=U.Button(self,"ЗАВЕРШИТЬ СЕАНС",function() self:AlphaTo(0,.12,0,function() if IsValid(self) then self:Remove() end end) end)
+ self.close:SetSize(210,38); self.close:SetPos(self:GetWide()-232,30)
+ local side=self:Add("DPanel"); self.side=side; side:Dock(LEFT); side:SetWide(math.min(310,self:GetWide()*.29)); side:DockMargin(0,0,20,0)
+ side.Paint=function(_,w,h) U.Plate(0,0,w,h,Color(21,10,17,215),U.line) end
+ side:DockPadding(12,14,12,14)
+ U.Label(side,"МОДУЛИ / SCiPNet","Mono",U.muted)
+ for _,tab in ipairs({{"cards","Ключ-карты","identity"},{"records","Личные дела","journal"}}) do
+  local b=U.Button(side,tab[2],function() self.mode=tab[1]; self.selected=nil; self:Rebuild() end)
+  b:Dock(TOP); b:SetTall(48); b:DockMargin(0,0,0,6)
+  b.Paint=function(btn,w,h)
+   U.ButtonFace(btn,w,h,false,self.mode==tab[1]); U.Icon(tab[3],14,13,22,self.mode==tab[1] and U.accent or U.muted)
+   U.Text(tab[2],"Body",48,14,self.mode==tab[1] and U.ink or U.muted)
+  end
+ end
+ local refresh=U.Button(side,"Считать карты",function() netstream.Start("ixDfTerminalRefresh") end); refresh:Dock(BOTTOM); refresh:SetTall(44)
+ self.search=side:Add("DTextEntry"); self.search:Dock(TOP); self.search:SetTall(38); self.search:DockMargin(0,16,0,12)
+ self.search:SetPlaceholderText("Имя / номер карты"); self.search:SetFont("facility.Small"); self.search:SetUpdateOnType(true)
+ self.search.Paint=function(e,w,h) U.Plate(0,0,w,h,Color(8,8,13,235),e:HasFocus() and U.accent or U.line); e:DrawTextEntryText(U.ink,U.accent,U.ink) end
+ self.search.OnValueChange=function() self:RebuildList() end
+ self.list=U.Scroll(side); self.list:Dock(FILL); self.list:DockMargin(0,0,0,12)
+ self.detail=U.Scroll(self); self.detail:Dock(FILL)
 end
-
-function PANEL:PerformLayout(w, h)
-	if IsValid(self.close) then self.close:SetPos(w - 34, 10) end
-	if IsValid(self.search) then
-		self.search:SetPos(16, 54)
-		self.search:SetWide(w - 32)
-	end
-	if IsValid(self.scroll) then
-		self.scroll:SetPos(16, 92)
-		self.scroll:SetSize(w - 32, h - 92 - 16)
-	end
+function PANEL:Paint(w,h)
+ local U=UI(); local elapsed=RealTime()-self.boot
+ draw.RoundedBox(8,0,0,w,h,Color(11,9,15,245))
+ U.Plate(1,1,w-2,89,Color(35,10,22,235),U.line)
+ U.Icon("identity",24,28,42,U.accent)
+ U.Text("SCiPNet","Title",82,20)
+ U.Text("PERSONNEL / IDENTITY & ACCESS","Mono",84,61,U.muted)
+ local label="ДОПУСК "..(self.payload.clearance or 0)
+ U.Text(label,"Mono",w-252,43,U.cyan,TEXT_ALIGN_RIGHT)
+ U.Rect(22,96,(w-44)*math.min(1,elapsed/.6),1,U.accent)
+ U.Rect(22,h-34,w-44,1,U.line)
+ U.Text("●  ТЕРМИНАЛ ПЕРСОНАЛА   /   ФОНД SCP","Mono",24,h-25,U.muted)
+ U.Text(os.date("%H:%M:%S").."  /  SECURE CONNECTION","Mono",w-24,h-25,U.muted,TEXT_ALIGN_RIGHT)
 end
-
-function PANEL:SetList(list)
-	self.data = list or {}
-	self:Rebuild("")
+function PANEL:SetList(payload)
+ self.payload=payload or {cards={},records={}}; self:Rebuild()
 end
-
-local function norm(s)
-	return tostring(s or ""):lower():gsub("[%- ]", "")
+function PANEL:ClearDetail()
+ self.detail:Clear(); self.detail:SetAlpha(0); self.detail:AlphaTo(255,.18)
 end
-
-function PANEL:Rebuild(filter)
-	if !IsValid(self.scroll) then return end
-	self.scroll:Clear()
-
-	filter = tostring(filter or ""):lower()
-	local fnorm = norm(filter)
-	local shown = 0
-
-	for _, v in ipairs(self.data) do
-		local pass = true
-		if filter != "" then
-			local nameMatch = tostring(v.name):lower():find(filter, 1, true)
-			local cidMatch  = norm(v.cid):find(fnorm, 1, true)
-			pass = (nameMatch or cidMatch) and true or false
-		end
-		if pass then
-			shown = shown + 1
-			self:AddRow(v)
-		end
-	end
-
-	self.count = shown
-
-	if shown == 0 then
-		local lbl = self.scroll:Add("DLabel")
-		lbl:Dock(TOP)
-		lbl:DockMargin(0, 12, 0, 0)
-		lbl:SetTall(28)
-		lbl:SetFont("ixDfbMono")
-		lbl:SetTextColor(C_DIM)
-		lbl:SetContentAlignment(5)
-		lbl:SetText("// СОВПАДЕНИЙ НЕТ")
-	end
+function PANEL:Rebuild()
+ self:RebuildList()
+ if self.mode=="cards" then
+  local selected
+  for _,d in ipairs(self.payload.cards or {}) do if d.number==self.selected then selected=d end end
+  selected=selected or (self.payload.cards or {})[1]
+  if selected then self:ShowCard(selected); return end
+ end
+ self:ClearDetail(); local U=UI()
+ U.Label(self.detail,self.mode=="cards" and "Проверка удостоверения допуска" or "Архив персонала","Title")
+ U.Label(self.detail,self.mode=="cards" and "Нет предъявленных ключ-карт" or "Выберите личное дело","Heading")
+ U.Label(self.detail,self.mode=="cards" and "Передайте карту оператору или предъявите её рядом с терминалом. Бумажные документы проверяются вручную." or "Доступные записи определяются уровнем вашей ключ-карты.","Body",U.muted)
 end
-
-function PANEL:AddRow(v)
-	local row = self.scroll:Add("DButton")
-	row:Dock(TOP)
-	row:DockMargin(0, 0, 6, 6)
-	row:SetTall(52)
-	row:SetText("")
-	row.hov = 0
-
-	row.DoClick = function()
-		surface.PlaySound("buttons/button14.wav")
-		netstream.Start("ixDfBrowserSelect", v.id)
-	end
-
-	row.Paint = function(p, w, h)
-		row.hov = Lerp(FrameTime() * 12, row.hov, p:IsHovered() and 1 or 0)
-		surface.SetDrawColor(
-			Lerp(row.hov, C_ROW.r, C_ROW_H.r),
-			Lerp(row.hov, C_ROW.g, C_ROW_H.g),
-			Lerp(row.hov, C_ROW.b, C_ROW_H.b), 255)
-		surface.DrawRect(0, 0, w, h)
-
-		local sc = STATUS_COLOR[tostring(v.status)] or C_LINE
-		surface.SetDrawColor(sc)
-		surface.DrawRect(0, 0, 3, h)
-
-		if row.hov > 0.05 then
-			surface.SetDrawColor(C_LINE.r, C_LINE.g, C_LINE.b, math.floor(row.hov * 90))
-			surface.DrawOutlinedRect(0, 0, w, h)
-		end
-
-		draw.SimpleText(v.name ~= "" and v.name or "Без имени", "ixDfbName", 14, 9, C_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-		draw.SimpleText("ГР. № " .. (v.cid ~= "" and v.cid or "—"), "ixDfbSmall", 14, 31, C_DIM, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-
-		draw.SimpleText(string.upper(tostring(v.status or "")), "ixDfbSmall", w - 12, 12, sc, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
-		draw.SimpleText("Кредиты: " .. tostring(v.points or 0), "ixDfbSmall", w - 12, 31, C_DIM, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
-	end
+function PANEL:RebuildList()
+ if not IsValid(self.list) then return end
+ self.list:Clear(); local U=UI(); local query=(self.search:GetValue() or ""):lower(); local count=0
+ for _,entry in ipairs(self.payload[self.mode] or {}) do
+  local text=(entry.name or "").." "..(entry.cid or "").." "..(entry.number or "")
+  if query=="" or text:lower():find(query,1,true) then
+   count=count+1
+   local button=U.Button(self.list,value(entry.name),function()
+    if self.mode=="cards" then self:ShowCard(entry) else self.selected=entry.id; netstream.Start("ixDfBrowserSelect",entry.id) end
+   end)
+   button:Dock(TOP); button:SetTall(78); button:DockMargin(0,0,0,7)
+   button.Paint=function(btn,w,h)
+    U.ButtonFace(btn,w,h,false,self.selected==(entry.number or entry.id))
+    U.Text(value(entry.name),"Small",12,16)
+    U.Text(entry.level and ("L"..entry.level.." / "..value(entry.department)) or ("ДЕЛО / "..tostring(entry.id)),"Mono",12,47,U.muted)
+   end
+  end
+ end
+ if count==0 then U.Label(self.list,"ЗАПИСЕЙ НЕ НАЙДЕНО","Mono",U.muted) end
 end
-
-function PANEL:Paint(w, h)
-	Derma_DrawBackgroundBlur(self, self.startTime)
-
-	surface.SetDrawColor(C_BG)
-	surface.DrawRect(0, 0, w, h)
-
-	-- scanlines
-	surface.SetDrawColor(0, 0, 0, 26)
-	for y = 0, h, 3 do surface.DrawRect(0, y, w, 1) end
-
-	surface.SetDrawColor(C_LINE_D)
-	surface.DrawOutlinedRect(0, 0, w, h)
-	CornerBrackets(0, 0, w, h, 16, C_LINE)
-
-	surface.SetDrawColor(C_PANEL)
-	surface.DrawRect(2, 2, w - 4, 44)
-	surface.SetDrawColor(C_LINE)
-	surface.DrawRect(2, 46, w - 4, 2)
-
-	draw.SimpleText("БАЗА ДАННЫХ ДОСЬЕ", "ixDfbTitle", 16, 13, C_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-	draw.SimpleText("// ГРАЖДАНСКАЯ ОБОРОНА", "ixDfbSmall", 16, 31, C_LINE, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-	draw.SimpleText("ЗАПИСЕЙ: " .. (self.count or 0), "ixDfbSmall", w - 44, 20, C_DIM, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
+function PANEL:FieldPair(left,right)
+ local U=UI(); local row=self.detail:Add("DPanel"); row:Dock(TOP); row:SetTall(92); row:DockMargin(0,0,0,8)
+ row.Paint=function(_,w,h) U.Plate(0,0,w,h,Color(29,14,23,170),U.line) end
+ local a=row:Add("DPanel"); a:Dock(LEFT); a:DockPadding(16,10,12,8); a.Paint=function() end
+ local b=row:Add("DPanel"); b:Dock(FILL); b:DockPadding(16,10,12,8); b.Paint=function() end
+ row.PerformLayout=function(_,w) a:SetWide(w*.5) end
+ for i,p in ipairs({a,b}) do local field=i==1 and left or right
+  if field then U.Label(p,field[1],"Mono",U.muted); local label=U.Label(p,value(field[2]),"Small"); label:DockMargin(0,-7,0,0) end
+ end
 end
-
-vgui.Register("ixDatafileBrowser", PANEL, "DFrame")
+function PANEL:ShowCard(d)
+ self.selected=d.number; self:ClearDetail(); self:CredentialDetails(d)
+end
+function PANEL:CredentialDetails(d)
+ local U=UI()
+ local hero=self.detail:Add("DPanel"); hero:Dock(TOP); hero:SetTall(286); hero:DockMargin(0,0,0,16)
+ hero.Paint=function(_,w,h)
+  U.Plate(0,0,w,h,Color(37,13,25,225),U.accent)
+  U.Rect(w-5,18,2,h-36,U.accent)
+ end
+ hero:DockPadding(14,14,20,14)
+ local portrait=hero:Add("ixCredentialPortrait"); portrait:Dock(LEFT); portrait:SetWide(178); portrait:DockMargin(0,0,22,0); portrait:SetPortrait(d.portrait)
+ local summary=U.Scroll(hero); summary:Dock(FILL)
+ U.Label(summary,"SCP FOUNDATION / CREDENTIAL","Mono",U.muted)
+ U.Label(summary,"УРОВЕНЬ "..(d.level or 0),"Title")
+ U.Label(summary,value(d.name),"Heading")
+ U.Label(summary,value(d.department),"Body",U.cyan)
+ U.Label(summary,d.revoked and "ОТОЗВАНА" or "КАРТА СЧИТАНА","Mono",U.accent)
+ U.Label(summary,"Фото зафиксировано при регистрации","Small",U.muted)
+ self:FieldPair({"ТАБЕЛЬНЫЙ НОМЕР",d.cid},{"СЕРИЙНЫЙ НОМЕР",d.number})
+ self:FieldPair({"ДОЛЖНОСТЬ / ЗВАНИЕ",d.position},{"ОБЪЕКТ / ПОДРАЗДЕЛЕНИЕ",d.site})
+ self:FieldPair({"ПОЗЫВНОЙ",d.callsign},{"ВЫДАНА",d.issued})
+ self:FieldPair({"ДЕЙСТВИТЕЛЬНА ДО",d.expires},{"ОРГАН ВЫДАЧИ",d.authority})
+ U.Label(self.detail,"ОГРАНИЧЕНИЯ ДОСТУПА","Mono",U.muted)
+ U.Label(self.detail,value(d.restrictions),"Body")
+end
+function PANEL:ShowRecord(d)
+ if self.mode~="records" or self.selected~=d.id then return end
+ self:ClearDetail(); local U=UI()
+ U.Label(self.detail,"SCiPNet / PERSONNEL ARCHIVE","Mono",U.muted)
+ U.Label(self.detail,value(d.name),"Title")
+ self:FieldPair({"НОМЕР ДЕЛА",d.id},{"ТАБЕЛЬНЫЙ НОМЕР",d.cid})
+ if d.credential then self:CredentialDetails(d.credential) else U.Label(self.detail,"Данные ключ-карты ещё не зарегистрированы.","Body",U.muted) end
+ U.Label(self.detail,d.bol and "ВНИМАНИЕ / РАЗЫСКИВАЕТСЯ" or d.restricted and "ДОСТУП ОГРАНИЧЕН" or "АРХИВНАЯ ЗАПИСЬ","Heading",U.accent)
+ if d.bol then U.Label(self.detail,value(d.bolReason),"Body") end
+ U.Label(self.detail,"ЖУРНАЛ СОБЫТИЙ","Mono",U.muted)
+ local types={union="СЛУЖЕБНАЯ ЗАПИСЬ",civil="ПРОИСШЕСТВИЕ",med="МЕДИЦИНА",reg="РЕГИСТРАЦИЯ"}
+ for _,record in ipairs(d.records or {}) do
+  U.Label(self.detail,(types[record.category] or "ЗАПИСЬ").." / "..os.date("%d.%m.%Y %H:%M",tonumber(record.unix_time) or 0),"Small",U.cyan)
+  U.Label(self.detail,record.text or "","Body")
+  U.Label(self.detail,"Автор: "..value(record.poster_name),"Mono",U.muted)
+ end
+ if #(d.records or {})==0 then U.Label(self.detail,"Записей пока нет.","Body",U.muted) end
+end
+vgui.Register("ixDatafileBrowser",PANEL,"DFrame")

@@ -131,6 +131,7 @@ if (SERVER) then
 	end
 
 	function ENT:OnLockChanged(name, bWasLocked, bLocked)
+        self.ixLockRevision = (self.ixLockRevision or 0) + 1
 		if (!IsValid(self.door)) then
 			return
 		end
@@ -174,11 +175,12 @@ if (SERVER) then
 		-- висеть на внешней грани приграничной двери (вне AABB зоны), поэтому проверяем
 		-- ещё и позицию двери. Авторитетно, не зависит от порядка хуков PlayerUse.
 		local blackout = ix.plugin.list["blackout"]
-		if (blackout and blackout.IsPosBlackedOut) then
+		if (blackout and blackout.IsPosBlackedOut and not (ix.Facility and ix.Facility.EntityBackup(self))) then
 			local dark = blackout:IsPosBlackedOut(self:GetPos())
 				or (IsValid(self.door) and blackout:IsPosBlackedOut(self.door:GetPos()))
 
 			if (dark) then
+                hook.Run("FoundationDoorAccess",client,self,false,"Нет питания")
 				if (IsValid(client) and client.NotifyLocalized) then
 					client:NotifyLocalized("blackout.noPower")
 				end
@@ -189,12 +191,14 @@ if (SERVER) then
 		end
 
 		if (!client:HasIDAccess(self:GetAccess())) then
+            hook.Run("FoundationDoorAccess",client,self,false,"Нет допуска")
 			self:DisplayError()
 			self.nextUseTime = CurTime() + 2
 
 			return
 		end
 
+        hook.Run("FoundationDoorAccess",client,self,true,self:GetLocked() and "Отпирание" or "Запирание")
 		self:SetLocked(!self:GetLocked())
 		self.nextUseTime = CurTime() + 2
 	end

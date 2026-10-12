@@ -1,458 +1,188 @@
-local PLUGIN = PLUGIN
-
-PLUGIN.currentMaterial = PLUGIN.defaultMaterial
-PLUGIN.mat             = nil
-PLUGIN.blackMat        = nil
-PLUGIN.htmlPanel       = nil   -- HTML panel for URL images
-
-PLUGIN.currentSound   = ""
-PLUGIN.soundStartTime = 0
-PLUGIN.tvSoundObjs    = {}
-PLUGIN.tvSoundOnce    = false  -- true = video-file audio, don't restart when channel stops
-
-PLUGIN.cachedTVs   = {}
-PLUGIN.lastCacheAt = -999
-
-local CACHE_INTERVAL = 5
-
-local function IsURL(path)
-	return isstring(path) and (path:find("^https?://") ~= nil)
+local P,T,M=PLUGIN,ix.TV,ix.BroadcastMedia
+if P.CleanupTV then P:CleanupTV() end
+if P.audio then P.audio:Destroy() end
+if IsValid(P.htmlPanel) then P.htmlPanel:Remove() end
+for _,name in ipairs({"ix_tv_sound_update","ix_tv_html_volume"}) do hook.Remove("Think",name) end
+hook.Remove("PostDrawOpaqueRenderables","ix_tv_screen_render")
+P.channels={};P.screens={};P.presets={};P.players={};P.audioAnchors={}
+-- Scale the full-volume zone and cutoff together to preserve the falloff curve.
+T.audioFullDistance=80/3;T.audioMaxDistance=500/3
+P.audio=M.NewAudio("TV",T.audioFullDistance,T.audioMaxDistance);P.tvReady=false
+P:ClearTVPlayback()
+local statusNames={[0]="loading",[1]="ready",[2]="buffering",[3]="ended",[4]="error",[5]="blocked"}
+function P:DropPlayer(id)
+ local r=self.players[id]
+ if r and IsValid(r.panel) then r.panel:Remove() end
+ self.players[id]=nil
 end
-
--- ── Радиус слышимости 3D-звука ТВ (аудио-режим /tvsound) ─────────────────────
--- ВАЖНО про BASS/IGModAudioChannel:Set3DFadeDistance(min, max): max — это НЕ точка,
--- где звук замолкает, а расстояние, ДАЛЬШЕ которого звук перестаёт затухать и
--- продолжает играть на громкости, достигнутой на max (~min/max). Поэтому звук с
--- Set3DFadeDistance(80, 500) слышно по ВСЕЙ карте на ~16% громкости. Настоящий
--- радиус задаём вручную: гасим громкость по дистанции до слушателя с жёстким нулём
--- за TV_SND_SILENT. Меняйте эти два числа, чтобы регулировать дальность звука.
-local TV_SND_FULL   = 80    -- до этой дистанции (юниты) — полная громкость
-local TV_SND_SILENT = 500   -- на этой дистанции и дальше — полная тишина
-
-local function TVDistanceVolume(ent)
-	local ply = LocalPlayer()
-	if not IsValid(ply) or not IsValid(ent) then return 0 end
-
-	local d = ply:GetPos():Distance(ent:GetPos())
-	if d <= TV_SND_FULL then return 1 end
-	if d >= TV_SND_SILENT then return 0 end
-	return 1 - (d - TV_SND_FULL) / (TV_SND_SILENT - TV_SND_FULL)
+function P:LoadPlayer(c,attempt)
+ self:DropPlayer(c.id)
+ local r={revision=c.revision,source=c.source,status="loading",created=RealTime(),attempt=attempt or 1,lastUse=RealTime()}
+ self.players[c.id]=r
+ if not c.source:match("^https?://") then
+  r.mat=Material(c.source);r.status=r.mat:IsError() and "error" or "ready";return r
+ end
+ local panel=vgui.Create("DHTML");r.panel=panel
+ panel:SetSize(1024,576);panel:SetPos(-1100,-700)
+ panel:SetMouseInputEnabled(false);panel:SetKeyboardInputEnabled(false);panel:SetAllowLua(false)
+ panel.OnDocumentReady=function()
+  if P.players[c.id]~=r then return end
+  panel:AddFunction("ixTV","playback",function(time,active,code)
+   if P.players[c.id]~=r or not IsValid(panel) or not T.Number(time,0,1e9) or not statusNames[code] then return end
+   r.status=statusNames[code];r.received=RealTime();r.playback={time=time,active=active==true,received=RealTime()}
+  end)
+  if r.suspended then panel:RunJavascript("if(window.ixMediaSuspend)window.ixMediaSuspend();") end
+ end
+ panel:SetHTML(self:BuildTVHTML(c.source))
+ return r
 end
-
--- Телевизор считается включённым, только если он включён выключателем И у него
--- есть питание. Проверять надо во ВСЕХ трёх местах: картинка, звук BASS-канала и
--- громкость HTML-панели — иначе обесточенный экран гаснет, но продолжает звучать.
-local function TVIsOn(ent)
-	if not IsValid(ent) then return false end
-	if not ent:GetNWBool("tv_on", true) then return false end
-
-	local blackout = ix.plugin.list["blackout"]
-
-	return not blackout or not blackout:IsPosBlackedOut(ent:GetPos())
+function P:GetChannelStatus(id)
+ local c=self.channels[id];local r=self.players[id]
+ if not c then return "missing" end
+ if not c.playing or c.source=="" then return "idle" end
+ return r and r.status or "loading"
 end
-
-local function RefreshTVCache()
-	local now = CurTime()
-	if now - PLUGIN.lastCacheAt < CACHE_INTERVAL then return end
-	PLUGIN.lastCacheAt = now
-
-	local tvs = {}
-	for model in pairs(PLUGIN.tvModels) do
-		for _, ent in ipairs(ents.FindByModel(model)) do
-			if IsValid(ent) then table.insert(tvs, ent) end
-		end
-	end
-	PLUGIN.cachedTVs = tvs
+local function read() return util.JSONToTable(net.ReadString()) end
+net.Receive("ixTVResetState",function()
+ for id in pairs(P.players) do P:DropPlayer(id) end
+ P.channels={};P.screens={};P.presets={};P.tvReady=true;P:ClearTVPlayback()
+ P:ResetTVInterest()
+end)
+net.Receive("ixTVChannel",function()
+ local c=read();if not istable(c) or not T.Number(c.id,1,T.maxChannels) then return end
+ local old=P.channels[c.id]
+ P.tvInterest=nil
+ if c.removed then P.channels[c.id]=nil;P:DropPlayer(c.id);return end
+ if old and (old.revision~=c.revision or old.source~=c.source) then P:DropPlayer(c.id) end
+ c.cues=M.ParseSubtitles(c.subtitles) or {};P.channels[c.id]=c
+ if P.RefreshTVLists then P:RefreshTVLists() end
+end)
+net.Receive("ixTVScreen",function()
+ local s=read();if not istable(s) or not isnumber(s.id) then return end
+ P.tvInterest=nil;if P.tvSight then P.tvSight[s.id]=nil end
+ if s.removed then
+  P.screens[s.id]=nil
+  if P.editPreview and P.editPreview.id==s.id then
+   P.editPreview=nil
+   if IsValid(P.tvWindow) and P.OpenTVAdmin then P:OpenTVAdmin("screens") end
+  end
+ else P.screens[s.id]=s end
+ if P.RefreshTVLists then P:RefreshTVLists() end
+end)
+net.Receive("ixTVPreset",function() local v=read();if istable(v) and T.Model(v.model) and T.Config(v.config) then P.presets[v.model]=v.config end end)
+function P:ScreenPowered(s)
+ local pos=T.Transform(s);if not pos then return false end
+ local ent=s.entity or Entity(s.entityIndex or -1)
+ if s.on and ix.Facility and ix.Facility.EntityBackup(ent) then return true end
+ local blackout=ix.plugin.list.blackout
+ return s.on and (not blackout or not blackout:IsPosBlackedOut(pos))
 end
-
-local function StopAllSounds()
-	for _, ch in pairs(PLUGIN.tvSoundObjs) do
-		if IsValid(ch) then ch:Stop() end
-	end
-	PLUGIN.tvSoundObjs = {}
+function P:DisplayScreen(screen)
+ local edited=self.editPreview
+ if edited and edited.id==screen.id and IsValid(self.tvWindow) then
+  local p=LocalPlayer();if IsValid(p) and p:IsAdmin() then return edited end
+ end
+ return screen
 end
-
--- Returns or creates the off-screen HTML panel used for URL content.
--- SetVisible(false) mutes Chromium audio, so we position it off-screen instead.
-local function GetHTMLPanel()
-	if not IsValid(PLUGIN.htmlPanel) then
-		local p = vgui.Create("HTML")
-		p:SetSize(1920, 1080)
-		p:SetPos(-2000, -2000)   -- off-screen, not hidden
-		p:SetMouseInputEnabled(false)
-		p:SetKeyboardInputEnabled(false)
-		PLUGIN.htmlPanel = p
-	end
-	return PLUGIN.htmlPanel
+local nextRequest,nextTick=0,0
+hook.Add("Think","ixTVChannels",function()
+ local p=LocalPlayer();if not IsValid(p) then return end
+ if not P.tvReady and CurTime()>=nextRequest then nextRequest=CurTime()+5;net.Start("ixTVReady");net.SendToServer() end
+ if RealTime()<nextTick then return end;nextTick=RealTime()+.25
+ local interest=P:UpdateTVInterest();local visual=P:TVVisualChannels(interest)
+ local needed,distances,sources,anchors={},{},{},{}
+ local muted=ix.option.Get("tvMute",false)
+ local subtitleID,subtitleDistance=nil,T.audioMaxDistance
+ for id in pairs(visual) do
+  local c=P.channels[id];if c and c.playing and c.source~="" then needed[id]=true end
+ end
+ -- Only one external audio source per channel: neighbouring televisions must
+ -- not create identical BASS streams. Video sound also uses the nearest TV.
+ for id,nearby in pairs(interest.nearby) do
+  local s,pos,d=nearby.screen,nearby.pos,nearby.distance;local c=P.channels[id]
+  if c and c.playing and P:ScreenPowered(s) then
+   distances[id]=d
+   if d<subtitleDistance then subtitleID,subtitleDistance=id,d end
+   if not muted and (c.volume or 1)>0 then
+    if c.sound=="" and c.source~="" then needed[id]=true end
+    if c.sound~="" then
+     local ent=s.entityIndex and Entity(s.entityIndex)
+     -- Different channels on one prop need separate audio keys. Keep one
+     -- invisible anchor per channel, following that channel's nearest screen.
+     if s.world or (IsValid(ent) and table.Count(ix.PropScreens.IDs(ent,"ixTVScreenID"))>1) then
+      ent=P.audioAnchors[id]
+      if not IsValid(ent) then ent=ClientsideModel("models/hunter/blocks/cube025x025x025.mdl");if IsValid(ent) then ent:SetNoDraw(true);P.audioAnchors[id]=ent end end
+      if IsValid(ent) then ent:SetPos(pos);anchors[id]=true end
+     end
+     if IsValid(ent) then sources[ent]={path=c.sound,start=c.soundStart or c.start,loop=c.soundLoop,volume=M.Volume(d,T.audioFullDistance,T.audioMaxDistance)*(c.volume or 1)} end
+    end
+   end
+  end
+ end
+ local total=0
+ for id,d in pairs(distances) do local c=P.channels[id];if c.sound=="" then total=total+M.Volume(d,T.audioFullDistance,T.audioMaxDistance)*(c.volume or 1) end end
+ for id in pairs(needed) do
+  local c=P.channels[id];local r=P.players[id]
+  if not r then r=P:LoadPlayer(c) end;r.lastUse=RealTime()
+  if r.suspended then r.suspended=nil;r.received=RealTime();r.created=RealTime() end
+  if IsValid(r.panel) then
+   if RealTime()-r.created>15 and (not r.received or RealTime()-r.received>10) then r.status="error" end
+   if (r.status=="error" or r.status=="buffering") and r.attempt<3 and RealTime()-r.created>15*r.attempt then r=P:LoadPlayer(c,r.attempt+1) end
+   local volume=c.sound=="" and M.Volume(distances[id] or math.huge,T.audioFullDistance,T.audioMaxDistance)*(c.volume or 1)/math.max(1,total) or 0
+   if muted then volume=0 end
+   r.panel:RunJavascript("if(window.ixMediaUpdate)window.ixMediaUpdate("..T.Elapsed(c)..","..volume..","..tostring(c.loop==true)..");")
+  end
+ end
+ for id,r in pairs(P.players) do
+  if not needed[id] then
+   local c=P.channels[id]
+   if not c or not c.playing or RealTime()-(r.lastUse or r.created or 0)>=3 then P:DropPlayer(id)
+   elseif not r.suspended then
+    -- Briefly retain a paused decoder so looking away and back does not
+    -- repeatedly reload a URL. Resume seeks to the shared channel clock.
+    r.suspended=true
+    if IsValid(r.panel) then r.panel:RunJavascript("if(window.ixMediaSuspend)window.ixMediaSuspend();") end
+   end
+  end
+ end
+ P.audio:Update(sources)
+ for id,ent in pairs(P.audioAnchors) do if not anchors[id] then if IsValid(ent) then ent:Remove() end;P.audioAnchors[id]=nil end end
+ local r=subtitleID and P.players[subtitleID]
+ P.htmlPanel=r and r.panel or nil;P.tvPlayback=r and r.playback or nil
+ P.tvSubtitleCues=subtitleID and P.channels[subtitleID].cues or {};P.tvSubtitleNearby=subtitleID~=nil
+end)
+function P:PaintChannel(id,w,h)
+ local c=self.channels[id];local r=self.players[id];local status=self:GetChannelStatus(id)
+ if status~="ready" then T.DrawFailure(w,h,status,c and c.name);return end
+ local mat=r and r.mat;local u,v=1,1
+ if r and IsValid(r.panel) then
+  -- Refreshed in PreRender, never inside a world camera or panel Paint.
+  mat=r.htmlMat;u=r.u or 1;v=r.v or 1
+ end
+ if not mat then T.DrawFailure(w,h,"loading",c.name);return end
+ surface.SetDrawColor(255,255,255);surface.SetMaterial(mat);surface.DrawTexturedRectUV(0,0,w,h,0,0,u,v)
 end
-
--- JS snippet injected into every page to force unmuted autoplay.
-local AUTOPLAY_JS = [[
-<script>
-(function() {
-    function forcePlay() {
-        document.querySelectorAll("video,audio").forEach(function(el) {
-            el.muted  = false;
-            el.volume = 1;
-            if (el.paused) el.play().catch(function() {});
-        });
-    }
-    document.addEventListener("DOMContentLoaded", forcePlay);
-    setTimeout(forcePlay, 500);
-    setTimeout(forcePlay, 2000);
-})();
-</script>
-]]
-
--- Detect URL type and load appropriate content into the HTML panel.
--- IMPORTANT: all HTML panel audio is muted.
--- HTML panel audio is inherently 2D (global), so we suppress it here and let
--- the ix_tv_sound / CreateTVChannel system handle positional 3D audio instead.
-local function LoadURLContent(url)
-	local p = GetHTMLPanel()
-
-	-- YouTube: navigate directly to embed URL.
-	-- mute=1 suppresses 2D global audio; no loop.
-	local ytID = url:match("[?&]v=([%w%-_]+)") or url:match("youtu%.be/([%w%-_]+)")
-	if ytID then
-		p:OpenURL("https://www.youtube.com/embed/" .. ytID
-			.. "?autoplay=1&mute=1&controls=0&rel=0")
-		return
-	end
-
-	-- Twitch: muted=true suppresses 2D audio.
-	local twitchChannel = url:match("twitch%.tv/([%w_]+)$")
-	if twitchChannel then
-		p:OpenURL("https://player.twitch.tv/?channel=" .. twitchChannel
-			.. "&parent=twitch.tv&autoplay=true&muted=true")
-		return
-	end
-
-	-- Classify by extension. Strip query/fragment and lowercase first, otherwise
-	-- "clip.MP4" or "host/file.webm?token=..." get misdetected and fall through to
-	-- the <img> branch (which shows nothing for a video). Anything that isn't a
-	-- known IMAGE type is treated as video — for a TV, extensionless/stream links
-	-- (CDN redirects, etc.) are far more likely to be video than image.
-	-- NOTE: GMod's Chromium has NO H.264 codec, so .mp4 will load but render black.
-	-- Use .webm (VP8/VP9) or .ogg/.ogv for direct video.
-	local clean = (url:lower():match("^[^?#]+")) or url:lower()
-	local isImage = clean:match("%.png$") or clean:match("%.jpe?g$") or clean:match("%.gif$")
-		or clean:match("%.webp$") or clean:match("%.bmp$") or clean:match("%.svg$")
-
-	-- Direct video: muted (3D audio via CreateTVChannel), plays ONCE (no loop).
-	-- onended: clears screen and tells Lua to stop 3D audio channels.
-	local body
-	if not isImage then
-		-- Video starts muted for autoplay policy compliance.
-		-- The ix_tv_html_volume Think hook immediately adjusts volume via RunJavascript.
-		body = '<video id="v" src="' .. url .. '" autoplay playsinline muted '
-			.. 'style="width:100%;height:100%;object-fit:contain;background:#000;display:block;">'
-			.. '</video>'
-			.. '<script>'
-			.. 'var v=document.getElementById("v");'
-			.. 'v.onended=function(){'
-			..   'document.body.style.background="#000";'
-			..   'v.style.display="none";'
-			.. '};'
-			.. '</script>'
-
-	-- Image / GIF: no audio concerns.
-	else
-		body = '<img src="' .. url .. '" '
-			.. 'style="width:100%;height:100%;object-fit:contain;display:block;">'
-	end
-
-	p:SetHTML('<html><head><style>'
-		.. 'html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden;}'
-		.. '</style></head><body>' .. body .. '</body></html>')
+function P:CleanupTV()
+ self.tvTestUntil=nil
+ if self.ResetTVInterest then self:ResetTVInterest() end
+ for id in pairs(self.players or {}) do self:DropPlayer(id) end
+ for _,ent in pairs(self.audioAnchors or {}) do if IsValid(ent) then ent:Remove() end end
+ if self.audio then self.audio:Destroy() end
+ if IsValid(self.tvWindow) then self.tvWindow:Remove() end
+ self:ClearTVPlayback()
 end
-
--- Create one sound channel for a TV entity.
-local function CreateTVChannel(ent)
-	if not IsValid(ent) then return end
-	if PLUGIN.currentSound == "" then return end
-
-	local idx       = ent:EntIndex()
-	local soundPath = PLUGIN.currentSound
-	local startTime = PLUGIN.soundStartTime
-	local flags     = "3d noblock"
-
-	local function onChannel(channel, errNum)
-		if not IsValid(channel) then return end
-		if PLUGIN.currentSound != soundPath then channel:Stop(); return end
-		if not IsValid(ent) then channel:Stop(); return end
-
-		local len    = channel:GetLength()
-		local offset = CurTime() - startTime
-		if len > 0 then offset = offset % len end
-		if offset > 0 then channel:SetTime(offset) end
-
-		channel:SetPos(ent:GetPos())
-		-- Отодвигаем собственное затухание BASS далеко за наш радиус, чтобы оно не
-		-- накладывалось на ручной конверт громкости (3D-панорама/направление при
-		-- этом сохраняется). Реальную дальность задаёт TVDistanceVolume ниже.
-		channel:Set3DFadeDistance(TV_SND_SILENT, TV_SND_SILENT * 4)
-
-		local isOn = ent:GetNWBool("tv_on", true)
-		channel:SetVolume(isOn and TVDistanceVolume(ent) or 0)
-		channel:Play()
-
-		PLUGIN.tvSoundObjs[idx] = channel
-	end
-
-	if IsURL(soundPath) then
-		sound.PlayURL(soundPath, flags, onChannel)
-	else
-		sound.PlayFile("sound/" .. soundPath, flags, onChannel)
-	end
+function P:OnUnload()
+ self:CleanupTV()
+ hook.Remove("Think","ixTVChannels");hook.Remove("Think","ixTVPlacement");hook.Remove("HUDPaint","ixTVPlacementHUD")
+ hook.Remove("PostDrawOpaqueRenderables","ixTVScreens")
+ hook.Remove("PostDrawTranslucentRenderables","ixTVScreens")
+ hook.Remove("PreRender","ixTVDisplayTextures")
+ hook.Remove("CreateMove","ixTVPlacementInput")
+ hook.Remove("HUDPaint","ix_tv_subtitle_hud")
 end
-
--- Receive new material / image URL from server.
-net.Receive("ix_tv_setmaterial", function()
-	local path = net.ReadString()
-	PLUGIN.currentMaterial = path
-
-	if IsURL(path) then
-		PLUGIN.mat = nil
-		LoadURLContent(path)
-
-		-- Video audio is handled by the HTML panel itself with distance-based JS volume.
-		-- (sound.PlayURL cannot decode video containers, so we don't use it here.)
-	else
-		PLUGIN.mat = Material(path)
-	end
+hook.Add("ShutDown","ix_tv_cleanup",function() P:CleanupTV() end)
+ix.option.Add("tvMute",ix.type.bool,false,{category="appearance",phrase="Отключить звук телевизоров"})
+concommand.Add("ix_tv_status",function()
+ for id,c in pairs(P.channels) do print("[TV "..id.."] "..c.name.." / "..P:GetChannelStatus(id)) end;P.audio:Status()
 end)
 
--- Receive sound update from server.
-net.Receive("ix_tv_sound", function()
-	local path      = net.ReadString()
-	local startTime = net.ReadDouble()
-
-	PLUGIN.currentSound   = path
-	PLUGIN.soundStartTime = startTime
-	PLUGIN.tvSoundOnce    = false  -- manual sound command = looping/persistent
-
-	StopAllSounds()
-	if path == "" then return end
-
-	for _, ent in ipairs(PLUGIN.cachedTVs) do
-		CreateTVChannel(ent)
-	end
-end)
-
--- Receive config update from server.
-net.Receive("ix_tv_config", function()
-	local model         = net.ReadString()
-	local forwardOffset = net.ReadFloat()
-	local rightOffset   = net.ReadFloat()
-	local upOffset      = net.ReadFloat()
-	local width         = net.ReadFloat()
-	local height        = net.ReadFloat()
-	local pitch         = net.ReadFloat()
-	local yaw           = net.ReadFloat()
-	local roll          = net.ReadFloat()
-
-	if PLUGIN.tvModels[model] then
-		local cfg = PLUGIN.tvModels[model]
-		cfg.forwardOffset = forwardOffset
-		cfg.rightOffset   = rightOffset
-		cfg.upOffset      = upOffset
-		cfg.width         = width
-		cfg.height        = height
-		cfg.pitch         = pitch
-		cfg.yaw           = yaw
-		cfg.roll          = roll
-	end
-end)
-
-PLUGIN.tvLastState = {}
-
-local lastSoundTick = 0
-hook.Add("Think", "ix_tv_sound_update", function()
-	-- Update 3D position AND distance-based volume every frame. Volume must be
-	-- refreshed per-frame or the TV would stay at its start-time volume as the
-	-- listener walks away (the reason /tvsound was audible across the whole map).
-	for _, ent in ipairs(PLUGIN.cachedTVs) do
-		if not IsValid(ent) then continue end
-		local ch = PLUGIN.tvSoundObjs[ent:EntIndex()]
-		if IsValid(ch) then
-			ch:SetPos(ent:GetPos())
-			ch:SetVolume(TVIsOn(ent) and TVDistanceVolume(ent) or 0)
-		end
-	end
-
-	-- (UpdateHTMLTexture is called in the render hook for better frame timing)
-
-	-- Every 2 seconds: open missing channels (only for persistent/looping sounds).
-	-- tvSoundOnce=true means a video file played once — don't restart stopped channels.
-	local now = CurTime()
-	if now - lastSoundTick < 2 then return end
-	lastSoundTick = now
-
-	if PLUGIN.currentSound == "" then return end
-	if PLUGIN.tvSoundOnce then return end  -- one-shot video audio, never restart
-	for _, ent in ipairs(PLUGIN.cachedTVs) do
-		if IsValid(ent) and not IsValid(PLUGIN.tvSoundObjs[ent:EntIndex()]) then
-			CreateTVChannel(ent)
-		end
-	end
-end)
-
--- Distance-based volume control for HTML panel video/audio.
--- sound.PlayURL cannot decode video containers, so we control the HTML panel's
--- own audio via RunJavascript. Volume is 1.0 up to 80 units, fades to 0 at 500 units.
-do
-	local lastTick     = 0
-	local lastVol      = -1
-	local lastMaterial = ""
-	local DIST_FULL   = 60
-	local DIST_SILENT = 200
-
-	hook.Add("Think", "ix_tv_html_volume", function()
-		-- Reset when material changes so the new video element gets unmuted immediately.
-		if PLUGIN.currentMaterial != lastMaterial then
-			lastMaterial = PLUGIN.currentMaterial
-			lastVol = -1
-		end
-
-		if not IsURL(PLUGIN.currentMaterial) then
-			-- Ensure panel is silent when not showing URL content.
-			if lastVol != 0 and IsValid(PLUGIN.htmlPanel) then
-				lastVol = 0
-				PLUGIN.htmlPanel:RunJavascript(
-					'document.querySelectorAll("video,audio").forEach(function(e){try{e.volume=0;e.muted=true;}catch(x){}});'
-				)
-			end
-			return
-		end
-		if not IsValid(PLUGIN.htmlPanel) then return end
-
-		local now = CurTime()
-		if now - lastTick < 0.05 then return end   -- 20 updates/sec
-		lastTick = now
-
-		local ply = LocalPlayer()
-		if not IsValid(ply) then return end
-
-		-- Find nearest ON TV entity (off and unpowered TVs don't emit sound).
-		local minDist = math.huge
-		for _, ent in ipairs(PLUGIN.cachedTVs) do
-			if TVIsOn(ent) then
-				local d = ply:GetPos():Distance(ent:GetPos())
-				if d < minDist then minDist = d end
-			end
-		end
-
-		-- Linear falloff between DIST_FULL and DIST_SILENT.
-		local vol = 0
-		if minDist <= DIST_FULL then
-			vol = 1
-		elseif minDist < DIST_SILENT then
-			vol = 1 - (minDist - DIST_FULL) / (DIST_SILENT - DIST_FULL)
-		end
-		vol = math.Round(vol, 2)
-
-		if vol == lastVol then return end
-		lastVol = vol
-
-		local muted = vol <= 0 and "true" or "false"
-		PLUGIN.htmlPanel:RunJavascript(
-			'document.querySelectorAll("video,audio").forEach(function(e){'
-			..   'try{e.muted=' .. muted .. ';if(!e.muted)e.volume=' .. vol .. ';}catch(x){}'
-			.. '});'
-		)
-	end)
-end
-
-hook.Add("PostDrawOpaqueRenderables", "ix_tv_screen_render", function()
-	if not PLUGIN.mat and not IsURL(PLUGIN.currentMaterial) then
-		PLUGIN.mat = Material(PLUGIN.currentMaterial)
-	end
-	if not PLUGIN.blackMat then
-		PLUGIN.blackMat = Material("blackscreen")
-		if PLUGIN.blackMat:IsError() then PLUGIN.blackMat = nil end
-	end
-
-	RefreshTVCache()
-	if table.IsEmpty(PLUGIN.cachedTVs) then return end
-
-	-- For URL images, grab the HTML panel material each frame.
-	-- UpdateHTMLTexture must be called right before sampling to get the latest frame.
-	-- DrawTexturedRectUV is required: GMod pads HTML textures to the next power-of-2
-	-- (e.g. 1920x1080 → 2048x2048), so plain DrawTexturedRect only fills ~53% vertically.
-	local urlMat = nil
-	local urlU, urlV = 1, 1
-	if IsURL(PLUGIN.currentMaterial) and IsValid(PLUGIN.htmlPanel) then
-		PLUGIN.htmlPanel:UpdateHTMLTexture()
-		urlMat = PLUGIN.htmlPanel:GetHTMLMaterial()
-		if urlMat then
-			local tex = urlMat:GetTexture("$basetexture")
-			if tex then
-				local tw, th = tex:Width(), tex:Height()
-				if tw > 0 and th > 0 then
-					urlU = 1920 / tw
-					urlV = 1080 / th
-				end
-			end
-		end
-	end
-
-	for _, ent in ipairs(PLUGIN.cachedTVs) do
-		if not IsValid(ent) then continue end
-
-		local config = PLUGIN.tvModels[ent:GetModel()]
-		if not config then continue end
-
-		local pos = ent:LocalToWorld(Vector(
-			config.forwardOffset,
-			config.rightOffset or 0,
-			config.upOffset
-		))
-
-		local ang = ent:GetAngles()
-		ang:RotateAroundAxis(ang:Forward(), config.roll  or 0)
-		ang:RotateAroundAxis(ang:Right(),   config.pitch or 0)
-		ang:RotateAroundAxis(ang:Up(),      config.yaw   or 0)
-
-		local scale = 0.1
-		local pw = config.width  / scale * 0.5
-		local ph = config.height / scale * 0.5
-
-		local isOn = TVIsOn(ent)
-		local idx  = ent:EntIndex()
-
-		if PLUGIN.tvLastState[idx] != isOn then
-			PLUGIN.tvLastState[idx] = isOn
-			local ch = PLUGIN.tvSoundObjs[idx]
-			if IsValid(ch) then ch:SetVolume(isOn and 1 or 0) end
-		end
-
-		cam.Start3D2D(pos, ang, scale)
-			if isOn then
-				local mat = urlMat or PLUGIN.mat
-				if mat then
-					surface.SetMaterial(mat)
-					surface.SetDrawColor(255, 255, 255, 255)
-					if mat == urlMat then
-						-- Use correct UV bounds to avoid power-of-2 padding crop.
-						surface.DrawTexturedRectUV(-pw, -ph, pw * 2, ph * 2, 0, 0, urlU, urlV)
-					else
-						surface.DrawTexturedRect(-pw, -ph, pw * 2, ph * 2)
-					end
-				else
-					surface.SetDrawColor(0, 0, 0, 255)
-					surface.DrawRect(-pw, -ph, pw * 2, ph * 2)
-				end
-			else
-				if PLUGIN.blackMat then
-					surface.SetMaterial(PLUGIN.blackMat)
-					surface.SetDrawColor(255, 255, 255, 255)
-					surface.DrawTexturedRect(-pw, -ph, pw * 2, ph * 2)
-				else
-					surface.SetDrawColor(0, 0, 0, 255)
-					surface.DrawRect(-pw, -ph, pw * 2, ph * 2)
-				end
-			end
-		cam.End3D2D()
-	end
-end)

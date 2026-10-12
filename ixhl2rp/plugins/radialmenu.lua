@@ -347,9 +347,18 @@ local function EquipmentOptions(headOnly)
   if (headOnly and head) or (not headOnly and item.isWeapon) then
    local equipped=item.IsEquipped and item:IsEquipped() or item:GetData("equip",false)
    local key=equipped and "unequip" or "equip"
+   local detail=equipped and "Убрать / снять" or "Экипировать"
+   local disabled=false
+   if item.nvgType then
+    -- NVGs stay in the glasses slot; the quick action only flips them up/down.
+    key="toggleNVG"
+    disabled=not equipped
+    detail=not equipped and "Сначала экипируйте через инвентарь" or
+     (LocalPlayer():GetNWBool("nvg_on",false) and "Поднять ПНВ" or "Опустить ПНВ")
+   end
    if item.functions and item.functions[key] then
-    result[#result+1]={label=item:GetName(), detail=equipped and "Убрать / снять" or "Экипировать",
-     callback=function() RunItemFunction(item,key) end}
+    result[#result+1]={label=item:GetName(),detail=detail,disabled=disabled,
+     callback=function() if not disabled then RunItemFunction(item,key) end end}
    end
   end
  end
@@ -369,6 +378,7 @@ local function PersonalOptions(target, entity, ragdoll)
  if IsValid(target) and target~=LocalPlayer() then
   options[#options+1]=Category("Взаимодействие",BuildOptions(target,entity,ragdoll),"Персонаж перед вами")
  end
+ hook.Run("CreatePersonalRadialOptions",options)
  return options
 end
 surface.CreateFont("ixRadialLabel",{font="Consolas",size=18,weight=500,extended=true})
@@ -407,6 +417,7 @@ function PANEL:PageOptions()
  end
  if #self.menuStack>0 then self.options[#self.options+1]={label="Назад",isBack=true} end
  self.hovered=0; self.hoverFade={}
+ if self.OnOptionsChanged then self:OnOptionsChanged() end
  self:SetAlpha(145); self:AlphaTo(255,.14,0)
 end
 function PANEL:PushOptions(options,name)
@@ -420,8 +431,8 @@ function PANEL:PopOptions()
  return true
 end
 function PANEL:Geometry()
- local r=math.min(ScrH()*.29,310)
- return ScrW()*.5,ScrH()*.5,r,r*.43
+ local r=math.min(ScrH()*(self.poseToken and .36 or .29),self.poseToken and 355 or 310)
+ return ScrW()*.5,ScrH()*.5,r,r*(self.poseToken and .62 or .43)
 end
 function PANEL:Think()
  if not IsValid(LocalPlayer()) or not LocalPlayer():Alive() or not self.character or LocalPlayer():GetCharacter()~=self.character then self:Remove() return end
@@ -439,7 +450,9 @@ function PANEL:Think()
   end
  end
  if hover~=self.hovered and hover>0 then surface.PlaySound("ix/ui/radial_hover.wav") end
+ if hover~=self.hovered and self.OnOptionHover then self:OnOptionHover(self.options[hover]) end
  self.hovered=hover
+ if self.PreviewThink then self:PreviewThink() end
  for i=1,#self.options do self.hoverFade[i]=Lerp(math.min(FrameTime()*12,1),self.hoverFade[i] or 0,i==hover and 1 or 0) end
 end
 local function Arc(cx,cy,inner,outer,start,finish)
@@ -481,10 +494,13 @@ function PANEL:Paint(w,h)
  surface.SetDrawColor(8,5,8,230*a); Arc(cx,cy,0,inner-8,0,360)
  surface.SetDrawColor(246,83,99,90*a); Arc(cx,cy,inner-9,inner-8,0,360)
  local selected=self.options[self.hovered]
+ local customCenter=self.PaintCenter and self:PaintCenter(cx,cy,inner)
+ if not customCenter then
  local label=selected and selected.label or self.centerName
  local lines=WrapTextSafe(label,inner*1.5,"ixRadialLabel")
  for i,line in ipairs(lines) do draw.SimpleText(line,"ixRadialLabel",cx,cy+(i-(#lines+1)*.5)*20-8,red,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER) end
  draw.SimpleText(selected and selected.disabled and "НЕДОСТУПНО" or "ВЫБРАТЬ", "ixRadialSmall",cx,cy+inner*.5,pale,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
+ end
  draw.SimpleText(selected and selected.detail or "", "ixRadialLabel",cx,cy+r+30,pale,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
  draw.SimpleText("ЛКМ — ВЫБОР    /    ПКМ — НАЗАД    /    ESC — ЗАКРЫТЬ", "ixRadialSmall",cx,cy+r+58,Color(160,136,139),TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
 end
@@ -570,6 +586,7 @@ hook.Remove("PlayerButtonDown", "ixRadialHotkey")
 
 -- H is a default convenience key; +ix_radial can be rebound independently.
 concommand.Add("ix_radial",function()
+ if ix.PlayerControls and not ix.PlayerControls.CanUseHotkeys(true) then return end
  local client=LocalPlayer()
  if not IsValid(client) or not client:GetCharacter() or not client:Alive() then return end
  if IsValid(ix.gui.charRadial) then ix.gui.charRadial:Remove() return end
@@ -585,17 +602,6 @@ concommand.Add("ix_radial",function()
 end)
 concommand.Add("+ix_radial",function() RunConsoleCommand("ix_radial") end)
 concommand.Add("-ix_radial",function() end)
-local defaultKey=CreateClientConVar("ix_radial_default_h","1",true,false,"Open quick actions with H; disable to use your own bind.")
--- Client polling also works in single-player, where predicted PlayerButtonDown
--- does not run clientside. One edge per press; the panel never closes on that
--- same key event. An explicit H bind owns input to avoid toggling twice.
-local wasDown=input.IsKeyDown(KEY_H)
-hook.Add("Think","ixRadialHotkey",function()
- local down=input.IsKeyDown(KEY_H)
- local pressed=down and not wasDown
- wasDown=down
- if not pressed or not defaultKey:GetBool() then return end
- local binding=input.LookupKeyBinding and input.LookupKeyBinding(KEY_H)
- if binding and binding:find("ix_radial",1,true) then return end
- RunConsoleCommand("ix_radial")
-end)
+-- All three shortcuts are configured together by player_controls.
+CreateClientConVar("ix_radial_default_h","1",true,false,"Legacy shortcut setting; use Controls / key bindings.")
+hook.Remove("Think","ixRadialHotkey")

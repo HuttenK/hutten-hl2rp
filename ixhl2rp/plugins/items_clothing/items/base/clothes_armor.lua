@@ -12,6 +12,10 @@ function ItemArmor:Init()
 
 	self.category = "item.category.clothing_armor"
 
+	self:AddData("plates", {Transmit = ix.transmit.owner})
+	self.functions.inspectPlates = {name="Осмотреть пластины", icon="icon16/shield.png",
+	 OnCanRun=function(item) return ix.field and ix.field.Capacity(item)~=nil and not IsValid(item:GetEntity()) end,
+	 OnRun=function(item) ix.field.Inspect(item.player,item); return false end}
 	self:AddData("value", {
 		Transmit = ix.transmit.owner,
 	})
@@ -128,6 +132,14 @@ if CLIENT then
 	})
 
 	function ItemArmor:PaintOver(w, h)
+		if ix.field and ix.field.Capacity(self)~=nil then
+		 local cap=ix.field.Capacity(self); if cap==0 then return end
+		 for i,hp in ipairs(ix.field.Plates(self)) do
+		  surface.SetDrawColor(hp>0 and Color(175,60,65) or Color(45,30,33))
+		  surface.DrawRect(2+(i-1)*(w-4)/cap,h-6,(w-4)/cap-1,4)
+		 end
+		 return
+		end
 		surface.SetDrawColor(35, 35, 35, 225)
 		surface.DrawRect(2, h-9, w-4, 7)
 
@@ -179,6 +191,12 @@ if CLIENT then
 	}
 
 	function ItemArmor:PopulateTooltip(tooltip)
+		if ix.field and ix.field.Capacity(self)~=nil then
+		 local cap=ix.field.Capacity(self)
+		 StatRow("plates",cap==0 and "Противоударный жилет: защита от рукопашных атак" or ("Пластины: "..ix.field.Count(self).." / "..cap.." | Защита: "..(ix.field.Count(self)*25).."%"),color_white,tooltip,true)
+		 StatRow("legs","Ноги не защищены",Color(200,110,110),tooltip)
+		 return
+		end
 		if self.armor then
 			if self.armor.class > 1 then
 				local stat_color = greenClr

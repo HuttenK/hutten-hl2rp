@@ -106,6 +106,16 @@ if CLIENT then
    self.FieldlinkWorldModel=ClientsideModel(self.WorldModel,RENDERGROUP_OPAQUE)
    if not IsValid(self.FieldlinkWorldModel) then return end
    self.FieldlinkWorldModel:SetNoDraw(true)
+   -- This is a viewmodel asset: its entity origin is not the device grip.
+   -- Freeze its idle pose and cache the actual screen-bone transform at origin.
+   local model=self.FieldlinkWorldModel
+   model:SetPos(vector_origin); model:SetAngles(angle_zero)
+   local idle=model:LookupSequence("idle")
+   if idle and idle>=0 then model:ResetSequence(idle) end
+   model:SetCycle(0); model:SetPlaybackRate(0); model:SetupBones()
+   local screen=model:LookupBone("jnt_offset")
+   local matrix=screen and model:GetBoneMatrix(screen)
+   self.FieldlinkScreenInverse=matrix and matrix:GetInverse() or nil
   end
   local model=self.FieldlinkWorldModel
   local owner=self:GetOwner()
@@ -114,8 +124,27 @@ if CLIENT then
    local matrix=bone and owner:GetBoneMatrix(bone)
    if not matrix then return end
    local pos,ang=LocalToWorld(Vector(3,-6,-6),Angle(-50,-10,-165),matrix:GetTranslation(),matrix:GetAngles())
+   local fraction=self:GetPDAFraction()
+   if fraction>0 and self.FieldlinkScreenInverse then
+    -- Follow the posed hand position, but orient the screen in body space:
+    -- wrist roll differs between player models and must not flip the device.
+    local body=Angle(0,owner:GetRenderAngles().y,0)
+    local screenAngle=Angle(-25,body.y,0)
+    local screenCenter=matrix:GetTranslation()-body:Right()*3+Vector(0,0,1)
+    local fieldlink=ix and ix.Fieldlink
+    if fieldlink and fieldlink.PDADeviceFromHand then
+     screenCenter,screenAngle=fieldlink.PDADeviceFromHand(owner,matrix:GetTranslation())
+    end
+    local target=Matrix()
+    target:SetAngles(screenAngle)
+    -- The LCD centre is y=-0.225, z=0.189 in jnt_offset space.
+    target:SetTranslation(screenCenter-screenAngle:Right()*0.225-screenAngle:Up()*0.189)
+    local device=target*self.FieldlinkScreenInverse
+    pos=LerpVector(fraction,pos,device:GetTranslation())
+    ang=LerpAngle(fraction,ang,device:GetAngles())
+   end
    model:SetPos(pos); model:SetAngles(ang)
   else model:SetPos(self:GetPos()); model:SetAngles(self:GetAngles()) end
-  model:SetupBones(); model:DrawModel()
+  model:InvalidateBoneCache(); model:SetupBones(); model:DrawModel()
  end
 end

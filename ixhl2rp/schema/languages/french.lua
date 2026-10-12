@@ -196,8 +196,8 @@ ration.useCoupon 				= "Prenez le coupon en main et utilisez le distributeur via
 
 -- Factions
 faction.citizen 					= "Citoyen"
-faction.citizen.desc 				= "Un citoyen humain ordinaire asservi par l'Union Universelle."
-faction.citizen.info 				= "Les civils - la majorité de l'humanité, épuisée par les Tempêtes Portales et la Guerre de Sept Heures. La plupart n'ont jamais pu prendre les armes, étant de simples travailleurs, programmeurs ou fonctionnaires sans pouvoir réel. Nourris, abreuvés - et surtout en sécurité - ils œuvrent au profit de l'Union Universelle... ou la combattent, en se souvenant de l'Ancien Monde.\n\nLa vie dans le Secteur 4 est souvent comparée à un camp de travail. Mauvais logements, travail pénible, conditions terribles et présence militaire constante. Pour la plupart des habitants, travailler pour l'Union est une chance d'obtenir un « billet en or » et de partir vers le Secteur 1, plus riche et prospère. Pour les nouveaux arrivants - une chance de gagner de l'argent et de rentrer dans leur secteur d'origine en loyaliste aisé."
+faction.citizen.desc = "Un civil."
+faction.citizen.info = "Un civil."
 faction.vortigaunt 					= "Vortigaunts"
 faction.vortigaunt.desc 			= "Une créature mystérieuse du monde de Xen. Sa sagesse et son savoir peuvent devenir une arme puissante."
 faction.vortigaunt.info 			= "La race vortigaunt est composée de réfugiés d'autres mondes lointains. Retrouvés dans le monde frontière de Xen lors de la Résonance en Cascade en fuyant le Combine - ils ont atterri sous son nez quand il a frappé la Terre. Prisonniers de leur conscience, ils sont responsables de la mort de centaines d'innocents. Les Vortigaunts ont la sagesse de reconnaître leur culpabilité, se comportant avec humilité malgré la haine persistante envers leur race.\n\nEn ces temps difficiles, les options des Vortigaunts sont limitées. La plupart de leur race a été réduite en esclavage et placée sous l'Overwatch pour des tâches humiliantes, tandis que ceux encore libres ont perdu le lien avec l'esprit partagé de leur race à cause des suppresseurs installés dans chaque centre de communication Overwatch."
@@ -594,3 +594,7 @@ class.elite_overwatch_soldier      = "Soldat d'Élite Transhumain"
 class.scanner                      = "Scanner"
 class.scanner2                     = "Scanner de l'Alliance"
 class.scanner3                     = "Scanner de Commandement"
+faction.foundation = "Personnel de la Fondation"
+faction.foundation.desc = "Personnel de la Fondation SCP."
+faction.mtf = "Force d’intervention mobile"
+faction.mtf.desc = "Un opérateur d’une force d’intervention mobile de la Fondation."

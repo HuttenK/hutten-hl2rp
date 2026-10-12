@@ -10,6 +10,7 @@ function PANEL:Init()
 	ix.gui.areaEdit = self
 	self.list = {}
 	self.properties = {}
+	self.propertyRows = {}
 
 	self:SetDeleteOnClose(true)
 	self:SetSizable(true)
@@ -39,6 +40,7 @@ function PANEL:Init()
 	self.typeEntry.OnSelect = function(panel)
 		panel:SizeToContents()
 		panel:SetWide(panel:GetWide() + 12) -- padding for arrow (nice)
+		if (IsValid(self.saveButton)) then self:UpdatePropertyVisibility() end
 	end
 
 	for id, name in pairs(ix.area.types) do
@@ -120,6 +122,7 @@ function PANEL:Init()
 			row:SetRightPanel(panel)
 			row:Dock(TOP)
 			row:SizeToContents()
+			self.propertyRows[k] = row
 		end
 
 		self.properties[k] = function()
@@ -136,9 +139,21 @@ function PANEL:Init()
 		self:Submit()
 	end
 
-	self:SizeToContents()
+	self:UpdatePropertyVisibility()
 	self:SetPos(64, 0)
 	self:CenterVertical()
+end
+
+function PANEL:UpdatePropertyVisibility()
+	local _, type = self.typeEntry:GetSelected()
+	local options = ix.area.typeOptions[type] or {}
+	for key, row in pairs(self.propertyRows) do
+		local property = ix.area.properties[key]
+		row:SetVisible((!property.areaType or property.areaType == type)
+			and (!options.allowedProperties or options.allowedProperties[key] == true))
+	end
+	self.canvas:InvalidateLayout(true)
+	self:SizeToContents()
 end
 
 function PANEL:SizeToContents()
@@ -146,8 +161,10 @@ function PANEL:SizeToContents()
 	local height = 37
 
 	for _, v in ipairs(self.canvas:GetCanvas():GetChildren()) do
-		width = math.max(width, v:GetLabelWidth())
-		height = height + v:GetTall()
+		if (v:IsVisible()) then
+			width = math.max(width, v:GetLabelWidth())
+			height = height + v:GetTall()
+		end
 	end
 
 	self:SetWide(width + 200)
@@ -165,7 +182,7 @@ function PANEL:Submit()
 	local properties = {}
 
 	for k, v in pairs(self.properties) do
-		properties[k] = v()
+		if (IsValid(self.propertyRows[k]) and self.propertyRows[k]:IsVisible()) then properties[k] = v() end
 	end
 
 	local _, type = self.typeEntry:GetSelected()
@@ -174,11 +191,12 @@ function PANEL:Submit()
 		net.WriteString(name)
 		net.WriteString(type)
 		net.WriteVector(PLUGIN.editStart)
-		net.WriteVector(PLUGIN:GetPlayerAreaTrace().HitPos)
+		net.WriteVector(PLUGIN.editEnd or PLUGIN:GetPlayerAreaTrace().HitPos)
 		net.WriteTable(properties)
 	net.SendToServer()
 
 	PLUGIN.editStart = nil
+	PLUGIN.editEnd = nil
 	self:Remove()
 end
 

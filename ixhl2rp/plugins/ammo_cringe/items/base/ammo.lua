@@ -15,7 +15,7 @@ function ItemAmmo:OnInstanced(isCreated)
 	-- caps transfers correctly for this specific ammo type.
 	self.max_stack = self.ammoAmount or 30
 
-	if isCreated then
+	if isCreated and self:GetData("stack") == nil then
 		-- Initialise the stack count to the full box size instead of
 		-- ItemStackable's generic default_stack (16).
 		self:SetData("stack", self.ammoAmount or 30)

@@ -45,6 +45,7 @@ end
 -- @realm shared
 -- @treturn bool Whether or not the player can shoot their weapon
 function meta:CanShootWeapon()
+	if ix.Downed and ix.Downed.Crawling and ix.Downed.Crawling(self) then return false end
 	return self:GetNetVar("canShoot", true)
 end
 
@@ -271,6 +272,7 @@ if (SERVER) then
 	-- @number[opt=startTime + time] finishTime Game time in seconds that the timer should complete at. If you are using `time`,
 	-- then you shouldn't use this argument
 	function meta:SetAction(text, time, callback, startTime, finishTime)
+        hook.Run("PlayerActionChanged", self, text)
 		if (time and time <= 0) then
 			if (callback) then
 				callback(self)
@@ -482,7 +484,12 @@ if (SERVER) then
 				if (IsValid(self) and !entity.ixIgnoreDelete) then
 					if (entity.ixWeapons) then
 						for _, v in ipairs(entity.ixWeapons) do
-							if (v.class) then
+							if v.slotItem and ix.WeaponSlots then
+                                        local item = ix.Item.instances[v.slotItem]
+                                        if item and ix.WeaponSlots.Owns(self, item) and ix.WeaponSlots.Slot(item) then
+                                            ix.WeaponSlots.Activate(self, item, true)
+                                        end
+                                    elseif (v.class) then
 								local weapon = self:Give(v.class, true)
 
 								if (v.item) then
@@ -548,7 +555,11 @@ if (SERVER) then
 			end
 
 			for _, v in ipairs(self:GetWeapons()) do
-				if (v.ixItem and v.ixItem.Equip and v.ixItem.Unequip) then
+				if ix.WeaponSlots and v.ixItem and ix.WeaponSlots.Slot(v.ixItem) then
+                        local item = v.ixItem
+                        entity.ixWeapons[#entity.ixWeapons + 1] = {slotItem = item.id}
+                        ix.WeaponSlots.Suspend(self, item)
+                    elseif (v.ixItem and v.ixItem.Equip and v.ixItem.Unequip) then
 					entity.ixWeapons[#entity.ixWeapons + 1] = {
 						item = v.ixItem,
 						invID = v.ixItem.invID,

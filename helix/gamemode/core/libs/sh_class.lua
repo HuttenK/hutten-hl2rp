@@ -25,6 +25,7 @@ function ix.class.LoadFromDir(directory)
 	for _, v in ipairs(file.Find(directory.."/*.lua", "LUA")) do
 		-- Get the name without the "sh_" prefix and ".lua" suffix.
 		local niceName = v:sub(4, -5)
+		if not (Schema and Schema.classAllowlist) or Schema.classAllowlist[niceName] then
 		-- Determine a numeric identifier for this class.
 		local index = #ix.class.list + 1
 		local halt
@@ -69,6 +70,7 @@ function ix.class.LoadFromDir(directory)
 
 			ix.class.list[index] = CLASS
 		CLASS = nil
+		end
 	end
 end
 

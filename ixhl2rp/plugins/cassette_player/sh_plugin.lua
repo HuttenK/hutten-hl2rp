@@ -23,7 +23,7 @@ for uniqueID, item in pairs(ix.Item.stored or {}) do
 		item.functions = item.functions or {}
 
 		-- Count existing functions BEFORE adding so nextIdx is correct.
-		local nextIdx = table.Count(item.functions) + 1
+		local nextIdx = item.functions.InsertCassette and item.functions.InsertCassette.index or (table.Count(item.functions) + 1)
 
 		item.functions.InsertCassette = {
 			name  = "Вставить в плеер",

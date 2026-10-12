@@ -12,6 +12,12 @@ if (CLIENT) then
 	PLUGIN.fadeTime = PLUGIN.fadeTime or 0
 
 	local matrixScale = Vector(1, 1, 0)
+    local function Choices(client)
+        return ix.WeaponSlots and ix.WeaponSlots.Choices(client) or client:GetWeapons()
+    end
+    local function IsChoice(weapon)
+        return weapon and (weapon.ixWeaponSlot or IsValid(weapon))
+    end
 
 	function PLUGIN:LoadFonts(font, genericFont)
 		surface.CreateFont("ixWeaponSelectFont", {
@@ -43,7 +49,7 @@ if (CLIENT) then
 
 			self.deltaIndex = Lerp(frameTime * 12, self.deltaIndex, self.index)
 
-			local weapons = LocalPlayer():GetWeapons()
+			local weapons = Choices(LocalPlayer())
 			local index = self.deltaIndex
 
 			if (!weapons[self.index]) then
@@ -99,7 +105,7 @@ if (CLIENT) then
 		self.fadeTime = CurTime() + 5
 		self.markup = nil
 
-		if (IsValid(weapon)) then
+		if (IsChoice(weapon)) then
 			local instructions = weapon.Instructions
 			local text = ""
 
@@ -146,7 +152,7 @@ if (CLIENT) then
 			bTool = tool and (tool.Scroll != nil)
 		end
 
-		local weapons = client:GetWeapons()
+		local weapons = Choices(client)
 
 		if (bind:find("invprev") and !bTool) then
 			local oldIndex = self.index
@@ -174,10 +180,14 @@ if (CLIENT) then
 		elseif (bind:find("attack") and self.alpha > 0) then
 			local weapon = weapons[self.index]
 
-			if (IsValid(weapon)) then
+			if (IsChoice(weapon)) then
 				LocalPlayer():EmitSound(hook.Run("WeaponSelectSound", weapon) or "HL2Player.Use")
 
-				input.SelectWeapon(weapon)
+				if weapon.ixWeaponSlot then
+                    ix.WeaponSlots.Select(weapon)
+                else
+                    input.SelectWeapon(weapon)
+                end
 				self.alpha = 0
 			end
 

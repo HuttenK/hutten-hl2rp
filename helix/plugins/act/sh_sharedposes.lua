@@ -1,4 +1,4 @@
--- Static RP pose retargeting. Native sequences always take precedence.
+-- RP pose/gesture retargeting. Native sequences always take precedence.
 -- Only pose identity is networked; visual bones are rebuilt on each client.
 ix.sharedPoses=ix.sharedPoses or {}
 local R=ix.sharedPoses
@@ -15,20 +15,35 @@ ix.Net:AddPlayerVar("sharedPose",false,nil,ix.Net.Type.Table)
 
 function R.Allowed(name)
  if not isstring(name) or #name>96 then return false end
+ local animated=ix.PoseStudio and ix.PoseStudio.RigMap
  if name:match("^stances_sit0[1-9]$") or name=="stances_sitground" or name=="stances_sitwall" or
   name=="stances_check" or name:match("^stances_lean0[12]$") or
   name:match("^stances_down0[123]$") or name=="stances_arrest" or name:match("^stances_stand0[123]$") or
   name=="sit_zen" or name=="sit_passive" or name=="sit_fist" then return true end
  for _,classes in pairs(ix.act.stored or {}) do
   for _,data in pairs(classes) do
-   if istable(data) and data.untimed then
-    for _,pose in ipairs(data.sequence or {}) do
-     if (istable(pose) and pose[1] or pose)==name then return true end
+   if istable(data) and (data.untimed or animated) then
+    for _,field in ipairs(animated and {"sequence","start","finish"} or {"sequence"}) do
+     for _,pose in ipairs(data[field] or {}) do
+      if (istable(pose) and pose[1] or pose)==name then return true end
+     end
     end
    end
   end
  end
  return false
+end
+
+function R.Animated(name)
+ if name:match("^stances_") or name=="sit_zen" or name=="sit_passive" or name=="sit_fist" then return false end
+ for _,classes in pairs(ix.act.stored or {}) do
+  for _,data in pairs(classes) do
+   if istable(data) and data.untimed then
+    for _,pose in ipairs(data.sequence or {}) do if (istable(pose) and pose[1] or pose)==name then return false end end
+   end
+  end
+ end
+ return ix.PoseStudio and ix.PoseStudio.RigMap~=nil or false
 end
 
 -- Read the compiled bind skeleton, not a guessed T-pose or model filename map.
@@ -125,11 +140,15 @@ function R.Resolve(entity,name)
  local base=R.BaseSequence(entity); if base==nil then return end
  for _,model in ipairs(providers) do
   local source=R.Rig(model)
-  if R.Compatible(target,source) then
+  local studio=ix.PoseStudio
+  if studio and studio.RigMap and studio.RigMap(target,source) or not (studio and studio.RigMap) and R.Compatible(target,source) then
    local donor=R.Probe(model)
    local id=IsValid(donor) and donor:LookupSequence(name)
    if id and id>=0 then
-    local pose={model=model,sequence=name,target=entity:GetModel(),base=base,cycle=0}
+    local animated=R.Animated(name)
+    local duration=animated and donor:SequenceDuration(id) or 0
+    if duration~=duration or duration==math.huge then duration=1 end
+    local pose={model=model,sequence=name,target=entity:GetModel(),base=base,cycle=0,animated=animated,duration=animated and math.Clamp(duration,.1,120) or nil}
     capabilities[key]={pose=pose,expires=CurTime()+60}
     return pose
    end
@@ -139,7 +158,8 @@ end
 
 if SERVER then
  function R.Begin(entity,pose)
-  entity:SetNetVar("sharedPose",pose)
+  local playing=table.Copy(pose); playing.started=CurTime()
+  entity:SetNetVar("sharedPose",playing)
  end
  function R.Clear(entity) entity:SetNetVar("sharedPose",nil) end
  hook.Add("PlayerDeath","SharedPoseCleanup",R.Clear)
@@ -189,12 +209,11 @@ local function Sample(pose)
  return sample
 end
 
--- Preserve target limb lengths. Transfer local rotation relative to the bind
--- skeleton; only pelvis displacement is scaled to the target's proportions.
+-- ValveBiped animation axes are shared, but mesh reference poses need not be.
+-- Preserve the sampled rotation instead of adding the target's reference bend.
+-- Keep target limb lengths; only pelvis displacement scales in this fallback.
 function R.RetargetLocal(targetBone,sourceBone,sourcePose,scale)
- local delta=sourceBone.localBind:GetInverse()*sourcePose
- delta:SetTranslation(vector_origin)
- local result=targetBone.localBind*delta
+ local result=sourcePose*Matrix()
  local position=targetBone.localBind:GetTranslation()
  if targetBone.name==prefix.."Pelvis" then
   position=position+(sourcePose:GetTranslation()-sourceBone.localBind:GetTranslation())*scale
@@ -205,6 +224,7 @@ end
 
 function R.Apply(entity,pose)
  if not IsValid(entity) or entity:GetModel()~=pose.target then R.Clear(entity); return false end
+ if ix.PoseStudio and ix.PoseStudio.ApplySharedAct then return ix.PoseStudio.ApplySharedAct(entity,pose) end
  local target=R.Rig(entity:GetModel()); local sample=Sample(pose)
  if not sample or not R.Compatible(target,sample.rig) then R.Clear(entity); return false end
  local source=sample.rig
@@ -256,6 +276,7 @@ function R.Apply(entity,pose)
 end
 
 function R.Clear(entity)
+ if ix.PoseStudio and ix.PoseStudio.ClearSharedAct then ix.PoseStudio.ClearSharedAct(entity) end
  local state=active[entity]
  if state and IsValid(entity) then
   if state.callback then entity:RemoveCallback("BuildBonePositions",state.callback) end
@@ -268,7 +289,7 @@ hook.Add("Think","SharedRoleplayPoses",function()
   local pose=entity:GetNetVar("sharedPose")
   if istable(pose) and entity:Alive() and entity:GetModel()==pose.target then
    if not R.Apply(entity,pose) and active[entity] then R.Clear(entity) end
-  elseif active[entity] then R.Clear(entity) end
+  else R.Clear(entity) end
  end
 end)
 hook.Add("EntityRemoved","SharedPoseCleanup",function(entity) active[entity]=nil end)

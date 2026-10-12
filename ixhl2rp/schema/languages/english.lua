@@ -195,8 +195,8 @@ ration.useCoupon 				= "Take the coupon in hand and use the dispenser via [TAB],
 
 -- Factions
 faction.citizen 					= "Citizen"
-faction.citizen.desc 				= "A regular human citizen enslaved by the Universal Union."
-faction.citizen.info 				= "Civilians - the bulk of humanity, exhausted by the Portal Storms and the Seven Hour War. Most civilians had no chance to take up arms, being simple workers, programmers or officials without real power. Provided with food, water - and most importantly security - they labor for the benefit of the Universal Union... or fight against it, remembering the Old World.\n\nLife in Sector 4 is often compared to a labor camp. Poor housing, hard work, terrible conditions and the constant presence of the military. For most locals, working for the Union is a chance to earn a 'golden ticket' and move to Sector 1, far wealthier and more prosperous. For newcomers - a chance to earn good money and return to their home sector as a wealthy loyalist."
+faction.citizen.desc = "A civilian."
+faction.citizen.info = "A civilian."
 faction.vortigaunt 					= "Vortigaunts"
 faction.vortigaunt.desc 			= "A mysterious being from the world of Xen. Its wisdom and knowledge can become a powerful weapon."
 faction.vortigaunt.info 			= "The Vortigaunt race are refugees from other distant worlds. Finding themselves in the borderworld of Xen during the Cascade Resonance while fleeing the Combine - they ended up under its nose when it struck Earth. Prisoners of their conscience, they are responsible for the deaths of hundreds of innocents. The Vortigaunts have the wisdom to recognize their guilt, behaving humbly despite the enduring hatred toward their race.\n\nIn these hard times the Vortigaunts' options are limited. Most of their race was enslaved and placed under Overwatch for various humiliating tasks, while those still free lost their connection to the shared mind of their race due to suppressors installed in every Overwatch communications center."
@@ -595,3 +595,7 @@ class.elite_overwatch_soldier      = "Elite Overwatch Soldier"
 class.scanner                      = "Scanner"
 class.scanner2                     = "2Scanner"
 class.scanner3                     = "3Scanner"
+faction.foundation = "Foundation Personnel"
+faction.foundation.desc = "Personnel of the SCP Foundation."
+faction.mtf = "Mobile Task Force"
+faction.mtf.desc = "A Foundation mobile task force operative."

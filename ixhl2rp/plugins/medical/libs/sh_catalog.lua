@@ -8,7 +8,7 @@ M.Catalog = {
  healthkit = {name="Аптечка Salewa", model="salewa", uses=4, kind="kit", wounds=4, time=12},
  painkiller = {name="Анальгин", model="anaglin", uses=4, kind="painkiller", pain=180, time=5},
  morphine = {name="Морфин", model="injector", skin=1, uses=1, kind="painkiller", pain=300, time=4},
- epinephrine = {name="Адреналин", model="injector", skin=7, uses=1, kind="stimulant", pain=90, time=4},
+ epinephrine = {name="Адреналин", model="injector", skin=7, uses=1, kind="stimulant", revive=90, pain=90, time=4},
  eft_afak = {name="Аптечка AFAK", model="afak", uses=5, kind="kit", wounds=5, time=14},
  eft_grizzly = {name="Медицинский набор Grizzly", model="grizzly", uses=8, kind="kit", wounds=8, time=16},
  eft_splint = {name="Алюминиевая шина", model="alusplint", uses=1, kind="splint", time=8},

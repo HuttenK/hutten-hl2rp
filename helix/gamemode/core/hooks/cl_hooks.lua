@@ -24,12 +24,21 @@ end
 
 local LOWERED_ANGLES = Angle(30, 0, -25)
 
+local function HasViewWeaponOwner(weapon, client)
+	if (!IsValid(weapon) or !weapon.ARC9) then return true end
+	local owner = weapon:GetOwner()
+	return IsValid(owner) and owner:IsPlayer() and owner == client
+end
+
 function GM:CalcViewModelView(weapon, viewModel, oldEyePos, oldEyeAngles, eyePos, eyeAngles)
 	if (!IsValid(weapon)) then
 		return
 	end
 
 	local client = LocalPlayer()
+	if (!IsValid(client) or !HasViewWeaponOwner(weapon, client)) then
+		return eyePos, eyeAngles
+	end
 	local bWepRaised = client:IsWepRaised()
 
 	-- update tween if the raised state is out of date
@@ -60,7 +69,11 @@ function GM:CalcViewModelView(weapon, viewModel, oldEyePos, oldEyeAngles, eyePos
 	end
 
 	viewModel:SetAngles(eyeAngles)
-	return self.BaseClass:CalcViewModelView(weapon, viewModel, oldEyePos, oldEyeAngles, eyePos, eyeAngles)
+	local position, angles = self.BaseClass:CalcViewModelView(weapon, viewModel, oldEyePos, oldEyeAngles, eyePos, eyeAngles)
+	if ix.PlayerControls and ix.PlayerControls.UpdateWeaponFOV then
+		ix.PlayerControls.UpdateWeaponFOV(client)
+	end
+	return position, angles
 end
 
 function GM:LoadIntro()
@@ -187,27 +200,36 @@ timer.Create("ixVignetteChecker", 1, 0, function()
 end)
 
 function GM:CalcView(client, origin, angles, fov)
-	local view = self.BaseClass:CalcView(client, origin, angles, fov) or {}
+	local view = {origin = origin, angles = angles, fov = fov, drawviewer = false}
+	if (!IsValid(client)) then return view end
 	local entity = Entity(client:GetLocalVar("ragdoll", 0))
 	local ragdoll = IsValid(client:GetRagdollEntity()) and client:GetRagdollEntity() or entity
 
 	if ((!client:ShouldDrawLocalPlayer() and IsValid(entity) and entity:IsRagdoll())
-	or (!LocalPlayer():Alive() and IsValid(ragdoll))) then
-		local ent = LocalPlayer():Alive() and entity or ragdoll
+	or (!client:Alive() and IsValid(ragdoll))) then
+		local ent = client:Alive() and entity or ragdoll
 		local index = ent:LookupAttachment("eyes")
 
-		if (index) then
+		if (index and index > 0) then
 			local data = ent:GetAttachment(index)
 
 			if (data) then
 				view.origin = data.Pos
 				view.angles = data.Ang
 			end
-
-			return view
 		end
+		-- Resolve the body camera before the base gamemode can call the SWEP.
+		return view
 	end
 
+	-- A valid active weapon may still have a NULL/non-player owner for a frame.
+	-- ARC9's camera assumes player methods just like its crosshair does.
+	if (!HasViewWeaponOwner(client:GetActiveWeapon(), client)) then return view end
+	view = self.BaseClass:CalcView(client, origin, angles, fov) or view
+
+	if (ix.Immersion and ix.Immersion.ApplyCamera) then
+		ix.Immersion.ApplyCamera(client, view, origin, angles)
+	end
 	return view
 end
 
@@ -305,7 +327,17 @@ function GM:HUDPaintBackground()
 	end
 
 	if (blurDelta > 0 and !client:ShouldDrawLocalPlayer()) then
-		ix.util.DrawBlurAt(0, 0, scrW, scrH, blurDelta)
+		-- Injury/unconsciousness must remain readable even with broken PP assets.
+        local shade = math.Clamp(blurDelta / 25, 0, 1)
+        surface.SetDrawColor(8, 5, 7, 38 * shade)
+        surface.DrawRect(0, 0, scrW, scrH)
+        local edge = scrH * 0.23
+        for band = 0, 47 do
+            local y = edge * band / 48
+            surface.SetDrawColor(4, 3, 5, 130 * shade * (1 - band / 48)^2)
+            surface.DrawRect(0, y, scrW, math.ceil(edge / 48))
+            surface.DrawRect(0, scrH - y - math.ceil(edge / 48), scrW, math.ceil(edge / 48))
+        end
 	end
 
 	self.BaseClass:PaintWorldTips()

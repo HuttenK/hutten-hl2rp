@@ -1,18 +1,11 @@
 ITEM.name = "Боевой шлем"
-ITEM.model = "models/cellar/prop_helmet_nato.mdl"
+ITEM.model = "models/sd/citizens/props/head_helmet_riot.mdl"
 ITEM.width = 2
 ITEM.height = 2
-ITEM.iconCam = {
-	pos = Vector(170.83224487305, -3.1775050163269, -31.036396026611),
-	ang = Angle(-11.637926101685, 178.93601989746, 0),
-	fov = 3.542275575055,
-}
 ITEM.description = "Стандартный баллистический шлем"
 ITEM.equip_inv = 'head'
 ITEM.equip_slot = nil
-ITEM.bodyGroups = {
-	[1] = 16,
-}
+ITEM.bodyGroups = {[1] = 6}
 -- Bodygroups used when the wearer has an MPF uniform on (metropolice model,
 -- different bodygroup layout than citizen models).
 ITEM.bodyGroupsMPF = {

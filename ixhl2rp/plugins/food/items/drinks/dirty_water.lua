@@ -12,7 +12,7 @@ ITEM.iconCam = {
 
 ITEM.volume = 330
 ITEM.sip_amount = 66
-ITEM.reagent_type = "dirty_water"
+ITEM.reagent_type = "water"
 
 ITEM.stats.container = false
 ITEM.stats.noExpire = true

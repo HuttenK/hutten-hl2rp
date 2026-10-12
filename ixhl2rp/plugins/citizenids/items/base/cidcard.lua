@@ -1,20 +1,13 @@
-local Item = class("ItemCID")
-implements("ItemEquipable", "ItemCID")
-
-Item = ix.meta.ItemCID
-
-Item.equip_inv = 'cid'
-Item.equip_slot = nil
-Item.stackable = true
-Item.max_stack = 5
-Item.cardType = 0
-
-CARDTYPE_NONE = 0
-CARDTYPE_MED = 1
-CARDTYPE_CWU = 2
-CARDTYPE_UNION = 3
-CARDTYPE_CITY = 4
-
+local Item=class("ItemIdentityDocument")
+implements("ItemEquipable","ItemIdentityDocument")
+Item=ix.meta.ItemIdentityDocument
+Item.isIdentityDocument=true
+Item.isKeycard=false
+-- Only retained so papers left in the old slot can be moved out safely.
+Item.equip_inv="cid"
+Item.equip_slot=nil
+Item.stackable=false
+Item.max_stack=1
 local prime = 9999999787 -- prime % 4 = 3! DO NOT CHANGE EVER
 local offset = 100000 -- slightly larger than sqrt(prime) is ok. DO NOT CHANGE EVER
 local block = 100000000
@@ -36,138 +29,49 @@ local function generateCardNumber(id)
 	end
 end
 
-function Item:GetDescription()
-	return L(string.format("iCardDesc%s", self.cardType or 0), self:GetData("name", "nobody"))
+
+function Item:Init() end
+function Item:CanEquip() return false end
+function Item:GetDescription() return "Удостоверение личности. Владелец: "..self:GetData("name","Не указано") end
+function Item:OnRegistered()
+ self:AddData("portrait",{Transmit=ix.transmit.none})
+ ix.meta.ItemEquipable.Init(self)
+ self.functions.equip=nil
+ self.category="Документы"; self.skin=19
+ for _,key in ipairs({"name","number","birthDate","nationality","sex","issued","expires","authority"}) do
+  self:AddData(key,{Transmit=ix.transmit.owner})
+ end
+ self.functions.inspectDocument={name="Осмотреть документ",icon="icon16/vcard.png",
+  OnCanRun=function(item) return not IsValid(item:GetEntity()) end,
+  OnRun=function(item) Schema:ShowIdentityDocument(item.player,item); return false end}
+ self.functions.showDocument={name="Показать документ",icon="icon16/user.png",
+  OnCanRun=function(item) return not IsValid(item:GetEntity()) end,
+  OnRun=function(item)
+   local target=item.player:GetEyeTraceNoCursor().Entity
+   if IsValid(target) and target:IsPlayer() and target:GetPos():DistToSqr(item.player:GetPos())<=150^2 then
+    Schema:ShowIdentityDocument(target,item,item.player)
+   else item.player:Notify("Посмотрите на человека рядом.") end
+   return false
+  end}
+ self.functions.devEdit={name="Редактировать (администратор)",icon="icon16/wrench.png",
+  OnCanRun=function(item) return item.player:IsAdmin() end,
+  OnRun=function(item) netstream.Start(item.player,"ixCitizenIDEdit",item:GetID(),item.data,false); return false end}
 end
-
-function Item:GetRarity()
-	return self.cardType
+function Item:OnInstanced(created)
+ if created then
+  local n=Schema:ZeroNumber(generateCardNumber(self:GetID()),10)
+  self:SetData("number",string.format("%s-%d",string.gsub(n,"^(%d%d)(%d%d%d%d)(%d%d%d%d)","%1-%2-%3"),n%97))
+  self:SetData("issued",os.date("%d.%m.%Y")); self:SetData("authority","Регистрационная служба")
+ end
+ -- Retired cards may contain old links. Papers never retain electronic access.
+ local legacy=self.data.access~=nil or self.data.datafileID~=nil or self.data.cid~=nil
+ self.data.access=nil; self.data.datafileID=nil; self.data.cid=nil
+ if legacy and SERVER then self:SetData("name",self:GetData("name","")) end
 end
-
-function Item:Init()
-	ix.meta.ItemEquipable.Init(self)
-	self.combine=self.combine or {}
-	self.combine.fieldlinkRegister={
-		name="Зарегистрировать КПК по CID",
-		OnCanRun=function(card,device)
-			return device.uniqueID=="pda" and not device:GetData("fieldlinkIdentity") and
-				ix.Fieldlink and ix.Fieldlink.CardIdentity(card)~=nil or false
-		end,
-		OnRun=function(card,device)
-			local plugin=ix.plugin.list.site_pda
-			if plugin then plugin:RegisterPDA(card.player,device,card) end
-			return false
-		end
-	}
-
-	self.category = "item.category.cid"
-
-	self.functions.devEdit = {
-		name = "Admin Edit",
-		icon = "icon16/wrench.png",
-		OnClick = function(item)
-			
-		end,
-		OnRun = function(item)
-			netstream.Start(item.player, "ixCitizenIDEdit", item:GetID(), item.data)
-			return false
-		end,
-		OnCanRun = function(item)
-			return item.player:IsAdmin()
-		end
-	}
-
-	self:AddData("name", {
-		Transmit = ix.transmit.owner,
-	})
-
-	self:AddData("cid", {
-		Transmit = ix.transmit.owner,
-	})
-
-	self:AddData("number", {
-		Transmit = ix.transmit.owner,
-	})
-
-	self:AddData("access", {
-		Transmit = ix.transmit.owner,
-	})
-
-	self:AddData("datafileID", {
-		Transmit = ix.transmit.owner,
-	})
-end
-
-function Item:OnInstanced(isCreated)
-	if isCreated then
-		local cardNumber = Schema:ZeroNumber(generateCardNumber(self:GetID()), 10)
-		self:SetData("number", string.format("%s-%d",
-			string.gsub(cardNumber, "^(%d%d)(%d%d%d%d)(%d%d%d%d)", "%1%-%2%-%3"),
-			Schema:ZeroNumber(cardNumber % 97, 2)
-		))
-
-		self:SetData("access", self.access or {})
-	end
-
-	hook.Run("OnIDCardInstanced", self)
-end
-
 function Item:SetupCharacter(character)
-	self:SetData("name", character:GetName())
-	self:SetData("cid", "000-00")
-	self:SetData("datafileID", character:GetID())
+ self:SetData("name",character:GetName())
+ if not self:GetData("sex") then self:SetData("sex",character:GetGender()==GENDER_FEMALE and "Ж" or "М") end
 end
-
-function Item:CreateDatafile(client)
-	if IsValid(client) then
-		local character = client:GetCharacter()
-
-		self:SetData("name", character:GetName())
-		self:SetData("cid", Schema:ZeroNumber(math.random(1, 99999), 5))
-
-		hook.Run("OnIDCardUpdated", self)
-	end
-end
-
-function Item:OnEquipped(client)
-	ix.Datafile:OnCardEquipped(client, self, true)
-end
-
-function Item:OnUnequipped(client)
-	ix.Datafile:OnCardEquipped(client, self, false)
-end
-
-if CLIENT then
-	function Item:PopulateTooltip(tooltip)
-		local cid = self:GetData("cid")
-		local number = self:GetData("number")
-
-		if cid then
-			local panel = tooltip:AddRowAfter("rarity", "cid")
-			panel:SetBackgroundColor(derma.GetColor("Warning", tooltip))
-			panel:SetText(L("cidCitizenIdLabel", cid))
-			panel:SizeToContents()
-		end
-
-		if number then
-			local panel = tooltip:AddRowAfter("rarity", "number")
-			panel:SetBackgroundColor(derma.GetColor("Warning", tooltip))
-			panel:SetText(L("cidCardIdLabel", number))
-			panel:SizeToContents()
-		end
-
-		if self.cardType > 0 then
-			local notice = tooltip:AddRowAfter("description", "notice")
-			notice:SetMinimalHidden(true)
-			notice:SetFont("ixMonoSmallFont")
-			notice:SetText(L(string.format("cardNotice%s", self.cardType)))
-			notice.Paint = function(_, width, height)
-				surface.SetDrawColor(ColorAlpha(derma.GetColor("Error", tooltip), 11))
-				surface.DrawRect(0, 0, width, height)
-			end
-			notice:SizeToContents()
-		end
-	end
-end
-
+function Item:OnEquipped() end
+function Item:OnUnequipped() end
 return Item

@@ -1,6 +1,6 @@
 netstream.Hook("ixDfBrowserOpen", function(list)
 	if IsValid(ix.gui.dfBrowser) then
-		ix.gui.dfBrowser:Remove()
+		ix.gui.dfBrowser:SetList(list or {}); return
 	end
 
 	ix.gui.dfBrowser = vgui.Create("ixDatafileBrowser")
@@ -12,6 +12,7 @@ end)
 
 -- Полные данные одного досье -> открываем окно с фото
 netstream.Hook("ixDfView", function(payload)
+ if IsValid(ix.gui.dfBrowser) then ix.gui.dfBrowser:ShowRecord(payload or {}); return end
 	if IsValid(ix.gui.dfView) then
 		ix.gui.dfView:Remove()
 	end

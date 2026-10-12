@@ -16,7 +16,7 @@ function F.BuildMediaPage(panel,d,U)
  if panel.page=="camera" then
   panel:Header("OPTICS / MONOCHROME","Полевая камера","Снимки и распознавание предъявленного CID.")
   Label(body,"ЛКМ — сделать снимок. ПКМ — вернуться в приложения. В режиме съёмки можно свободно осматриваться и двигаться.","Heading",C.text)
-  Label(body,"Распознавание: наведите центр кадра на человека рядом. Считывается только экипированная действующая CID-карта; скрытая личность персонажа не раскрывается.","Body",C.muted)
+  Label(body,"Распознавание: наведите центр кадра на человека рядом. Считывается только экипированная действующая ключ-карта; скрытая личность персонажа не раскрывается.","Body",C.muted)
   Label(body,#(d.photos or {}).." / "..F.photoLimit.." снимков на устройстве","Mono",C.muted)
   Action(body,"Включить камеру",function() F.SetCamera(true) end)
   Action(body,"Открыть галерею",function() panel:Navigate("gallery") end)

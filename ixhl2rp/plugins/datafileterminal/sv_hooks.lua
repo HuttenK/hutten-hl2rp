@@ -70,146 +70,64 @@ function PLUGIN:BuildList(client)
 	return list
 end
 
--- ------------------------------------------------------------------
--- Фильтр по фракции владельца досье.
--- В базовом терминале показываем ТОЛЬКО граждан и роли ССД (CWU + медики).
--- Метрополиция (группа COMBINE), OTA/EOW (группа OTA) и администрация
--- (без группы) в список не выводятся. datafileID == character:GetID().
--- ------------------------------------------------------------------
-local function IsFactionAllowed(factionIndex)
-	-- Неизвестная фракция (осиротевшая/легаси запись без строки в ix_characters)
-	-- — показываем: почти всегда это старые гражданские досье, не Комбайн.
-	if !factionIndex then return true end
-	if factionIndex == FACTION_CITIZEN then return true end
-	return Schema:GetFactionGroup(factionIndex) == FACTION_GROUP_CWU
-end
-
--- Приводит значение колонки faction (uniqueID-строка, иногда число) к индексу фракции.
-local function FactionIndexFromRaw(raw)
-	if raw == nil then return nil end
-	if isnumber(raw) then return ix.faction.indices[raw] and raw or nil end
-	local n = tonumber(raw)
-	if n and ix.faction.indices[n] then return n end
-	local f = ix.faction.teams[tostring(raw)]
-	return f and f.index or nil
-end
-
--- Резолвим фракции: онлайн — сразу с персонажа, оффлайн — одним запросом к ix_characters.
--- cb(filteredList) вызывается всегда.
-function PLUGIN:FilterByFaction(list, cb)
-	local factionByID = {}
-	for _, p in ipairs(player.GetAll()) do
-		local c = p:GetCharacter()
-		if c then factionByID[c:GetID()] = c:GetFaction() end
-	end
-
-	local offline = {}
-	for _, e in ipairs(list) do
-		if factionByID[e.id] == nil then offline[#offline + 1] = e.id end
-	end
-
-	local function finish()
-		local out = {}
-		for _, e in ipairs(list) do
-			if IsFactionAllowed(factionByID[e.id]) then out[#out + 1] = e end
-		end
-		cb(out)
-	end
-
-	if #offline == 0 then finish() return end
-
-	local q = mysql:Select("ix_characters")
-		q:Select("id")
-		q:Select("faction")
-		q:WhereIn("id", offline)
-		q:Callback(function(rows)
-			if istable(rows) then
-				for _, row in ipairs(rows) do
-					factionByID[tonumber(row.id)] = FactionIndexFromRaw(row.faction)
-				end
-			end
-			finish()
-		end)
-	q:Execute()
-end
-
 -- Вызывается из ENT:Use
-function PLUGIN:OpenBrowser(client, terminal)
-	local list = self:BuildList(client)
-
-	if list == nil then
-		client:Notify("Нет доступа: требуется CID-карта с правом на досье.")
-		return
-	end
-
-	self:FilterByFaction(list, function(filtered)
-		if !IsValid(client) then return end
-
-		if #filtered == 0 then
-			client:Notify("База данных досье пуста.")
-			return
-		end
-
-		netstream.Start(client, "ixDfBrowserOpen", filtered)
-	end)
+function PLUGIN:CardSnapshot(card) return Schema:GetCredentialSnapshot(card) end
+function PLUGIN:OpenBrowser(client,terminal)
+ if not self:IsNearTerminal(client) or not client:GetCharacter() then return end
+ local cards={}
+ for _,item in pairs(client:GetItems()) do
+  local info=self:CardSnapshot(item)
+  if info then cards[#cards+1]=info end
+ end
+ local target=client:GetEyeTraceNoCursor().Entity
+ if IsValid(target) and target:IsPlayer() and target~=client and target:GetPos():DistToSqr(client:GetPos())<=130^2 then
+  local info=self:CardSnapshot(target:GetIDCard()); if info then cards[#cards+1]=info end
+ end
+ local list=self:BuildList(client) or {}
+ netstream.Start(client,"ixDfBrowserOpen",{cards=cards,records=list,clearance=client:GetCharacter():ReturnDatafilePermission() or 0})
 end
+netstream.Hook("ixDfTerminalRefresh",function(client)
+ if (client.ixNextCredentialCheck or 0)>CurTime() then return end
+ client.ixNextCredentialCheck=CurTime()+1
+ PLUGIN:OpenBrowser(client)
+end)
 
 -- Внешность владельца (модель/скин/физописание). Асинхронно: для оффлайн-персонажей
 -- модель берётся напрямую из ix_characters, поэтому Кляйнер больше не подставляется.
 -- cb(model, skin, genetic) вызывается всегда.
-local function ResolveAppearance(id, cb)
-	-- Снимок с впечатанной карты (модель/скин/готовый текст физописания).
-	-- Физописание берём ТОЛЬКО отсюда: генетика других игроков не сетится
-	-- наблюдателю, поэтому клиент не может построить её сам (в отличие от
-	-- лоялист-терминала, который читает СВОЮ карту). Источник — впечатывание,
-	-- которое теперь выполняется автоматически при первом спавне персонажа.
-	local cModel, cSkin, cGenetic = "", 0, ""
-	for _, item in pairs(ix.Item.instances) do
-		if item.GetData and tonumber(item:GetData("datafileID")) == id then
-			cModel   = item:GetData("charModel", "") or ""
-			cSkin    = item:GetData("charSkin", 0) or 0
-			cGenetic = item:GetData("charGenetic", "") or ""
-			break
-		end
-	end
-
-	-- 1. Онлайн-владелец — живая ОРИГИНАЛЬНАЯ модель (форма не учитывается),
-	--    физописание — с карты (cGenetic).
-	for _, p in ipairs(player.GetAll()) do
-		local c = p:GetCharacter()
-		if c and c:GetID() == id then
-			-- Всегда берём БАЗОВУЮ модель персонажа, а не текущую. Форма/костюм/форма МП
-			-- подменяют модель ИГРОКА (client:SetModel) и char_outfit.model, но
-			-- character:GetModel() остаётся исходной моделью из карт-генерации. Так в
-			-- терминале показывается изначальная модель без бодигрупп и костюмов.
-			local model = c:GetModel() or cModel or ""
-			local skin  = c:GetData("skin", 0) or cSkin or 0
-			cb(model, skin, cGenetic)
-			return
-		end
-	end
-
-	-- 3. Оффлайн — модель/скин персонажа напрямую из БД (id == datafileID)
-	local q = mysql:Select("ix_characters")
-		q:Select("model")
-		q:Select("data")
-		q:Where("id", id)
-		q:Limit(1)
-		q:Callback(function(rows)
-			local model, skin = cModel, cSkin
-			if istable(rows) and istable(rows[1]) then
-				local row = rows[1]
-				if isstring(row.model) and row.model != "" then
-					model = row.model
-				end
-				local d = row.data and util.JSONToTable(row.data)
-				if istable(d) and d.skin != nil then
-					skin = tonumber(d.skin) or skin
-				end
-			end
-			cb(model, skin, cGenetic)
-		end)
-	q:Execute()
+local function ResolveCredential(id, generic, cb)
+ -- Prefer a loaded, non-revoked card; archived snapshot covers removed cards.
+ local best
+ for _,item in pairs(ix.Item.instances) do
+  if item.isKeycard and tonumber(item:GetData("datafileID",0))==id and not item:GetData("revoked",false) then
+   if not best or item:GetID()>best:GetID() then best=item end
+  end
+ end
+ if best then cb(PLUGIN:CardSnapshot(best)); return end
+ if istable(generic.credential) then cb(table.Copy(generic.credential)); return end
+ -- Legacy archives: recover the actual saved card even when its owner is offline.
+ local classes={}
+ for name,item in pairs(ix.Item.stored) do if item.isKeycard then classes[#classes+1]=name end end
+ if #classes==0 then cb(nil); return end
+ local query=mysql:Select("ix_items")
+ query:Select("item_id"); query:Select("unique_id"); query:Select("data")
+ query:WhereIn("unique_id",classes)
+ query:Callback(function(rows)
+  local snapshot, newest=nil,-1
+  for _,row in ipairs(rows or {}) do
+   local data=util.JSONToTable(row.data or "{}") or {}
+   if tonumber(data.datafileID)==id and not data.revoked and (tonumber(row.item_id) or 0)>newest then
+    local definition=ix.Item.stored[row.unique_id]
+    if definition and definition.isKeycard then
+     snapshot=PLUGIN:CardSnapshot({isKeycard=true,clearanceLevel=definition.clearanceLevel,departmentLabel=definition.departmentLabel,
+      GetData=function(_,key,default) if data[key]~=nil then return data[key] end return default end})
+     newest=tonumber(row.item_id) or 0
+    end
+   end
+  end
+  cb(snapshot)
+ end)
+ query:Execute()
 end
 
 -- Клиент выбрал досье в меню -> собираем полные данные и открываем окно ixDfView
@@ -227,7 +145,7 @@ netstream.Hook("ixDfBrowserSelect", function(client, datafileID)
 
 	local perm = char:ReturnDatafilePermission() or 0
 	if perm <= 0 then
-		client:Notify("Нет доступа: требуется CID-карта с правом на досье.")
+		client:Notify("Нет доступа: экипируйте действующую ключ-карту SCP.")
 		return
 	end
 
@@ -260,8 +178,8 @@ netstream.Hook("ixDfBrowserSelect", function(client, datafileID)
 		}
 	end
 
-	ResolveAppearance(datafileID, function(model, skin, genetic)
-		if !IsValid(client) then return end
+	ResolveCredential(datafileID, generic, function(credential)
+		if !IsValid(client) or !PLUGIN:IsNearTerminal(client) or !client:GetCharacter() or client:GetCharacter():ReturnDatafilePermission()<math.max(1,targetPerm) then return end
 
 		netstream.Start(client, "ixDfView", {
 			id         = datafileID,
@@ -275,9 +193,9 @@ netstream.Hook("ixDfBrowserSelect", function(client, datafileID)
 			restricted = generic.restricted and true or false,
 			lastSeen   = generic.last_seen or 0,
 			aparts     = generic.aparts or "N/A",
-			model      = model,
-			skin       = skin,
-			genetic    = genetic,
+			credential = credential,
+			
+			
 			ownerCharID = datafileID,
 			records    = outRecords,
 		})

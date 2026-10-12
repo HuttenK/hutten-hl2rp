@@ -37,80 +37,9 @@ function ENT:ShouldNotCollide(pPlayer)
 	return false
 end
 
-function ENT:FindEmptyRefillable(pPlayer)
-	for _, item in ipairs(pPlayer:GetInventory("main"):GetItems()) do
-		if item.isReagentHolder and ix.Reagents:IsRefillable(item) and (item:GetData("value") or 0) <= 0.1 then
-			return item
-		end
-	end
-end
-
-function ENT:FillReagentContainer(pPlayer, item, reagentType)
-	timer.Simple(1, function()
-		if !IsValid(pPlayer) or !item.reagents then return end
-
-		item.reagents:AddReagent(reagentType, item.reagents.max_volume, 300, true)
-		item.reagents:UpdateTotal()
-
-		pPlayer:ViewPunch(Angle(2, 0, 1))
-		pPlayer:EmitSound("needs/bottle/fill_bottle" .. math.random(1, 2) .. ".wav", 70)
-	end)
-end
-
-function ENT:FillContainer(pPlayer, item, resultItem)
-	timer.Simple(1, function()
-		pPlayer:TakeItem(item)
-		pPlayer:GiveItem(resultItem)
-
-		pPlayer:ViewPunch(Angle(2, 0, 1))
-		pPlayer:EmitSound("needs/bottle/fill_bottle" .. math.random(1, 2) .. ".wav", 70)
-	end)
-end
-
-function ENT:Use(pPlayer)
-	if (self.iNextUseTime or 0) > CurTime() then return end
-	if not IsValid(pPlayer) or not pPlayer:IsPlayer() then return end
-	if pPlayer:GetPos():DistToSqr(self:GetPos()) > 3500 or pPlayer:GetNetVar("isCreature") then return end
-
-	local character = pPlayer:GetCharacter()
-
-	self.iNextUseTime = CurTime() + 5
-	self:EmitSound("needs/toilet/fill_toilet" .. math.random(1, 2) .. ".wav", 70)
-
-	pPlayer:ForceSequence("roofidle1")
-
-	local emptyContainer = self:FindEmptyRefillable(pPlayer)
-
-	if emptyContainer then
-		self:FillReagentContainer(pPlayer, emptyContainer, "dirty_water")
-
-		pPlayer:Emote("me", "emoteFillContainer", emptyContainer.name)
-	elseif pPlayer:HasItem("empty_can") then
-		self:FillContainer(pPlayer, "empty_can", "dirty_water")
-
-		pPlayer:Emote("me", "emoteFillEmptyCan")
-	elseif pPlayer:HasItem("empty_tin_can") then
-		self:FillContainer(pPlayer, "empty_tin_can", "dirty_water")
-
-		pPlayer:Emote("me", "emoteFillTinCan")
-	else
-		timer.Simple(1, function()
-			pPlayer:ViewPunch(Angle(3, 0, 2))
-			character:UpdateNeeds(20, 0)
-
-			local rad = 50
-
-			if math.random(1, 2) == 1 then
-				rad = 100
-			end
-
-			if pPlayer:Team() != FACTION_VORTIGAUNT then
-				character:SetRadLevel(character:GetRadLevel() + rad)
-			end
-
-			pPlayer:Emote("me", "emoteDrinkToilet")
-		end)
-	end
+-- The shared water plugin owns validation, selection and completion.
+function ENT:Use(client)
+ if SERVER and ix.water and ix.water.Open then ix.water.Open(client, self) end
 end
 
 properties.Add("sinktrigger2", {
@@ -159,28 +88,7 @@ function ENT:Draw() end
 ENT.PopulateEntityInfo = true
 
 function ENT:OnPopulateEntityInfo(tooltip)
-	local client = LocalPlayer()
-	local hint = L("hintDrinkDirtyWater")
-
-	local hasRefillable = false
-	local inventory = client:GetInventory("main")
-
-	if inventory then
-		for _, item in ipairs(inventory:GetItems()) do
-			if item.isReagentHolder and ix.Reagents:IsRefillable(item) and (item:GetData("value") or 0) <= 0.1 then
-				hasRefillable = true
-				break
-			end
-		end
-	end
-
-	if hasRefillable then
-		hint = L("hintFillContainerDirtyWater")
-	elseif client:HasItem("empty_can") or client:HasItem("empty_tin_can") then
-		hint = L("hintPourIntoCanDirtyWater")
-	end
-
-	local title = tooltip:AddRow("hint")
-	title:SetText(hint)
-	title:SizeToContents()
+ local title = tooltip:AddRow("hint")
+ title:SetText("E — напиться / выбрать ёмкость · грязная вода")
+ title:SizeToContents()
 end

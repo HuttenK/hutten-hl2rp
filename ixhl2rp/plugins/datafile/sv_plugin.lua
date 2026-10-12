@@ -47,34 +47,22 @@ function PLUGIN:GetDatafileRegID(id)
 	return data and data[3] or id
 end
 
-function PLUGIN:ReturnPermission(CID, RegID, callback)
-	local query = mysql:Select("ix_items")
-		query:Select("data")
-		query:WhereLike("data", "\"cid\":\""..CID.."\"")
-		query:WhereLike("data", "\"number\":\""..RegID.."\"")
-		query:Callback(function(result)
-			local access = 0
-
-			if istable(result) and #result > 0 then
-				local data = util.JSONToTable((result[1].data or {}))
-				data = (data["access"] or {})
-				
-				if data["DATAFILE_ELEVATED"] then
-					access = 4
-				elseif data["DATAFILE_FULL"] then
-					access = 3
-				elseif data["DATAFILE_MEDIUM"] then
-					access = 2
-				elseif data["DATAFILE_MINOR"] then
-					access = 1
-				end
-			end
-
-			if callback then
-				callback(access)
-			end
-		end)
-	query:Execute()
+function PLUGIN:ReturnPermission(CID,RegID,callback)
+ local query=mysql:Select("ix_items")
+ query:Select("data"); query:Select("unique_id")
+ query:WhereLike("data", "\"cid\":\""..tostring(CID).."\"")
+ query:Callback(function(rows)
+  local level=0
+  for _,row in ipairs(rows or {}) do
+   local template=ix.Item:Get(row.unique_id)
+   local data=util.JSONToTable(row.data or "{}")
+   if template and template.isKeycard and data and not data.revoked and data.number==RegID and data.cid==CID then
+    level=math.max(level,template.clearanceLevel or 0)
+   end
+  end
+  if callback then callback(level) end
+ end)
+ query:Execute()
 end
 
 function PLUGIN:ReturnPermissionByID(id)
@@ -335,29 +323,10 @@ do
 	end
 
 	function CHAR:ReturnDatafilePermission()
-		local cid = self:GetPlayer():GetIDCard()
-
-		if !cid then
-			return 0
-		end
-
-		-- Отозванная карта допуска не даёт.
-		if cid:GetData("revoked") then return 0 end
-
-		local accesses = cid:GetData("access", {})
-		
-		if accesses["DATAFILE_ELEVATED"] then
-			return 4
-		elseif accesses["DATAFILE_FULL"] then
-			return 3
-		elseif accesses["DATAFILE_MEDIUM"] then
-			return 2
-		elseif accesses["DATAFILE_MINOR"] then
-			return 1
-		end
-
-		return 0
-	end
+  local card=self:GetPlayer():GetIDCard()
+  return card and card.isKeycard and not card:GetData("revoked",false) and
+   card:GetData("name","")~="" and card:GetData("cid","")~="" and card:GetData("cid","")~="000-00" and (card.clearanceLevel or 0) or 0
+ end
 end
 
 /*

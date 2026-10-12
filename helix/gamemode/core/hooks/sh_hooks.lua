@@ -45,6 +45,11 @@ function GM:TranslateActivity(client, act)
 	local bRaised = client:IsWepRaised()
 
 	clientInfo.CalcSeqOverride2 = nil
+	local pdaSequence = ix.Fieldlink and ix.Fieldlink.PDABaseSequence and ix.Fieldlink.PDABaseSequence(client, act)
+	if pdaSequence then
+		clientInfo.CalcSeqOverride = pdaSequence
+		return
+	end
 	local arc9Activity = ix.anim.GetARC9NativeActivity and
 		ix.anim.GetARC9NativeActivity(client, client:GetActiveWeapon(), act)
 	if arc9Activity then
@@ -339,6 +344,8 @@ do
 	local normalizeAngle = math.NormalizeAngle
 
 	function GM:CalcMainActivity(client, velocity)
+		local crawl = ix.Downed and ix.Downed.CrawlActivity and ix.Downed.CrawlActivity(client, velocity)
+		if crawl then return ACT_MP_CROUCH_IDLE, crawl end
 		local clientInfo = client:GetTable()
 		if clientInfo.ixAnimResolvedModel ~= client:GetModel() then
 			self:PlayerModelChanged(client, client:GetModel())
@@ -385,7 +392,11 @@ do
 			end
 		end
 
-		self:TranslateActivity(client, clientInfo.CalcIdeal)
+		local translated = self:TranslateActivity(client, clientInfo.CalcIdeal)
+		-- NPC/Cellar tables mix sequence names with numeric activities. Resolve
+		-- both now; otherwise numeric entries fall through to an unsupported
+		-- ACT_MP_* and the engine displays sequence zero (ragdoll).
+		sequenceOverride = ix.anim.ResolveMainSequence(client, translated, clientInfo.CalcSeqOverride)
 		hook.Run("ModifyMainActivity", client, length, clientInfo)
 
 		clientInfo.m_bWasOnGround = client:OnGround()

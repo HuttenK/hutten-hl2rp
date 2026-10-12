@@ -22,6 +22,7 @@ netstream.Hook("ixCitizenIDEdit", function(client, itemID, newData)
 	if !client:IsSuperAdmin() and !client:IsAdmin() then return end
 
 	local item = ix.Item.instances[itemID]
+	if not istable(newData) or not item or item.equip_inv~="cid" then return end
 	
 	if !item then return end
 	
@@ -37,13 +38,13 @@ netstream.Hook("ixCitizenIDEdit", function(client, itemID, newData)
 	-- который при 50+ игроках регулярно совпадает. Не даём выдать номер, уже занятый
 	-- другой картой. Проверяем среди ЗАГРУЖЕННЫХ карт (онлайн-игроки, мир, загруженные
 	-- хранилища) — этого достаточно для типичного случая двух активных игроков.
-	local newCID = tostring(newData["cid"] or "0000")
+	local newCID = string.sub(tostring(newData["cid"] or item:GetData("cid", "0000")),1,40)
 
 	if newCID != "" and newCID != "0000" and newCID != "000-00" then
 		for _, other in pairs(ix.Item.instances) do
 			if other == item then continue end
 			if !istable(other) or !other.GetData then continue end
-			if other.equip_inv != "cid" then continue end
+			if other.equip_inv != "cid" or other.isKeycard~=item.isKeycard then continue end
 
 			if tostring(other:GetData("cid", "")) == newCID then
 				client:Notify("Номер УЛ " .. newCID .. " уже выдан другой карте. Выберите другой.")
@@ -52,13 +53,16 @@ netstream.Hook("ixCitizenIDEdit", function(client, itemID, newData)
 		end
 	end
 
-	item:SetData("name", newData["name"] or "nobody")
-	item:SetData("cid", newCID)
-	item:SetData("number", newData["number"] or "")
-	item:SetData("access", access)
+	for _,key in ipairs({"birthDate","nationality","sex","issued","expires","authority","position","site","callsign","restrictions"}) do
+  item:SetData(key,string.sub(tostring(newData[key] or ""),1,96))
+ end
+ item:SetData("name", string.sub(tostring(newData["name"] or ""),1,96))
+	if item.isKeycard then item:SetData("cid",newCID) end
+	-- Serial numbers are immutable: PDA registration uses them as identity keys.
+	if item.isKeycard then item:SetData("access",item.access or {}) end
 	item:SetData("type", newData["type"])
 
-	hook.Run("OnIDCardUpdated", item)
+	if item.isKeycard then hook.Run("OnIDCardUpdated", item) end
 end)
 
 do
@@ -68,10 +72,11 @@ do
 		if type then
 			local client = self:GetPlayer()
 
-			local instance = ix.Item:Instance(type)
+			local instance = ix.Item:Instance("card")
+			if not instance then return end
 			instance:SetupCharacter(self)
 
-			client:AddItem(instance, "cid")
+			client:AddItem(instance, "main")
 
 			-- Авто-регистрация при первом спавне: уникальный CID + впечатывание
 			-- персонажа в карту (раньше это делалось вручную через /CardImprint).
@@ -106,7 +111,7 @@ function Schema:RevokeOtherCards(datafileID, keepItemID)
 	for _, other in pairs(ix.Item.instances) do
 		if !istable(other) or !other.GetData then continue end
 		if other:GetID() == keepItemID then continue end
-		if other.equip_inv != "cid" then continue end
+		if not other.isKeycard then continue end
 		if tonumber(other:GetData("datafileID", 0)) != datafileID then continue end
 
 		other:SetData("datafileID", 0)
@@ -117,6 +122,10 @@ end
 
 function Schema:ImprintCard(item, character)
 	if !item or !item.SetData or !character then return false end
+ if not item.isKeycard and not item.isIdentityDocument then return false end
+ if not self:CaptureIdentityPortrait(item,character) then return false end
+ if item.isIdentityDocument then item:SetupCharacter(character); return true end
+ if not item.isKeycard then return false end
 
 	-- Уникальный CID — выдаём, только если его ещё нет (не затираем выданный
 	-- терминалом/админом). Детерминирован от ID персонажа => уникален и стабилен.
@@ -138,12 +147,13 @@ function Schema:ImprintCard(item, character)
 	-- Эта карта становится единственной рабочей: все ранее впечатанные в это же
 	-- досье — отзываем.
 	item:SetData("revoked", nil)
-	Schema:RevokeOtherCards(character:GetID(), item:GetID())
+	if item.isKeycard then Schema:RevokeOtherCards(character:GetID(), item:GetID()) end
 
 	-- Идентичность (снимок)
 	item:SetData("name",      character:GetName())
-	item:SetData("charModel", character:GetModel() or "")
-	item:SetData("charSkin",  character:GetData("skin", 0))
+    if not item:GetData("sex") then item:SetData("sex",character:GetGender()==GENDER_FEMALE and "Ж" or "М") end
+	item:SetData("charModel", item:GetData("portrait").model)
+	item:SetData("charSkin", item:GetData("portrait").skin)
 
 	-- Сырая генетика (4 числа: shape, height, age, eyeColor) — текст соберёт клиент
 	local g = character.Genetic and character:Genetic()
@@ -160,7 +170,7 @@ function Schema:ImprintCard(item, character)
 	end
 
 	-- Синхронизируем досье/stored (имя, доступ, очки — по datafileID)
-	hook.Run("OnIDCardUpdated", item)
+	if item.isKeycard then hook.Run("OnIDCardUpdated", item) end
 
 	return true
 end
@@ -180,3 +190,15 @@ net.Receive("ixCardImprintDescResp", function(len, ply)
 
 	item:SetData("charGenetic", string.sub(tostring(desc or ""), 1, 255))
 end)
+util.AddNetworkString("ixIdentityDocument")
+function Schema:ShowIdentityDocument(viewer,item,owner)
+ if not item or item.isKeycard then return end
+ owner=owner or viewer
+ if not IsValid(viewer) or not IsValid(owner) or not owner:HasItemByID(item.id) then return end
+ local data={}
+ for _,key in ipairs({"name","number","birthDate","nationality","sex","issued","expires","authority","position","site","callsign","restrictions"}) do
+  data[key]=string.sub(tostring(item:GetData(key,"")),1,128)
+ end
+ data.portrait=self:GetIdentityPortrait(item)
+ net.Start("ixIdentityDocument"); net.WriteTable(data); net.Send(viewer)
+end

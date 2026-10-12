@@ -1,15 +1,9 @@
 ITEM.name = "item.canned_water"
 ITEM.description = "item.canned_water.desc"
-ITEM.model = "models/mosi/fallout4/props/drink/water.mdl"
+ITEM.model = "models/crunchy/props/eft_props/waterbottle.mdl"
 ITEM.cost = 12
 ITEM.width = 1
 ITEM.height = 1
-ITEM.iconCam = {
-	pos = Vector(115.45742034912, 78.218246459961, 26.112365722656),
-	ang = Angle(8.807559967041, 214.11622619629, 0),
-	fov = 4.3763253711939,
-}
-
 ITEM.volume = 330
 ITEM.sip_amount = 66
 ITEM.reagent_type = "water"
@@ -17,4 +11,4 @@ ITEM.reagent_type = "water"
 ITEM.stats.container = true
 ITEM.stats.noExpire = true
 
-ITEM.junk = "empty_tin_can"
+ITEM.junk = "empty_plastic_bottle"

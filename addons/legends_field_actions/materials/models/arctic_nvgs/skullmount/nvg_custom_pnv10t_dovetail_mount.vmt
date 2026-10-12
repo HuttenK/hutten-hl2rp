@@ -1,0 +1,12 @@
+VertexLitGeneric
+{
+    $basetexture "models/arctic_nvgs/skullmount/nvg_custom_pnv10t_dovetail_mount_LOD0_diff"
+
+    $basemapalphaphongmask "0"
+    $phong 1
+    $phongfresnelranges "[0 0.5 1]"
+
+    $envmapmask "models/arctic_nvgs/skullmount/nvg_custom_pnv10t_dovetail_mount_LOD0_gloss"
+    $envmap "env_cubemap"
+    $envmaptint "[0.05 0.05 0.05]"
+}

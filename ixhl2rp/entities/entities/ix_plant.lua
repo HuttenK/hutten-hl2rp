@@ -315,10 +315,11 @@ if CLIENT then
 	function ENT:OnPopulateEntityInfo(container)
 		local id = self:GetPlant()
 		local status = self:GetGrowStatus()
+		-- NetworkVar strings start empty; definitions may also be unavailable
+		-- during loading or after a plant type has been removed from the server.
+		local plantInfo = id and id ~= "" and ix.Farming and ix.Farming:GetPlant(id)
 
-		if id then
-			local plantInfo = ix.Farming:GetPlant(id)
-
+		if plantInfo then
 			local name = container:AddRow("name")
 			name:SetImportant()
 			name:SetText(L(plantInfo.Name))
@@ -337,7 +338,7 @@ if CLIENT then
 				this:SetText(L("plantWaterLabel", math.Round(self:GetWater())))
 			end
 
-			if status and (status > 0) then
+			if growStatus[status] then
 				local info = container:AddRow("status")
 				info:SetText(L(growStatus[status]))
 				info:SetBackgroundColor(Color(225, 225, 225))
@@ -349,9 +350,7 @@ if CLIENT then
 
 					local status = self:GetGrowStatus()
 
-					if status and (status > 0) then
-						this:SetText(L(growStatus[status]))
-					end
+					this:SetText(growStatus[status] and L(growStatus[status]) or "")
 				end
 			end
 

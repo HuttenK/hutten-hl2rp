@@ -6,7 +6,17 @@ function PLAYER:InCriticalState()
 end
 
 do
-	local crit_material = Material("cellar/ui/crit.png")
+	local function DrawSkull(x, y, size, alpha)
+        draw.NoTexture()
+        surface.SetDrawColor(235, 232, 225, alpha)
+        surface.DrawRect(x + size*.18, y + size*.12, size*.64, size*.48)
+        surface.DrawRect(x + size*.3, y + size*.56, size*.4, size*.3)
+        surface.SetDrawColor(12, 12, 15, alpha)
+        surface.DrawRect(x + size*.27, y + size*.3, size*.16, size*.16)
+        surface.DrawRect(x + size*.57, y + size*.3, size*.16, size*.16)
+        surface.DrawRect(x + size*.46, y + size*.5, size*.08, size*.12)
+        for i=1,3 do surface.DrawRect(x + size*(.3+i*.1), y + size*.7, 1, size*.16) end
+    end
 	local size = 32
 	local mid  = size / 2
 	local abs = math.abs
@@ -77,18 +87,19 @@ do
 	end
 
 	local function UseCriticalButton()
+		local target = focused_ent
 		local menu = ix.SimpleMenu()
 
 		menu:AddOption("ОГРАБИТЬ", function()
 			net.Start("crit.use")
-				net.WriteEntity(focused_ent)
+				net.WriteEntity(target)
 				net.WriteBool(true)
 			net.SendToServer()
 		end)
 
 		menu:AddOption("ДОБИТЬ", function()
 			net.Start("crit.use")
-				net.WriteEntity(focused_ent)
+				net.WriteEntity(target)
 				net.WriteBool(false)
 			net.SendToServer()
 		end)
@@ -101,6 +112,13 @@ do
 	end
 
 	function PLUGIN:PlayerBindPress(client, bind, pressed)
+		-- Let the drag menu handle living ragdolls before the legacy critical
+		-- prompt, regardless of plugin hook order. Shooting stays available.
+		if ix.BodyDrag then
+			local handled = ix.BodyDrag.HandleBind(client, bind, pressed)
+			if handled then return true end
+			if ix.BodyDrag.Body(client) then return end
+		end
 		if IsValid(focused_ent) and focus_stick >= CurTime() then
 			if bind:find("attack") and pressed then
 				return true
@@ -117,7 +135,7 @@ do
 			return
 		end
 
-		surface.SetMaterial(crit_material)
+
 
 		local plypos = LocalPlayer():GetPos()
 		local midscreen_x = ScrW() / 2
@@ -149,7 +167,7 @@ do
 
 					if d < 1 then
 						surface.SetDrawColor(255, 255, 255, 255 * (1 - d))
-						surface.DrawTexturedRect(scrpos.x - mid, scrpos.y - mid, size, size)
+						DrawSkull(scrpos.x - mid, scrpos.y - mid, size, 255 * (1 - d))
 
 						if d > focus_d then
 							local x = abs(scrpos.x - midscreen_x)

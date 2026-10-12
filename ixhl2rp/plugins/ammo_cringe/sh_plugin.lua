@@ -4,6 +4,8 @@ PLUGIN.name = "ARC9 Inventory Weapons"
 PLUGIN.author = "Legends"
 PLUGIN.description = "ARC9 magazines, reserve ammunition and per-item attachment persistence."
 ix.util.Include("sh_arc9.lua")
+ix.util.Include("sh_weapon_slots.lua")
+ix.util.Include("cl_weapon_holsters.lua")
 local A = ix.arc9Inventory
 local playerMeta = FindMetaTable("Player")
 
@@ -21,6 +23,11 @@ local function Carried(client)
      local id = game.GetAmmoID(name)
      if id and id >= 0 then result[name:lower()] = id end
     end
+   end
+  elseif IsValid(weapon) and weapon.ixItem and weapon.ixInventoryReady then
+   for _, id in ipairs({weapon:GetPrimaryAmmoType(), weapon:GetSecondaryAmmoType()}) do
+    local name = id >= 0 and game.GetAmmoName(id)
+    if name then result[name:lower()] = id end
    end
   end
  end

@@ -74,8 +74,7 @@ end
 local PLAYER = FindMetaTable("Player")
 function PLAYER:RewardXP(xp, text)
     local character = self:GetCharacter()
-    if character and character:AddLevelXP(xp) then
-        local reason = isstring(text) and (L(text, self) or text) or text
-        self:NotifyLocalized("xp.reward", xp, reason)
+    if character then
+        character:AddLevelXP(xp)
     end
 end

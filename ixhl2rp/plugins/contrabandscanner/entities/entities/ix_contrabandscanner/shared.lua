@@ -12,4 +12,7 @@ function ENT:SetupDataTables()
 	self:NetworkVar("Float", 1, "ScanHeight")
 	self:NetworkVar("Float", 2, "ScanDepth")
 	self:NetworkVar("Bool", 0, "Alarming")
+ self:NetworkVar("Bool", 1, "Disabled")
 end
+
+ENT.bNoPersist = true

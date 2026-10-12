@@ -96,6 +96,22 @@ function M.VolumePlan(item, health, hitgroup)
  return plan
 end
 
+function M.CanRevive(target)
+ if not IsValid(target) or not target:Alive() or not target:GetCharacter() then return false end
+ local health = target:GetCharacter():Health()
+ if health:GetBleedRate() >= 0.1 then return false, "Сначала остановите кровотечение." end
+ for _, diff in health:GetHediffs() do
+  if diff.uniqueID == "bleeding" and diff:GetSeverity() >= 0.75 then
+   return false, "Сначала восстановите запас крови переливанием."
+  end
+ end
+ if health:GetPartHealth(health.consciousSource or 1) <= 0 or
+  health:GetPartHealth(2) <= 0 or health:GetPartHealth(3) <= 0 then
+  return false, "Сначала обработайте тяжёлые ранения головы и туловища."
+ end
+ return true
+end
+
 function M.Eligible(item, target, hitgroup)
  local health = target:GetCharacter():Health()
  local def = M.Catalog[item.uniqueID]
@@ -111,6 +127,7 @@ function M.Eligible(item, target, hitgroup)
   end
   return true
  end
+ if def.revive and target:InCriticalState() then return M.CanRevive(target) end
  if def.capacity then
   if M.VolumePlan(item,health,hitgroup).cost<=0 then return false, "Нет подходящей травмы или недостаточно запаса средства." end
   return true
@@ -181,9 +198,24 @@ function M.Apply(item, target, medic, hitgroup)
  if def.kind == "stimulant" then
   health:AddHediff("epinephrine", 0, {severity=100, tended_start=os.time(), tended_time=90})
  end
+ local revive = def.revive and target:InCriticalState() and M.CanRevive(target)
+ if revive then
+  local old = {}
+  for _, diff in health:GetHediffs() do if diff.uniqueID == "epinephrine_revival" then old[#old+1]=diff.id end end
+  for _, id in ipairs(old) do health:RemoveHediffByID(id) end
+  health:AddHediff("epinephrine_revival", 0, {severity=100, tended_start=os.time(), tended_time=def.revive})
+ end
  health:OnUpdateDiffs()
  health:GetBleedRate()
  M.Sync(health)
+ if revive then
+  target:SetAction()
+  target.ixRegainConscious = nil
+  target:SetLocalVar("knocked", false)
+  target:SetCriticalState(false)
+  target:SetRagdolled(false)
+  target:Notify("Вы пришли в сознание. Действие адреналина продлится 90 секунд; раны требуют лечения.")
+ end
  return {dmg=healed}
 end
 
@@ -193,6 +225,12 @@ function M.ValidSession(client, session)
   not IsValid(client.ixRagdoll) and not client:InCriticalState() and not client:IsRestricted() and
   IsValid(target) and target:Alive() and target:GetCharacter() == session.patient and
   item.inUse == client and M.Owns(client, item) and item:GetUses() > 0 and M.Reachable(client, target)
+end
+
+function M.AnnounceTreatment(client,session)
+ if session.emoteStarted or client.ixMedicalSession~=session or not M.ValidSession(client,session) then return end
+ session.emoteStarted=true
+ hook.Run("MedicalTreatmentStarted",client,session)
 end
 
 function M.Finish(client, success)
@@ -275,6 +313,7 @@ function M.Begin(item, target, hitgroup)
   session.ends = CurTime() + math.max(3, (item.stats.time or 10) / session.rate)
   if client:IsWepRaised() then client:ToggleWepRaised() end
   client:EmitSound("items/medshot4.wav", 55)
+  M.AnnounceTreatment(client,session)
  end
  net.Start("ixMedicalProgress") net.WriteString(item:GetName()) net.WriteFloat(session.ends and session.ends-CurTime() or 0) net.Send(client)
  return false

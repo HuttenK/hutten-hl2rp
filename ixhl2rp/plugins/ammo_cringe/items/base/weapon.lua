@@ -2,6 +2,7 @@ local Item = class("ItemWeapon"):implements("Item")
 
 Item.stackable = false 
 Item.isWeapon = true
+Item.equip_inv = "weapon"
 Item.useSound = 'items/ammo_pickup.wav'
 Item.contraband = true
 Item.canRename = true
@@ -29,11 +30,7 @@ function Item:GetPrintName()
 end
 
 function Item:IsEquipped()
-	-- equip-данные — достоверный признак экипировки (синхронизируются owner-transmit).
-	-- Раньше тут была привязка к self.inventory_type == 'main', но это поле на клиенте
-	-- не выставляется приёмником item.sync для предметов в инвентаре, поэтому после
-	-- ресинка (например при экипировке второго оружия) кнопка не переключалась на Unequip.
-	return self:GetData('equip') == true
+ return ix.WeaponSlots.Equipped(self)
 end
 
 local function Write_Equip(item, value)
@@ -69,9 +66,20 @@ function Item:Init()
 	self.hasLock = self.hasLock or false
 
 	self.functions.equip = {
+        isMulti = true,
+        multiOptions = function(item)
+            local result = {}
+            if ix.WeaponSlots.Kind(item) == "utility" then return {{name = "Экипировать", data = {}}} end
+            for slot = 1, 3 do
+                if ix.WeaponSlots.Accepts(item, slot) and not ix.WeaponSlots.Item(item.player or LocalPlayer(), slot) then
+                    result[#result + 1] = {name = ix.WeaponSlots.Label(slot), data = {slot = slot}}
+                end
+            end
+            return result
+        end,
 		tip = "equipTip",
 		icon = "icon16/box.png",
-		OnRun = function(item)
+		OnRun = function(item, items, data)
 			-- Однорукий персонаж не удержит двуручное оружие — оно падает на землю.
 			if ix.Amputation and ix.Amputation.IsTwoHanded(item) then
 				local client = item.player
@@ -98,7 +106,7 @@ function Item:Init()
 					return false
 				end
 			end
-			item:Equip(item.player)
+			item:Equip(item.player, false, false, data and data.slot)
 		end,
 		OnCanRun = function(item)
 			if IsValid(item:GetEntity()) then
@@ -120,6 +128,15 @@ function Item:Init()
 			return IsValid(client) and !item:IsEquipped()
 		end
 	}
+
+    self.functions.draw = {
+        name = "Взять в руки",
+        icon = "icon16/gun.png",
+        OnCanRun = function(item)
+            return not IsValid(item:GetEntity()) and item:IsEquipped()
+        end,
+        OnRun = function(item) ix.WeaponSlots.Activate(item.player, item) return false end
+    }
 
 	-- Ампутация: подменю на 4 конечности. Показывается только у подходящих
 	-- клинков и только хирургу с медициной 5. Жертва подтверждает согласие.
@@ -177,6 +194,7 @@ function Item:Init()
 	}
 
 	self.functions.unequip = {
+        name = "Убрать в инвентарь",
 		tip = "unequipTip",
 		icon = "icon16/box.png",
 		OnRun = function(item)
@@ -185,7 +203,7 @@ function Item:Init()
 		OnCanRun = function(item)
 			local client = item.player
 
-			return not IsValid(item:GetEntity()) and IsValid(client) and item:IsEquipped()
+			return not IsValid(item:GetEntity()) and IsValid(client) and (item:IsEquipped() or ix.WeaponSlots.Slot(item) ~= nil)
 		end
 	}
 
@@ -193,6 +211,7 @@ function Item:Init()
 		name = "weapon.unloadMagazine",
 		icon = "icon16/page_go.png",
 		OnRun = function(item)
+			if item.isFlamethrower then return false end
 			for _, pair in ipairs({{"ammo", "ammoType"}, {"ammo2", "ammoType2"}}) do
 				local count = item:GetData(pair[1], 0)
 				local ammo = item:GetData(pair[2])
@@ -205,7 +224,7 @@ function Item:Init()
 			return false
 		end,
 		OnCanRun = function(item)
-			return not item:IsEquipped() and (item:GetData("ammo", 0) > 0 or item:GetData("ammo2", 0) > 0)
+			return not item.isFlamethrower and not item:IsEquipped() and (item:GetData("ammo", 0) > 0 or item:GetData("ammo2", 0) > 0)
 		end
 	}
 
@@ -240,6 +259,9 @@ function Item:Init()
 			return !IsValid(item.entity) and IsValid(ply) and ply:IsAdmin()
 		end
 	}
+
+	self:AddData("weaponFiremode", {Transmit = ix.transmit.none})
+	self:AddData("weaponSafety", {Transmit = ix.transmit.none})
 
 	self:AddData("equip", {
 		Transmit = ix.transmit.owner,
@@ -301,192 +323,80 @@ function Item:CheckBiolock(client)
 end
 
 function Item:AddDurability(x)
-	local value = self:GetData("value", 0)
-	local newValue = math.Clamp(value + x, 0, self.durability)
-
-	self:SetData("value", newValue)
-
-	local delta = (newValue / self.durability)
-
-	if !self.lastDurability then
-		self.lastDurability = delta
-	end
-
-	local newDelta = math.abs(self.lastDurability - delta)
-	if newDelta >= 0.2 or newDelta < 0 then
-		self:SetData("durability", math.min(math.floor(5 * delta), 4))
-		self.lastDurability = delta
-	end
-
-	if delta <= 0 then
-		self:SetData("durability", 5)
-		self:OnRemoved()
-
-		return true
-	end
-
-	return false
+    -- Weapon wear is retired. Preserve compatibility with legacy callers.
+    return false
 end
 
 function Item:OnInstanced(isCreated)
-	if isCreated then
-		self:SetData("value", self.durability)
-		self:SetData("durability", 4)
-		self:SetData("regid", string.format("%s-%d", string.gsub(os.time(), "^(%d%d%d%d%d)(%d%d%d%d%d)", "%1:%2"), self.id))
-	end
-
-	if !self:GetData("durability") then
-		self:OnInstanced(true)
-	end
+    if isCreated and self.isFlamethrower then
+        self:SetData("ammo", 1000)
+        self:SetData("ammoType", "arc9_napalm")
+    end
+    -- Restore surviving items saved with legacy broken condition.
+    self:SetData("value", self.durability)
+    self:SetData("durability", 4)
+    if isCreated or not self:GetData("regid") then
+        self:SetData("regid", string.format("%s-%d", string.gsub(os.time(), "^(%d%d%d%d%d)(%d%d%d%d%d)", "%1:%2"), self.id))
+    end
 end
 
-function Item:Equip(client, bNoSelect, bNoSound)
-	if not IsValid(client) or not client:GetCharacter() then return false end
-	if self:GetData("arc9Spent") then client:Notify("Эта граната уже использована.") return false end
-	if not ix.arc9Inventory.IsClass(self.class) then
-		client:Notify("Требуется установленное оружие ARC9. Класс предмета: " .. tostring(self.class))
-		return false
-	end
-	client.carryWeapons = client.carryWeapons or {}
-	for _, other in pairs(client:GetItems()) do
-		if other.id ~= self.id and other.isWeapon and other.weaponCategory == self.weaponCategory and other:GetData("equip") then
-			client:NotifyLocalized("weaponSlotFilled", self.weaponCategory)
-			return false
-		end
-	end
-	-- Never silently destroy an unlinked weapon and its ammunition.
-	local existing = client:GetWeapon(self.class)
-	if IsValid(existing) then
-		if existing.ixItem == self then return true end
-		client:Notify("У вас уже есть оружие этого класса. Сначала уберите его.")
-		return false
-	end
-	local weapon = client:Give(self.class, true)
-	if not IsValid(weapon) then
-		client:Notify("Не удалось выдать " .. tostring(self.class) .. ". Проверьте серверную консоль.")
-		return false
-	end
-	if self.hasLock and not self:GetData("locked") then self:SetData("locked", client:GetCharacter():GetID()) end
-	if not ix.arc9Inventory.Bind(self, weapon, client) then
-		weapon.ixItem = nil
-		weapon:Remove()
-		client:CalculateAmmo()
-		return false
-	end
-	client.carryWeapons[self.weaponCategory] = weapon
-	self:SetData("equip", true)
-	if not bNoSelect then client:SelectWeapon(self.class) end
-	if not bNoSound then client:EmitSound(self.useSound, 80) end
-	return true
+function Item:Equip(client, bNoSelect, bNoSound, slot)
+ return ix.WeaponSlots.Equip(client, self, slot, bNoSelect, bNoSound)
 end
 
--- Запоминает тип и оба магазина с живого экземпляра ARC9.
 function Item:SaveLoadedAmmoType(weapon)
-	ix.arc9Inventory.Save(self, weapon)
+ ix.WeaponSlots.Save(self, weapon)
 end
 
 function Item:Unequip(user, bPlaySound, bRemoveItem, previousOwner)
-	local client = previousOwner or self:GetOwner()
-	if not IsValid(client) then return end
-	local weapon = client:GetWeapon(self.class)
-	if IsValid(weapon) and weapon.ixItem == self then
-		if weapon.CancelReload then weapon:CancelReload() end
-		if ix.arc9Inventory.Settle then ix.arc9Inventory.Settle(client) end
-		ix.arc9Inventory.Save(self, weapon)
-		weapon.ixItem = nil
-		client.ixAmmoReady = false
-		client:StripWeapon(self.class)
-	end
-	client.carryWeapons = client.carryWeapons or {}
-	client.carryWeapons[self.weaponCategory] = nil
-	self:SetData("equip", false)
-	client:CalculateAmmo()
-	if bPlaySound then client:EmitSound(self.useSound, 80) end
-	if bRemoveItem then self:Remove() end
+ local client = previousOwner or user or self:GetOwner()
+ if not IsValid(client) then return false end
+ if previousOwner or bRemoveItem then
+  ix.WeaponSlots.Release(client, self)
+  self:SetData("equip", false)
+  if bRemoveItem then self:Remove() end
+  return true
+ end
+ local success = ix.WeaponSlots.Unequip(client, self)
+ if success and bPlaySound then client:EmitSound(self.useSound, 80) end
+ return success
 end
 
-function Item:CanTransfer(oldInventory, newInventory, x, y)
-	if newInventory and self:GetData("equip") then
-		local owner = self:GetOwner()
+function Item:CanTransfer(oldInventory, newInventory)
+ return ix.WeaponSlots.CanTransfer(self, oldInventory, newInventory)
+end
 
-		if IsValid(owner) then
-			owner:NotifyLocalized("equippedWeapon")
-		end
-
-		return false
-	end
-
-	return true
+function Item:OnTransfer(newInventory, oldInventory)
+ ix.WeaponSlots.OnTransfer(self, newInventory, oldInventory)
 end
 
 function Item:OnDrop(client, inventory)
-	if self:GetData("equip") and inventory then self:Unequip(client, true, false, inventory.owner) end
+ if inventory then ix.WeaponSlots.Release(inventory.owner, self) end
+ self:SetData("equip", false)
 end
 
-function Item:OnLoadout()
-	if self:GetData("equip") then
-		if not self:Equip(self.player, true, true) then self:SetData("equip", false) end
-	end
+function Item:OnLoadout(client)
+ -- Slot contents remain equipped; a live SWEP is restored when its slot is drawn.
+ self:SetData("equip", ix.WeaponSlots.Equipped(self))
+ if ix.WeaponSlots.Kind(self) == "utility" and self:GetData("equip") and IsValid(client) then
+  ix.WeaponSlots.Activate(client, self, true)
+ end
 end
 
 function Item:OnSave()
-	local inventory = ix.Inventory:Get(self.inventory_id)
-	
-	if !inventory then
-		return
-	end
-	
-	local owner = inventory.GetOwner and inventory:GetOwner()
-
-	if IsValid(owner) and owner:IsPlayer() then
-		owner.carryWeapons = owner.carryWeapons or {}
-		local weapon = owner:GetWeapon(self.class)
-
-		if IsValid(weapon) and weapon.ixItem == self and self:GetData("equip") then
-			self:SaveLoadedAmmoType(weapon)
-			-- Clip state is saved together by SaveLoadedAmmoType.
-		end
-	end
+ local inventory = ix.WeaponSlots.Inventory(self)
+ if not inventory then return end
+ local weapon = ix.WeaponSlots.Live(inventory.owner, self)
+ if weapon then self:SaveLoadedAmmoType(weapon) end
 end
 
 function Item:OnRemoved()
-	local inventory = ix.Inventory:Get(self.inventory_id)
-	
-	if !inventory then
-		return
-	end
-	
-	local owner = inventory.GetOwner and inventory:GetOwner()
-	local wasEquipped = self:GetData("equip")
-	
-	self:SetData("equip", false)
-
-	if IsValid(owner) and owner:IsPlayer() then
-		owner.carryWeapons = owner.carryWeapons or {}
-		if wasEquipped then
-			owner.carryWeapons[self.weaponCategory] = nil
-		end
-
-		local weapon = owner:GetWeapon(self.class)
-
-		if IsValid(weapon) and weapon.ixItem == self then
-			ix.arc9Inventory.Settle(owner)
-			owner.ixAmmoReady = false
-			weapon:Remove()
-			owner:CalculateAmmo()
-		end
-	end
+ local inventory = ix.WeaponSlots.Inventory(self)
+ if inventory then ix.WeaponSlots.Release(inventory.owner, self) end
+ self:SetData("equip", false)
 end
 
 if CLIENT then
-	local durability_state = {
-		[0] = {"weaponConditionFaulty", 0.15},
-		[1] = {"weaponConditionHeavyWear", 0.25},
-		[2] = {"weaponConditionMediumWear", 0.4},
-		[3] = {"weaponConditionLightWear", 0.6},
-		[4] = {"weaponConditionNew", 0.9},
-		[5] = {"weaponConditionBroken", 0}
-	}
 
 	local greenClr = Color(50, 200, 50)
 	local yellowClr = Color(255, 200, 50)
@@ -533,15 +443,6 @@ if CLIENT then
 			lock:SizeToContents()
 		end
 
-		local durability = self:GetData("durability")
-
-		if durability then
-			local info = durability_state[durability]
-			local panel = tooltip:AddRowAfter(hasLock and "lock" or "name", "durability")
-			panel:SetBackgroundColor(HSVToColor(120 * info[2], 1, 1))
-			panel:SetText(L("weaponConditionLabel", L(info[1])))
-			panel:SizeToContents()
-		end
 
 		local weapon = weapons.GetStored(self.class)
 		if weapon then
@@ -604,39 +505,11 @@ if CLIENT then
 			return
 		end
 		
-		local durability = self:GetData("durability")
 
-		if durability then
-			local info = durability_state[durability]
-			local clr = HSVToColor(120 * info[2], 0.75, 1)
-
-			surface.SetDrawColor(35, 35, 35, 225)
-			surface.DrawRect(2, 2, 6, h - 4)
-
-			if durability > 4 then
-				durability = 4
-			elseif durability == 0 then
-				durability = 0.4
-			end
-
-			local filledWidth = (h - 6) * (durability / 4)
-
-			surface.SetDrawColor(clr)
-			surface.DrawRect(3, math.ceil(h - filledWidth - 3), 4, filledWidth)
-		end
 	end
 end
 
-hook.Add("PlayerDeath", "ixStripClip", function(client)
-	client.carryWeapons = {}
-
-	for _, v in pairs(client:GetItems()) do
-		if (v.isWeapon and v:GetData("equip")) then
-			v:SetData("ammo", 0)
-			v:SetData("ammo2", 0)
-			v:SetData("equip", false)
-		end
-	end
-end)
+-- Retire the category-based death hook during Lua auto-refresh as well.
+hook.Remove("PlayerDeath", "ixStripClip")
 
 return Item

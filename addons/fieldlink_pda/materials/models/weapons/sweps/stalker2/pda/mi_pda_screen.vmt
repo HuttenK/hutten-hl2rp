@@ -1,0 +1,7 @@
+"VertexLitGeneric"
+{
+ "$basetexture" "models/weapons/sweps/stalker2/pda/mi_dev_pda_rgb"
+ "$bumpmap" "models/weapons/sweps/stalker2/pda/mi_dev_pda_n"
+ "$envmap" "env_cubemap"
+ "$envmaptint" "[0.08 0.08 0.08]"
+}

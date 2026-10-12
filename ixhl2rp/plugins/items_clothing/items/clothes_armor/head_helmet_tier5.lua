@@ -1,18 +1,11 @@
 ITEM.name = "Штурмовой шлем"
-ITEM.model = "models/autonomous/africa/items/prop_head_helmet_soviet.mdl"
+ITEM.model = "models/sd/citizens/props/head_helmet_soviet.mdl"
 ITEM.width = 2
 ITEM.height = 2
-ITEM.iconCam = {
-	pos = Vector(170.83224487305, -3.1775050163269, -31.036396026611),
-	ang = Angle(-11.637926101685, 178.93601989746, 0),
-	fov = 3.542275575055,
-}
 ITEM.description = "Тяжёлый штурмовой шлем, обеспечивающий серьёзную защиту головы"
 ITEM.equip_inv = 'head'
 ITEM.equip_slot = nil
-ITEM.bodyGroups = {
-	[1] = 15,
-}
+ITEM.bodyGroups = {[1] = 5}
 -- Bodygroups used when the wearer has an MPF uniform on (metropolice model,
 -- different bodygroup layout than citizen models).
 ITEM.bodyGroupsMPF = {

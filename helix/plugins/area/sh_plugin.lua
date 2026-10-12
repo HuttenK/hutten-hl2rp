@@ -7,6 +7,7 @@ PLUGIN.description = "Provides customizable area definitions."
 
 ix.area = ix.area or {}
 ix.area.types = ix.area.types or {}
+ix.area.typeOptions = ix.area.typeOptions or {}
 ix.area.properties = ix.area.properties or {}
 ix.area.stored = ix.area.stored or {}
 
@@ -32,15 +33,17 @@ ix.config.Add("areaTickTime", 1, "config.areaTickTime.desc",
 function ix.area.AddProperty(name, type, default, data)
 	ix.area.properties[name] = {
 		type = type,
-		default = default
+		default = default,
+		areaType = data and data.areaType
 	}
 end
 
-function ix.area.AddType(type, name)
+function ix.area.AddType(type, name, options)
 	name = name or type
 
 	-- only store localized strings on the client
 	ix.area.types[type] = CLIENT and name or true
+	ix.area.typeOptions[type] = options or {}
 end
 
 function PLUGIN:SetupAreaProperties()

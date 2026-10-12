@@ -104,6 +104,7 @@ function ix.option.Add(key, optionType, default, data)
 		bNetworked = data.bNetworked and true or false,
 		hidden = data.hidden or nil,
 		populate = data.populate or nil,
+		keybind = data.keybind == true,
 		OnChanged = data.OnChanged or nil
 	}
 end

@@ -1,12 +1,2 @@
-RECIPE.name = "recipe.cooking.coffee"
-RECIPE.category = "recipe.category.cooking.drinks"
-RECIPE.requirements = {
-	cook_coffee = 1,
-	purified_water = 1,
-}
-RECIPE.results = {
-	coffee_mug = 1
-}
-
-RECIPE.station = {"station_stove", "station_coffeemachine"}
-RECIPE.preview = "models/shibcuppy.mdl"
+-- Removed alongside its retired food/drink result.
+RECIPE.disabled = true

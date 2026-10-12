@@ -445,10 +445,10 @@ function ix.anim.GetModelClass(model, entity)
 	return class
 end
 
-ix.anim.SetModelClass("models/police.mdl", "metrocop")
-ix.anim.SetModelClass("models/combine_super_soldier.mdl", "overwatch")
-ix.anim.SetModelClass("models/combine_soldier_prisonGuard.mdl", "overwatch")
-ix.anim.SetModelClass("models/combine_soldier.mdl", "overwatch")
+ix.anim.SetModelClassHint("models/police.mdl", "metrocop")
+ix.anim.SetModelClassHint("models/combine_super_soldier.mdl", "overwatch")
+ix.anim.SetModelClassHint("models/combine_soldier_prisonGuard.mdl", "overwatch")
+ix.anim.SetModelClassHint("models/combine_soldier.mdl", "overwatch")
 ix.anim.SetModelClass("models/vortigaunt.mdl", "vortigaunt")
 ix.anim.SetModelClass("models/vortigaunt_blue.mdl", "vortigaunt")
 ix.anim.SetModelClass("models/vortigaunt_doctor.mdl", "vortigaunt")
@@ -495,7 +495,7 @@ if (SERVER) then
 			if ix.sharedPoses then
 				if sharedPose then ix.sharedPoses.Begin(self,sharedPose) else ix.sharedPoses.Clear(self) end
 			end
-			time = time or self:SequenceDuration(sequence)
+			time = time or (sharedPose and sharedPose.duration) or self:SequenceDuration(sequence)
 
 			timer.Remove("ixSeq" .. self:EntIndex())
 			if self.ixSequenceMoveType == nil then

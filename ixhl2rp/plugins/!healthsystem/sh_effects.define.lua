@@ -14,6 +14,10 @@ local TEMPLATE = Hediffs:New("epinephrine", "Hediff_Medical")
 TEMPLATE.name = "Эпинефрин"
 TEMPLATE.color = Color(96, 255, 96)
 
+local TEMPLATE = Hediffs:New("epinephrine_revival", "Hediff_Medical")
+TEMPLATE.name = "Поддержка сознания"
+TEMPLATE.color = Color(96, 255, 96)
+
 local TEMPLATE = Hediffs:New("gunshot", "Hediff_Injury")
 TEMPLATE.name = "Огнестрельная рана"
 TEMPLATE.bleedRate = 0.06

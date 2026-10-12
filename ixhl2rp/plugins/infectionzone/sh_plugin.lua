@@ -137,6 +137,7 @@ ix.command.Add("InfectionClean", {
 	},
 	OnRun = function(self, client, name)
 		if (name == "all") then
+            PLUGIN:CleanFlora("__waste")
 			local n = 0
 
 			for zoneName, area in pairs(ix.area.stored) do
