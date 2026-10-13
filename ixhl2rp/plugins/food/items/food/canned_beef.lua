@@ -1,15 +1,9 @@
 ITEM.name = "item.canned_beef"
 ITEM.description = "item.canned_beef.desc"
-ITEM.model = "models/crunchy/props/eft_props/beefstew2.mdl"
+ITEM.model = "models/illusion/eftcontainers/beefstew2.mdl"
 ITEM.cost = 12
 ITEM.width = 1
 ITEM.height = 1
-ITEM.iconCam = {
-	pos = Vector(100.68323516846, 34.123859405518, 56.536716461182),
-	ang = Angle(27.128786087036, 198.68937683105, 0),
-	fov = 4.0788186793622,
-}
-
 ITEM.volume = 340
 ITEM.portion_amount = 85
 

@@ -11,6 +11,6 @@ RECIPE.results = {
 	slam_mine = 1
 }
 RECIPE.skill = {"crafting", 7}
-RECIPE.tools = {"tool_welding", "wm_screwdriver"}
+RECIPE.tools = {"tool_welding", "tool_screw"}
 RECIPE.station = "station_guns"
 RECIPE.xp = 225

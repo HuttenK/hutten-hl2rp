@@ -208,6 +208,7 @@ function GM:CalcView(client, origin, angles, fov)
 	if ((!client:ShouldDrawLocalPlayer() and IsValid(entity) and entity:IsRagdoll())
 	or (!client:Alive() and IsValid(ragdoll))) then
 		local ent = client:Alive() and entity or ragdoll
+		ent = (ix.PushCart and ix.PushCart.PatientDisplay and ix.PushCart:PatientDisplay(ent)) or ent
 		local index = ent:LookupAttachment("eyes")
 
 		if (index and index > 0) then

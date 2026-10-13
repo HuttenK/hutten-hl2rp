@@ -1,6 +1,6 @@
 ITEM.name = "item.canned_water"
 ITEM.description = "item.canned_water.desc"
-ITEM.model = "models/crunchy/props/eft_props/waterbottle.mdl"
+ITEM.model = "models/illusion/eftcontainers/waterbottle.mdl"
 ITEM.cost = 12
 ITEM.width = 1
 ITEM.height = 1

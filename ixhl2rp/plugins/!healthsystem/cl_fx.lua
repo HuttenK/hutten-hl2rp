@@ -1,6 +1,18 @@
 local BLEEDING_DISTANCE = 2048 ^ 2
 local bleedingPlayers = {}
 
+local function BleedingObject(client)
+	-- Cart transport hides the original ragdoll. Its client bone cache may
+	-- remain at the pickup point; emit from the visible lying model instead.
+	local cart = ix.PushCart
+	local display = cart and cart.PatientDisplay and cart:PatientDisplay(client)
+	if IsValid(display) then return display end
+
+	local doll = client:GetNetVar("doll")
+	doll = doll and Entity(doll)
+	return IsValid(doll) and doll or client
+end
+
 timer.Create("ixBleedingUpdate", 1, 0, function()
 	if !IsValid(LocalPlayer()) then return end
 
@@ -12,7 +24,7 @@ timer.Create("ixBleedingUpdate", 1, 0, function()
 		if !client:Alive() then continue end
 		if !client:GetNetVar("isBleeding") then continue end
 
-		local pos = client:GetPos()
+		local pos = BleedingObject(client):GetPos()
 		if pos:DistToSqr(origin) <= BLEEDING_DISTANCE then
 			bleedingPlayers[#bleedingPlayers + 1] = client
 		end
@@ -93,18 +105,16 @@ function PLUGIN:DrawBleeding()
 	
 	for _, v in ipairs(bleedingPlayers) do
 		if !IsValid(v) then continue end
+		if !v:Alive() or !v:GetNetVar("isBleeding") then continue end
 
-		local doll = v:GetNetVar("doll") and Entity(v:GetNetVar("doll"))
-		doll = IsValid(doll) and doll or nil
-
-		local object = doll or v
+		local object = BleedingObject(v)
 		local boneID = object:LookupBone("ValveBiped.Bip01_Spine1")
 		if !boneID then continue end
 
 		local pos, ang = object:GetBonePosition(boneID)
 		local effectData = EffectData()
 			effectData:SetEntity(v)
-			effectData:SetOrigin(pos or (v:GetPos() + offset))
+			effectData:SetOrigin(pos or (object:GetPos() + offset))
 			effectData:SetAngles(ang or angle_zero)
 		util.Effect("bleeding", effectData, true, true)
 	end

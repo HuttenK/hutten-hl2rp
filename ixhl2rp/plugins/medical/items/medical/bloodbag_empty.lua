@@ -1,6 +1,6 @@
 ITEM.name = "item.bloodbagempty"
 ITEM.description = "item.bloodbagempty.desc"
-ITEM.model = Model("models/mosi/fallout4/props/aid/bloodbagempty.mdl")
+ITEM.model = "models/illusion/eftcontainers/sicccase.mdl"
 ITEM.useSound = "items/medshot4.wav"
 ITEM.cost = 50
 ITEM.rarity = 1

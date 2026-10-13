@@ -16,6 +16,7 @@ function ENT:Initialize()
 	self:SetBodyTop(Kin.BODY_TOP_EMPTY)
 	self.crates = {}
 	self.spawnBuild = P.BUILD
+	self.cartGeometryVersion = P.GEOMETRY_VERSION
 	P:Register(self)
 	P:CreateInventory(self, P.INV_WIDTH, P.INV_HEIGHT, self.cargoRecord)
 	self.cargoRecord = nil
@@ -35,7 +36,7 @@ function ENT:UpdateLoad()
 	end
 	self.crates = crates
 	self:SetCrateCount(#crates)
-	self:SetCargoLoad(math.Clamp(weight / P.MAX_CRATES, 0, 1))
+	self:SetCargoLoad(P.GetPatient and P:GetPatient(self) and P.PATIENT_LOAD or math.Clamp(weight / P.MAX_CRATES, 0, 1))
 	local phys = self:GetPhysicsObject()
 	if IsValid(phys) then phys:SetMass(45 + self:GetCargoLoad() * 100) end
 end
@@ -50,6 +51,8 @@ end
 
 function ENT:LayoutCrates()
 	local top = Kin.BODY_TOP_EMPTY
+	local state = P.patientStates and P.patientStates[self]
+	if state then top = math.max(top, self.BedZ + state.height + 3 - Kin.WHEEL_BOTTOM) end
 	for index, crate in ipairs(self.crates or {}) do
 		if IsValid(crate) then
 			local slot, column = self:CrateSlot(crate:GetCartSlot())
@@ -72,12 +75,13 @@ function ENT:ApplyDrive(state, command)
 end
 
 function ENT:StartPush(client)
+	if ix.BodyDrag and ix.BodyDrag.Body(client) then return false end
 	if !P:Near(client, self) or IsValid(self:GetPusher()) or P:IsPushing(client) or self.cargoLoading or self.cargoPacking then return false end
 	if ix.storage.InUse(self:GetInventory()) or P:PendingTransfers(self:GetInventory()) or IsValid(client:GetLocalVar("holdingObject")) then return false end
-	local pos, ang = self:GetPos(), self:GetAngles()
+	local pos, ang = self:GetPos(), P:FlipModelAngles(self:GetAngles())
 	if math.abs(math.NormalizeAngle(ang.p)) > 50 or math.abs(math.NormalizeAngle(ang.r)) > 35 then client:Notify("Сначала поставьте тележку на колёса.") return false end
 	-- Invert PoseTransform along the actual model normal. The raised origin
-	-- is 34 units from the wheel plane: a world-Z offset would move a tilted
+	-- follows the wheel plane normal: a world-Z offset would move a tilted
 	-- cart sideways when its handle is acquired. Project the normal onto the
 	-- yaw frame as well, so simultaneous pitch/roll reconstruct the same plane.
 	local up = ang:Up()
@@ -128,11 +132,13 @@ function ENT:ShouldRelease()
 end
 
 function ENT:CanAttachCrate(crate)
+	if P.GetPatient and P:GetPatient(self) then return false end
 	return P:IsLoadable(crate) and !IsValid(crate:GetParent()) and #self.crates < P.MAX_CRATES
 		and !IsValid(self:GetPusher()) and !P:CargoBusy(self) and !P:CargoBusy(crate)
 end
 
 function ENT:AttachCrate(crate, restoring)
+	if P.GetPatient and P:GetPatient(self) then return false end
 	if !P:IsLoadable(crate) or IsValid(crate:GetParent()) or #self.crates >= P.MAX_CRATES then return false end
 	if !restoring and !self:CanAttachCrate(crate) then return false end
 	local occupied = {}
@@ -215,6 +221,7 @@ function ENT:Think()
 end
 
 function ENT:OnRemove()
+	if P.ReleasePatient then P:ReleasePatient(self) end
 	self:StopPush()
 	if !P.cleaning and !ix.shuttingDown then
 		-- Detached crates keep their own inventories and persistence records.
@@ -230,6 +237,6 @@ function ENT:SpawnFunction(client, trace)
 	if !client:IsAdmin() or !trace.Hit then return end
 	local ent = ents.Create("ix_pushcart")
 	ent:SetPos(trace.HitPos + trace.HitNormal * 2 - Vector(0, 0, Kin.WHEEL_BOTTOM))
-	ent:SetAngles(Angle(0, client:EyeAngles().y + 180, 0)) ent:Spawn()
+	ent:SetAngles(Angle(0, client:EyeAngles().y, 0)) ent:Spawn()
 	return ent
 end

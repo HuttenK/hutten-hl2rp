@@ -13,7 +13,7 @@ local function PadRenderBounds(self)
 	local mins, maxs = self:OBBMins(), self:OBBMaxs()
 	if (maxs - mins):LengthSqr() < 1 then return end
 	if self.GetComposite and self:GetComposite() then
-		mins, maxs = Vector(-38, -23, -34), Vector(44, 23, 57.5)
+		mins, maxs = self.ChassisMins, self.ChassisMaxs
 	end
 	self:SetRenderBounds(mins - RENDER_PAD, maxs + RENDER_PAD)
 	self.renderPadded = true
@@ -31,7 +31,7 @@ local WHEELS_CONVAR = CreateClientConVar("ix_pushcart_wheels", "1", true, false,
 	"Крутящиеся колёса тележки; 0 - обычная модель с неподвижными колёсами.")
 
 -- Колёса в модели отдельной частью тела «wells», и вся она ниже этой высоты.
-local WHEEL_TOP = 14 + ix.PushCart.MODEL_Z_OFFSET
+local WHEEL_TOP = -20.5 -- retired separate-wheel model only
 -- Рывок дальше этого за кадр - телепорт или подгрузка, колёса не крутим.
 local MAX_STEP = 20
 
@@ -44,7 +44,7 @@ local MAX_STEP = 20
 ]]
 local CASTER_MIN_X, CASTER_MAX_X = -35, -27
 local CASTER_MIN_Y, CASTER_MAX_Y = 15, 21
-local CASTER_MAX_Z = 12 + ix.PushCart.MODEL_Z_OFFSET
+local CASTER_MAX_Z = -22.5 -- retired separate-wheel model only
 -- Вилка доворачивается за ходом, град/с; медленнее этого хода (ед/с) - стоит как стояла.
 local SWIVEL_RATE = 240
 local SWIVEL_MIN_SPEED = 3
@@ -671,13 +671,17 @@ function ENT:GetTooltipLines()
 	local lines = {
 		{text = string.format("Ящиков: %d из %d", self:GetCrateCount(), ix.PushCart.MAX_CRATES), color = labelColor}
 	}
+	local patient = ix.PushCart.GetPatient and ix.PushCart:GetPatient(self)
+	if patient then lines = {{text = "Занята персонажем · весь кузов", color = labelColor}} end
 
 	if IsValid(self:GetPusher()) then
 		lines[#lines + 1] = {text = "Везут", color = labelColor}
 	end
 
 	lines[#lines + 1] = {text = "E — ДЕЙСТВИЯ"}
-	lines[#lines + 1] = {text = "Поднесите грузовой ящик — он закрепится автоматически"}
+	if !patient then
+		lines[#lines + 1] = {text = ix.BodyDrag and ix.BodyDrag.Body(LocalPlayer()) and "E — уложить персонажа" or "Поднесите грузовой ящик — он закрепится автоматически"}
+	end
 
 	return {
 		title = "ГРУЗОВАЯ ТЕЛЕЖКА",

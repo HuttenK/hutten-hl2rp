@@ -1,10 +1,7 @@
 RECIPE.name = "TOZ-194"
 RECIPE.category = "recipe.category.weapons"
 RECIPE.requirements = {
-	gun_shotgun_frame = 1,
-	gun_shotgun_grip = 1,
-	gun_weapon_barrel = 1,
-	mat_weaponparts = 2,
+	mat_weaponparts = 5,
 }
 RECIPE.results = {
 	selected_eft_mr153 = 1

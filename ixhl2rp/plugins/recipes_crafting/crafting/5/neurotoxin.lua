@@ -1,7 +1,7 @@
 RECIPE.name = "Нейротоксин"
 RECIPE.category = "recipe.category.chemistry"
 RECIPE.requirements = {
-	xen_extract = 2,   -- очищенная вытяжка
+	xen_extract = 2,   -- нейротоксичное растение
 	mat_sulfur = 2,    -- стабилизатор
 	mat_acid = 1,      -- катализатор
 	mat_oil = 1,       -- носитель

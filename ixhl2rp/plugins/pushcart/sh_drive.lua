@@ -154,13 +154,13 @@ function PushCart:TraceFor(cart)
 	return Trace
 end
 
--- Поза Kin -> положение и угол сущности. Начало модели - на полколеса ниже плоскости колёс, по её нормали.
+-- Driving uses +X towards the handle; the EP2 model has its handle on -X.
 function PushCart:PoseTransform(pose)
 	local fx, fy, fz, ux, uy, uz = Kin.Basis(pose)
 	local bottom = Kin.WHEEL_BOTTOM
 	local position = Vector(pose.x - ux * bottom, pose.y - uy * bottom, pose.z0 - uz * bottom)
 
-	return position, Vector(fx, fy, fz):AngleEx(Vector(ux, uy, uz))
+	return position, self:FlipModelAngles(Vector(fx, fy, fz):AngleEx(Vector(ux, uy, uz)))
 end
 
 --[[
@@ -1097,13 +1097,13 @@ local function CartFacing(client)
 
 		local _, angles = cart:GetDrawPose()
 
-		return angles.y + 180, weight
+		return angles.y, weight
 	end
 
 	local cart = PushCart:GetPushedCart(client)
 
 	if cart then
-		return cart:GetAngles().y + 180, 1
+		return cart:GetAngles().y, 1
 	end
 end
 
@@ -1209,7 +1209,7 @@ if CLIENT then
 		local overridden = {}
 
 		for _, child in ipairs(cart:GetChildren()) do
-			if child.isCargoCrate then
+			if child.isCargoCrate or child.isCartPatient then
 				if !child.ixRenderPadded then
 					child:SetRenderBounds(child:OBBMins() - RENDER_PAD, child:OBBMaxs() + RENDER_PAD)
 					child.ixRenderPadded = true

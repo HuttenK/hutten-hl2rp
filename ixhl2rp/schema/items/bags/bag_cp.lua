@@ -1,6 +1,6 @@
 ITEM.name = "item.bag_cp"
 ITEM.description = "item.bag_cp.desc"
-ITEM.model = "models/cellar/prop_pack_cp.mdl"
+ITEM.model = "models/cultist/backpacks/world/backpack_big.mdl"
 ITEM.rarity = 2
 ITEM.width = 3
 ITEM.height = 4
@@ -17,10 +17,4 @@ ITEM.inventory_data = {
         {x=3, y=4, w=2, h=3},  -- bottom right
     }
 }
-ITEM.iconCam = {
-	pos = Vector(0, 0, 200),
-	ang = Angle(89.804817199707, -0.057920835912228, 0),
-	fov = 4.3062882137585,
-}
-
-ITEM.displayID = "backpack_cp"
+ITEM.displayID = "backpack"

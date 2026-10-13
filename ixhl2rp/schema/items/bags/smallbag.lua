@@ -1,11 +1,6 @@
 ITEM.name = "item.smallbag"
 ITEM.description = "item.smallbag.desc"
-ITEM.model = "models/cellar/prop_pack_regular.mdl"
-ITEM.iconCam = {
-	pos = Vector(-101.23272705078, -12.317017555237, 271.6901550293),
-	ang = Angle(69.209274291992, 6.8816394805908, 0),
-	fov = 4.2366720866849,
-}
+ITEM.model = "models/eft/misk/scontainer_bag_sport.mdl"
 ITEM.width = 3
 ITEM.height = 2
 ITEM.inventory_data = {

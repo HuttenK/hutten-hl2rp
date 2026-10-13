@@ -11,6 +11,6 @@ RECIPE.results = {
 	m67_grenade = 2
 }
 RECIPE.skill = {"crafting", 6}
-RECIPE.tools = {"tool_welding", "wm_screwdriver"}
+RECIPE.tools = {"tool_welding", "tool_screw"}
 RECIPE.station = "station_guns"
 RECIPE.xp = 175

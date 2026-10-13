@@ -9,10 +9,12 @@ net.Receive("ixPushCartMenu", function()
 	local menu = ix.SimpleMenu()
 	P.menu = menu
 	local character, parent, chosen = client:GetCharacter(), entity:GetParent(), false
+	local function occupant() return P:GetPatient(entity.isCartPatient and P:PatientCart(entity) or entity) end
+	local patient = occupant()
 	local expires = CurTime() + 15
 	local function valid()
 		return IsValid(menu) and !chosen and client == LocalPlayer() and client:GetCharacter() == character
-			and CurTime() <= expires and P:CanInteract(client, entity) and entity:GetParent() == parent
+			and CurTime() <= expires and P:CanInteract(client, entity) and entity:GetParent() == parent and occupant() == patient
 	end
 	for _, action in ipairs(options) do
 		local info = P.actions[action]
@@ -22,6 +24,17 @@ net.Receive("ixPushCartMenu", function()
 			local allowed = valid()
 			chosen = true; menu:Remove()
 			if !allowed then return end
+			if action == "examinePatient" then
+				local patient = P:GetPatient(entity.isCartPatient and P:PatientCart(entity) or entity)
+				if IsValid(patient) and ix.Medicine then ix.Medicine.OpenExamination(patient) end
+				return
+			elseif action == "robPatient" or action == "finishPatient" then
+				local display = entity.isCartPatient and entity or entity:GetNW2Entity("ixCartPatientDisplay")
+				if IsValid(display) then
+					net.Start("crit.use") net.WriteEntity(display) net.WriteBool(action=="robPatient") net.SendToServer()
+				end
+				return
+			end
 			net.Start("ixPushCartAction") net.WriteEntity(entity) net.WriteUInt(token,16) net.WriteString(action) net.SendToServer()
 		end):SetImage(info.icon)
 	end

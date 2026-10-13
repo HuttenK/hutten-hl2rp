@@ -41,7 +41,7 @@ local function item(p,id)
  if not p:GetCharacter() or not p.inventories then return end
  local found,instance=p:HasItem(id);return found and instance or nil
 end
-local function screwdriver(p) return item(p,"tool_screw") or item(p,"wm_screwdriver") end
+local function screwdriver(p) return item(p,"tool_screw") end
 function P:BeginWork(p,j)
  if not F.Active(p) or not j or j.status~="assigned" or not self:JobAllowed(p,j) then return false,"Заявка недоступна." end
  if j.owner~=p:GetCharacter():GetID() then return false,"Сначала примите заявку." end

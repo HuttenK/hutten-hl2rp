@@ -1,6 +1,11 @@
 local P = ix.PushCart
 
 P.actions = {
+	takePatient = {label = "Снять и тащить", icon = "icon16/hand.png"},
+	unloadPatient = {label = "Положить рядом", icon = "icon16/arrow_down.png"},
+	examinePatient = {label = "Осмотреть ранения", icon = "icon16/heart.png"},
+	robPatient = {label = "Ограбить", icon = "icon16/box.png"},
+	finishPatient = {label = "Добить", icon = "icon16/cross.png"},
 	push = {label = "Взяться за ручку", icon = "icon16/lorry.png"},
 	stop = {label = "Отпустить тележку", icon = "icon16/control_stop.png"},
 	open = {label = "Открыть ящик", icon = "icon16/box.png"},
@@ -13,6 +18,8 @@ P.actions = {
 -- Attached crates are not solid. Resolve their individual OBBs before the
 -- chassis behind them, without letting the selection ray pass through walls.
 function P:InteractionTarget(client)
+	local patient = self.TracePatient and self:TracePatient(client)
+	if patient then return patient end
 	local start = client:GetShootPos()
 	local delta = client:GetAimVector() * self.USE_RANGE
 	local trace = util.TraceLine({start = start, endpos = start + delta, filter = client, mask = MASK_SOLID})

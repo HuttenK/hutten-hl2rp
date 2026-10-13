@@ -112,6 +112,8 @@ do
 	end
 
 	function PLUGIN:PlayerBindPress(client, bind, pressed)
+		-- Non-solid cart occupants have their own server-authorized E menu.
+		if bind:find("+use") and ix.PushCart and ix.PushCart.TracePatient and ix.PushCart:TracePatient(client) then return end
 		-- Let the drag menu handle living ragdolls before the legacy critical
 		-- prompt, regardless of plugin hook order. Shooting stays available.
 		if ix.BodyDrag then
@@ -150,6 +152,7 @@ do
 				if IsValid(doll) then
 					but = doll
 				end
+				but = (ix.PushCart and ix.PushCart.PatientDisplay and ix.PushCart:PatientDisplay(but)) or but
 
 				local boneID = but:LookupBone("ValveBiped.Bip01_Head1")
 
@@ -169,7 +172,7 @@ do
 						surface.SetDrawColor(255, 255, 255, 255 * (1 - d))
 						DrawSkull(scrpos.x - mid, scrpos.y - mid, size, 255 * (1 - d))
 
-						if d > focus_d then
+						if d > focus_d and !but.isCartPatient then
 							local x = abs(scrpos.x - midscreen_x)
 							local y = abs(scrpos.y - midscreen_y)
 							if (x < focus_range and y < focus_range and

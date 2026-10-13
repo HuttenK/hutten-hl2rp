@@ -10,6 +10,20 @@ end
 function P:InteractionOptions(client, entity)
 	if !self:CanInteract(client, entity) then return {} end
 	if entity.ixIsPushCart and entity:GetPusher() == client then return {"stop"} end
+	local cart = entity.isCartPatient and self:PatientCart(entity) or entity
+	local patient = self.GetPatient and self:GetPatient(cart)
+	if patient then
+		if self:IsPushing(client) or IsValid(cart:GetPusher()) or self:CargoBusy(cart) then return {} end
+		local options = {"examinePatient"}
+		if !IsValid(client:GetLocalVar("holdingObject")) and !(ix.BodyDrag and ix.BodyDrag.Body(client)) then
+			options[#options+1] = "takePatient"
+			options[#options+1] = "unloadPatient"
+			if entity.ixIsPushCart then options[#options+1] = "push" end
+		end
+		if entity.isCartPatient and patient:GetNetVar("crit",false) then options[#options+1]="robPatient"; options[#options+1]="finishPatient" end
+		return options
+	end
+	if entity.isCartPatient then return {} end
 	if self:CargoBusy(entity) or self:IsPushing(client) then return {} end
 	if entity.ixIsPushCart then
 		if IsValid(entity:GetPusher()) then return {} end
@@ -29,10 +43,16 @@ end
 function P:OpenInteraction(client, entity)
 	if (client.nextPushCartUse or 0) > CurTime() or !self:CanInteract(client, entity) then return end
 	client.nextPushCartUse = CurTime() + 0.3
+	if entity.ixIsPushCart and ix.BodyDrag and ix.BodyDrag.Body(client) then
+		local ok, reason = self:LoadPatient(client,entity)
+		if !ok and reason then client:Notify(reason) end
+		return
+	end
 	local options = self:InteractionOptions(client, entity)
 	client.ixCartMenuSerial = ((client.ixCartMenuSerial or 0) + 1) % 65536
 	client.ixCartMenu = {entity = entity, parent = entity:GetParent(), character = client:GetCharacter(),
-		token = client.ixCartMenuSerial, expires = CurTime() + 15, options = options}
+		token = client.ixCartMenuSerial, expires = CurTime() + 15, options = options,
+		patient = self.GetPatient and self:GetPatient(entity.isCartPatient and self:PatientCart(entity) or entity)}
 	net.Start("ixPushCartMenu")
 		net.WriteEntity(entity) net.WriteUInt(client.ixCartMenuSerial, 16) net.WriteUInt(#options, 3)
 		for _, action in ipairs(options) do net.WriteString(action) end
@@ -57,8 +77,14 @@ function P:PerformInteraction(client, entity, token, action)
 	if menu.entity != entity or menu.character != client:GetCharacter() or menu.expires < CurTime()
 		or !self:CanInteract(client, entity) or entity:GetParent() != menu.parent then return false end
 	if !table.HasValue(menu.options, action) or !table.HasValue(self:InteractionOptions(client, entity), action) then return false end
+	local cart = entity.isCartPatient and self:PatientCart(entity) or entity
+	if menu.patient != (self.GetPatient and self:GetPatient(cart)) then return false end
 	local ok = false
-	if action == "push" then ok = entity:StartPush(client)
+	if action == "takePatient" or action == "unloadPatient" then
+		local reason
+		ok, reason = self:UnloadPatient(client,cart,action=="takePatient")
+		if reason then client:Notify(reason) end
+	elseif action == "push" then ok = entity:StartPush(client)
 	elseif action == "stop" then entity:StopPush() ok = true
 	elseif action == "open" then ok = self:OpenInventory(client, entity)
 	elseif action == "pack" then ok = self:Pack(client, entity, self.ITEM)

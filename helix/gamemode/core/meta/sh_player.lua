@@ -468,11 +468,12 @@ if (SERVER) then
 
 			entity:CallOnRemove("fixer", function()
 				if (IsValid(self)) then
+					local recoveryPosition = hook.Run("GetRagdollRecoveryPosition", self, entity)
 					self:SetLocalVar("blur", nil)
 					self:SetLocalVar("ragdoll", nil)
 
 					if (!entity.ixNoReset) then
-						self:SetPos(entity:GetPos())
+						self:SetPos(recoveryPosition or entity:GetPos())
 					end
 
 					self:SetNoDraw(false)

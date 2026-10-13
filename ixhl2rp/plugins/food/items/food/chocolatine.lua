@@ -1,6 +1,6 @@
 ITEM.name = "item.chocolatine"
 ITEM.description = "item.chocolatine.desc"
-ITEM.model = "models/crunchy/props/underhell_props/pg_choco_bar.mdl"
+ITEM.model = "models/foodnhouseholditems/marabou1.mdl"
 ITEM.cost = 6
 ITEM.width = 1
 ITEM.height = 1

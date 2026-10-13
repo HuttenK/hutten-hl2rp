@@ -1,7 +1,7 @@
 ITEM.name = "item.mat_acid"
 ITEM.description = "item.mat_acid.desc"
 ITEM.category = "item.category.raw"
-ITEM.model = "models/crunchy/props/serioussam_props/health_extrasmall.mdl"
+ITEM.model = "models/illusion/eftcontainers/ibuprofen.mdl"
 ITEM.width = 1
 ITEM.height = 1
 ITEM.max_stack = 8

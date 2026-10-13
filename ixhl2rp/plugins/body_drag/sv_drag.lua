@@ -32,9 +32,16 @@ function D.DropPatient(patient)
     end
 end
 
-function D.Start(client, entity)
+function D.Start(client, entity, handoff)
     if not D.CanTarget(client, entity) then return false end
-    local trace = util.TraceLine({start = client:GetShootPos(),
+    -- Optional server-only cart handoff. Network requests still obtain their
+    -- own trace; proximity and obstruction are rechecked for the new grip.
+    if handoff then
+        if handoff.Entity ~= entity or not handoff.HitPos then return false end
+        local line = util.TraceLine({start=client:GetShootPos(),endpos=handoff.HitPos,filter={client,entity},mask=MASK_SOLID})
+        if line.Hit or line.StartSolid then return false end
+    end
+    local trace = handoff or util.TraceLine({start = client:GetShootPos(),
         endpos = client:GetShootPos() + client:GetAimVector() * D.RANGE, filter = client, mask = MASK_SOLID})
     local patient = D.Patient(entity)
     if trace.Entity ~= entity and trace.Entity ~= D.PatientBody(patient) then return false end

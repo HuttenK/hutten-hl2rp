@@ -2,32 +2,25 @@ ENT.Type = "anim"
 ENT.PrintName = "Грузовая тележка"
 ENT.Author = "Autonomous"
 ENT.Category = "Foundation — Logistics"
-ENT.Model = "models/props_junk/pushcart02a.mdl"
+ENT.Model = "models/props_silo/pushcart.mdl"
 ENT.Spawnable = true
 ENT.AdminOnly = true
 ENT.bNoPersist = true
 -- Метка для ShouldCollide (sh_plugin.lua): дешевле, чем сравнивать класс.
 ENT.ixIsPushCart = true
 
---[[
-	РАЗМЕТКА МОДЕЛИ (PushCart02a, разобрана по .mdl/.vvd).
-
-	Начало координат на 34 единицы выше земли, ручка на +X. Толкающий стоит со
-	стороны +X и катит тележку в сторону -X.
-
-	Настил: верх на z = -16.25, по X от -38 до 38, по Y от -23 до 23, но
-	стойки ручки стоят на x = 34 - груз кладётся не дальше x = 32.
-	Колёса, габарит кузова и низ настила для хода - в sh_kinematics.lua.
-]]
-ENT.BedZ = -16.2
-ENT.BedMinX = -36.5
-ENT.BedMaxX = 32
+-- EP2 mesh measurements: wheel contact z=-15.96365, deck z=1.786,
+-- curved handles on -X at x=-34.006, y=+/-12, z=35.236.
+-- Item, physics, cargo, patients and hand IK all use this model-space frame.
+ENT.BedZ = 1.84
+ENT.BedMinX = -31
+ENT.BedMaxX = 36.5
 ENT.BedHalfY = 22
 
 -- Four stacks of two native 21x21x22 crates, lower and clear of the handle.
 -- The 1-unit center gap leaves half a unit to each deck edge; crate size
 -- is unchanged when loaded or unloaded.
-ENT.CrateColumns = {Vector(-16, -11, 0), Vector(10, -11, 0), Vector(-16, 11, 0), Vector(10, 11, 0)}
+ENT.CrateColumns = {Vector(-10, -11, 0), Vector(16, -11, 0), Vector(-10, 11, 0), Vector(16, 11, 0)}
 ENT.CratesPerColumn = 2
 
 function ENT:SetupDataTables()
@@ -62,25 +55,23 @@ function ENT:GetInventory()
 	return ix.Inventory:Get(self:GetInventoryID())
 end
 
--- Calibrated physical chassis for both the requested mesh and the fallback.
--- Its native PHY bounds extend above the visible handle; these hulls follow
--- the deck/handle/wheels instead, in exactly the same space as the hand IK.
+-- Physical chassis, paired handles and wheel assemblies in EP2 model space.
+-- Keep these hulls aligned with the driving probes and visible mesh.
 ENT.CompositeParts = {
-	{Vector(-38, -23, 13.8), Vector(38, 23, 18.3)},
-	{Vector(34.9, -19, 18.3), Vector(37.7, -16.2, 47.2)},
-	{Vector(34.9, 16.2, 18.3), Vector(37.7, 19, 47.2)},
-	{Vector(35.4, -19, 46.3), Vector(37.2, 19, 48.1)},
-	{Vector(-35, -21, 0.5), Vector(-27, -15, 13.8)},
-	{Vector(-35, 15, 0.5), Vector(-27, 21, 13.8)},
-	{Vector(27, -21, 0.5), Vector(35, -15, 13.8)},
-	{Vector(27, 15, 0.5), Vector(35, 21, 13.8)}
+	{Vector(-38, -23, -2.964), Vector(39.72, 23, 1.8)},
+	{Vector(-35.01, -19.02, 1.8), Vector(-33, -17.02, 30.24)},
+	{Vector(-35.01, 17.01, 1.8), Vector(-33, 19.01, 30.24)},
+	{Vector(-35.01, -17.02, 33.2), Vector(-33, -7, 36.24)},
+	{Vector(-35.01, 7, 33.2), Vector(-33, 17.01, 36.24)},
+	{Vector(-28.4, -16, -15.96365), Vector(-16.4, -12.95, -2.464)},
+	{Vector(-28.4, 12.95, -15.96365), Vector(-16.4, 16, -2.464)},
+	{Vector(20.39, -16, -15.96365), Vector(32.4, -12.95, -2.464)},
+	{Vector(20.39, 12.95, -15.96365), Vector(32.4, 16, -2.464)},
+	{Vector(-35.01, -7.01, 25.24), Vector(-33, -5, 33.2)},
+	{Vector(-35.01, 4.99, 25.24), Vector(-33, 7, 33.2)}
 }
-
--- Convert the old ground-based calibration into the requested model origin.
-for _, part in ipairs(ENT.CompositeParts) do
-	part[1].z = part[1].z + ix.PushCart.MODEL_Z_OFFSET
-	part[2].z = part[2].z + ix.PushCart.MODEL_Z_OFFSET
-end
+ENT.ChassisMins = Vector(-38, -23, -15.96365)
+ENT.ChassisMaxs = Vector(39.72, 23, 36.24)
 
 function ENT:InitCompositePhysics()
 	local hulls = {}
@@ -95,7 +86,7 @@ function ENT:InitCompositePhysics()
 	end
 	self:PhysicsInitMultiConvex(hulls)
 	self:EnableCustomCollisions(true)
-	self:SetCollisionBounds(Vector(-38, -23, -34), Vector(43.1, 23, 14.1))
+	self:SetCollisionBounds(self.ChassisMins, self.ChassisMaxs)
 	self.compositePhysics = true
 end
 

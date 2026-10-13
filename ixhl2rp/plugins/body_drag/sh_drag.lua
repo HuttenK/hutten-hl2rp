@@ -43,6 +43,7 @@ end
 
 function D.CanTarget(client, entity)
     local patient = D.Patient(entity)
+    if ix.PushCart and ix.PushCart.PatientCart and ix.PushCart:PatientCart(patient) then return false end
     if not D.CanDrag(client) or not IsValid(patient) or patient == client
         or not patient:Alive() or not patient:GetCharacter() then return false end
     local body = D.PatientBody(patient)

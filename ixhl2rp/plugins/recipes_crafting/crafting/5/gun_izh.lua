@@ -1,9 +1,7 @@
 RECIPE.name = "Дробовик Иж-58"
 RECIPE.category = "recipe.category.weapons"
 RECIPE.requirements = {
-	gun_shotgun_frame = 1,
-	gun_shotgun_grip = 1,
-	gun_weapon_barrel = 2,
+	mat_weaponparts = 4,
 }
 RECIPE.results = {
 	selected_eft_mr43_sawedoff = 1

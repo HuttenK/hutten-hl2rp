@@ -35,19 +35,19 @@ local Kin = PushCart.Kin or {}
 
 PushCart.Kin = Kin
 
--- Оси колёс на x = ±31, колёса на y = ±18 (замер по .vvd).
-local HALF_BASE = 31
-local HALF_TRACK = 18
--- Габарит кузова вместе с ручкой (.vvd): кузов не короче того, что видно.
-local BODY_MIN_X = -38
-local BODY_MAX_X = 43.1
+-- EP2 VVD wheel centers, rotated into the driving frame (+X to the handle).
+local HALF_BASE = 24.3965
+local WHEEL_CENTER_X = -1.9975
+local HALF_TRACK = 14.47
+local BODY_MIN_X = -39.72
+local BODY_MAX_X = 38
 local BODY_HALF_Y = 23
 -- Низ настила по .phy.
-local CLEARANCE = 13.8
+local CLEARANCE = 13
 -- Верх ручки. Ящики поднимают его (BodyTop в дататейбле тележки).
-local BODY_TOP_EMPTY = 48.6
--- VVD wheel bottom is z=-34; origin is above the ground, not on it.
-local WHEEL_BOTTOM = -34
+local BODY_TOP_EMPTY = 52.25
+-- EP2 model origin is roughly 16 units above its wheel contact plane.
+local WHEEL_BOTTOM = -15.96365
 -- Пятно колеса (-2, -2, 0)..(2, 2, 1).
 local PROBE = 2
 -- Полуширина столбика по периметру кузова и зазор над CLEARANCE.
@@ -64,17 +64,10 @@ local BELLY_HEIGHT = 3
 ]]
 local MAX_PITCH = 45
 local MAX_ROLL = 25
---[[
-	Руки толкающего в осях тележки на ровном - (54, 0): перекладина в 17.7 перед ногами. На уклоне
-	перекладина (на 46.7 над плоскостью колёс) наклоняется вместе с тележкой и уходит по горизонтали
-	на 36.3·(cos - 1) - 46.7·sin: при 20° вниз - на 36 от ног, руки не достают, при 20° вверх - в
-	грудь. Поэтому хват доводится не к (54, 0), а к (54, 0) плюс этот сдвиг (Kin.HandleShift):
-	перекладина остаётся там же перед ногами при любом наклоне.
-	Доводка - экспонентой (HOLD_TAU), но не быстрее HOLD_EASE и не медленнее HOLD_CREEP, ед/с: на
-	лестнице без пандуса наклон скачет на каждой ступени, и ровная скорость 60 дёргала тележку
-	16..136 ед/с.
-]]
-local REACH = 54
+-- Pusher feet stay at x=52 in the driving frame, roughly 18 units behind
+-- the handle. HandleShift compensates for the 51.2-unit grip height when
+-- the cart pitches/rolls, keeping the wrists reachable on slopes.
+local REACH = 52
 local HOLD_EASE = 60
 local HOLD_TAU = 0.2
 local HOLD_CREEP = 5
@@ -84,16 +77,12 @@ local HOLD_MAX_X = 100
 local HOLD_MAX_Y = 45
 -- Хват, пересчитанный HoldOf, совпадает с прежним до этого шума: поворачивать и доводить нечего.
 local HOLD_SAME = 1e-9
---[[
-	Перекладина ручки (x = 36.3, z = 12.7 в осях модели). Она не дальше 30 по высоте от того места,
-	где была бы на ровном у ног толкающего (Kin.HandleZ). Иначе тележку утянуло бы на другой уровень
-	(толкающий сошёл с уступа, а её тащат следом): такая поза - стена, а не спуск. Мерить по самой
-	перекладине, а не по плоскости под x = 36.3: на крутом подъёме тот край на 30 выше ног, хотя
-	перекладина в руках, и тележка вставала посреди лестницы.
-]]
-local HANDLE_X = 36.3
+-- Reject a pose when the handle is more than HANDLE_DZ above/below its
+-- level-ground height relative to the pusher's feet.
+-- Tops of the two curved handles: model (-34.006, +/-12, 35.236).
+local HANDLE_X = 34.006
 local HANDLE_DZ = 30
-local GRIP_Z = 12.7
+local GRIP_Z = 35.236
 local GRIP_HEIGHT = GRIP_Z - WHEEL_BOTTOM
 --[[
 	Шагов деления пополам, когда ход упёрся: точность 1/16 хода команды (сотые
@@ -109,6 +98,7 @@ local FREE_DIRECTIONS = 8
 local WHEELS = {{-1, 1}, {-1, -1}, {1, 1}, {1, -1}}
 
 Kin.HALF_BASE, Kin.HALF_TRACK = HALF_BASE, HALF_TRACK
+Kin.WHEEL_CENTER_X = WHEEL_CENTER_X
 Kin.BODY_MIN_X, Kin.BODY_MAX_X, Kin.BODY_HALF_Y = BODY_MIN_X, BODY_MAX_X, BODY_HALF_Y
 Kin.CLEARANCE, Kin.BODY_TOP_EMPTY, Kin.WHEEL_BOTTOM = CLEARANCE, BODY_TOP_EMPTY, WHEEL_BOTTOM
 Kin.PROBE, Kin.COLUMN, Kin.LIFT = PROBE, COLUMN, LIFT
@@ -272,7 +262,7 @@ function Kin.EvalPose(trace, x, y, yaw, prev, ctx)
 
 	for i = 1, 4 do
 		local wheel = WHEELS[i]
-		local hx, hy = wheel[1] * halfBase, wheel[2] * halfTrack
+		local hx, hy = wheel[1] * halfBase + WHEEL_CENTER_X * pose.cp, wheel[2] * halfTrack
 		local wheelX = x + hx * pose.c - hy * pose.s
 		local wheelY = y + hx * pose.s + hy * pose.c
 		local z, why = Kin.Probe(trace, wheelX, wheelY, Kin.PlaneAt(prev, wheelX, wheelY))
@@ -287,6 +277,8 @@ function Kin.EvalPose(trace, x, y, yaw, prev, ctx)
 	end
 
 	local z0, a, b = Kin.FitSupport(g, halfBase, halfTrack)
+	-- FitSupport returns the height at the axle midpoint, not the model origin.
+	z0 = z0 - a * WHEEL_CENTER_X * pose.cp
 
 	if math.deg(math.atan(math.abs(a))) > MAX_PITCH or math.deg(math.atan(math.abs(b))) > MAX_ROLL then
 		return nil, "slope"

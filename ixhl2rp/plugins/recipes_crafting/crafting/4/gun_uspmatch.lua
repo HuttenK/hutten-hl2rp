@@ -1,9 +1,7 @@
 RECIPE.name = "recipe.crafting.gun_uspmatch"
 RECIPE.category = "recipe.category.weapons"
 RECIPE.requirements = {
-	gun_pistol_frame = 1,
-	gun_pistol_barrel = 1,
-	gun_pistol_receiver = 1,
+	mat_weaponparts = 3,
 }
 RECIPE.results = {
 	selected_eft_mp443 = 1

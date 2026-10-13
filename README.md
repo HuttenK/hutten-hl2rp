@@ -1,4 +1,4 @@
-## Current SCP schema snapshot (2026-10-12)
+## Current SCP schema snapshot (2026-10-13)
 
 The `scp-schema` branch contains the current Helix framework, SCP schema, and
 companion addons used by this version.
@@ -17,6 +17,11 @@ multi-screen devices, weapon equipment slots and ARC9/SD animation support,
 helmet cameras, and one-handed dragging of downed players. While dragging,
 press E on the carried body to release it, or hold R to raise/lower the weapon;
 reloading is disabled until the body is released.
+
+This update adds cart transport for downed players, including patient bleeding
+effects and corrected hand placement. The cart now uses the Episode Two model
+with matching grips and cargo geometry. It also updates item models, names and
+descriptions, replaces retired crafting items, and fixes spawning unnamed books.
 
 Local diagnostics, deployment backups, and copied stock gamemodes are not part
 of this snapshot.

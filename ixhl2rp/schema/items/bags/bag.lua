@@ -1,6 +1,6 @@
 ITEM.name = "item.bag"
 ITEM.description = "item.bag.desc"
-ITEM.model = "models/props_junk/garbage_bag001a.mdl"
+ITEM.model = "models/cultist/backpacks/world/backpack_small.mdl"
 ITEM.rarity = 1
 ITEM.width = 3
 ITEM.height = 4

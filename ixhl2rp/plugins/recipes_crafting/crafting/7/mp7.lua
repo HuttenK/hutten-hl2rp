@@ -1,9 +1,7 @@
 RECIPE.name = "recipe.crafting.mp7"
 RECIPE.category = "recipe.category.weapons"
 RECIPE.requirements = {
-	gun_smg_frame = 1,
-	gun_smg_grip = 1,
-	gun_smg_receiver = 1,
+	mat_weaponparts = 3,
 }
 RECIPE.results = {
 	selected_eft_mp7a1 = 1

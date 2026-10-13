@@ -24,18 +24,28 @@
 	обратной стороны, из-под ладони.
 ]]
 local PushCart = ix.PushCart
+-- Refresh existing players as well as future pushers. Old callbacks otherwise
+-- retain the incomplete rig cache even after this file is reloaded.
+if PushCart.CleanupIK then
+    PushCart.CleanupIK()
+else
+    for _, client in ipairs(player.GetAll()) do
+        if client.ixPushCartIK then
+            client:RemoveCallback("BuildBonePositions", client.ixPushCartIK)
+            client.ixPushCartIK = nil
+        end
+        client.ixPushCartIKCart = nil
+        client.ixPushCartIKWeight = 0
+    end
+end
 
---[[
-	Хват на перекладине в координатах модели тележки (труба на x = 36.3,
-	z = 47.2, от y = -12 до 12). Толкающий стоит на +X лицом в -X, значит его
-	правая рука - на +Y. Место трубы - одно с Kin: по нему же ход держит её
-	перед ногами на уклоне (Kin.HandleShift).
-]]
-PushCart.GRIP_RIGHT = Vector(PushCart.Kin.HANDLE_X, 9, PushCart.Kin.GRIP_Z)
-PushCart.GRIP_LEFT = Vector(PushCart.Kin.HANDLE_X, -9, PushCart.Kin.GRIP_Z)
--- Окружность, по которой ложатся суставы пальцев: труба (радиус 0.9 по
--- вершинам модели) плюс половина толщины пальца.
-PushCart.WRAP_RADIUS = 1.25
+-- Each hand grips the top of one EP2 handle loop. Pusher stands on model
+-- -X facing +X, so their right hand is on -Y. Driving uses the opposite
+-- X/Y frame; its handle height is shared with these visible grip targets.
+PushCart.GRIP_RIGHT = Vector(-PushCart.Kin.HANDLE_X, -12.009, PushCart.Kin.GRIP_Z)
+PushCart.GRIP_LEFT = Vector(-PushCart.Kin.HANDLE_X, 11.998, PushCart.Kin.GRIP_Z)
+-- One-unit handle tube radius, plus clearance for the finger thickness.
+PushCart.WRAP_RADIUS = 1.35
 -- Где на трубе костяшка среднего пальца: градусы от верха к передней стороне.
 PushCart.KNUCKLE_ANGLE = 20
 -- Куда сперва идёт большой палец: на заднюю сторону трубы, на середину высоты.
@@ -223,9 +233,9 @@ local function Subtree(entity, root, stop)
 	local bones = {}
 
 	for bone = 0, entity:GetBoneCount() - 1 do
-		local parent = bone
+		local parent, steps = bone, 0
 
-		while parent and parent >= 0 do
+		while parent and parent >= 0 and steps < entity:GetBoneCount() do
 			if stop and parent == stop then
 				break
 			elseif parent == root then
@@ -235,6 +245,7 @@ local function Subtree(entity, root, stop)
 			end
 
 			parent = entity:GetBoneParent(parent)
+            steps = steps + 1
 		end
 	end
 
@@ -256,13 +267,13 @@ local function LookupChain(entity, prefix, names)
 end
 
 local function GetRig(entity)
-	local model = entity:GetModel()
+	local model, count = entity:GetModel(), entity:GetBoneCount()
 
-	if rigs[model] != nil then
+	if rigs[model] and rigs[model].count == count then
 		return rigs[model]
 	end
 
-	local rig = {}
+	local rig = {count = count}
 
 	for index, info in ipairs(SIDES) do
 		local upper = entity:LookupBone(info.prefix.."UpperArm")
@@ -270,8 +281,6 @@ local function GetRig(entity)
 		local hand = entity:LookupBone(info.prefix.."Hand")
 
 		if !upper or !lower or !hand then
-			rigs[model] = false
-
 			return false
 		end
 
@@ -292,6 +301,23 @@ local function GetRig(entity)
 			fingers = fingers,
 			thumb = LookupChain(entity, info.prefix, THUMB)
 		}
+
+        -- A model/LOD transition can expose named fingers before GetBoneCount
+        -- and the parent hierarchy are ready. Never cache an arm-only tree:
+        -- it would move the wrist forever while leaving the fingers behind.
+        local arm = rig[index]
+        local handBones, lowerBones = {}, {}
+        for _, bone in ipairs(arm.handTree) do handBones[bone] = true end
+        for _, bone in ipairs(arm.lowerTree) do lowerBones[bone] = true end
+        if not lowerBones[lower] or not lowerBones[hand] then return false end
+        local function Complete(chain)
+            for _, bone in ipairs(chain or {}) do
+                if not handBones[bone] or not lowerBones[bone] then return false end
+            end
+            return true
+        end
+        for _, chain in ipairs(fingers) do if not Complete(chain) then return false end end
+        if not Complete(arm.thumb) then return false end
 	end
 
 	rigs[model] = rig
@@ -435,9 +461,9 @@ local function PlaceArm(entity, arm, cart, weight, rightDir, withFingers)
 		с ними кисти уезжали с трубы на поворотах и уклонах.
 	]]
 	local cartPos, cartAngles = cart:GetDrawPose()
-	local front = -cartAngles:Forward()
+	local front = cartAngles:Forward()
 	local up = cartAngles:Up()
-	local along = cartAngles:Right()
+	local along = -cartAngles:Right()
 	local grip = LocalToWorld(arm.side > 0 and PushCart.GRIP_RIGHT or PushCart.GRIP_LEFT, angle_zero,
 		cartPos, cartAngles)
 	local knuckleAngle = math.rad(PushCart.KNUCKLE_ANGLE)
@@ -466,7 +492,7 @@ local function PlaceArm(entity, arm, cart, weight, rightDir, withFingers)
 	--[[
 		Кисть: ладонью на трубу. «Вперёд» кисти - по касательной, линия
 		костяшек - вдоль трубы, указательным внутрь. Для правой руки внутрь -
-		это правый вектор тележки (-Y), для левой - наоборот; ладонь при этом
+		это локальный +Y тележки, для левой - наоборот; ладонь при этом
 		сама выходит вниз, как у настоящей руки.
 	]]
 	local middle = arm.fingers[2] and BonePos(entity, arm.fingers[2][1])
@@ -539,6 +565,20 @@ end
 ]]
 -- Игроки, чьи руки на ручке или ещё сходят с неё: кроме них и тех, кто сейчас везёт, никого не трогаем.
 local active = {}
+
+function PushCart.CleanupIK()
+    for _, client in ipairs(player.GetAll()) do
+        if client.ixPushCartIK then
+            client:RemoveCallback("BuildBonePositions", client.ixPushCartIK)
+            client.ixPushCartIK = nil
+        end
+        client.ixPushCartIKCart = nil
+        client.ixPushCartIKWeight = 0
+    end
+    active = {}
+end
+hook.Add("ShutDown", "ixPushCartIK", PushCart.CleanupIK)
+
 
 hook.Add("Think", "ixPushCartIK", function()
 	local step = FrameTime() / BLEND_TIME

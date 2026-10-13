@@ -12,7 +12,7 @@ RECIPE.results = {
 	station_combine = 1
 }
 RECIPE.skill = {"crafting", 10}
-RECIPE.tools = {"wm_screwdriver", "tool_welding", "wm_wrench"}
+RECIPE.tools = {"tool_screw", "tool_welding", "tool_wrench"}
 RECIPE.tool_durability = {
 	tool_welding = 40,
 }

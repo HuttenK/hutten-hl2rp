@@ -1,6 +1,6 @@
 ITEM.name = "item.mat_charcoal"
 ITEM.description = "item.mat_charcoal.desc"
-ITEM.model = "models/props_junk/rock001a.mdl"
+ITEM.model = "models/props_nature/coal_001.mdl"
 ITEM.category = "item.category.crafted"
 ITEM.width = 1
 ITEM.height = 1

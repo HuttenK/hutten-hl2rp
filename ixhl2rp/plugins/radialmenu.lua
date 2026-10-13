@@ -531,6 +531,11 @@ vgui.Register("ixCharRadialMenu",PANEL,"EditablePanel")
 -- по сетевой переменной "doll" (ставится в !healthsystem на нокдаун, networked всем).
 local function ResolveTarget(entity)
 	if (!IsValid(entity)) then return end
+	if entity.isCartPatient then
+		local patient = entity:GetNW2Entity("ixCartPatient")
+		if IsValid(patient) and patient != LocalPlayer() and patient:GetCharacter() then return patient,entity,true end
+		return
+	end
 
 	if (entity:IsPlayer()) then
 		if (entity == LocalPlayer() or !entity:GetCharacter()) then return end
@@ -595,7 +600,7 @@ concommand.Add("ix_radial",function()
  local focus=vgui.GetKeyboardFocus()
  if IsValid(focus) and (focus:GetClassName()=="TextEntry" or focus:GetName()=="DTextEntry") then return end
  local tr=util.TraceLine({start=client:GetShootPos(),endpos=client:GetShootPos()+client:GetAimVector()*96,filter=client})
- local target,entity,ragdoll=ResolveTarget(tr.Entity)
+ local target,entity,ragdoll=ResolveTarget((ix.PushCart and ix.PushCart.TracePatient and ix.PushCart:TracePatient(client,96)) or tr.Entity)
  local panel=vgui.Create("ixCharRadialMenu")
  panel:SetTarget(target,entity,ragdoll,true)
  ix.gui.charRadial=panel

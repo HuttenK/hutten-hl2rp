@@ -7,4 +7,4 @@ RECIPE.results = {
 	apple_juice = 1
 }
 
-RECIPE.preview = "models/crunchy/props/eft_props/juice.mdl"
+RECIPE.preview = "models/illusion/eftcontainers/juice.mdl"

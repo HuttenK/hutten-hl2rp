@@ -7,6 +7,10 @@
 		E на тележку или ящик - открыть список действий;
 		поднести ящик к кузову - автоматически закрепить в свободном месте;
 		E на закреплённый ящик - отсоединить именно выбранный ящик.
+		E на пустую тележку при перетаскивании персонажа - уложить его;
+		E на пассажира - осмотр, снять и тащить или положить рядом.
+		Персонаж занимает весь кузов. При выздоровлении освобождается
+		рядом с тележкой; состояние пациента не сохраняется как груз.
 
 	Сложенная тележка - предмет pushcart (items/pushcart.lua), ставится
 	действием «Установить». Сложить можно только пустую свободную тележку.
@@ -23,7 +27,7 @@ local PLUGIN = PLUGIN
 
 PLUGIN.name = "Push Cart"
 PLUGIN.author = "Autonomous"
-PLUGIN.description = "Грузовая тележка: перевозка ящиков и вещей."
+PLUGIN.description = "Грузовая тележка: перевозка ящиков или лежащего персонажа."
 
 ix.PushCart = ix.PushCart or {}
 
@@ -31,9 +35,9 @@ local PushCart = ix.PushCart
 
 -- Model constants and the stable Kin table are created in libs/sh_bootstrap.lua
 -- before Helix registers the entity files.
-PushCart.GEOMETRY_VERSION = 2
+PushCart.GEOMETRY_VERSION = 3
 -- Метка версии кода для отладки (ix_pushcart_debug): видно, что сервер крутит свежий файл.
-PushCart.BUILD = "foundation-2026-10-10.1"
+PushCart.BUILD = "foundation-2026-10-13.ep2"
 PushCart.ITEM = "pushcart"
 PushCart.MAX_CRATES = 8
 PushCart.INV_WIDTH = 6
@@ -232,9 +236,11 @@ end
 
 ix.util.Include("sh_kinematics.lua")
 ix.util.Include("sh_drive.lua")
+ix.util.Include("sh_patient.lua")
 ix.util.Include("sh_interaction.lua")
 ix.util.Include("sv_plugin.lua")
 ix.util.Include("sv_interaction.lua")
+ix.util.Include("sv_patient.lua")
 ix.util.Include("sv_legacy.lua")
 ix.util.Include("cl_plugin.lua")
 ix.util.Include("cl_interaction.lua")

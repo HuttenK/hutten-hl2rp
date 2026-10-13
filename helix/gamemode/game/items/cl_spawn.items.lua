@@ -21,7 +21,6 @@ local icons = {
 	["item.category.skillbook"] = "book_open",
 	["item.category.cooking"] = "cup",
 	["loot.categoryJunk"] = "bin",
-	["item.category.weapon_parts"] = "text_list_bullets",
 	["item.category.craft_chemical"] = "asterisk_orange",
 	["item.category.filter"] = "help",
 	["item.category.medical"] = "pill",

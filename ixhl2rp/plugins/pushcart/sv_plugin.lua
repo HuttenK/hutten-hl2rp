@@ -72,6 +72,7 @@ function P:CreateInventory(entity, width, height, record)
 end
 
 function P:HasContents(entity)
+	if self.GetPatient and self:GetPatient(entity) then return true end
 	local inv = entity:GetInventory()
 	return entity.cargoLoading or (entity.pendingItems and #entity.pendingItems > 0)
 		or (entity.unplacedItems and #entity.unplacedItems > 0)
@@ -180,7 +181,10 @@ function P:Snapshot(entity)
 		record.cartSlot = entity:GetCartSlot()
 	end
 	if entity.ixIsPushCart then
-		record.geometryVersion = self.GEOMETRY_VERSION
+		-- A live old cart can be saved after Lua refresh but before restart.
+		-- Its origin still belongs to the mesh it was spawned with.
+		record.geometryVersion = entity.cartGeometryVersion
+			or (entity:GetModel() == "models/props_junk/pushcart02a.mdl" and 2 or 1)
 		record.crates = {}
 		for _, crate in ipairs(entity.crates or {}) do
 			if IsValid(crate) then record.crates[#record.crates + 1] = self:Snapshot(crate) end
@@ -224,9 +228,14 @@ function P:RestoreRecord(record, live)
 	entity.ixAutoLoadBlockedUID = isstring(record.autoLoadBlockedUID) and record.autoLoadBlockedUID or nil
 	local ang = record.ang or angle_zero
 	local pos = record.pos
-	if class == "ix_pushcart" and (record.geometryVersion or 1) < self.GEOMETRY_VERSION then
-		-- Preserve the old world-space wheel/deck/hand positions, including tilted saves.
-		pos = pos - ang:Up() * self.MODEL_Z_OFFSET
+	if class == "ix_pushcart" then
+		local version = record.geometryVersion or 1
+		if version < 2 then pos = pos + ang:Up() * 34.5 end
+		if version < 3 then
+			-- Keep the same ground plane and handle side, even for tilted saves.
+			pos = pos + ang:Up() * (-34 - self.Kin.WHEEL_BOTTOM)
+			ang = self:FlipModelAngles(ang)
+		end
 	end
 	entity:SetPos(pos)
 	entity:SetAngles(ang)
@@ -341,14 +350,14 @@ function P:Deploy(item, class)
 		return false
 	end
 	local cart = class == "ix_pushcart"
-	local yaw = client:EyeAngles().y + (cart and 180 or 0)
+	local yaw = client:EyeAngles().y
 	local forward = Angle(0, client:EyeAngles().y, 0):Forward()
 	local point = client:GetPos() + forward * (cart and 76 or 48)
 	local floor = util.TraceLine({start = point + Vector(0, 0, 32), endpos = point - Vector(0, 0, 80), filter = client, mask = MASK_SOLID})
 	if !floor.Hit or floor.HitNormal.z < 0.8 then client:Notify("Нужна ровная свободная площадка.") return false end
 	local pos = floor.HitPos + Vector(0, 0, 1)
 	local half = cart and 49 or 17
-	local tr = util.TraceHull({start = pos, endpos = pos, mins = Vector(-half, -half, 1), maxs = Vector(half, half, cart and 50 or 30), filter = client, mask = MASK_SOLID})
+	local tr = util.TraceHull({start = pos, endpos = pos, mins = Vector(-half, -half, 1), maxs = Vector(half, half, cart and self.Kin.BODY_TOP_EMPTY or 30), filter = client, mask = MASK_SOLID})
 	if tr.Hit or tr.StartSolid then client:Notify("Недостаточно места для установки.") return false end
 	local entity = ents.Create(class)
 	if !IsValid(entity) then

@@ -7,8 +7,8 @@ item.cook_coffee.desc   = "Un paquet de café instantané. Il suffit d'ajouter d
 item.cook_flour         = "Farine de seigle"
 item.cook_flour.desc    = "Farine de seigle de basse qualité. Pourrait être confondue avec une autre poudre, mais le paquet affirme que c'est de la farine."
 
-item.cook_spices        = "Épices"
-item.cook_spices.desc   = "Une petite boîte contenant diverses épices pour relever vos plats."
+item.cook_spices = "Ketchup"
+item.cook_spices.desc = "Une bouteille de sauce tomate utilisée pour assaisonner les plats."
 
 item.cook_egg           = "Œuf cru"
 item.cook_egg.desc      = "Un œuf de poule capturé sournoisement par les humains."

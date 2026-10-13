@@ -2,7 +2,7 @@ RECIPE.name = "recipe.cooking.ketchup"
 RECIPE.category = "recipe.category.cooking.products"
 RECIPE.requirements = {
 	tomato = 3,
-	cook_spices = 1,
+	cook_sugar = 1,
 	empty_glass_bottle = 1
 }
 RECIPE.results = {

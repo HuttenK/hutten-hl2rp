@@ -19,6 +19,8 @@ function M.Owns(client, item)
 end
 
 function M.PatientEntity(target)
+ local display = ix.PushCart and ix.PushCart.PatientDisplay and ix.PushCart:PatientDisplay(target)
+ if display then return display end
  if IsValid(target.ixRagdoll) then return target.ixRagdoll end
  local doll = target:GetNetVar("doll")
  if doll and IsValid(Entity(doll)) then return Entity(doll) end
@@ -27,6 +29,9 @@ end
 
 function M.Reachable(client, target)
  if client == target then return true end
+ if ix.PushCart and ix.PushCart.PatientCart and ix.PushCart:PatientCart(target) then
+  return ix.PushCart:PatientReachable(client,target,128)
+ end
  local entity = M.PatientEntity(target)
  local point = entity:NearestPoint(client:GetShootPos())
  if client:GetShootPos():DistToSqr(point) > 128 * 128 then return false end
@@ -36,7 +41,7 @@ end
 
 function M.ResolveTarget(client)
  local trace = util.TraceLine({start=client:GetShootPos(), endpos=client:GetShootPos()+client:GetAimVector()*96, filter=client})
- local ent = trace.Entity
+ local ent = (ix.PushCart and ix.PushCart.TracePatient and ix.PushCart:TracePatient(client,96)) or trace.Entity
  if IsValid(ent) and ent:IsPlayer() then return ent end
  if IsValid(ent) and IsValid(ent.ixPlayer) then return ent.ixPlayer end
  if IsValid(ent) then

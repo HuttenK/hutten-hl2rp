@@ -10,6 +10,6 @@ RECIPE.results = {
 }
 RECIPE.skill = {"crafting", 2}
 RECIPE.station = "station_tokar"
-RECIPE.tools = {"wm_screwdriver"}
+RECIPE.tools = {"tool_screw"}
 RECIPE.xp = 90
 RECIPE.preview = "models/props_se/furniture_nexus_clock.mdl"

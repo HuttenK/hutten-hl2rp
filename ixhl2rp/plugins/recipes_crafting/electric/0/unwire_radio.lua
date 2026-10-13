@@ -8,5 +8,5 @@ RECIPE.results = {
 	electro_battery = 1,
 }
 RECIPE.skill = {"electric", 0}
-RECIPE.tools = {"wm_screwdriver"}
+RECIPE.tools = {"tool_screw"}
 RECIPE.xp = 10

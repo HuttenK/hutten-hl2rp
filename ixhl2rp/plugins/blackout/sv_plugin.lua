@@ -294,7 +294,7 @@ end
 
 function PLUGIN:HasScrewdriver(client)
 	return client:GetCharacter() and client.inventories and
-		(client:HasItem("tool_screw") or client:HasItem("wm_screwdriver"))
+		(client:HasItem("tool_screw"))
 end
 
 -- Repair interaction (called from the entity's Use).

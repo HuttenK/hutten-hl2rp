@@ -137,10 +137,11 @@ net.Receive("crit.apply", function(len, client)
 				return false
 			end
 
-			local traceEnt = client:GetEyeTraceNoCursor().Entity
+			local traceEnt = (ix.PushCart and ix.PushCart.TracePatient and ix.PushCart:TracePatient(client,64)) or client:GetEyeTraceNoCursor().Entity
+			local display = ix.PushCart and ix.PushCart.PatientDisplay and ix.PushCart:PatientDisplay(target)
 
 			if !IsValid(target) or !target:Alive() or !target:InCriticalState() or
-				(traceEnt != (IsValid(target.ixRagdoll) and target.ixRagdoll or target)) then
+				(traceEnt != (display or (IsValid(target.ixRagdoll) and target.ixRagdoll or target))) then
 				return false
 			end
 
@@ -193,7 +194,9 @@ net.Receive("crit.use", function(len, client)
 		return
 	end
 
-	if client:GetPos():DistToSqr(target:GetPos()) > 4000 then
+	if target.isCartPatient then
+		if !ix.PushCart or ix.PushCart:TracePatient(client,64) != target then return end
+	elseif client:GetPos():DistToSqr(target:GetPos()) > 4000 then
 		return
 	end
 

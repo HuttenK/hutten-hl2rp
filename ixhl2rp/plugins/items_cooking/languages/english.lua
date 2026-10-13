@@ -7,8 +7,8 @@ item.cook_coffee.desc   = "A pack of instant coffee. Just add water and stir."
 item.cook_flour         = "Rye Flour"
 item.cook_flour.desc    = "Low-grade rye flour. Could be mistaken for some powder, but the package insists it's flour."
 
-item.cook_spices        = "Spices"
-item.cook_spices.desc   = "A box with various spices inside to enrich your dish."
+item.cook_spices = "Ketchup"
+item.cook_spices.desc = "A bottle of tomato sauce used to season food during cooking."
 
 item.cook_egg           = "Raw Egg"
 item.cook_egg.desc      = "A chicken egg that was treacherously taken by humans."

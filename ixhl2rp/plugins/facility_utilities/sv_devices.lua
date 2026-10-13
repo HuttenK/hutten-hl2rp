@@ -20,7 +20,7 @@ function P:DeviceSnapshot(p,d)
   powered=self:DevicePowered(d),entity=d.entity:EntIndex(),circuits=circuits,canStart=(d.kind=="generator" or d.kind=="battery") and self:GeneratorOperator(p,d) or F.Access(p,3),hasFuel=has(p,"facility_fuel"),
   portable=d.portable,links=links,hasCable=self:CableItem(p)~=nil,charging=d.chargeSource,connected=d.kind=="battery" and self:BatteryConnected(d),
   moveReason=(d.kind=="generator" or d.kind=="battery") and self:SourceMoveReason(p,d) or nil,heldByMe=d.entity.ixHeldOwner==p,
-  hasTool=has(p,"tool_screw") or has(p,"wm_screwdriver"),hasParts=has(p,"facility_spares"),repairAllowed=job and self:JobAllowed(p,job),
+  hasTool=has(p,"tool_screw"),hasParts=has(p,"facility_spares"),repairAllowed=job and self:JobAllowed(p,job),
   owner=job and job.ownerName,mine=job and job.owner==p:GetCharacter():GetID(),workpoint=d.kind=="workpoint"}}
 end
 function P:SendDeviceUI(p,d,message,close)

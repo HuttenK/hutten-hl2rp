@@ -1,14 +1,9 @@
 ITEM.name = "item.tool_scissors"
 ITEM.description = "item.tool_scissors.desc"
-ITEM.model = "models/cellar/scissors.mdl"
+ITEM.model = "models/cod/bo1/interrogation_room/p_int_surgical_clippers.mdl"
 ITEM.width = 1
 ITEM.height = 1
 ITEM.cost = 15
-ITEM.iconCam = {
-	pos = Vector(46.054550170898, 41.814300537109, 134.60003662109),
-	ang = Angle(65.710968017578, 222.84214782715, 0),
-	fov = 3.4427581317421,
-}
 ITEM.DurabilityCraft = 20
 
 ITEM.combine = ITEM.combine or {}

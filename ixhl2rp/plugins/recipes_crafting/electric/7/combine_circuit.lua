@@ -12,7 +12,7 @@ RECIPE.results = {
 RECIPE.skill = {"electric", 7}
 RECIPE.blueprint = true
 RECIPE.station = "station_combine"
-RECIPE.tools = {"wm_screwdriver", "tool_welding"}
+RECIPE.tools = {"tool_screw", "tool_welding"}
 RECIPE.tool_durability = {
 	tool_welding = 10
 }

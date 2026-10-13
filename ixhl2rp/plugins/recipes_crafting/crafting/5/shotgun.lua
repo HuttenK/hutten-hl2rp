@@ -1,9 +1,7 @@
 RECIPE.name = "recipe.crafting.shotgun"
 RECIPE.category = "recipe.category.weapons"
 RECIPE.requirements = {
-	gun_shotgun_frame = 1,
-	gun_shotgun_grip = 1,
-	gun_weapon_barrel = 1,
+	mat_weaponparts = 3,
 }
 RECIPE.results = {
 	selected_eft_saiga12k = 1

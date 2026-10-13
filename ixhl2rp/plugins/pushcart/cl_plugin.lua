@@ -21,6 +21,7 @@ end
 -- Share the same non-solid crate selection as the server menu.
 local function IsAimingAtCrate(client)
 	local target = PushCart:InteractionTarget(client)
+	if IsValid(target) and target.isCartPatient then return "ПЕРСОНАЖ НА ТЕЛЕЖКЕ · E — ДЕЙСТВИЯ · H — ОСМОТР" end
 	return IsValid(target) and target.isCargoCrate and IsValid(target:GetParent())
 end
 
@@ -49,7 +50,7 @@ hook.Add("HUDPaint", "ixPushCartHint", function()
 		return
 	end
 
-	draw.SimpleTextOutlined(HINT_TEXT, "ixSmallFont", ScrW() * 0.5, ScrH() * 0.5 + ScrH() * 0.04,
+	draw.SimpleTextOutlined(isstring(aimingAtCrate) and aimingAtCrate or HINT_TEXT, "ixSmallFont", ScrW() * 0.5, ScrH() * 0.5 + ScrH() * 0.04,
 		HINT_COLOR, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, HINT_SHADOW)
 end)
 

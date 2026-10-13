@@ -4,7 +4,7 @@ ENT.Author = "Hutten"
 ENT.Category = "Helix"
 ENT.Spawnable = true
 ENT.AdminOnly = true
-ENT.Model = "models/props_combine_enhanced/combine_table.mdl"
+ENT.Model = "models/brickscrafting/workbench_2.mdl"
 
 function ENT:SpawnFunction(client, trace)
 	local ent = ents.Create(self.ClassName)

@@ -1,7 +1,7 @@
 ITEM.name = "item.syringe"
 ITEM.description = "item.syringe.desc"
 ITEM.category = "item.category.medical"
-ITEM.model = Model("models/hls/alyxports/hla_stimdose.mdl")
+ITEM.model = "models/illusion/eftcontainers/medsyringe.mdl"
 ITEM.width = 1
 ITEM.height = 1
 ITEM.reagent_flags = bit.bor(ix.Reagents.holder.refillable, ix.Reagents.holder.drainable)
