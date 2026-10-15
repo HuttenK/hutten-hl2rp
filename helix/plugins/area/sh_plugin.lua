@@ -13,6 +13,7 @@ ix.area.stored = ix.area.stored or {}
 
 ix.util.Include("sh_geometry.lua")
 ix.util.Include("sh_volume_phrases.lua")
+ix.util.Include("cl_outline.lua")
 
 ix.option.Add("showArea", ix.type.bool, true, {
 	category = "general"

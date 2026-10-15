@@ -106,8 +106,8 @@ function PLUGIN:PostDrawTranslucentRenderables(bDepth, bSkybox)
 		local center, min, max = self:GetLocalAreaPosition(v.startPosition, v.endPosition)
 		local color = ColorAlpha(v.properties.color or ix.config.Get("color"), 255)
 
-		for _, box in ipairs(ix.area.GetVolumes(v)) do
-			render.DrawWireframeBox(vector_origin, angle_zero, box.min, box.max, color)
+		for _, line in ipairs(ix.area.GetOutline(v)) do
+			render.DrawLine(line[1], line[2], color, false)
 		end
 
 		cam.Start2D()

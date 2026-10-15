@@ -287,6 +287,7 @@ function PANEL:PresentDraft()
 	local skin = istable(entry) and entry[2] or 0
  if faction.sdSkinCounts and faction.sdSkinCounts[Path(entry)] then skin = self.draft.sdSkin or 0 end
 	self.scene:Present(Path(entry), skin, groups)
+ if ix.SDHair then ix.SDHair.Apply(self.scene:GetEntity(), self.draft.sdHairColor or "original") end
 end
 function PANEL:ShowStep()
 	self:BeginView("create", string.format("%02d / ", self.step) .. T(unpack(chapters[self.step])),
@@ -368,6 +369,16 @@ function PANEL:Appearance()
    self.draft.sdSkin=value; self:PresentDraft()
   end)
  end
+	if ix.SDHair and ix.SDHair.Supported(path) then
+		local colours = {}
+		for _, preset in ipairs(ix.SDHair.presets) do
+			colours[#colours + 1] = {value=preset.id, label=T(preset.en, preset.ru)}
+		end
+		U.Choice(self.content, T("HAIR COLOUR", "ЦВЕТ ВОЛОС"), colours, self.draft.sdHairColor or "original", function(value)
+			self.draft.sdHairColor = value
+			ix.SDHair.Apply(self.scene:GetEntity(), value)
+		end)
+	end
 	local function numeric(label, slot, low, high)
 		U.Label(self.content, label, "Mono", U.muted)
 		local slider = self.content:Add("DNumSlider")
@@ -451,7 +462,7 @@ function PANEL:Advance()
 		net.Start("ixCharacterChoose"); net.WriteUInt(self.selected:GetID(), 32); net.SendToServer()
 	elseif self.step == 5 then self:Submit()
 	else
-		local checks = {{"faction"}, {"name", "description", "languages"}, {"gender", "model", "genetic", "face", "sdSkin"}, {"specials", "primaryStat"}}
+		local checks = {{"faction"}, {"name", "description", "languages"}, {"gender", "model", "genetic", "face", "sdSkin", "sdHairColor"}, {"specials", "primaryStat"}}
 		if not self:Validate(checks[self.step]) then return end
 		self.step = self.step + 1; self:ShowStep()
 	end

@@ -114,6 +114,7 @@ function P:PreparePatient(client, cart, body, patient, display)
     display:SetMaterial(body:GetMaterial())
     for _, group in ipairs(body:GetBodyGroups()) do display:SetBodygroup(group.id,body:GetBodygroup(group.id)) end
     for index in ipairs(body:GetMaterials()) do display:SetSubMaterial(index-1,body:GetSubMaterial(index-1)) end
+    if ix.SDHair then ix.SDHair.Copy(body, display) end
     display:SetPos(position); display:SetAngles(angles); display:Spawn()
     display:ResetSequence(sequence); display:SetCycle(0); display:SetPlaybackRate(0)
     -- SetupBones and InvalidateBoneCache are client-only. On the server,

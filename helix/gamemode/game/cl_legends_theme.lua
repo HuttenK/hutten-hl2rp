@@ -197,6 +197,7 @@ end
 
 -- Active characters use the replicated player appearance, not the logout cache.
 function U.ApplyCharacterAppearance(entity,character)
+ if ix.SDHair then ix.SDHair.Apply(entity, ix.SDHair.Saved(character)) end
  local player=LocalPlayer()
  if IsValid(player) and player:GetCharacter()==character and player:GetModel()==entity:GetModel() then
   entity:SetSkin(player:GetSkin())
