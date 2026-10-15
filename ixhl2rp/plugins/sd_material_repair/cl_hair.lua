@@ -1,0 +1,84 @@
+if (SERVER) then return end
+
+local PLUGIN = PLUGIN
+
+-- Restore the previous instance before a plugin reload takes ownership again.
+if (PLUGIN.ClearHairLighting) then
+	PLUGIN:ClearHairLighting()
+end
+
+local prefix = "models/sectorialdistrict/citizens/"
+local hairMaterials = {
+	"haircurly", "haircurly_black", "haircurly_white",
+	"haircurly2", "haircurly2_black", "haircurly2_white",
+	"haircurly3", "haircurly3_black", "haircurly3_white",
+	"hairlong01", "hairlong01_black", "hairlong01_blonde", "hairlong01_red",
+	"hairshaved", "hairshaved_black", "hairshaved_white", "hairshaved04",
+	"hairshaved06", "hairshaved06_black",
+	"hairshort01", "hairshort01_black", "hairshort01_blonde",
+	"hairshort01_gray", "hairshort01_red", "hairshort01_white"
+}
+local repaired = {}
+local enabled = true
+local hookID = "ixSDHairLighting"
+
+function PLUGIN:ApplyHairLighting()
+	if (!enabled) then return end
+
+	for _, name in ipairs(hairMaterials) do
+		local material = Material(prefix..name)
+
+		if (!material:IsError() and string.lower(material:GetShader()) == "vertexlitgeneric") then
+			local texture = material:GetTexture("$lightwarptexture")
+			local textureName = texture and string.lower(texture:GetName()):gsub("\\", "/"):gsub("%.vtf$", "")
+
+			if (textureName == prefix.."lightwarp_hair") then
+				-- The shipped ramp varies vertically, but Source samples it horizontally.
+				-- Use normal diffuse lighting; keep strand alpha, tint, normals and Phong.
+				repaired[material] = texture
+				material:SetUndefined("$lightwarptexture")
+				material:Recompute()
+			end
+		end
+	end
+end
+
+function PLUGIN:ClearHairLighting()
+	enabled = false
+	hook.Remove("InitPostEntity", hookID)
+	hook.Remove("OnReloaded", hookID)
+	hook.Remove("ShutDown", hookID)
+
+	for material, texture in pairs(repaired) do
+		-- Do not overwrite a different correction installed later by another addon.
+		if (!material:IsError() and !material:GetTexture("$lightwarptexture")) then
+			material:SetTexture("$lightwarptexture", texture)
+			material:Recompute()
+		end
+	end
+
+	repaired = {}
+end
+
+function PLUGIN:OnUnload()
+	self:ClearHairLighting()
+end
+
+hook.Add("InitPostEntity", hookID, function()
+	PLUGIN:ApplyHairLighting()
+end)
+
+hook.Add("OnReloaded", hookID, function()
+	PLUGIN:ApplyHairLighting()
+end)
+
+hook.Add("ShutDown", hookID, function()
+	PLUGIN:ClearHairLighting()
+end)
+
+-- Also covers loading the plugin after InitPostEntity has already fired.
+timer.Simple(0, function()
+	if (enabled) then
+		PLUGIN:ApplyHairLighting()
+	end
+end)
