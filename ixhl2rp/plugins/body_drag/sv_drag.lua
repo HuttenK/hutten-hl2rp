@@ -74,6 +74,11 @@ function D.Start(client, entity, handoff)
     if ix.Downed and ix.Downed.EndRescueWindow and ix.Downed.Active(patient) then
         ix.Downed.EndRescueWindow(patient)
     end
+    -- A custom drag does not set IsPlayerHolding. Release the falling pose
+    -- explicitly, just as physgun pickup does, so it cannot fight this grip.
+    -- Keep the flag after release to also cancel any delayed animation start.
+    body.BD_AnimationInterrupted = true
+    if IsValid(body.AnimModule) then body.AnimModule:Remove() end
     local state = {body = body, patient = patient, character = client:GetCharacter(),
         physics = physics, offset = localPoint, index = index, lastPosition = client:GetPos(),
         yaw = (point - client:GetPos()):Angle().y,
@@ -120,11 +125,16 @@ function D.Step(client, state, delta)
     -- Zero teleport distance forbids the controller from snapping through walls.
     physics:Wake()
     physics:ComputeShadowControl({pos = target - (point - physics:GetPos()), angle = physics:GetAngles(),
-        secondstoarrive = 0.12, delta = delta, maxangular = 0, maxangulardamp = 0,
-        maxspeed = 220, maxspeeddamp = 350, dampfactor = 0.8, teleportdistance = 0})
+        secondstoarrive = 0.05, delta = delta, maxangular = 0, maxangulardamp = 0,
+        -- These are shadow-controller limits, not the carrier's walking speed.
+        -- Leave enough pull/damping headroom to move the articulated body.
+        maxspeed = 1200, maxspeeddamp = 2400, dampfactor = 1, teleportdistance = 0})
 end
 
-hook.Add("Think", "ixBodyDragPhysics", function()
+-- Think can skip simulation ticks on a busy dedicated server. Keep the pull
+-- and its delta on the same cadence; remove the old hook when hot-reloading.
+hook.Remove("Think", "ixBodyDragPhysics")
+hook.Add("Tick", "ixBodyDragPhysics", function()
     for client, state in pairs(D.states) do D.Step(client, state, engine.TickInterval()) end
 end)
 hook.Add("ShouldCollide", "ixBodyDragCarrier", function(a, b)
