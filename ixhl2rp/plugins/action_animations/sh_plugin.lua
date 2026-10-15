@@ -9,10 +9,14 @@ ix.util.Include("sh_ik.lua")
 function A.Conflict(p)
  if not IsValid(p) or not p:IsPlayer() or not p:Alive() or not p:GetCharacter() or p:InVehicle() then return true end
  local ragdoll=p:GetLocalVar("ragdoll")
+ -- Helix networks an entity index here; IsValid cannot accept a number, even 0.
+ local ragdolled
+ if isnumber(ragdoll) then ragdolled=ragdoll>0
+ else ragdolled=IsValid(ragdoll) end
  if p:IsRestricted() or p:GetNetVar("tied") or p:GetNetVar("brth") or p:GetNetVar("crit")
   or p:GetNetVar("forcedSequence") or p:GetNetVar("untimedSequence") or p.ixUntimedSequence or p:GetNetVar("bedRestAngle")
   or p:GetNW2Bool("ixPoseStudioPlaying",false) or IsValid(p:GetNW2Entity("ixPushCart"))
-  or p:GetNetVar("prone",false) or p:GetLocalVar("knocked",false) or IsValid(ragdoll) or (isnumber(ragdoll) and ragdoll>0)
+  or p:GetNetVar("prone",false) or p:GetLocalVar("knocked",false) or ragdolled
   or IsValid(p.ixRagdoll) or p:GetMoveType()==MOVETYPE_OBSERVER or p:GetNoDraw() then return true end
  if p.IsProne and p:IsProne() then return true end
  if ix.Downed and ix.Downed.Active and ix.Downed.Active(p) then return true end

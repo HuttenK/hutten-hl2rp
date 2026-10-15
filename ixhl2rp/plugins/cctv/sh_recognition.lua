@@ -16,7 +16,11 @@ function C.Recognizable(p)
  if SERVER and not p:GetCharacter() then return false end
  if p.GetLocalVar then
   local ragdoll=p:GetLocalVar("ragdoll")
-  if IsValid(ragdoll) or (isnumber(ragdoll) and ragdoll>0) or p:GetLocalVar("knocked",false) then return false end
+  -- Positive IDs also suppress recognition before the client receives the body entity.
+  local ragdolled
+  if isnumber(ragdoll) then ragdolled=ragdoll>0
+  else ragdolled=IsValid(ragdoll) end
+  if ragdolled or p:GetLocalVar("knocked",false) then return false end
  end
  return true
 end
