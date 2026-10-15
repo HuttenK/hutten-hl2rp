@@ -43,7 +43,7 @@ local function isInZone()
 
 		for _, area in pairs(ix.area.stored or {}) do
 			if (area.type == "infection" and area.startPosition and area.endPosition
-				and pos:WithinAABox(area.startPosition, area.endPosition)) then
+				and ix.area.Contains(area, pos)) then
 				cachedInZone = true
 				break
 			end
@@ -173,7 +173,7 @@ local EDGE_DIST2 = 4000 * 4000 -- дальше этого (в квадрате) 
 local function eachInfectionZone(fn)
 	for _, area in pairs(ix.area.stored or {}) do
 		if (area.type == "infection" and area.startPosition and area.endPosition) then
-			fn(area.startPosition, area.endPosition)
+			for _, box in ipairs(ix.area.GetVolumes(area)) do fn(box.min, box.max) end
 		end
 	end
 end

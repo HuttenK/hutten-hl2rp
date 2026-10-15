@@ -2,8 +2,9 @@ local P,F=PLUGIN,ix.Facility
 function P:RawGrid(c)
  local b=ix.plugin.list.blackout;local z=b and b.zones[c.zone]
  if not z then return false,true end -- never silently energize an unbound sector
- local center=(z.min+z.max)*.5;local available=not c.mainsOff;local isolated=c.isolated==true
- for _,zone in pairs(b.zones) do if center:WithinAABox(zone.min,zone.max) then
+ local first=ix.area.GetVolumes(z)[1]
+ local center=(first.min+first.max)*.5;local available=not c.mainsOff;local isolated=c.isolated==true
+ for _,zone in pairs(b.zones) do if ix.area.Contains(zone,center) then
   if zone.active then available=false end
   if zone.remoteIsolation then isolated=true end
  end end
@@ -24,10 +25,10 @@ function P:BatteryMains(d)
  local override=b and b.ElectronicsOverride and b:ElectronicsOverride(pos)
  if override~=nil then return not override end
  if self:EntityIsolated(d.entity) then return false end
- for _,z in pairs(b and b.zones or {}) do if z.active and pos:WithinAABox(z.min,z.max) then return false end end
+ for _,z in pairs(b and b.zones or {}) do if z.active and ix.area.Contains(z,pos) then return false end end
  for _,c in pairs(self.store.circuits) do
   local z=b and b.zones[c.zone]
-  if z and pos:WithinAABox(z.min,z.max) and (c.mainsOff or c.isolated) then return false end
+  if z and ix.area.Contains(z,pos) and (c.mainsOff or c.isolated) then return false end
  end
  return true
 end
@@ -141,12 +142,12 @@ end
 function P:FacilityPowerAt(pos)
  if self.stopping then return end
  local b=ix.plugin.list.blackout;local best,size
- for _,z in pairs(b and b.zones or {}) do if z.remoteIsolation and pos:WithinAABox(z.min,z.max) then return true end end
+ for _,z in pairs(b and b.zones or {}) do if z.remoteIsolation and ix.area.Contains(z,pos) then return true end end
  for _,c in pairs(self.store.circuits) do
   local z=b and b.zones[c.zone]
-  if z and c.powered~=nil and pos:WithinAABox(z.min,z.max) then
+  if z and c.powered~=nil and ix.area.Contains(z,pos) then
    if z.remoteIsolation then return true end
-   local v=z.max-z.min;local n=v.x*v.y*v.z
+   local n=ix.area.Measure(z)
    if not size or n<size then best=c;size=n end
   end
  end
@@ -171,19 +172,25 @@ end
 function P:FacilityBlackoutVolumes(zones,active)
  if self.stopping or not next(self.store.circuits) then return end
  local ordered={};for _,c in pairs(self.store.circuits) do
-  local z=zones[c.zone];if z and c.powered~=nil then local v=z.max-z.min;ordered[#ordered+1]={c=c,z=z,volume=v.x*v.y*v.z} end
+  local z=zones[c.zone];if z and c.powered~=nil then ordered[#ordered+1]={c=c,z=z,volume=ix.area.Measure(z)} end
  end
  table.sort(ordered,function(a,b) return a.volume>b.volume end)
  local boxes={};for _,z in ipairs(active) do boxes[#boxes+1]=visualBox(z) end
  for _,entry in ipairs(ordered) do
-  local filtered={}
-  for _,box in ipairs(boxes) do for _,part in ipairs(subtract(box,entry.z)) do filtered[#filtered+1]=part end end
-  boxes=filtered
-  if not entry.c.powered then boxes[#boxes+1]=visualBox(entry.z) end
+  for _,cut in ipairs(ix.area.GetVolumes(entry.z)) do
+   local filtered={}
+   for _,box in ipairs(boxes) do for _,part in ipairs(subtract(box,cut)) do filtered[#filtered+1]=part end end
+   boxes=filtered
+  end
+  if not entry.c.powered then
+   for _,part in ipairs(ix.area.GetVolumes(entry.z)) do boxes[#boxes+1]=visualBox(entry.z,part.min,part.max) end
+  end
   if #boxes>512 then return active end
  end
  -- Safety isolations always win, including a smaller backed-up circuit inside.
- for _,z in pairs(zones) do if z.remoteIsolation then boxes[#boxes+1]=visualBox(z) end end
+ for _,z in pairs(zones) do if z.remoteIsolation then
+  for _,part in ipairs(ix.area.GetVolumes(z)) do boxes[#boxes+1]=visualBox(z,part.min,part.max) end
+ end end
  return boxes
 end
 function P:PowerAction(p,data)

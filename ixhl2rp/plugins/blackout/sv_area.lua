@@ -24,6 +24,8 @@ function PLUGIN:AreaDefinitionCreating(id, info)
     if not name and table.Count(self.zones) >= 1024 then
         return false, "Достигнут предел: 1024 зоны электроснабжения."
     end
+    local allowed, reason = self:AreaVolumesChanging(id, info)
+    if allowed == false then return false, reason end
     local mn, mx = info.startPosition, info.endPosition
     for _, axis in ipairs({"x", "y", "z"}) do
         if not finite(mn[axis]) or not finite(mx[axis]) or mx[axis] <= mn[axis] then
@@ -63,6 +65,7 @@ function PLUGIN:ApplyZoneArea(id, info)
     zone = zone or {active = info.properties and info.properties.blackoutStartOff == true}
     -- The saved power state wins over the creation checkbox after repair/restart.
     zone.min, zone.max, zone.areaID = info.startPosition, info.endPosition, id
+    zone.volumes = info.volumes
     info.properties=info.properties or {}
     zone.darkness=math.Clamp(tonumber(info.properties.blackoutDarkness) or zone.darkness or 86,0,100)
     zone.softness=math.Clamp(tonumber(info.properties.blackoutSoftness) or zone.softness or 24,0,128)
@@ -93,6 +96,26 @@ function PLUGIN:AreaDefinitionDeleted(id)
     self:SaveAreaDefinitions()
 end
 
+function PLUGIN:AreaVolumeAdding(id, info, box)
+    if info.type ~= "blackout" then return end
+    local margin = math.Clamp(tonumber(info.properties.blackoutMargin) or self.areaMargin, 0, 16)
+    local pad = Vector(margin, margin, margin)
+    box.min, box.max = box.min - pad, box.max + pad
+end
+
+function PLUGIN:AreaVolumesChanging(id, info)
+    if info.type ~= "blackout" then return end
+    local count = #ix.area.GetVolumes(info)
+    for _, zone in pairs(self.zones) do
+        if zone.areaID ~= id then count = count + #ix.area.GetVolumes(zone) end
+    end
+    if count > 1024 then return false, "areaVolumeComplex" end
+end
+
+function PLUGIN:AreaDefinitionUpdated(id, info)
+    self:AreaDefinitionCreated(id, info)
+end
+
 -- Expose legacy zones without changing their volume, state or circuit/cable name.
 function PLUGIN:PublishZoneArea(name)
     if not ix.area or not ix.area.loaded then return end
@@ -115,7 +138,7 @@ function PLUGIN:PublishZoneArea(name)
         color = Color(235, 180, 70), display = false,
         blackoutMargin = 0, blackoutStartOff = zone.active == true,
         blackoutDarkness = zone.darkness or 86, blackoutSoftness = zone.softness or 24
-    })
+    }, zone.volumes)
     self.syncingAreas = syncing
     if not syncing then self:SaveAreaDefinitions() end
 end
@@ -159,9 +182,7 @@ function PLUGIN:UpdateAreaAppearance(client,id,darkness,softness)
     info.properties.blackoutDarkness=math.Round(darkness);info.properties.blackoutSoftness=math.Round(softness)
     local zone=self.zones[name];zone.darkness=info.properties.blackoutDarkness;zone.softness=info.properties.blackoutSoftness
     self:SaveAreaDefinitions();self:SaveData();self:NetworkZones()
-    net.Start("ixAreaAdd")
-    net.WriteString(id);net.WriteString(info.type);net.WriteVector(info.startPosition);net.WriteVector(info.endPosition);net.WriteTable(info.properties)
-    net.Broadcast()
+    ix.area.Sync(id)
     return true
 end
 net.Receive("ixBlackoutAppearance",function(_,client)
@@ -179,14 +200,11 @@ function PLUGIN:UpdateAreaHeight(client,id,lower,upper)
     if not info or info.type~="blackout" or not name then return false,"Зона больше не существует." end
     -- Preserve the footprint, zone identity and power state. Do not call Create:
     -- its creation margin would expand the already padded bounds a second time.
-    local mn,mx=info.startPosition,info.endPosition
-    info.startPosition=Vector(mn.x,mn.y,lower);info.endPosition=Vector(mx.x,mx.y,upper)
-    local zone=self.zones[name];zone.min=info.startPosition;zone.max=info.endPosition
-    self:RefreshAreaPower();self:SaveAreaDefinitions();self:SaveData()
-    net.Start("ixAreaAdd")
-    net.WriteString(id);net.WriteString(info.type);net.WriteVector(info.startPosition);net.WriteVector(info.endPosition);net.WriteTable(info.properties)
-    net.Broadcast()
-    return true
+    local volumes={}
+    for _,box in ipairs(ix.area.GetVolumes(info)) do
+        volumes[#volumes+1]={min=Vector(box.min.x,box.min.y,lower),max=Vector(box.max.x,box.max.y,upper)}
+    end
+    return ix.area.UpdateVolumes(id,volumes)
 end
 net.Receive("ixBlackoutHeight",function(_,client)
     local id=net.ReadString();local lower,upper=net.ReadFloat(),net.ReadFloat()

@@ -189,7 +189,9 @@ hook.Add("PostDrawTranslucentRenderables", "ixFurnishEditor", function(depth, sk
 	if areas then
 		for _, info in ipairs(areas) do
 			if isvector(info.startPosition) and isvector(info.endPosition) then
-				render.DrawWireframeBox(vector_origin, angle_zero, info.startPosition, info.endPosition, AREA_EDGE, true)
+				for _, box in ipairs(ix.area.GetVolumes(info)) do
+					render.DrawWireframeBox(vector_origin, angle_zero, box.min, box.max, AREA_EDGE, true)
+				end
 			end
 		end
 	end

@@ -68,7 +68,7 @@ function PLUGIN:IsPosBlackedOut(pos)
 	for _, z in pairs(self.zones) do
 		if (z.active == false) then continue end
 
-		if (pos:WithinAABox(z.min, z.max)) then
+		if (ix.area.Contains(z, pos)) then
 			return true
 		end
 	end
@@ -95,7 +95,7 @@ function PLUGIN:ElectronicsOverride(pos)
 	if self.unloading or not self.electronicsRestricted then return end
 	local zones = SERVER and self.zones or self.electronicsZones
 	for _, z in pairs(zones or {}) do
-		if (not SERVER or z.active == true) and pos:WithinAABox(z.min, z.max) then return false end
+		if (not SERVER or z.active == true) and ix.area.Contains(z, pos) then return false end
 	end
 	return true
 end

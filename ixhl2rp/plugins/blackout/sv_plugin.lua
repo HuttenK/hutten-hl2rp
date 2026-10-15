@@ -135,9 +135,7 @@ function PLUGIN:CanPlayerInteractEntity(client, entity)
 end
 
 local function BoxVolume(zone)
-	local size = zone.max - zone.min
-
-	return size.x * size.y * size.z
+	return ix.area.Measure(zone)
 end
 
 -- Зоны вкладываются друг в друга: общегородская накрывает поздания, у каждого из
@@ -147,7 +145,7 @@ function PLUGIN:GetOwningZone(pos)
 	local best, bestVolume
 
 	for _, z in pairs(self.zones) do
-		if (!pos:WithinAABox(z.min, z.max)) then continue end
+		if (!ix.area.Contains(z, pos)) then continue end
 
 		local volume = BoxVolume(z)
 
@@ -565,7 +563,10 @@ function PLUGIN:NetworkZones(receiver)
 
 	for _, z in pairs(self.zones) do
 		if z.active then
-			active[#active + 1] = z
+			for _, box in ipairs(ix.area.GetVolumes(z)) do
+				active[#active + 1] = {min=box.min,max=box.max,darkness=z.darkness,softness=z.softness,
+					fadeMin=z.min,fadeMax=z.max}
+			end
 		end
 	end
 	-- Send raw exceptions separately; the visual volumes below can be split by
@@ -606,7 +607,7 @@ function PLUGIN:SaveData()
 	local out = {}
 
 	for name, z in pairs(self.zones) do
-		out[name] = { min = z.min, max = z.max, active = z.active, remoteIsolation=z.remoteIsolation, remotePrevious=z.remotePrevious, areaID=z.areaID, darkness=z.darkness, softness=z.softness }
+		out[name] = { min = z.min, max = z.max, volumes=z.volumes, active = z.active, remoteIsolation=z.remoteIsolation, remotePrevious=z.remotePrevious, areaID=z.areaID, darkness=z.darkness, softness=z.softness }
 	end
 
 	ix.data.Set("blackout", out)

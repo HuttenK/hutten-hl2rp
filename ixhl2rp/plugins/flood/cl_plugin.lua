@@ -41,9 +41,9 @@ local function SampledLight(pos)
 end
 
 -- Нарисовать одну плоскость воды (с обеих сторон, чтобы видеть и снизу).
-local function DrawWaterPlane(mins, maxs, lvl)
-	local x1, y1 = mins.x - OVERSHOOT, mins.y - OVERSHOOT
-	local x2, y2 = maxs.x + OVERSHOOT, maxs.y + OVERSHOOT
+local function DrawWaterPlane(mins, maxs, lvl, margin)
+	local x1, y1 = mins.x - margin, mins.y - margin
+	local x2, y2 = maxs.x + margin, maxs.y + margin
 	local z = lvl
 
 	local a = Vector(x1, y1, z)
@@ -93,10 +93,10 @@ function PLUGIN:PostDrawTranslucentRenderables(bDepth, bSkybox)
 	for name, area in pairs(ix.area.stored or {}) do
 		if (area.type == "flood") then
 			local lvl = self.level[name]
-			local mins, maxs = self:GetAreaBounds(area)
-
-			if (lvl and mins and lvl > mins.z) then
-				DrawWaterPlane(mins, maxs, lvl)
+			for _, box in ipairs(ix.area.GetDisjointVolumes(area) or ix.area.GetVolumes(area)) do
+				if (lvl and lvl > box.min.z and lvl <= box.max.z) then
+					DrawWaterPlane(box.min, box.max, lvl, area.volumes and #area.volumes > 1 and 0 or OVERSHOOT)
+				end
 			end
 		end
 	end

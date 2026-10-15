@@ -123,8 +123,8 @@ ix.command.Add("BlackoutDebug", {
 			client:PrintMessage(HUD_PRINTCONSOLE, string.format(
 				"    zone '%s' active=%s  min=%s max=%s  contains entity: %s | contains you: %s | owns it: %s\n",
 				name, tostring(z.active), tostring(z.min), tostring(z.max),
-				tostring(pos:WithinAABox(z.min, z.max)),
-				tostring(client:GetPos():WithinAABox(z.min, z.max)),
+				tostring(ix.area.Contains(z, pos)),
+				tostring(ix.area.Contains(z, client:GetPos())),
 				tostring(z == owner)))
 		end
 

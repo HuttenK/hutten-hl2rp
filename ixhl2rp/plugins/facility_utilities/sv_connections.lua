@@ -230,9 +230,9 @@ function P:EntityIsolated(e)
  if override~=nil then return override end
  if e:GetClass()=="ix_combinelock" and IsValid(e.door) and self:EntityIsolated(e.door) then return true end
  local b=ix.plugin.list.blackout;local pos=e:GetPos()
- for _,z in pairs(b and b.zones or {}) do if z.remoteIsolation and pos:WithinAABox(z.min,z.max) then return true end end
+ for _,z in pairs(b and b.zones or {}) do if z.remoteIsolation and ix.area.Contains(z,pos) then return true end end
  for _,c in pairs(self.store.circuits) do local z=b and b.zones[c.zone]
-  if c.isolated and z and pos:WithinAABox(z.min,z.max) then return true end
+  if c.isolated and z and ix.area.Contains(z,pos) then return true end
  end
  return false
 end

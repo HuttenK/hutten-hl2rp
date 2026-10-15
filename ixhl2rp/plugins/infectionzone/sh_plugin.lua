@@ -223,7 +223,7 @@ ix.command.Add("InfectionDebug", {
 		for name, area in pairs(ix.area.stored or {}) do
 			if (area.type == "infection") then
 				n = n + 1
-				local inside = pos:WithinAABox(area.startPosition, area.endPosition)
+				local inside = ix.area.Contains(area, pos)
 				local fc = (PLUGIN.flora and PLUGIN.flora[name] and table.Count(PLUGIN.flora[name])) or 0
 				local zc = (PLUGIN.zombies and PLUGIN.zombies[name] and table.Count(PLUGIN.zombies[name])) or 0
 				local rem = (PLUGIN.remaining and PLUGIN.remaining[name])

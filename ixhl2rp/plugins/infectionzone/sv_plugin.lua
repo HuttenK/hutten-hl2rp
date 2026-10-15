@@ -42,7 +42,9 @@ end
 
 -- Случайная валидная точка на полу внутри AABB-куба зоны.
 local function randomGroundPoint(area)
-	local mins, maxs = area.startPosition, area.endPosition
+	local boxes = ix.area.GetDisjointVolumes(area) or ix.area.GetVolumes(area)
+	local box = boxes[math.random(#boxes)]
+	local mins, maxs = box.min, box.max
 
 	local x = math.Rand(mins.x, maxs.x)
 	local y = math.Rand(mins.y, maxs.y)
@@ -67,18 +69,13 @@ end
 
 -- Есть ли рядом живой игрок (внутри зоны или в радиусе активации).
 local function hasPlayerNear(area, radius)
-	local center = (area.startPosition + area.endPosition) * 0.5
 	local r2 = radius * radius
 
 	for _, ply in ipairs(player.GetAll()) do
 		if (ply:Alive() and ply:GetCharacter()) then
 			local pos = ply:GetPos()
 
-			if (pos:WithinAABox(area.startPosition, area.endPosition)) then
-				return true
-			end
-
-			if (pos:DistToSqr(center) <= r2) then
+			if (ix.area.DistanceSqr(area, pos) <= r2) then
 				return true
 			end
 		end
@@ -608,7 +605,7 @@ function PLUGIN:InfectionTick()
 
 		-- кто сейчас внутри этой зоны (для смога)
 		for _, ply in ipairs(player.GetAll()) do
-			if (control.zoneGas ~= false and ply:Alive() and (ply:GetPos() + ply:OBBCenter()):WithinAABox(area.startPosition, area.endPosition)) then
+			if (control.zoneGas ~= false and ply:Alive() and ix.area.Contains(area, ply:GetPos() + ply:OBBCenter())) then
 				inToxic[ply] = true
 			end
 		end

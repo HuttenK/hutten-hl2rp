@@ -2,6 +2,13 @@ local P=PLUGIN
 local oldPage,oldAction,oldLogin,oldEnd=P.Page,P.Action,P.Login,P.EndSession
 local routes={['scip://home']=true,['scip://power']=true,['scip://infection']=true,['scip://logs']=true,['scip://service']=true}
 local function count(t) local n=0 for ent in pairs(t or {}) do if IsValid(ent) then n=n+1 end end return n end
+local function AreaPowerOff(area, power)
+ if not power then return false end
+ for _, box in ipairs(ix.area.GetVolumes(area)) do
+  if (power.IsElectronicsOffAt or power.IsPosBlackedOut)(power,(box.min+box.max)*.5) then return true end
+ end
+ return false
+end
 function P:Audit(p,kind,target,result,reason)
  self.store.audit=self.store.audit or {}
  local identity=self:Identity(p)
@@ -84,7 +91,7 @@ function P:Action(p,action,payload)
  elseif payload.command=='suppress' then
   route='scip://infection';local area=ix.area.stored[zone]
   self.cycles=self.cycles or {};self.cycleCooldown=self.cycleCooldown or {}
-  if inf and area and area.type=='infection' and (self.cycleCooldown[zone] or 0)<=CurTime() and not (power and (power.IsElectronicsOffAt or power.IsPosBlackedOut)(power,(area.startPosition+area.endPosition)*.5)) then
+  if inf and area and area.type=='infection' and (self.cycleCooldown[zone] or 0)<=CurTime() and not AreaPowerOff(area,power) then
    local expires=CurTime()+120
    inf.suppressed[zone]=math.max(inf.suppressed[zone] or 0,expires)
    self.cycles[zone]=expires;self.cycleCooldown[zone]=CurTime()+300;ok=true
@@ -98,7 +105,7 @@ timer.Create('FoundationFacilityMaintenance',1,0,function()
  local inf=ix.plugin.list.infectionzone;local power=ix.plugin.list.blackout
  for name,expires in pairs(P.cycles or {}) do
   local area=ix.area.stored[name]
-  if not inf or not area or CurTime()>=expires or (power and (power.IsElectronicsOffAt or power.IsPosBlackedOut)(power,(area.startPosition+area.endPosition)*.5)) then
+  if not inf or not area or CurTime()>=expires or AreaPowerOff(area,power) then
    if inf and inf.suppressed[name]==expires then inf.suppressed[name]=nil end
    P.cycles[name]=nil
   end

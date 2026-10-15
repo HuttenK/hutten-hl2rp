@@ -19,8 +19,11 @@ function P:MapSnapshot(p)
   if z.type=='area' and not z.bNoReplicate and z.startPosition and z.endPosition then
    if #data.areas>=128 then data.truncated=true;break end
    local c=(z.properties or {}).color
-   data.areas[#data.areas+1]={name=tostring(name):sub(1,100),min=xyz(z.startPosition),max=xyz(z.endPosition),
-    color=c and {c.r,c.g,c.b} or nil}
+   for _,box in ipairs(ix.area.GetVolumes(z)) do
+    if #data.areas>=128 then data.truncated=true;break end
+    data.areas[#data.areas+1]={name=tostring(name):sub(1,100),min=xyz(box.min),max=xyz(box.max),
+     color=c and {c.r,c.g,c.b} or nil}
+   end
   end
  end
  local n=0

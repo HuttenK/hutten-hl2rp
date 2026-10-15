@@ -53,15 +53,16 @@ function PLUGIN:WaterLevelAt(pos)
 	for name, area in pairs(ix.area.stored or {}) do
 		if (area.type == "flood") then
 			local lvl = self.level[name]
-			local mins, maxs = self:GetAreaBounds(area)
-
-			if (lvl and mins and maxs and lvl > mins.z) then
-				if (pos.x >= mins.x and pos.x <= maxs.x
+			local surface
+			for _, box in ipairs(ix.area.GetVolumes(area)) do
+				local mins, maxs = box.min, box.max
+				if (lvl and lvl > mins.z and pos.x >= mins.x and pos.x <= maxs.x
 				and pos.y >= mins.y and pos.y <= maxs.y
-				and pos.z <= lvl and pos.z >= mins.z - 64) then
-					return lvl, name
+				and pos.z <= math.min(lvl, maxs.z) and pos.z >= mins.z - 64) then
+					surface = math.max(surface or -math.huge, math.min(lvl, maxs.z))
 				end
 			end
+			if (surface) then return surface, name end
 		end
 	end
 end

@@ -51,7 +51,7 @@ function PLUGIN:AreaThink()
 
 		for id, info in pairs(ix.area.stored) do
 			local options = ix.area.typeOptions[info.type] or {}
-			if (!options.nonLocation and position:WithinAABox(info.startPosition, info.endPosition)) then
+			if (!options.nonLocation and ix.area.Contains(info, position)) then
 				overlappingBoxes[#overlappingBoxes + 1] = id
 			end
 		end

@@ -20,7 +20,7 @@ local function SortVector(first, second)
 		Vector(math.max(first.x, second.x), math.max(first.y, second.y), math.max(first.z, second.z))
 end
 
-function ix.area.Create(name, type, startPosition, endPosition, bNoReplicate, properties)
+function ix.area.Create(name, type, startPosition, endPosition, bNoReplicate, properties, volumes)
 	local min, max = SortVector(startPosition, endPosition)
 
 	local info = {
@@ -28,6 +28,7 @@ function ix.area.Create(name, type, startPosition, endPosition, bNoReplicate, pr
 		startPosition = min,
 		endPosition = max,
 		bNoReplicate = bNoReplicate,
+		volumes = volumes,
 		properties = properties or {}
 	}
 	local allowed, reason = hook.Run("AreaDefinitionCreating", name, info)
@@ -38,15 +39,25 @@ function ix.area.Create(name, type, startPosition, endPosition, bNoReplicate, pr
 
 	-- network to clients if needed
 	if (!bNoReplicate) then
-		net.Start("ixAreaAdd")
-			net.WriteString(name)
-			net.WriteString(info.type)
-			net.WriteVector(info.startPosition)
-			net.WriteVector(info.endPosition)
-			net.WriteTable(info.properties)
-		net.Broadcast()
+		ix.area.Sync(name)
 	end
 	return true
+end
+
+function ix.area.Sync(name)
+	local info = ix.area.stored[name]
+	if (!info or info.bNoReplicate) then return end
+	local volumes = ix.area.GetVolumes(info)
+	net.Start("ixAreaAdd")
+		net.WriteString(name)
+		net.WriteString(info.type)
+		net.WriteVector(info.startPosition)
+		net.WriteVector(info.endPosition)
+		net.WriteTable(info.properties)
+		net.WriteUInt(info.volumeRevision or 0, 32)
+		net.WriteUInt(#volumes, 6)
+		for _, box in ipairs(volumes) do net.WriteVector(box.min); net.WriteVector(box.max) end
+	net.Broadcast()
 end
 
 function ix.area.Remove(name, bNoReplicate)

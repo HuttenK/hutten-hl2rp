@@ -44,7 +44,11 @@ function PLUGIN:OpenAreaHeight(id,info)
  hook.Add("PostDrawTranslucentRenderables","ixBlackoutHeightPreview",function(depth,sky,sky3d)
   if depth or sky or sky3d or not IsValid(frame) or not ix.area.bEditing or (ix.CCTV and ix.CCTV.rendering) then return end
   local preview=frame.heightPreview
-  if preview then render.DrawWireframeBox(vector_origin,angle_zero,preview.min,preview.max,previewColor,true) end
+  if preview then
+   for _,box in ipairs(ix.area.GetVolumes(info)) do
+    render.DrawWireframeBox(vector_origin,angle_zero,Vector(box.min.x,box.min.y,preview.min.z),Vector(box.max.x,box.max.y,preview.max.z),previewColor,true)
+   end
+  end
  end)
  frame.OnRemove=function()
   hook.Remove("PostDrawTranslucentRenderables","ixBlackoutHeightPreview")
@@ -52,9 +56,8 @@ function PLUGIN:OpenAreaHeight(id,info)
  end
 end
 
-function PLUGIN:AreaEditShowOptions(id,info)
+function PLUGIN:AreaEditPopulateOptions(id,info,menu)
  if not info or info.type~="blackout" then return end
- local menu=DermaMenu()
  menu:AddOption("Настроить затемнение",function()
   local frame=vgui.Create("DFrame");frame:SetTitle(id.." — затемнение")
   frame:SetSize(510,220);frame:Center();frame:MakePopup()
@@ -78,11 +81,4 @@ function PLUGIN:AreaEditShowOptions(id,info)
  menu:AddOption("Изменить высоту",function()
   self:OpenAreaHeight(id,info)
  end):SetIcon("icon16/arrow_up.png")
- menu:AddOption("Удалить зону",function()
-  Derma_Query(L("areaDeleteConfirm",id),L("areaDelete"),L("no"),nil,L("yes"),function()
-   net.Start("ixAreaRemove");net.WriteString(id);net.SendToServer()
-  end)
- end):SetIcon("icon16/delete.png")
- menu:Open(ScrW()*.5,ScrH()*.5)
- return true
 end

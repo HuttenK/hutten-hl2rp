@@ -21,7 +21,7 @@ function ENT:GetFloodZone()
 			-- иначе WithinAABox всегда false и насос «не видит» зону.
 			local mins, maxs = plugin:GetAreaBounds(area)
 
-			if (mins and pos:WithinAABox(mins, maxs)) then
+			if (mins and ix.area.Contains(area, pos)) then
 				return name, area
 			end
 		end

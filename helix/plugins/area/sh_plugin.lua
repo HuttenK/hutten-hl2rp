@@ -11,6 +11,9 @@ ix.area.typeOptions = ix.area.typeOptions or {}
 ix.area.properties = ix.area.properties or {}
 ix.area.stored = ix.area.stored or {}
 
+ix.util.Include("sh_geometry.lua")
+ix.util.Include("sh_volume_phrases.lua")
+
 ix.option.Add("showArea", ix.type.bool, true, {
 	category = "general"
 })
@@ -57,6 +60,8 @@ ix.util.Include("sv_plugin.lua")
 ix.util.Include("cl_plugin.lua")
 ix.util.Include("sv_hooks.lua")
 ix.util.Include("cl_hooks.lua")
+ix.util.Include("sv_volumes.lua")
+ix.util.Include("cl_volumes.lua")
 
 -- return world center, local min, and local max from world start/end positions
 function PLUGIN:GetLocalAreaPosition(startPosition, endPosition)

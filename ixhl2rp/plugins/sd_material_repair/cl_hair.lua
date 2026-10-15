@@ -22,6 +22,10 @@ local repaired = {}
 local enabled = true
 local hookID = "ixSDHairLighting"
 
+local function TextureName(texture)
+	return texture and string.lower(texture:GetName()):gsub("\\", "/"):gsub("%.vtf$", "")
+end
+
 function PLUGIN:ApplyHairLighting()
 	if (!enabled) then return end
 
@@ -30,14 +34,26 @@ function PLUGIN:ApplyHairLighting()
 
 		if (!material:IsError() and string.lower(material:GetShader()) == "vertexlitgeneric") then
 			local texture = material:GetTexture("$lightwarptexture")
-			local textureName = texture and string.lower(texture:GetName()):gsub("\\", "/"):gsub("%.vtf$", "")
-
-			if (textureName == prefix.."lightwarp_hair") then
-				-- The shipped ramp varies vertically, but Source samples it horizontally.
-				-- Use normal diffuse lighting; keep strand alpha, tint, normals and Phong.
-				repaired[material] = texture
-				material:SetUndefined("$lightwarptexture")
-				material:Recompute()
+			local textureName = TextureName(texture)
+			-- Keep deliberate third-party diffuse ramps. GMod returns an error
+			-- texture, rather than nil, for an undefined texture parameter.
+			if (!textureName or textureName == "error" or textureName == prefix.."lightwarp_hair") then
+				local changes = repaired[material] or {}
+				local changed = false
+				if (textureName == prefix.."lightwarp_hair") then
+					changes.warp = changes.warp or texture
+					material:SetUndefined("$lightwarptexture")
+					changed = true
+				end
+				-- Live comparison isolates the excessive sheen to the Phong pass.
+				-- Keep the original colour, normals, detail and strand alpha.
+				local phong = material:GetInt("$phong")
+				if (phong and phong ~= 0) then
+					changes.phong = changes.phong or phong
+					material:SetInt("$phong", 0)
+					changed = true
+				end
+				if (changed) then repaired[material] = changes; material:Recompute() end
 			end
 		end
 	end
@@ -49,11 +65,20 @@ function PLUGIN:ClearHairLighting()
 	hook.Remove("OnReloaded", hookID)
 	hook.Remove("ShutDown", hookID)
 
-	for material, texture in pairs(repaired) do
+	for material, changes in pairs(repaired) do
 		-- Do not overwrite a different correction installed later by another addon.
-		if (!material:IsError() and !material:GetTexture("$lightwarptexture")) then
-			material:SetTexture("$lightwarptexture", texture)
-			material:Recompute()
+		if (!material:IsError()) then
+			local changed = false
+			local name = TextureName(material:GetTexture("$lightwarptexture"))
+			if (changes.warp and (!name or name == "error")) then
+				material:SetTexture("$lightwarptexture", changes.warp)
+				changed = true
+			end
+			if (changes.phong and material:GetInt("$phong") == 0) then
+				material:SetInt("$phong", changes.phong)
+				changed = true
+			end
+			if (changed) then material:Recompute() end
 		end
 	end
 

@@ -45,7 +45,7 @@ function ix.furnish.FindApartment(position)
 		local key = ix.furnish.ApartmentKey(id, info)
 
 		if key and isvector(info.startPosition) and isvector(info.endPosition)
-			and position:WithinAABox(info.startPosition, info.endPosition) then
+			and ix.area.Contains(info, position) then
 			return id, info, key
 		end
 	end
@@ -72,7 +72,7 @@ end
 local function InsideAny(areas, position)
 	for _, info in ipairs(areas) do
 		if isvector(info.startPosition) and isvector(info.endPosition)
-			and position:WithinAABox(info.startPosition, info.endPosition) then
+			and ix.area.Contains(info, position) then
 			return true
 		end
 	end

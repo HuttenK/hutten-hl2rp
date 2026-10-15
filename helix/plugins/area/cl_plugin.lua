@@ -16,6 +16,7 @@ function PLUGIN:StartEditing()
 	self.editStart = nil
 	self.editEnd = nil
 	self.editProperties = nil
+	self.editVolumeID, self.editVolumeRevision, self.volumePreview = nil, nil, nil
 end
 
 -- Infrastructure volumes can overlap a named location without replacing it.
@@ -25,7 +26,7 @@ function PLUGIN:GetEditableAreas()
 	local position = client:GetPos() + client:OBBCenter()
 	local found = {}
 	for id, info in pairs(ix.area.stored) do
-		if (position:WithinAABox(info.startPosition, info.endPosition)) then found[#found + 1] = id end
+		if (ix.area.Contains(info, position)) then found[#found + 1] = id end
 	end
 	table.sort(found)
 	return found
@@ -33,6 +34,7 @@ end
 
 function PLUGIN:StopEditing()
 	ix.area.bEditing = false
+	self.editVolumeID, self.editVolumeRevision, self.volumePreview = nil, nil, nil
 
 	if (IsValid(ix.gui.areaEdit)) then
 		ix.gui.areaEdit:Remove()

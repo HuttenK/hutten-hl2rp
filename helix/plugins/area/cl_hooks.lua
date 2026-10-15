@@ -80,12 +80,15 @@ function PLUGIN:HUDPaint()
 
 	local y = 64
 	y = y + DrawTextBackground(64, y, L("areaEditMode"), nil, ix.config.Get("color"))
+	if (self.editVolumeID) then
+		y = y + DrawTextBackground(64, y, L("areaVolumeDrawing", self.editVolumeID), "ixSmallTitleFont")
+	end
 
 	if (!self.editStart) then
-		y = y + DrawTextBackground(64, y, L("areaEditTip"), "ixSmallTitleFont")
-		DrawTextBackground(64, y, L("areaRemoveTip"), "ixSmallTitleFont")
+		y = y + DrawTextBackground(64, y, L(self.editVolumeID and "areaVolumeStart" or "areaEditTip"), "ixSmallTitleFont")
+		DrawTextBackground(64, y, L("areaVolumeMenuTip"), "ixSmallTitleFont")
 	else
-		DrawTextBackground(64, y, L("areaFinishTip"), "ixSmallTitleFont")
+		DrawTextBackground(64, y, L(self.editVolumeID and "areaVolumeFinish" or "areaFinishTip"), "ixSmallTitleFont")
 	end
 
 	if (area) then
@@ -103,7 +106,9 @@ function PLUGIN:PostDrawTranslucentRenderables(bDepth, bSkybox)
 		local center, min, max = self:GetLocalAreaPosition(v.startPosition, v.endPosition)
 		local color = ColorAlpha(v.properties.color or ix.config.Get("color"), 255)
 
-		render.DrawWireframeBox(center, angle_zero, min, max, color)
+		for _, box in ipairs(ix.area.GetVolumes(v)) do
+			render.DrawWireframeBox(vector_origin, angle_zero, box.min, box.max, color)
+		end
 
 		cam.Start2D()
 			local centerScreen = center:ToScreen()
@@ -120,6 +125,9 @@ function PLUGIN:PostDrawTranslucentRenderables(bDepth, bSkybox)
 	end
 
 	-- draw currently edited area
+	if (self.volumePreview) then
+		render.DrawWireframeBox(vector_origin, angle_zero, self.volumePreview.min, self.volumePreview.max, Color(90,225,255), true)
+	end
 	if (self.editStart) then
 		local center, min, max = self:GetLocalAreaPosition(self.editStart, self.editEnd or self:GetPlayerAreaTrace().HitPos)
 		local color = Color(255, 255, 255, 25 + (1 + math.sin(SysTime() * 6)) * 115)
@@ -136,9 +144,10 @@ function PLUGIN:PostDrawTranslucentRenderables(bDepth, bSkybox)
 end
 
 function PLUGIN:EditRightClick()
-	if (self.editStart) then
+	if (self.editStart or self.editVolumeID) then
 		self.editStart = nil
 		self.editEnd = nil
+		self.editVolumeID, self.editVolumeRevision = nil, nil
 	else
 		self:StopEditing()
 	end
@@ -148,6 +157,7 @@ function PLUGIN:EditClick()
 	if (!self.editStart) then
 		self.editStart = LocalPlayer():GetEyeTraceNoCursor().HitPos
 	elseif (self.editStart and !self.editProperties) then
+		if (self.editVolumeID) then self:SubmitVolume(); return end
 		self.editProperties = true
 		self.editEnd = self:GetPlayerAreaTrace().HitPos
 
@@ -163,15 +173,7 @@ function PLUGIN:EditReload()
 
 	local areas = self:GetEditableAreas()
 	local function Confirm(id)
-		if (hook.Run("AreaEditShowOptions", id, ix.area.stored[id]) == true) then return end
-		Derma_Query(L("areaDeleteConfirm", id), L("areaDelete"),
-		L("no"), nil,
-		L("yes"), function()
-			net.Start("ixAreaRemove")
-				net.WriteString(id)
-			net.SendToServer()
-		end
-		)
+		self:OpenAreaOptions(id, ix.area.stored[id])
 	end
 	if (#areas == 1) then
 		Confirm(areas[1])
@@ -227,13 +229,18 @@ net.Receive("ixAreaAdd", function()
 	local type = net.ReadString()
 	local startPosition, endPosition = net.ReadVector(), net.ReadVector()
 	local properties = net.ReadTable()
+	local revision, count = net.ReadUInt(32), net.ReadUInt(6)
+	local volumes = {}
+	for i = 1, count do volumes[i] = {min = net.ReadVector(), max = net.ReadVector()} end
 
 	if (name != "") then
 		ix.area.stored[name] = {
 			type = type,
 			startPosition = startPosition,
 			endPosition = endPosition,
-			properties = properties
+			properties = properties,
+			volumes = volumes,
+			volumeRevision = revision
 		}
 	end
 end)

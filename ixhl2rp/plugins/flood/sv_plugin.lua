@@ -177,6 +177,7 @@ function PLUGIN:ApplyBuoyancy(name, area, lvl)
 		if (!IsValid(phys) or !phys:IsMotionEnabled()) then continue end
 
 		local pos = ent:WorldSpaceCenter()
+		if (!ix.area.Contains(area, pos)) then continue end
 		local depth = lvl - pos.z
 		if (depth <= 0) then continue end
 

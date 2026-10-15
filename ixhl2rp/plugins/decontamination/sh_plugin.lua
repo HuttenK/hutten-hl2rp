@@ -18,11 +18,7 @@ function P:InitializedPlugins()
 end
 P:InitializedPlugins()
 function D.ZoneDistance(pos,area)
- local a,b=area.startPosition,area.endPosition
- local x=math.max(a.x-pos.x,0,pos.x-b.x)
- local y=math.max(a.y-pos.y,0,pos.y-b.y)
- local z=math.max(a.z-pos.z,0,pos.z-b.z)
- return x*x+y*y+z*z
+ return ix.area.DistanceSqr(area,pos)
 end
 ix.util.Include("sv_decon.lua")
 ix.util.Include("cl_decon.lua")
