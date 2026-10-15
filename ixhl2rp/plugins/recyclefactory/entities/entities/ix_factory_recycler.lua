@@ -322,8 +322,14 @@ local allowedEntities = {
 }
 
 if SERVER then
+	local function powerOff(entity)
+		local blackout = ix.plugin.list.blackout
+		return blackout and blackout:IsEntityBlackedOut(entity)
+	end
+
 	function ENT:CreateProduct(activator)
 		timer.Simple(0.1, function()
+			if not IsValid(self) or powerOff(self) then return end
 			if self:GetProduct() == "" then
 				return
 			end
@@ -332,6 +338,7 @@ if SERVER then
 			local vPos = self:GetPos() + self:GetUp() * 16 + self:GetRight() * -25 + self:GetForward() * -80
 
 			ix.Item:Spawn(vPos, Angle(), instance)
+			self:SetRawResource(0)
 
 			self:SetProduct("")
 
@@ -346,7 +353,6 @@ if SERVER then
 			self.workers = {}
 		end)
 
-		self:SetRawResource(0)
 	end
 
 	function ENT:UpdateTransmitState()
@@ -359,6 +365,7 @@ if SERVER then
 
 		timer.Simple(0, function() 
 			if !IsValid(activator) or !IsValid(self) then return end
+			if powerOff(self) then return end
 
 			entity.StartTouch(self, activator)
 		end)
@@ -366,6 +373,7 @@ if SERVER then
 
 	function ENT:Think()
 		if CLIENT then return end
+		if powerOff(self) then self:StopSound("machine_moving") end
 
 		if self:GetManufacturing() then
 			local eEnt = self:GetPlayerUsing()
@@ -388,6 +396,7 @@ if SERVER then
 	end
 
 	function ENT:Use(activator)
+		if powerOff(self) then return end
 		if self:GetManufacturing() or self:GetBroken() then return end
 
 		if (self.iNextResourceCreation or 0) > CurTime() then return end
@@ -407,6 +416,7 @@ if SERVER then
 		activator:ForceSequence("Open_door_away")
 
 		timer.Simple(1, function()
+			if not IsValid(self) or powerOff(self) then return end
 			self:EmitSound("machine_moving")
 			util.ScreenShake(activator:GetPos(), 5, 5, 4, 62)
 		end)
@@ -420,6 +430,7 @@ if SERVER then
 			self:StopSound("machine_moving")
 			self:SetManufacturing(false)
 			self:SetPlayerUsing(nil)
+			if powerOff(self) then return end
 
 			self:CreateProduct(activator)
 

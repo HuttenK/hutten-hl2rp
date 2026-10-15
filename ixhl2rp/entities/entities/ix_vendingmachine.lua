@@ -231,6 +231,8 @@ if SERVER then
 	end
 
 	function ENT:Use(client)
+		local blackout = ix.plugin.list.blackout
+		if blackout and blackout:IsEntityBlackedOut(self) then return end
 		local buttonID = self:GetClosestButton(client)
 
 		if buttonID then
@@ -297,8 +299,18 @@ else
 	local color_red = Color(255, 76, 53)
 	local color_green = Color(48, 255, 76)
 
+	function ENT:Think()
+		if IsValid(self.Station) then
+			local blackout = ix.plugin.list.blackout
+			self.Station:SetVolume(blackout and blackout:IsEntityBlackedOut(self) and 0 or 0.05)
+			self.Station:SetPos(self:GetPos())
+		end
+	end
+
 	function ENT:Draw()
 		self:DrawModel()
+		local blackout = ix.plugin.list.blackout
+		if blackout and blackout:IsEntityBlackedOut(self) then return end
 
 		local position = self:GetPos()
 		local distance = LocalPlayer():GetPos():DistToSqr(position)

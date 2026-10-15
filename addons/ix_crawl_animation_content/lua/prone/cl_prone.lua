@@ -37,6 +37,7 @@ end
 -- Desc:		Begins sending a prone impulse to the server.
 local SendImpulse = false
 function prone.Request()
+	if hook.Run("prone.AllowInput", LocalPlayer()) == false then SendImpulse = false return end
 	SendImpulse = true
 end
 concommand.Add("prone", function()
@@ -62,6 +63,12 @@ local doubletap_keypress_resettime = false
 hook.Add("CreateMove", "prone.ReadBindKeys", function(cmd)
 	local ply = LocalPlayer()
 	if not IsValid(ply) then
+		return
+	end
+
+	if hook.Run("prone.AllowInput", ply) == false then
+		SendImpulse, key_waspressed = false, false
+		doubletap_shouldsend, doubletap_keypress_resettime = true, false
 		return
 	end
 

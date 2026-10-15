@@ -3,42 +3,37 @@ PLUGIN.author = "SchwarzKruppzo"
 PLUGIN.description = "Allows easy setting of NPC relations."
 
 if SERVER then
-	function PLUGIN:OnEntityCreated(entity)
-		if entity:IsNPC() then
-			for _, client in pairs(player.GetAll()) do
-				local character = client:GetCharacter()
+	local function ready(entity)
+		return IsValid(entity) and entity:IsNPC() and (not entity.IsCPTBase_NPC or istable(entity.MemoryTable))
+	end
 
-				if (character) then
-					local faction = ix.faction.indices[character:GetFaction()]
-
-					if (faction and faction.npcRelations) then
-						entity:AddEntityRelationship(client, faction.npcRelations[entity:GetClass()] or D_HT, 0)
-					end
-				end
-			end
+	local function apply(entity, client)
+		if not ready(entity) or not IsValid(client) then return end
+		local character = client:GetCharacter()
+		local faction = character and ix.faction.indices[character:GetFaction()]
+		if not faction then return end
+		local relation = faction.npcRelations and faction.npcRelations[entity:GetClass()]
+		-- Scripted NPCs own their default factions. Only explicit schema overrides
+		-- should replace them, and CPT's Lua memory must match the engine relation.
+		if entity.IsCPTBase_NPC then
+			if relation and entity.SetRelationship then entity:SetRelationship(client, relation, 0) end
+		else
+			entity:AddEntityRelationship(client, relation or D_HT, 0)
 		end
 	end
 
+	function PLUGIN:OnEntityCreated(entity)
+		-- OnEntityCreated runs inside ents.Create, before ENT:Initialize.
+		timer.Simple(0, function()
+			if not ready(entity) then return end
+			for _, client in ipairs(player.GetAll()) do apply(entity, client) end
+		end)
+	end
+
 	function PLUGIN:PlayerSpawn(client)
-		local character = client:GetCharacter()
-
-		if character then
-			local faction = ix.faction.indices[character:GetFaction()]
-			local relations = faction.npcRelations
-
-			if relations then
-				for _, entity in pairs(ents.GetAll()) do
-					if (entity:IsNPC() and relations[entity:GetClass()]) then
-						entity:AddEntityRelationship(client, relations[entity:GetClass()], 0)
-					end
-				end
-			else
-				for _, entity in pairs(ents.GetAll()) do
-					if (entity:IsNPC()) then
-						entity:AddEntityRelationship(client, D_HT, 0)
-					end
-				end
-			end
-		end
+		timer.Simple(0, function()
+			if not IsValid(client) then return end
+			for _, entity in ipairs(ents.GetAll()) do apply(entity, client) end
+		end)
 	end
 end

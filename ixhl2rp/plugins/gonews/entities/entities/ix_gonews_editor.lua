@@ -74,6 +74,8 @@ else
 
 	-- Простой баннер без VGUI/обёртки (не трогает общий ввод 3D2D)
 	function ENT:DrawScreen()
+		local blackout = ix.plugin.list.blackout
+		if blackout and blackout:IsEntityBlackedOut(self) then return end
 		local up      = self:GetUp()
 		local right   = self:GetRight()
 		local forward = self:GetForward()

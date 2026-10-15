@@ -22,6 +22,7 @@ end
 
 function M.Powered(ent)
 	local blackout = ix.plugin.list.blackout
+	if IsValid(ent) and blackout and blackout.IsElectronicsOffAt then return not blackout:IsElectronicsOffAt(ent:GetPos(), ent) end
 	return IsValid(ent) and (not blackout or not blackout:IsPosBlackedOut(ent:GetPos()))
 end
 

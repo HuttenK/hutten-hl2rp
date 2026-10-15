@@ -1,0 +1,12 @@
+local def = ix.Medicine.Catalog.scp_neutralizer
+ITEM.name = def.name
+ITEM.description = "Инъектор Фонда для нейтрализации разъедания тканей от выделений SCP-035. Не действует на SCP-106. Уже полученные ожоги лечатся аптечкой."
+ITEM.model = Model(ix.Medicine.Model(def))
+ITEM.skin = def.skin
+ITEM.width = 1
+ITEM.height = 1
+ITEM.cost = 200
+ITEM.rarity = 3
+ITEM.stats.uses = def.uses
+ITEM.stats.time = def.time
+ITEM.medicalID = "scp_neutralizer"

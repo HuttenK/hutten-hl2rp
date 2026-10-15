@@ -110,6 +110,8 @@ function W.DrawHolsters(plugin, client)
    local assembly = A.Get(entry.host, row.class, row.tree, row.rounds)
    if not assembly then break end
    local mount, rotation = W.HolsterMount(slot)
+   -- Follow the body, but retain enough lateral separation for two full-size guns.
+   mount = Vector(mount.x * scale, mount.y * (hip and scale or math.max(1, scale)), mount.z * scale)
    local pos, ang = LocalToWorld(mount, rotation, matrix:GetTranslation(), facing)
    local offset = LocalToWorld(A.Center(assembly), angle_zero, vector_origin, ang)
    A.Draw(assembly, pos - offset, ang)
@@ -120,14 +122,16 @@ function W.DrawHolsters(plugin, client)
    local pos, ang = matrix:GetTranslation(), matrix:GetAngles()
    if profile.bodyFrame then
     local frame = profile.slotMount and facing or Angle(0, client:GetRenderAngles().y, 0)
-    pos, ang = LocalToWorld(profile.pos * scale, profile.ang, pos, frame)
+    local mount = profile.pos * scale
+    if profile.slotMount and not hip then mount.y = profile.pos.y * math.max(1, scale) end
+    pos, ang = LocalToWorld(mount, profile.ang, pos, frame)
     model:SetModelScale(1, 0)
     local mins, maxs = model:GetRenderBounds()
     local anchor = (mins + maxs) * 0.5
     -- Align the upper end with the belt, not the centre of a long weapon.
     -- Bounds are from the standalone world mesh, never hidden viewmodel arms.
     if profile.anchorZ then anchor.z = profile.anchorZ == "min" and mins.z or maxs.z end
-    local offset = LocalToWorld(anchor * scale, angle_zero, vector_origin, ang)
+    local offset = LocalToWorld(anchor, angle_zero, vector_origin, ang)
     pos = pos - offset
    else
     local right, up, forward = ang:Right(), ang:Up(), ang:Forward()
@@ -141,7 +145,7 @@ function W.DrawHolsters(plugin, client)
     local _, relative = WorldToLocal(vector_origin, ang, vector_origin, facing)
     _, ang = LocalToWorld(vector_origin, W.MirrorHolsterAngle(relative), vector_origin, facing)
    end
-   model:SetModelScale(scale, 0)
+   model:SetModelScale(1, 0)
    model:SetPos(pos)
    model:SetAngles(ang)
    model:SetupBones()

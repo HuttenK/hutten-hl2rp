@@ -75,11 +75,24 @@ end
 function PLUGIN:ConnectScannerToPlayer(client, scanner, terminal)
 	if (self:CanEnterToScanner(client, scanner, terminal)) then
 		scanner:Transmit(client)
+		scanner.ixControlTerminal = IsValid(terminal) and terminal or nil
 		client:SetNWEntity("Scanner", scanner)
 
 		return true
 	end
 end
+
+-- Losing the terminal's power disconnects an already established link as well.
+timer.Create("ixScannerTerminalPower", 0.5, 0, function()
+	local blackout = ix.plugin.list.blackout
+	for _, scanner in ipairs(ents.FindByClass("ix_scanner")) do
+		local terminal = scanner.ixControlTerminal
+		if terminal and (not IsValid(terminal) or (blackout and blackout:IsEntityBlackedOut(terminal))) then
+			scanner.ixControlTerminal = nil
+			if IsValid(scanner:GetPilot()) then scanner:Eject() end
+		end
+	end
+end)
 
 function PLUGIN:SpawnScanner(isCombine, pos)
 	if (!pos) then

@@ -47,7 +47,9 @@ do
 	ix.command.Add("vault", COMMAND)
 end
 
-do
+-- These optional administration commands belong to ServerGuard. The normal
+-- subscription/vault plugin must also load when ServerGuard is not installed.
+if SERVER and serverguard and serverguard.command then
 	local command = {}
 	command.help	= ""
 	command.command = "donate"

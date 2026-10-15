@@ -1,7 +1,7 @@
 -- Legacy item IDs intentionally retained so stored inventories and recipes migrate.
 local def = ix.Medicine.Catalog["epinephrine"]
 ITEM.name = def.name
-ITEM.description = "Пробуждает пострадавшего после остановки кровотечения и восстановления крови. Поддерживает сознание и подавляет боль на 90 секунд; не лечит раны."
+ITEM.description = "Устраняет остановку сердца от SCP-049. Пробуждает пострадавшего после устранения тяжёлых ран и кровопотери; поддерживает сознание 90 секунд. Не заменяет перевязки и переливание крови."
 ITEM.model = Model(ix.Medicine.Model(def))
 ITEM.skin = def.skin or 0
 ITEM.width = 1

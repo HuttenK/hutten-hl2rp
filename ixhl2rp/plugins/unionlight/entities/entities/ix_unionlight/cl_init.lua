@@ -11,6 +11,8 @@ end
 
 -- Called when the entity should think.
 function ENT:Think()
+    local blackout = ix.plugin.list.blackout
+    if blackout and blackout:IsEntityBlackedOut(self) then return end
     local dlight = DynamicLight( self:EntIndex() )
 	if ( dlight ) then
 		dlight.Pos = self:GetPos()

@@ -136,6 +136,8 @@ else
 
 	function ENT:Draw()
 		self:DrawModel()
+		local blackout = ix.plugin.list.blackout
+		if blackout and blackout:IsEntityBlackedOut(self) then return end
 
 		local color = self:GetColor()
 		local glowColor = Color(0, 255, 0, color.a)
@@ -160,6 +162,8 @@ else
 end
 
 function ENT:IsOn()
+	local blackout = ix.plugin.list.blackout
+	if blackout and blackout:IsEntityBlackedOut(self) then return false end
 	return self:GetNetVar("on", false)
 end
 

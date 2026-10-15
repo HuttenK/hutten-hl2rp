@@ -1,0 +1,83 @@
+ZONE TSADE: KEYCARD ACCESS
+
+Installed maps supported: rp_zone_tsade_v1f_us and rp_zone_tsade_v1f_fr, inspected v1f BSPs.
+Restart/reload the map after installation to load the new Helix plugin.
+If the plugin is already loaded but only Info/Remove appear, run this in the
+server console after installing the command fix:
+  lua_openscript ix_map_keycards_commands_apply.lua
+Use lua_openscript, not lua_openscript_cl. It refreshes all four commands on the
+server and connected clients without resetting door rules. Reopen chat afterward.
+
+ADMIN CHAT COMMANDS
+Aim at a nearby wall button or the moving door leaf (within 256 Source units).
+Do not aim at the stationary frame.
+
+/MapDoorAccess 2
+  Require an equipped, issued, non-revoked L2 or higher card, any department.
+/MapDoorAccess 3 science
+  Require L3 or higher from the science department.
+  Available departments: security, military, science. Omit for any department.
+/MapDoorAccess 0
+  Public access; electrical controls still need power. Replaces the old department restriction.
+/MapDoorAccessInfo
+  Show the selected mechanism, number of parts, binding status and current rule.
+/MapDoorAccessRemove
+  Remove the group's rule and return to the original map behavior.
+/MapDoorAccessTest true
+  Disable your administrator clearance bypass to test your own equipped card.
+/MapDoorAccessTest false
+  Restore your administrator clearance bypass. Disconnecting also resets test mode.
+
+No doors are restricted automatically. Assign levels where appropriate.
+Administrators bypass card clearance by default, but not missing power or map locks.
+Rules save immediately and persist per map in Helix data: map_keycard_access_v1.txt.
+Cards in a backpack do not count; use the equipped card slot.
+
+BEHAVIOR
+All controls and moving leaves belonging to one doorway share its rule.
+An attached visible door model resolves to its parent moving door.
+Elevator buttons are grouped with the complete elevator mechanism; original
+doors, teleport timing, sounds, relays, button cooldowns and auto-closing remain.
+Access is checked before activation. An authorized sequence may finish if the
+operator changes cards while it runs; a new press always checks the current card.
+Manual doors without electrical controls do not acquire a power requirement.
+Configured electrical controls use existing blackout/generator/isolation rules,
+including the inverse BlackoutElectronics mode. Unconfigured controls are unchanged.
+Facility console actions also check the assigned card rule. This does not add
+the entire map to the facility console or replace its existing registration UI.
+
+MASTER CONTROLS
+Cell-block locks, containment levers, emergency controls and machinery controls
+are separate from ordinary door groups. Aim at those controls to restrict them.
+Assigning a rule to one cell does not restrict the master control or other cells.
+Map-authored emergency overrides/automatic closing continue to work; a local
+door rule is not a replacement for securing the master control itself.
+
+VALIDATION / MAP UPDATES
+Bindings use the inspected class/model/name identities and disambiguated origins,
+not live entity indices. A CRC of the compiled entity lump verifies the map version.
+If that data changes, the plugin reports a mismatch and refuses to apply the old
+bindings; the saved file is retained. Refresh the manifest for the new map before
+using access rules again. Rules are inactive while the map version is unsupported.
+An incomplete group on a supported map rejects configuration and denies existing
+restricted access instead of operating just one remaining part.
+
+Implementation: ixhl2rp/plugins/map_keycards/; scoped facility DoorAllowed bridge.
+Manifest builder: tools/build-tsade-access.cjs (read-only BSP input).
+Focused regression tests: node tools/run-map-keycards-tests.cjs
+Full regression suite: node tools/test.cjs
+Offline mocks do not verify engine entity binding or actual in-game button use.
+
+LIVE CHECKLIST
+1. Assign L2 at an LCZ doorway; use MapDoorAccessInfo from the button and door.
+2. Enable MapDoorAccessTest. With no card/L1, both sides must deny access.
+3. Equip an issued L2 card. Both leaves should open together with normal sound.
+4. Check department restrictions and a revoked card, then remove the test rule.
+5. Test an assigned elevator; it must run its complete original travel sequence.
+6. Test normal blackout, generator power and inverse electronics mode.
+7. Restart/clean up the map and confirm the same doorway retains its rule.
+
+API references:
+https://wiki.facepunch.com/gmod/GM:PlayerUse
+https://wiki.facepunch.com/gmod/GM:AcceptInput
+https://wiki.facepunch.com/gmod/Entity:MapCreationID

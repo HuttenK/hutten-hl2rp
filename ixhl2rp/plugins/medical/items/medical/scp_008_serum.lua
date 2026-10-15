@@ -1,0 +1,12 @@
+local def = ix.Medicine.Catalog.scp_008_serum
+ITEM.name = def.name
+ITEM.description = "Экспериментальная сыворотка Фонда. Останавливает инфекцию SCP-008; укусы, переломы и кровопотеря требуют отдельного лечения. Вводится через меню медицинского осмотра."
+ITEM.model = Model(ix.Medicine.Model(def))
+ITEM.skin = def.skin
+ITEM.width = 1
+ITEM.height = 1
+ITEM.cost = 250
+ITEM.rarity = 3
+ITEM.stats.uses = def.uses
+ITEM.stats.time = def.time
+ITEM.medicalID = "scp_008_serum"

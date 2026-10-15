@@ -69,6 +69,11 @@ function D.Start(client, entity, handoff)
     local point = trace.Entity == body and trace.HitPos or physics:GetPos()
     if point:DistToSqr(client:GetShootPos()) > D.RANGE * D.RANGE then return false end
     local localPoint = physics:WorldToLocal(point)
+    -- Grabbing during the initial fall cancels its automatic crawl handoff.
+    -- The patient must stay in the rescuer's hand (or on a cart afterwards).
+    if ix.Downed and ix.Downed.EndRescueWindow and ix.Downed.Active(patient) then
+        ix.Downed.EndRescueWindow(patient)
+    end
     local state = {body = body, patient = patient, character = client:GetCharacter(),
         physics = physics, offset = localPoint, index = index, lastPosition = client:GetPos(),
         yaw = (point - client:GetPos()):Angle().y,

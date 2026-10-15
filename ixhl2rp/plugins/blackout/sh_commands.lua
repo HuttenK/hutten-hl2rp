@@ -1,5 +1,17 @@
 local PLUGIN = PLUGIN
 
+ix.command.Add("BlackoutElectronics", {
+	description = "Restrict electronics to active blackout zones (true); restore normal power rules (false).",
+	privilege = "Manage Blackouts",
+	adminOnly = true,
+	arguments = {ix.type.bool},
+	OnRun = function(self, client, enabled)
+		PLUGIN:SetElectronicsRestricted(enabled)
+		return enabled and "Электроника отключена везде, кроме активных зон блэкаута."
+			or "Восстановлены обычные правила электроснабжения."
+	end
+})
+
 -- Thin command layer registered on both realms (gives clients autocomplete and
 -- proper dispatch). The OnRun bodies only ever execute server-side, where the
 -- PLUGIN:* helpers in sv_plugin.lua are defined.

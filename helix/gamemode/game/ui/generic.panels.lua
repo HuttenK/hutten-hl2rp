@@ -252,7 +252,10 @@ function PANEL:DrawModel()
 
 	local ret = self:PreDrawModel( self.Entity )
 	if ( ret != false ) then
+		local height = ix.CharacterHeight
+		if height then height.Preview(self, self.Entity); height.BeginHeadwear(self.Entity) end
 		self.Entity:DrawModel()
+		if height then height.EndHeadwear(self.Entity) end
 		self:PostDrawModel( self.Entity )
 	end
 

@@ -1,5 +1,8 @@
 local D = ix.Downed
 local PLUGIN = PLUGIN
+-- Rebuild the live overlay when this file is refreshed, including older panels
+-- created before the give-up control was restored.
+if IsValid(ix.gui.downedScreen) then ix.gui.downedScreen:Remove() end
 local red, white, muted = Color(215, 67, 78), Color(239, 232, 223), Color(174, 171, 172)
 local function scale(n) return math.floor(n * math.Clamp(ScrH() / 1080, 0.65, 1.5)) end
 local function fonts()
@@ -19,27 +22,95 @@ local function text(value, font, x, y, color, align)
     draw.SimpleTextOutlined(value, "ixDowned" .. font, x, y, color, align, TEXT_ALIGN_TOP,
         1, Color(0, 0, 0, alpha * 0.65))
 end
+local function send(operation)
+    net.Start("ixDownedGiveUp")
+        net.WriteUInt(operation, 2)
+    net.SendToServer()
+end
 local PANEL = {}
 function PANEL:Init()
     self:SetSize(ScrW(), ScrH())
     self:MakePopup()
     self:SetKeyboardInputEnabled(false)
-    self:SetMouseInputEnabled(false)
+    self:SetMouseInputEnabled(D.Active(LocalPlayer()))
     self.birth = RealTime()
     self.character = LocalPlayer():GetCharacter()
+    self.button = self:Add("DButton")
+    self.button:SetText("")
+    self.button:SetVisible(D.Active(LocalPlayer()))
+    self.button.OnMousePressed = function(button, key)
+        local client = LocalPlayer()
+        if key ~= MOUSE_LEFT or not D.Active(client) or client:GetCharacter() ~= self.character or button.sent then return end
+        button.started = CurTime()
+        button:MouseCapture(true)
+        send(0)
+    end
+    self.button.OnMouseReleased = function(_, key)
+        if key == nil or key == MOUSE_LEFT then self:CancelGiveUp() end
+    end
+    self.button.Paint = function(button, w, h)
+        draw.NoTexture()
+        local progress = button.started and math.Clamp((CurTime() - button.started) / D.HoldTime, 0, 1) or 0
+        surface.SetDrawColor(red)
+        surface.DrawRect(w * 0.15, h - 2, w * 0.7 * progress, 1)
+        text(button.sent and "Вы отпускаете…" or "Сдаться", "Body", w / 2, scale(8),
+            button:IsHovered() and white or muted, TEXT_ALIGN_CENTER)
+        text("Удерживайте ЛКМ · 1,5 сек", "Small", w / 2, scale(35), muted, TEXT_ALIGN_CENTER)
+    end
+end
+function PANEL:PerformLayout(w, h)
+    self.button:SetSize(math.min(scale(290), w - 32), scale(65))
+    self.button:SetPos((w - self.button:GetWide()) / 2,
+        self.paralyzed and h - scale(92) or h * 0.48 + scale(145))
+end
+function PANEL:CancelGiveUp()
+    local button = self.button
+    if not IsValid(button) then return end
+    if button.started and not button.sent then send(1) end
+    button.started = nil
+    button:MouseCapture(false)
+end
+function PANEL:OnRemove()
+    self:CancelGiveUp()
 end
 function PANEL:Think()
     local client = LocalPlayer()
-    if D.CrawlWindow and D.CrawlWindow(client) then self:Remove() return end
+    if D.RescueWindow and D.RescueWindow(client) then self:Remove() return end
     if not IsValid(client) or client:GetCharacter() ~= self.character or
         (client:Alive() and not D.Active(client)) then self:Remove() return end
     if self:GetWide() ~= ScrW() or self:GetTall() ~= ScrH() then self:SetSize(ScrW(), ScrH()) end
+    local active = D.Active(client)
+    local paralyzed = D.ConsciousParalysis and D.ConsciousParalysis(client) or false
+    if self.paralyzed ~= paralyzed then self.paralyzed = paralyzed self:InvalidateLayout() end
+    self:SetMouseInputEnabled(active)
+    self.button:SetVisible(active)
+    if not active then self:CancelGiveUp() return end
+    local button = self.button
+    if button.started and not button.sent then
+        if not input.IsMouseDown(MOUSE_LEFT) or not button:IsHovered() then
+            self:CancelGiveUp()
+        elseif CurTime() - button.started >= D.HoldTime then
+            button.sent = CurTime()
+            button:MouseCapture(false)
+            send(2)
+        end
+    end
+    if button.sent and CurTime() - button.sent > 3 then
+        button.sent, button.started = nil, nil
+    end
 end
 function PANEL:Paint(w, h)
     local client = LocalPlayer()
     if not IsValid(client) then return end
     draw.NoTexture()
     local dead = not client:Alive()
+    if not dead and D.ConsciousParalysis and D.ConsciousParalysis(client) then
+        -- Neck trauma immobilizes the body, not the eyes. Keep the scene clear
+        -- and retain the voluntary give-up control below this small status line.
+        text("Вы в сознании, но не можете двигаться.", "Body", w / 2, h - scale(155), white, TEXT_ALIGN_CENTER)
+        text("Паралич необратим. Лечение пока недоступно.", "Small", w / 2, h - scale(125), muted, TEXT_ALIGN_CENTER)
+        return
+    end
     local reveal = math.Clamp((RealTime() - self.birth) / 0.8, 0, 1)
     local blood = D.Blood(client:GetCharacter())
     self.blood = Lerp(math.Clamp(FrameTime() * 5, 0, 1), self.blood or blood, blood)
@@ -76,7 +147,7 @@ vgui.Register("ixDownedScreen", PANEL, "EditablePanel")
 hook.Add("Think", "ixDownedScreen", function()
     local client = LocalPlayer()
     if not IsValid(client) or not client.GetCharacter or not client:GetCharacter() then return end
-    if (D.Active(client) or not client:Alive()) and not (D.CrawlWindow and D.CrawlWindow(client)) and not IsValid(ix.gui.downedScreen) then
+    if (D.Active(client) or not client:Alive()) and not (D.RescueWindow and D.RescueWindow(client)) and not IsValid(ix.gui.downedScreen) then
         ix.gui.downedScreen = vgui.Create("ixDownedScreen")
     end
 end)

@@ -88,10 +88,18 @@ if SERVER then
 	}
 
 	function ENT:SpawnRation(client, coupon, callback, releaseDelay)
+		local blackout = ix.plugin.list.blackout
+		if blackout and blackout:IsEntityBlackedOut(self) then
+			-- Preserve the already inserted coupon while waiting for power.
+			timer.Simple(1, function()
+				if IsValid(self) then self:SpawnRation(client, coupon, callback, releaseDelay) end
+			end)
+			return
+		end
 		releaseDelay = releaseDelay or 1.2
 
 		-- TODO: move to callback in faction function
-		local character = client:GetCharacter()
+		local character = IsValid(client) and client:GetCharacter() or nil
 		//local faction = ix.faction.indices[character:GetFaction()]
 
 		local ration = coupons[coupon]
@@ -130,8 +138,10 @@ if SERVER then
 				self:SetDisplay(self.cid and 2 or 1)
 			end)
 
-			client:ChatNotifyLocalized("ration.dispenserReady")
-			client:ChatNotifyLocalized("ration.rememberCard")
+			if IsValid(client) then
+				client:ChatNotifyLocalized("ration.dispenserReady")
+				client:ChatNotifyLocalized("ration.rememberCard")
+			end
 		end)
 	end
 
@@ -222,6 +232,8 @@ if SERVER then
 		if !IsValid(entity) or !entity.IsRationDispenser then
 			return
 		end
+		local blackout = ix.plugin.list.blackout
+		if blackout and blackout:IsEntityBlackedOut(entity) then return end
 /*
 		if !entity.canUse or entity.nextUseTime > CurTime() then
 			return

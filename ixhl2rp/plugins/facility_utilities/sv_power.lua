@@ -11,13 +11,19 @@ function P:RawGrid(c)
 end
 function P:DevicePowered(d)
  if not d or d.fault or d.enabled==false or not IsValid(d.entity) then return false end
+ local b=ix.plugin.list.blackout
+ local override=b and b.ElectronicsOverride and b:ElectronicsOverride(d.entity:GetPos())
+ if override~=nil then return not override end
  if d.kind=="generator" or d.kind=="battery" or d.kind=="workpoint" then return true end
  if self:EntityIsolated(d.entity) then return false end
  return F.EntityBackup(d.entity) or self:DirectGrid(d.entity)
 end
 function P:BatteryMains(d)
- if not IsValid(d.entity) or self:EntityIsolated(d.entity) then return false end
+ if not IsValid(d.entity) then return false end
  local b=ix.plugin.list.blackout;local pos=d.entity:GetPos()
+ local override=b and b.ElectronicsOverride and b:ElectronicsOverride(pos)
+ if override~=nil then return not override end
+ if self:EntityIsolated(d.entity) then return false end
  for _,z in pairs(b and b.zones or {}) do if z.active and pos:WithinAABox(z.min,z.max) then return false end end
  for _,c in pairs(self.store.circuits) do
   local z=b and b.zones[c.zone]
@@ -81,7 +87,9 @@ function P:RecomputePower(dt)
  local powered={}
  for _,target in ipairs(direct) do
   local e,s=target.entity,target.source
-  if not self:EntityIsolated(e) and not self:DirectGrid(e) and s.remaining>=5 then
+  local b=ix.plugin.list.blackout
+  local blocked=b and b.ElectronicsOverride and b:ElectronicsOverride(e:GetPos())
+  if not blocked and not self:EntityIsolated(e) and not self:DirectGrid(e) and s.remaining>=5 then
    powered[e]=true;s.remaining=s.remaining-5;s.used=s.used+5
   end
  end

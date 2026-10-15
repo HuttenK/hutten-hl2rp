@@ -4,8 +4,9 @@ local P = ix.DevicePower
 P.states = P.states or setmetatable({}, {__mode = "k"})
 
 function P.IsBlackedOut(ent)
-    if ix.Facility and ix.Facility.EntityBackup(ent) then return false end
     local blackout = ix.plugin.list.blackout
+    if blackout and blackout.IsElectronicsOffAt then return blackout:IsElectronicsOffAt(ent:GetPos(), ent) end
+    if ix.Facility and ix.Facility.EntityBackup(ent) then return false end
     return blackout and not blackout.unloading and blackout.IsPosBlackedOut
         and blackout:IsPosBlackedOut(ent:GetPos()) or false
 end

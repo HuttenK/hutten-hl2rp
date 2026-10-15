@@ -17,7 +17,8 @@ function PLUGIN:NearEditor(client)
 	if !IsValid(client) then return false end
 	for _, e in ipairs(ents.FindInSphere(client:GetPos(), self.editorRadius)) do
 		if IsValid(e) and e:GetClass() == "ix_gonews_editor" then
-			return true
+			local blackout = ix.plugin.list.blackout
+			if not blackout or not blackout:IsEntityBlackedOut(e) then return true end
 		end
 	end
 	return false

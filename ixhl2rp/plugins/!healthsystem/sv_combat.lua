@@ -233,6 +233,7 @@ local function ApplyFallDamage(health, amount)
 end
 
 local damage_to_diff = {
+	burn = {hediff = "scp_burn"},
 	impulse = {
 		hediff = "gunshot",
 		uniqueEffect = function(health, hit_group, info)
@@ -625,6 +626,9 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 		return
 	end
 
+	-- Run after ragdoll forwarding and downed protection, before generic damage
+	-- classification (CPT uses crush/direct damage for bites and cardiac arrest).
+	if ix.SCPMedicine and ix.SCPMedicine.Damage and ix.SCPMedicine.Damage(target, dmg, ApplyDamageToPart) then return true end
 	local inflictor = dmg:GetInflictor()
 	local client = dmg:GetAttacker()
 	local amount = dmg:GetDamage()
@@ -918,6 +922,9 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 		end
 	else
 		local class = GetDamageClass(isEnergy, isFists, isBuckshot, isSlash, isClub, isExplosive, isAcid)
+		-- Includes SCP-457's env_fire trails, which Source attributes to the fire
+		-- entity rather than the NPC. Fire must not create gunshot wounds.
+		if dmg:IsDamageType(DMG_BURN) or dmg:IsDamageType(DMG_SLOWBURN) then class = "burn" end
 		showBlood = ApplyDamageToPart(health, hit_group, {
 			attacker = client,
 			weapon = weapon,

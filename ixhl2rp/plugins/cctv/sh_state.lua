@@ -69,8 +69,9 @@ function C.Powered(d)
  -- scenes. The destination monitor still uses ordinary facility power.
  if d.bodycam then return ix.bodycams and ix.bodycams.Active(d) or false end
  local pos,_,ent=C.Transform(d);if not pos then return false end
- if ix.Facility and ix.Facility.EntityBackup(ent) then return true end
  local blackout=ix.plugin.list.blackout
+ if blackout and blackout.IsElectronicsOffAt then return not blackout:IsElectronicsOffAt(pos,ent) end
+ if ix.Facility and ix.Facility.EntityBackup(ent) then return true end
  return not blackout or not blackout:IsPosBlackedOut(pos)
 end
 function C.Placement(p,tr,kind)

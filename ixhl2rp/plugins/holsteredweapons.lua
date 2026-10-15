@@ -266,7 +266,7 @@ function PLUGIN:PostPlayerDraw(client)
 			if assembly then
 				local hip = weapon:GetNWString("ixHolsterSlot") == "hip"
 				local facing = self:HolsterBoneFrame(client, profile.bone, matrix)
-				local pos, ang = LocalToWorld(hip and Vector(0, -8, -4) or Vector(-3.5, 0, 9),
+				local pos, ang = LocalToWorld((hip and Vector(0, -8, -4) or Vector(-3.5, 0, 9)) * client:GetModelScale(),
 					hip and Angle(90, 0, 0) or Angle(-65, 90, 0), matrix:GetTranslation(), facing)
 				local offset = LocalToWorld(A.Center(assembly), angle_zero, vector_origin, ang)
 				A.Draw(assembly, pos - offset, ang)
@@ -293,7 +293,7 @@ function PLUGIN:PostPlayerDraw(client)
 			-- visible mesh so that those origin differences do not shift the holster.
 			model:SetModelScale(1, 0)
 			local mins, maxs = model:GetRenderBounds()
-			local offset = LocalToWorld((mins + maxs) * (0.5 * client:GetModelScale()), angle_zero, vector_origin, ang)
+			local offset = LocalToWorld((mins + maxs) * 0.5, angle_zero, vector_origin, ang)
 			pos = pos - offset
 		else
 		local right, up, forward = ang:Right(), ang:Up(), ang:Forward()
@@ -302,7 +302,7 @@ function PLUGIN:PostPlayerDraw(client)
 		ang:RotateAroundAxis(up, profile.ang.y)
 		ang:RotateAroundAxis(forward, profile.ang.r)
 		end
-		model:SetModelScale(client:GetModelScale(), 0)
+		model:SetModelScale(1, 0)
 		model:SetPos(pos)
 		model:SetAngles(ang)
 		model:SetupBones()

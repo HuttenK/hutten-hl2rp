@@ -2,6 +2,7 @@ local PLUGIN = PLUGIN
 PLUGIN.unloading = false
 
 util.AddNetworkString("ixBlackoutSync3")
+util.AddNetworkString("ixBlackoutElectronics")
 
 PLUGIN.zones     = PLUGIN.zones     or {} -- [name] = { min = Vector, max = Vector, active = bool }
 PLUGIN.staging   = PLUGIN.staging   or {} -- [client] = { corner1, corner2 }
@@ -45,7 +46,7 @@ end
 function PLUGIN:RefreshLights()
     for _, ent in ipairs(ents.GetAll()) do
         if LIGHT_CLASSES[ent:GetClass()] or self.lightStates[ent] then
-            local off = LIGHT_CLASSES[ent:GetClass()] and not self.unloading and self:IsPosBlackedOut(ent:GetPos())
+            local off = LIGHT_CLASSES[ent:GetClass()] and not self.unloading and (self.IsElectronicsOffAt or self.IsPosBlackedOut)(self, ent:GetPos())
             local saved = self.lightStates[ent]
             if off and not saved then
                 local on = lightState(ent)
@@ -126,6 +127,11 @@ function PLUGIN:PlayerUse(client, entity)
 	end
 
 	return false
+end
+
+-- A previously opened context menu still reaches this server-side check.
+function PLUGIN:CanPlayerInteractEntity(client, entity)
+	return self:PlayerUse(client, entity)
 end
 
 local function BoxVolume(zone)
@@ -562,6 +568,13 @@ function PLUGIN:NetworkZones(receiver)
 			active[#active + 1] = z
 		end
 	end
+	-- Send raw exceptions separately; the visual volumes below can be split by
+	-- nested circuits or generator backup and must not redefine the admin rule.
+	net.Start("ixBlackoutElectronics")
+		net.WriteBool(self.electronicsRestricted == true and not self.unloading)
+		net.WriteUInt(#active, 16)
+		for _, z in ipairs(active) do net.WriteVector(z.min); net.WriteVector(z.max) end
+	if IsValid(receiver) then net.Send(receiver) else net.Broadcast() end
 	active=hook.Run("FacilityBlackoutVolumes",self.zones,active) or active
 
 	net.Start("ixBlackoutSync3")
@@ -580,6 +593,15 @@ function PLUGIN:NetworkZones(receiver)
 	end
 end
 
+function PLUGIN:SetElectronicsRestricted(enabled)
+	self.electronicsRestricted = enabled == true
+	ix.data.Set("blackoutElectronicsRestricted", self.electronicsRestricted)
+	local facility = ix.plugin.list.facility_utilities
+	if facility and facility.RecomputePower then facility:RecomputePower(0) end
+	self:SetZoneLights()
+	self:NetworkZones()
+end
+
 function PLUGIN:SaveData()
 	local out = {}
 
@@ -592,6 +614,7 @@ end
 
 function PLUGIN:LoadData()
 	self.zones = ix.data.Get("blackout") or {}
+	self.electronicsRestricted = ix.data.Get("blackoutElectronicsRestricted", false) == true
 	self.zonesLoaded = true
 
 	-- Щитки — это просто размещённые сущности и не зависят от карты света, поэтому
@@ -603,11 +626,7 @@ function PLUGIN:LoadData()
 	-- spawn enabled by default after a map load).
 	timer.Simple(1, function()
         if self.unloading then return end
-		for _, z in pairs(self.zones) do
-			if z.active then
-				self:SetZoneLights(z, false)
-			end
-		end
+		self:SetZoneLights()
 
 		self:NetworkZones()
 	end)

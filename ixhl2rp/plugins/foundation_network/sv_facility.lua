@@ -84,7 +84,7 @@ function P:Action(p,action,payload)
  elseif payload.command=='suppress' then
   route='scip://infection';local area=ix.area.stored[zone]
   self.cycles=self.cycles or {};self.cycleCooldown=self.cycleCooldown or {}
-  if inf and area and area.type=='infection' and (self.cycleCooldown[zone] or 0)<=CurTime() and not (power and power:IsPosBlackedOut((area.startPosition+area.endPosition)*.5)) then
+  if inf and area and area.type=='infection' and (self.cycleCooldown[zone] or 0)<=CurTime() and not (power and (power.IsElectronicsOffAt or power.IsPosBlackedOut)(power,(area.startPosition+area.endPosition)*.5)) then
    local expires=CurTime()+120
    inf.suppressed[zone]=math.max(inf.suppressed[zone] or 0,expires)
    self.cycles[zone]=expires;self.cycleCooldown[zone]=CurTime()+300;ok=true
@@ -98,7 +98,7 @@ timer.Create('FoundationFacilityMaintenance',1,0,function()
  local inf=ix.plugin.list.infectionzone;local power=ix.plugin.list.blackout
  for name,expires in pairs(P.cycles or {}) do
   local area=ix.area.stored[name]
-  if not inf or not area or CurTime()>=expires or (power and power:IsPosBlackedOut((area.startPosition+area.endPosition)*.5)) then
+  if not inf or not area or CurTime()>=expires or (power and (power.IsElectronicsOffAt or power.IsPosBlackedOut)(power,(area.startPosition+area.endPosition)*.5)) then
    if inf and inf.suppressed[name]==expires then inf.suppressed[name]=nil end
    P.cycles[name]=nil
   end

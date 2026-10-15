@@ -8,6 +8,9 @@ if SERVER then
 	local playerMeta = FindMetaTable("Player")
 
 	function playerMeta:CreateServerRagdoll(bDontSetPlayer)
+		-- A saved downed character can create its body during loadout, before
+		-- the deferred model-change hook. Copy the selected height immediately.
+		if ix.CharacterHeight then ix.CharacterHeight.Apply(self) end
 		local entity = ents.Create("prop_ragdoll")
 		if (!IsValid(entity)) then return end
 		entity:SetPos(self:GetPos())

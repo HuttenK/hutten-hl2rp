@@ -6,7 +6,9 @@ ix.Downed = ix.Downed or {}
 -- The original Prone Workshop download lacks the Cellar bridge and can override it.
 ix.Net:AddPlayerVar("downedSince", false, nil, ix.Net.Type.Float)
 ix.Net:AddPlayerVar("criticalCrawlUntil", false, nil, ix.Net.Type.Float)
+ix.Net:AddPlayerVar("criticalFallUntil", false, nil, ix.Net.Type.Float)
 ix.util.Include("sh_downed.lua")
 ix.util.Include("sh_crawl.lua")
 ix.util.Include("sv_downed.lua")
 ix.util.Include("cl_downed.lua")
+ix.util.Include("cl_crawl.lua")

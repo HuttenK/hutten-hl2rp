@@ -121,6 +121,7 @@ function H.Install(weapon)
    captured = H.Capture(player)
   end
   -- Remain inside ARC9's bone-write render context. Do not write bones in Think.
+  if IsValid(player) and player:IsPlayer() then hook.Run("ixARC9PreArmPose", self, player) end
   local result = original(self, ...)
   if captured and IsValid(player) and self:GetOwner() == player and player:GetModel() == model then
    H.Apply(player, captured)

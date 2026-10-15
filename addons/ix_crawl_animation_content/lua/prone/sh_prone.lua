@@ -1,4 +1,7 @@
 local PLAYER = FindMetaTable("Player")
+local function CharacterScale(ply)
+	return ix and ix.CharacterHeight and ply:GetModelScale() or 1
+end
 
 ---------------------------------
 -- PLAYER.GetProneAnimationState
@@ -77,7 +80,7 @@ function prone.HasRoomToGetUp(ply)
 
 	local tr = util.TraceEntity({
 		start = ply:GetPos(),
-		endpos = ply:GetPos() + Vector(0, 0, 65 - prone.Config.HullHeight),
+		endpos = ply:GetPos() + Vector(0, 0, 65 - prone.Config.HullHeight) * CharacterScale(ply),
 		filter = ply
 	}, ply)
 	
@@ -142,8 +145,9 @@ function prone.Enter(ply)
 	prone.PlayerStateDatas[ply:SteamID()] = plyProneStateData
 	plyProneStateData:UpdateDataOnProneEnter()
 
-	ply:SetHull(Vector(-16, -16, 0), Vector(16, 16, prone.Config.HullHeight))
-	ply:SetHullDuck(Vector(-16, -16, 0), Vector(16, 16, prone.Config.HullHeight))
+	local scale = CharacterScale(ply)
+	ply:SetHull(Vector(-16, -16, 0) * scale, Vector(16, 16, prone.Config.HullHeight) * scale)
+	ply:SetHullDuck(Vector(-16, -16, 0) * scale, Vector(16, 16, prone.Config.HullHeight) * scale)
 
 	local getDownTime = plyProneStateData:GetGetDownTime()
 	ply:SetProneAnimationLength(getDownTime)
@@ -344,8 +348,8 @@ end
 local GetMainActivityAnimation = {
 	[PRONE_GETTINGDOWN] = function(ply)
 		if ply:GetProneAnimationLength() <= CurTime() then
-			ply:SetViewOffset(prone.Config.View)
-			ply:SetViewOffsetDucked(prone.Config.View)
+			ply:SetViewOffset(prone.Config.View * CharacterScale(ply))
+			ply:SetViewOffsetDucked(prone.Config.View * CharacterScale(ply))
 			ply:SetProneAnimationState(PRONE_INPRONE)
 		end
 		

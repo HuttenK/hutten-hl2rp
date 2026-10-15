@@ -1,6 +1,10 @@
 local D = ix.Downed
+D.HoldTime = 1.5
 function D.Active(client)
     return IsValid(client) and client:GetCharacter() and client:Alive() and client:GetNetVar("crit") == true
+end
+function D.ConsciousParalysis(client)
+    return D.Active(client) and client:GetNetVar("scpParalyzed", false) == true
 end
 function D.Blood(character)
     local health = character and character:Health()
@@ -30,6 +34,7 @@ function D.BlockDamage(entity, damage)
     return true
 end
 function D.CanRecover(health)
+    if ix.SCPMedicine and ix.SCPMedicine.BlocksRecovery(health) then return false end
     return health:GetConsciousness() >= 0.4 and health:GetPartHealth(2) > 0 and
         health:GetPartHealth(3) > 0 and health:GetBleedRate() < 0.1 and D.Blood(health.character) > 0.25
 end

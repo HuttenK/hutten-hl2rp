@@ -298,12 +298,21 @@ local function startAnimation(rag, kind, data, position, angles, scale)
     return driver, duration / math.max(driver:GetPlaybackRate(), 0.1)
 end
 
-local function make_death_anim(ent, rag, kind)
+local function make_death_anim(ent, rag, kind, fallUntil)
     if not IsValid(ent) or not IsValid(rag) then return end
-    if not AnimHeadshot:GetBool() and ent.LastDamageHitgroup == HITGROUP_HEAD then return end
+    if not fallUntil and not AnimHeadshot:GetBool() and ent.LastDamageHitgroup == HITGROUP_HEAD then return end
     local driver, duration = startAnimation(rag, kind,
         {ent.LastDamageHitgroup, ent.LastDamageIsNeck}, ent:GetPos(), Angle(0, ent:GetAngles().y, 0))
     if not IsValid(driver) then return end
+    if fallUntil then
+        -- Finish long donor sequences within the conscious fall phase, leaving
+        -- a short settling interval before the real player starts crawling.
+        local window = math.max(0.1, fallUntil - CurTime() - 0.35)
+        local rate = driver:GetPlaybackRate()
+        driver:SetPlaybackRate(math.max(rate, duration * rate / window))
+        driver.ExpiresAt = math.min(driver.ExpiresAt, fallUntil)
+        return -- No secondary NPC/corpse crawl or ignition on a living casualty.
+    end
     rag.NPCClass = ent.GetNPCClass and ent:GetNPCClass() or ent.Classify and ent:Classify() or CLASS_BULLSEYE
     rag.RagHealth = ent:GetMaxHealth() * LifeScale:GetFloat()
     rag.MaxRagHealth = rag.RagHealth
@@ -424,9 +433,19 @@ end)
 
 hook.Add("OnCharacterFallover", "BD_HelixFallover", function(client, rag, state)
     if not state or not EnablePlayers:GetBool() then return end
+    local downed = ix and ix.Downed
+    local critical = downed and downed.Active and downed.Active(client)
+    local falling = critical and downed.Falling and downed.Falling(client)
+    -- At the end of the rescue window the character is already on the floor.
+    -- Replaying a standing collapse there would pull the body upright again.
+    if critical and not falling then return end
+    local fallUntil = falling and client:GetNetVar("criticalFallUntil") or nil
     timer.Simple(0, function()
         if not IsValid(client) or not client:Alive() or not IsValid(rag) or
             client.ixRagdoll ~= rag or client.ixNoDeathAnim or rag.IsDeathRagdoll then return end
-        if math.random(1, 100) <= AnimChance:GetFloat() then make_death_anim(client, rag, nil) end
+        if fallUntil and (not downed.Falling(client) or client:GetNetVar("criticalFallUntil") ~= fallUntil) then return end
+        if fallUntil or math.random(1, 100) <= AnimChance:GetFloat() then
+            make_death_anim(client, rag, nil, fallUntil)
+        end
     end)
 end)

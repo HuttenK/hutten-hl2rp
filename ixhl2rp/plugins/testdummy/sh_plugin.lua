@@ -32,10 +32,13 @@ end)
 -- Only their implementation belongs to the server.
 if SERVER then
 
+local comparisonHeights = {155, 180, 190}
+
 -- Доводим только что подключившегося бота до состояния манекена.
-function PLUGIN:SetupDummy(bot, admin)
+function PLUGIN:SetupDummy(bot, admin, selectedHeight)
 	bot.ixIsDummy = true
 	bot.ixDummyCreator = admin
+	selectedHeight = selectedHeight or 180
 
 	if (IsValid(admin)) then
 		local tr = admin:GetEyeTraceNoCursor()
@@ -54,13 +57,25 @@ function PLUGIN:SetupDummy(bot, admin)
 	local char = bot:GetCharacter()
 
 	if (char) then
-		char:SetName("Манекен #" .. bot:EntIndex())
+		char:SetName("Манекен #" .. bot:EntIndex() .. " — " .. selectedHeight .. " см")
 		if IsValid(admin) then
 			char:SetModel(admin:GetModel())
 			bot:SetModel(admin:GetModel())
 			bot:SetSkin(admin:GetSkin())
-			bot:SetModelScale(admin:GetModelScale(), 0)
 			for _, group in ipairs(admin:GetBodyGroups()) do bot:SetBodygroup(group.id, admin:GetBodygroup(group.id)) end
+		end
+		-- Store the value on the character, so the normal height timer, revive
+		-- and ragdoll creation all use the same dimensions as a real player.
+		local genetic = char.Genetic and char:Genetic()
+		if genetic then
+			genetic.height = selectedHeight
+			genetic.cachedSave, genetic.cachedDesc = nil, nil
+			genetic:Sync()
+		end
+		if ix.CharacterHeight and genetic then
+			ix.CharacterHeight.Apply(bot, true)
+		else
+			bot:SetModelScale(selectedHeight / 180, 0)
 		end
 	end
 end
@@ -93,13 +108,26 @@ function PLUGIN:ResetDummy(bot)
 	bot:SetLocalVar("blur", nil)
 end
 
-function PLUGIN:CreateDummy(client)
+function PLUGIN:CreateDummy(client, selectedHeight)
+	local automatic = selectedHeight == nil
+	if not automatic then
+		selectedHeight = tonumber(selectedHeight)
+		if not selectedHeight or selectedHeight ~= selectedHeight or selectedHeight < 155 or selectedHeight > 190
+			or selectedHeight ~= math.floor(selectedHeight) then return "Укажите целый рост от 155 до 190 см." end
+	end
 	if game.SinglePlayer() or game.MaxPlayers() < 2 then
 		return "Манекен — настоящий игрок-бот. Запустите локальную игру на 2 или больше игроков; приглашать кого-либо не нужно."
 	end
 	if #player.GetAll() >= game.MaxPlayers() then return "Нет свободного места для манекена (слота игрока)." end
 	local bot = player.CreateNextBot("IX Dummy")
 	if not IsValid(bot) then return "Не удалось создать манекен: нет свободного слота игрока." end
+	if automatic then
+		local index = client.ixDummyHeightIndex or 1
+		selectedHeight = comparisonHeights[index]
+		-- Reserve immediately: several pending character loads must not all
+		-- receive the same height. Explicit heights leave this cycle untouched.
+		client.ixDummyHeightIndex = index % #comparisonHeights + 1
+	end
 	bot.ixIsDummy, bot.ixDummyCreator = true, client
 	local tries = 0
 	local function Ready()
@@ -112,8 +140,8 @@ function PLUGIN:CreateDummy(client)
 			client:Notify("Не удалось загрузить IX-персонажа манекена.")
 			return
 		end
-		PLUGIN:SetupDummy(bot, client)
-		client:Notify("Манекен создан. /dummyfallover — уложить; /dummyrevive — поднять.")
+		PLUGIN:SetupDummy(bot, client, selectedHeight)
+		client:Notify("Манекен создан: " .. selectedHeight .. " см. /dummyfallover — уложить; /dummyrevive — поднять.")
 	end
 	timer.Simple(0, Ready)
 end
@@ -132,10 +160,11 @@ end -- SERVER
 
 ix.command.Add("DummyCreate", {
 	alias = "DummyAdd",
-	description = "Создать неподвижного бота-манекена там, куда вы смотрите.",
+	description = "Создать манекен в прицеле. Рост 155–190 см; без числа — по очереди 155, 180 и 190 см.",
 	adminOnly = true,
-	OnRun = function(self, client)
-		return PLUGIN:CreateDummy(client)
+	arguments = {bit.bor(ix.type.number, ix.type.optional)},
+	OnRun = function(self, client, height)
+		return PLUGIN:CreateDummy(client, height)
 	end
 })
 

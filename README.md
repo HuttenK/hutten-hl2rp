@@ -1,4 +1,4 @@
-## Current SCP schema snapshot (2026-10-13)
+## Current SCP schema snapshot (2026-10-15)
 
 The `scp-schema` branch contains the current Helix framework, SCP schema, and
 companion addons used by this version.
@@ -22,6 +22,35 @@ This update adds cart transport for downed players, including patient bleeding
 effects and corrected hand placement. The cart now uses the Episode Two model
 with matching grips and cargo geometry. It also updates item models, names and
 descriptions, replaces retired crafting items, and fixes spawning unnamed books.
+
+Further updates add character height, the ragdoll-to-crawl severe injury flow,
+SCP NPC possession and medical compatibility, blackout electronics control,
+and persistent keycard restrictions for Zone Tsade's map doors and buttons.
+
+### Map door access
+
+Aim at a nearby door button or moving door leaf and use:
+
+```text
+/MapDoorAccess <level> [department]
+```
+
+- `level`: an integer from `0` to `4`; cards must meet or exceed this level.
+- `department`: optional, one of `science`, `security`, or `military`.
+  Omit it to accept any department with sufficient clearance.
+- `/MapDoorAccess 0` allows public access without a card. Power checks remain.
+- `/MapDoorAccessInfo` shows the selected group's rule.
+- `/MapDoorAccessRemove` removes the group's rule.
+- `/MapDoorAccessTest true` makes your administrator account obey card checks.
+  Use `false` to restore the default administrator bypass.
+
+Examples: `/MapDoorAccess 3 science`, `/MapDoorAccess 2 security`,
+`/MapDoorAccess 4 military`, or `/MapDoorAccess 2` for any department.
+The card must be equipped, issued, and not revoked. One department can be
+specified per rule. Administrators bypass card checks by default.
+See [door access instructions](docs/map-keycard-access.txt) for supported maps
+and testing. The optional command refresh script in `tools` must be copied to
+`garrysmod/lua` before running it; a normal server restart loads the fix too.
 
 Local diagnostics, deployment backups, and copied stock gamemodes are not part
 of this snapshot.

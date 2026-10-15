@@ -9,9 +9,15 @@ end
 function P:DoorAllowed(p,d)
  local c=d and self.store.circuits[d.circuit]
  if not d or not F.Door(d.entity) or d.fault then return false end
+ local access=ix.plugin.list.map_keycards
+ -- LockSector must still authorize an operator who is releasing an existing lockdown.
+ if access and not access:GroupAllowed(p,access:FindGroup(d.entity),d.entity,true) then return false end
  local powered
  powered=self:DirectGrid(d.entity)
  if F.EntityBackup(d.entity) and not self:EntityIsolated(d.entity) then powered=true end
+ local b=ix.plugin.list.blackout
+ local override=b and b.ElectronicsOverride and b:ElectronicsOverride(d.entity:GetPos())
+ if override~=nil then powered=not override end
  return powered and F.Access(p,d.level,d.department)
 end
 function P:DoorAction(p,session,data)

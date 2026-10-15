@@ -14,6 +14,9 @@ function PLAYER:SetCriticalState(state)
 		if !self:Alive() then return end
 		local alreadyCritical = self:InCriticalState()
 		local persistedCritical = character:GetData("crit", false)
+		local paralyzed = ix.SCPMedicine and ix.SCPMedicine.IsParalyzed(character:Health())
+		local consciousParalysis = paralyzed and character:Health():GetConsciousness() > 0.3
+		self:SetNetVar("scpParalyzed", consciousParalysis and true or nil)
 		if !alreadyCritical and self.LeaveSequence and self:GetNetVar("forcedSequence") then self:LeaveSequence() end
 		self:SetHealth(1)
 		self:SetNetVar("crit", true)
@@ -21,11 +24,23 @@ function PLAYER:SetCriticalState(state)
 		character:SetData("crit", true)
 		character:SetData("critTime", nil)
 		if !alreadyCritical then self:SetNetVar("downedSince", CurTime()) end
-		if !alreadyCritical and ix.Downed and ix.Downed.BeginCrawl then
+		if !alreadyCritical and !paralyzed and ix.Downed and ix.Downed.BeginCrawl then
 			ix.Downed.BeginCrawl(self, persistedCritical)
 		end
 
-		if not (ix.Downed and ix.Downed.CrawlWindow and ix.Downed.CrawlWindow(self)) then
+		if paralyzed then
+			if ix.Downed and ix.Downed.EndRescueWindow then ix.Downed.EndRescueWindow(self) end
+			if self:InVehicle() then self:ExitVehicle() end
+			self:SetAction()
+			self.ixRegainConscious = nil
+			if !IsValid(self.ixRagdoll) then self:SetRagdolled(true) end
+			if IsValid(self.ixRagdoll) then self.ixRagdoll.ixGrace = nil end
+			self:SetLocalVar("knocked", !consciousParalysis)
+		elseif ix.Downed and ix.Downed.Falling and ix.Downed.Falling(self) then
+			if !alreadyCritical or !IsValid(self.ixRagdoll) then self:SetRagdolled(true) end
+			if IsValid(self.ixRagdoll) then self.ixRagdoll.ixGrace = nil end
+			self:SetLocalVar("knocked", false)
+		elseif not (ix.Downed and ix.Downed.CrawlWindow and ix.Downed.CrawlWindow(self)) then
 			if !IsValid(self.ixRagdoll) then
 				self:SetRagdolled(true)
 			end
@@ -35,9 +50,12 @@ function PLAYER:SetCriticalState(state)
 	else
 		if self:Alive() then self:SetHealth(100) end
 		self:SetNetVar("crit", nil)
+		self:SetNetVar("scpParalyzed", nil)
 		self:SetNetVar("downedSince", nil)
 		self:SetNetVar("criticalCrawlUntil", nil)
+		self:SetNetVar("criticalFallUntil", nil)
 		character:SetData("criticalCrawlDeadline", nil)
+		character:SetData("criticalFallDeadline", nil)
 		if ix.Downed and ix.Downed.RestoreCrawl then ix.Downed.RestoreCrawl(self) end
 		self.ixGiveUpRequest = nil
 
@@ -54,7 +72,7 @@ function PLAYER:InCriticalState()
 end
 
 function PLUGIN:OnCharacterFallover(client, ragdoll, state)
-	if !state then
+	if !state and !client.ixCriticalCrawlHandoff then
 		client:SetCriticalState(false)
 	end
 end

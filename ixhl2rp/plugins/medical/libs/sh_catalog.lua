@@ -17,7 +17,9 @@ M.Catalog = {
  eft_propital = {name="Пропитал", model="injector", skin=9, uses=1, kind="stimulant", pain=240, wounds=2, time=4},
  eft_etg = {name="eTG-change", model="injector", skin=5, uses=1, kind="kit", wounds=6, time=4},
  eft_l1 = {name="L1", model="injector", skin=4, uses=1, kind="stimulant", pain=120, time=4},
- eft_tg12 = {name="Загустин", model="injector", skin=13, uses=1, kind="bandage", wounds=8, time=4}
+ eft_tg12 = {name="Загустин", model="injector", skin=13, uses=1, kind="bandage", wounds=8, time=4},
+ scp_008_serum = {name="Сыворотка против SCP-008", model="injector", skin=5, uses=1, kind="scp_treatment", time=6},
+ scp_neutralizer = {name="Нейтрализатор коррозии", model="injector", skin=9, uses=1, kind="scp_treatment", time=6}
 }
 
 function M.Model(def, view)

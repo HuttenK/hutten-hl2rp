@@ -89,13 +89,43 @@ function PLUGIN:IsPoweredClass(class)
 	return false
 end
 
--- Обесточена ли конкретная сущность: её класс питается от сети и она внутри тёмной зоны.
+-- The global electronics switch is independent of visual darkness and circuit
+-- backup. Raw active zones are its exceptions, even when a generator lights one.
+function PLUGIN:ElectronicsOverride(pos)
+	if self.unloading or not self.electronicsRestricted then return end
+	local zones = SERVER and self.zones or self.electronicsZones
+	for _, z in pairs(zones or {}) do
+		if (not SERVER or z.active == true) and pos:WithinAABox(z.min, z.max) then return false end
+	end
+	return true
+end
+
+function PLUGIN:IsElectronicsOffAt(pos, entity)
+	if self.unloading then return false end
+	local override = self:ElectronicsOverride(pos)
+	if override ~= nil then return override end
+	if IsValid(entity) and ix.Facility and ix.Facility.EntityBackup(entity) then return false end
+	if self:IsPosBlackedOut(pos) then return true end
+	-- Normal blackout rules also cover a lock mounted just outside its door.
+	return IsValid(entity) and entity:GetClass() == "ix_combinelock"
+		and IsValid(entity.door) and self:IsPosBlackedOut(entity.door:GetPos()) or false
+end
+
+-- Devices with their own normal power model also participate in the admin mode.
+PLUGIN.electronicClasses = {
+	ix_boombox=true, ix_stationary_radio=true, ix_vendingmachine=true,
+	ix_rationdispenser=true, ix_factory_recycler=true, ix_flood_pump=true,
+	ix_scannerterminal=true, ix_unionlight=true,
+}
+
+-- Only electronics are blocked; ordinary props, carts and medical beds stay usable.
 function PLUGIN:IsEntityBlackedOut(entity)
 	if (!IsValid(entity)) then return false end
- if ix.Facility and ix.Facility.EntityBackup(entity) then return false end
-	if (!self:IsPoweredClass(entity:GetClass())) then return false end
-
-	return self:IsPosBlackedOut(entity:GetPos())
+	local class = entity:GetClass()
+	local extra = self.electronicsRestricted and (self.electronicClasses[class]
+		or class:sub(1,12) == "ix_facility_" or class:sub(1,8) == "ix_cctv_")
+	if not extra and not self:IsPoweredClass(class) then return false end
+	return self:IsElectronicsOffAt(entity:GetPos(), entity)
 end
 
 ix.lang.AddTable("ru", {

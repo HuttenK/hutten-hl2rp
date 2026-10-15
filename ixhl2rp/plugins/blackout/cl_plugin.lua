@@ -3,6 +3,15 @@ local PLUGIN = PLUGIN
 PLUGIN.zones    = PLUGIN.zones    or {} -- list of { min = Vector, max = Vector }
 PLUGIN.darkness = 0 -- clear the old full-screen veil on auto-refresh
 
+net.Receive("ixBlackoutElectronics", function()
+	PLUGIN.electronicsRestricted = net.ReadBool()
+	local zones = {}
+	for i = 1, net.ReadUInt(16) do
+		zones[i] = {min=net.ReadVector(), max=net.ReadVector()}
+	end
+	PLUGIN.electronicsZones = zones
+end)
+
 net.Receive("ixBlackoutSync3", function()
 	local count = net.ReadUInt(16)
 	local zones = {}
@@ -206,5 +215,7 @@ function PLUGIN:OnUnload()
  hook.Remove("PostDrawOpaqueRenderables", "ixBlackoutStencilFallback")
  hook.Remove("PostDrawTranslucentRenderables", "ixBlackoutStencil")
  self.zones = {}; self.darkness = 0
+ self.electronicsRestricted = false; self.electronicsZones = {}
+ net.Receive("ixBlackoutElectronics", function() end)
  net.Receive("ixBlackoutSync3", function() end)
 end

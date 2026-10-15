@@ -175,9 +175,11 @@ if (SERVER) then
 		-- висеть на внешней грани приграничной двери (вне AABB зоны), поэтому проверяем
 		-- ещё и позицию двери. Авторитетно, не зависит от порядка хуков PlayerUse.
 		local blackout = ix.plugin.list["blackout"]
-		if (blackout and blackout.IsPosBlackedOut and not (ix.Facility and ix.Facility.EntityBackup(self))) then
-			local dark = blackout:IsPosBlackedOut(self:GetPos())
-				or (IsValid(self.door) and blackout:IsPosBlackedOut(self.door:GetPos()))
+		if (blackout and blackout.IsPosBlackedOut) then
+			local dark
+			if blackout.IsElectronicsOffAt then dark = blackout:IsElectronicsOffAt(self:GetPos(), self)
+			else dark = not (ix.Facility and ix.Facility.EntityBackup(self)) and (blackout:IsPosBlackedOut(self:GetPos())
+				or (IsValid(self.door) and blackout:IsPosBlackedOut(self.door:GetPos()))) end
 
 			if (dark) then
                 hook.Run("FoundationDoorAccess",client,self,false,"Нет питания")

@@ -104,6 +104,11 @@ end
 function M.CanRevive(target)
  if not IsValid(target) or not target:Alive() or not target:GetCharacter() then return false end
  local health = target:GetCharacter():Health()
+ if ix.SCPMedicine then
+  local blocked, treatment, incurable, condition = ix.SCPMedicine.BlocksRecovery(health)
+  if blocked and incurable then return false, "Необратимое поражение: " .. condition .. ". Восстановление невозможно." end
+  if blocked then return false, "Сначала устраните причину критического состояния. Требуется: " .. treatment .. "." end
+ end
  if health:GetBleedRate() >= 0.1 then return false, "Сначала остановите кровотечение." end
  for _, diff in health:GetHediffs() do
   if diff.uniqueID == "bleeding" and diff:GetSeverity() >= 0.75 then
@@ -132,6 +137,10 @@ function M.Eligible(item, target, hitgroup)
   end
   return true
  end
+ -- Treat cardiac arrest even if blood loss prevents immediate revival. A
+ -- stimulant's generic consciousness buff must never bypass an untreated cause.
+ if ix.SCPMedicine and #ix.SCPMedicine.TreatmentMatches(health, item, hitgroup) > 0 then return true end
+ if def.kind == "scp_treatment" then return false, "Нет соответствующего аномального поражения." end
  if def.revive and target:InCriticalState() then return M.CanRevive(target) end
  if def.capacity then
   if M.VolumePlan(item,health,hitgroup).cost<=0 then return false, "Нет подходящей травмы или недостаточно запаса средства." end
@@ -152,6 +161,7 @@ function M.Apply(item, target, medic, hitgroup)
   M.Sync(health)
   return data
  end
+ if ix.SCPMedicine then ix.SCPMedicine.Treat(health, item, hitgroup) end
  if def.capacity then
   local plan=M.VolumePlan(item,health,hitgroup)
   local healed=0

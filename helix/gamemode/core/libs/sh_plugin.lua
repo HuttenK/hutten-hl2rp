@@ -343,13 +343,22 @@ do
 	-- luacheck: globals hook
 	hook.ixCall = hook.ixCall or hook.Call
 	local function finishView(name, value, ...)
-		if CLIENT and name == "CalcView" and ix.PlayerControls and ix.PlayerControls.ApplyViewFOV then
-			return ix.PlayerControls.ApplyViewFOV(value, ...)
+		if CLIENT and name == "CalcView" then
+			if ix.Downed and ix.Downed.ApplyCrawlView then
+				value = ix.Downed.ApplyCrawlView(value, ...)
+			end
+			if ix.PlayerControls and ix.PlayerControls.ApplyViewFOV then
+				return ix.PlayerControls.ApplyViewFOV(value, ...)
+			end
 		end
 		return value
 	end
 
 	function hook.Call(name, gm, ...)
+		if ix.SCPCompat and ix.SCPCompat.OverrideHook then
+			local handled, value = ix.SCPCompat.OverrideHook(name, ...)
+			if handled then return value end
+		end
 		local cache = HOOKS_CACHE[name]
 
 		if (cache) then

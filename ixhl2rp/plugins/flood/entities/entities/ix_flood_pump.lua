@@ -96,6 +96,8 @@ if (SERVER) then
 	-- Меню: откачивать воду (если бак подключён).
 	function ENT:OnSelectPump(client)
 		if (!IsValid(client) or !client:Alive() or !client:GetCharacter()) then return end
+		local blackout = ix.plugin.list.blackout
+		if blackout and blackout:IsEntityBlackedOut(self) then return end
 
 		local plugin = ix.plugin.list["flood"]
 		if (!plugin) then return end
@@ -127,6 +129,8 @@ if (SERVER) then
 		client:SetAction("Откачка воды...", plugin.defaults.pumpTime, function(ply)
 			if (!IsValid(ply) or !ply:Alive()) then return end
 			if (!IsValid(self) or !IsValid(self.linkedTank)) then return end
+			local blackout = ix.plugin.list.blackout
+			if blackout and blackout:IsEntityBlackedOut(self) then return end
 
 			if (ply:GetPos():DistToSqr(self:GetPos()) > 120 * 120) then
 				ply:Notify("Вы отошли от насоса.")

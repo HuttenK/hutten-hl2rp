@@ -27,6 +27,8 @@ function ENT:PhysicsUpdate(physicsObject)
 end
 
 function ENT:Touch(ent)
+	local blackout = ix.plugin.list.blackout
+	if blackout and blackout:IsEntityBlackedOut(self) then return end
 	if self.nextUse > CurTime() then
 		return
 	end

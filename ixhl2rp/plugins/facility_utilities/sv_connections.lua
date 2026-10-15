@@ -225,6 +225,9 @@ function P:GeneratorConnections(p,d)
  return result
 end
 function P:EntityIsolated(e)
+ local blackout=ix.plugin.list.blackout
+ local override=blackout and blackout.ElectronicsOverride and blackout:ElectronicsOverride(e:GetPos())
+ if override~=nil then return override end
  if e:GetClass()=="ix_combinelock" and IsValid(e.door) and self:EntityIsolated(e.door) then return true end
  local b=ix.plugin.list.blackout;local pos=e:GetPos()
  for _,z in pairs(b and b.zones or {}) do if z.remoteIsolation and pos:WithinAABox(z.min,z.max) then return true end end
@@ -234,8 +237,10 @@ function P:EntityIsolated(e)
  return false
 end
 function P:DirectGrid(e)
- if self:EntityIsolated(e) then return false end
  local b=ix.plugin.list.blackout
+ local override=b and b.ElectronicsOverride and b:ElectronicsOverride(e:GetPos())
+ if override~=nil then return not override end
+ if self:EntityIsolated(e) then return false end
  if e:GetClass()=="ix_combinelock" and IsValid(e.door) and b and b:IsPosBlackedOut(e.door:GetPos()) then return false end
  return not b or not b:IsPosBlackedOut(e:GetPos())
 end

@@ -73,8 +73,9 @@ net.Receive("ixTVPreset",function() local v=read();if istable(v) and T.Model(v.m
 function P:ScreenPowered(s)
  local pos=T.Transform(s);if not pos then return false end
  local ent=s.entity or Entity(s.entityIndex or -1)
- if s.on and ix.Facility and ix.Facility.EntityBackup(ent) then return true end
  local blackout=ix.plugin.list.blackout
+ if blackout and blackout.IsElectronicsOffAt then return s.on and not blackout:IsElectronicsOffAt(pos,ent) end
+ if s.on and ix.Facility and ix.Facility.EntityBackup(ent) then return true end
  return s.on and (not blackout or not blackout:IsPosBlackedOut(pos))
 end
 function P:DisplayScreen(screen)

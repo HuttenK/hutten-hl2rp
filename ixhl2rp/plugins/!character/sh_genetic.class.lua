@@ -72,10 +72,13 @@ function GENETIC:Load(vars)
 	if !isDefault then
 		self.shape = tonumber(genetics[1] or self.shape)
 		self.height = tonumber(genetics[2] or self.height)
+		if not self.height or self.height ~= self.height or math.abs(self.height) == math.huge then self.height = 180 end
+		self.height = math.Clamp(math.Round(self.height), 155, 190)
 		self.age = tonumber(genetics[3] or self.age)
 		self.eyeColor = tonumber(genetics[4] or self.eyeColor)
 
 		self.cachedSave = nil
+		self.cachedDesc = nil
 	end
 end
 
@@ -85,7 +88,7 @@ function GENETIC:GetDesc(randomize)
 		local faction = ix.faction.indices[factionID]
 
 		local shape = L(BODY_SHAPES[math.Clamp(self.shape, 1, #BODY_SHAPES)])
-		local height = tostring(math.Clamp(self.height, 160, 190)).." СМ"
+		local height = tostring(math.Clamp(self.height, 155, 190)).." СМ"
 		local age = ""
 		local eyeColor = ""
 

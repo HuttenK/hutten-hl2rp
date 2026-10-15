@@ -104,6 +104,8 @@ if (CLIENT) then
 
 	function Legs:Update(maxSeqGroundSpeed)
 		if (IsValid(self.LegEnt)) then
+			local bodyScale = LocalPlayer():GetModelScale()
+			if self.LegEnt:GetModelScale() ~= bodyScale then self.LegEnt:SetModelScale(bodyScale, 0) end
 			self.Velocity = LocalPlayer():GetVelocity():Length2D()
 
 			self.PlaybackRate = 1
@@ -168,15 +170,15 @@ if (CLIENT) then
 					self.BiaisAngles = sharpeye_focus and sharpeye_focus.GetBiaisViewAngles and sharpeye_focus:GetBiaisViewAngles() or LocalPlayer():EyeAngles()
 					self.RenderAngle = Angle(0, self.BiaisAngles.y, 0)
 					self.RadAngle = math.rad(self.BiaisAngles.y)
-					self.ForwardOffset = -22
+					self.ForwardOffset = -22 * LocalPlayer():GetModelScale()
 					self.RenderPos.x = self.RenderPos.x + math.cos(self.RadAngle) * self.ForwardOffset
 					self.RenderPos.y = self.RenderPos.y + math.sin(self.RadAngle) * self.ForwardOffset
 
 					if (LocalPlayer():GetGroundEntity() == NULL) then
-						self.RenderPos.z = self.RenderPos.z + 8
+						self.RenderPos.z = self.RenderPos.z + 8 * LocalPlayer():GetModelScale()
 
 						if (LocalPlayer():KeyDown(IN_DUCK)) then
-							self.RenderPos.z = self.RenderPos.z - 28
+							self.RenderPos.z = self.RenderPos.z - 28 * LocalPlayer():GetModelScale()
 						end
 					end
 				end

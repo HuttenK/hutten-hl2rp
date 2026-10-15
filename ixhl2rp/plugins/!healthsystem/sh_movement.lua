@@ -143,6 +143,7 @@ function PLUGIN:SetupMove(ply, mv, cmd)
 		end
 
 		ply.movementPenalty = fraction
+		if ix.SCPMedicine then ply.movementPenalty = ply.movementPenalty * ix.SCPMedicine.MovementFactor(hp) end
 		ply.fracturedLegs = hasFracture
 	end
 

@@ -432,6 +432,7 @@ function HEALTH:GetPercent()
 end
 
 function HEALTH:GetConsciousness()
+	if ix.SCPMedicine and ix.SCPMedicine.ForcesUnconscious(self) then return 0 end
 	if self.cachedConscious < 0 then
 		if self.consciousSource then
 			local hp = math.Clamp(math.Remap(self:GetPartHealth(self.consciousSource), 0, 10, 0, 1), 0, 1)
@@ -519,9 +520,13 @@ if SERVER then
 		local pain = self:GetPain()
 
 		if alive then
-			if consciousness <= 0.3 then
+			if ix.SCPMedicine and ix.SCPMedicine.IsParalyzed(self) then
+				local conscious = consciousness > 0.3
+				if !client:InCriticalState() or !IsValid(client.ixRagdoll) or
+					client:GetNetVar("scpParalyzed", false) ~= conscious then client:SetCriticalState(true) end
+			elseif consciousness <= 0.3 then
 				if !client:InCriticalState() then client:SetCriticalState(true) end
-				if not (ix.Downed and ix.Downed.CrawlWindow and ix.Downed.CrawlWindow(client)) and !IsValid(client.ixRagdoll) then
+				if not (ix.Downed and ix.Downed.RescueWindow and ix.Downed.RescueWindow(client)) and !IsValid(client.ixRagdoll) then
 					client:SetRagdolled(true)
 					client:SetLocalVar("knocked", true)
 				end
