@@ -7,14 +7,14 @@ ix.lang.AddTable("ru", {
     blackout = "Зона электроснабжения",
     blackoutMargin = "Запас границ (ед.; 2 ≈ 5 см)",
     blackoutStartOff = "Обесточить при создании",
-    blackoutDarkness = "Затемнение (0–100%)",
+    blackoutDarkness = "Затемнение (0–100%%)",
     blackoutSoftness = "Плавная граница (0–128 ед.)"
 })
 ix.lang.AddTable("en", {
     blackout = "Power zone",
     blackoutMargin = "Boundary margin (units; 2 ≈ 5 cm)",
     blackoutStartOff = "Start with power off",
-    blackoutDarkness = "Darkness (0–100%)",
+    blackoutDarkness = "Darkness (0–100%%)",
     blackoutSoftness = "Edge fade (0–128 units)"
 })
 
