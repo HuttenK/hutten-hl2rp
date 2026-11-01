@@ -5,6 +5,7 @@ ENT.Author = "SchwarzKruppzo"
 ENT.PrintName = "Garbage Point"
 ENT.Category = "HL2 RP"
 ENT.Spawnable = true
+ENT.bNoPersist = true -- Saved automatically by world_persistence.
 ENT.AdminSpawnable = true
 
 if SERVER then

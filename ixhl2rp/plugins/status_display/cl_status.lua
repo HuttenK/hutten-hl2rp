@@ -2,6 +2,18 @@ local P=PLUGIN
 local state={text='',enabled=false,revision=-1,received=0}
 local cache
 local fontSets={}
+local image={}
+-- Fixed targets: https://wiki.facepunch.com/gmod/Global.GetRenderTargetEx
+-- Transparent capture: https://wiki.facepunch.com/gmod/render.PushRenderTarget
+-- Premultiplied composite: https://wiki.facepunch.com/gmod/render.OverrideBlend
+-- Non-Windows fallback: https://github.com/Facepunch/garrysmod-issues/issues/5693
+local imageWidth,imageHeight=2048,1024
+local function targetFits(target)
+ -- A clamped/lost target cannot be sampled with the requested UV dimensions.
+ -- https://wiki.facepunch.com/gmod/ITexture:Width (and ITexture:Height)
+ local ok,width,height=pcall(function() return target:Width(),target:Height() end)
+ return ok and width==imageWidth and height==imageHeight
+end
 local function fonts(scale)
  local size=math.max(18,math.floor(22*scale))
  if fontSets[size] then return fontSets[size] end
@@ -21,6 +33,10 @@ local function project(x,y)
  local v=(y/cache.height)-.5
  return cache.left+x+10*cache.scale*u*v*v,
   cache.top+y-32*cache.scale*u*u
+end
+local function bounds(x,y)
+ cache.minX=math.min(cache.minX or x,x);cache.maxX=math.max(cache.maxX or x,x)
+ cache.minY=math.min(cache.minY or y,y);cache.maxY=math.max(cache.maxY or y,y)
 end
 local function glyphs(text,font,y,align)
  surface.SetFont(font)
@@ -46,8 +62,13 @@ local function glyphs(text,font,y,align)
   local centerX,centerY=inset+gw/2,inset+height/2
   local matrix=Matrix()
   matrix:SetAngles(Angle(0,math.deg(angle),0))
-  matrix:SetTranslation(Vector(px-centerX*cosine+centerY*sine,py-centerX*sine-centerY*cosine,0))
-  row[#row+1]={char=char,x=inset,y=inset,matrix=matrix}
+  local tx,ty=px-centerX*cosine+centerY*sine,py-centerX*sine-centerY*cosine
+  matrix:SetTranslation(Vector(tx,ty,0))
+  row[#row+1]={char=char,x=inset,y=inset,matrix=matrix,tx=tx,ty=ty,angle=math.deg(angle)}
+  -- Include font bearings, antialiasing and the one-pixel drop shadow.
+  for _,gx in ipairs({inset-8,inset+gw+8}) do
+   for _,gy in ipairs({inset-8,inset+height+8}) do bounds(tx+gx*cosine-gy*sine,ty+gx*sine+gy*cosine) end
+  end
  end
  return row
 end
@@ -76,7 +97,7 @@ end
 local function stroke(points)
  local path={}
  for _,point in ipairs(points) do
-  local x,y=project(point[1],point[2]);path[#path+1]={x=x,y=y}
+  local x,y=project(point[1],point[2]);path[#path+1]={x=x,y=y};bounds(x-2,y-2);bounds(x+2,y+2)
  end
  return path
 end
@@ -93,11 +114,14 @@ local function rebuild()
   height=86*s+#lines*lineHeight
  end
  cache={scale=s,width=width,height=height,left=ScrW()-48*s-width,top=ScrH()*.13,
-  screenWidth=ScrW(),screenHeight=ScrH(),rows={},paths={}}
+  screenWidth=ScrW(),screenHeight=ScrH(),rows={},paths={},settledAt=.35}
  cache.title=glyphs('ОПЕРАТИВНАЯ СВОДКА',set.Title,0)
  cache.footer=glyphs('УВС-19F  /  SCiPNET',set.Meta,height-22*s,'left')
  cache.revision=glyphs('SYNC '..string.format('%03d',state.revision%1000),set.Meta,height-22*s)
- for i,line in ipairs(lines) do cache.rows[i]=glyphs(line,set.Text,46*s+(i-1)*lineHeight) end
+ for i,line in ipairs(lines) do
+  cache.rows[i]=glyphs(line,set.Text,46*s+(i-1)*lineHeight)
+  cache.settledAt=math.max(cache.settledAt,(i-1)*.075+math.max(.3,#cache.rows[i]/100))
+ end
  local divider={}
  for i=0,48 do divider[#divider+1]={width*i/48,32*s} end
  cache.paths[1]=stroke(divider)
@@ -117,7 +141,10 @@ local function rebuild()
  local accent={}
  for i=0,12 do accent[#accent+1]={i*s,8*s+3*s*math.sin(i/12*math.pi)} end
  cache.accent=stroke(accent)
+ cache.imageX=math.floor(cache.minX);cache.imageY=math.floor(cache.minY)
+ cache.imageW=math.ceil(cache.maxX)-cache.imageX;cache.imageH=math.ceil(cache.maxY)-cache.imageY
 end
+function P:OnReloaded() fontSets={};cache=nil end
 net.Receive('ixStatusHUD',function()
  local text=net.ReadString();local enabled=net.ReadBool();local revision=net.ReadUInt(31)
  if not P:ValidateStatus(text) then return end
@@ -129,42 +156,114 @@ local ink=Color(150,235,241)
 local heading=Color(225,248,250)
 local muted=Color(174,218,224)
 local shadow=Color(0,0,0)
-local function paintText(row,color,alpha,count)
+local imageGlyphPushed=false
+local function paintText(row,color,alpha,count,toImage)
  color.a=255*alpha;shadow.a=190*alpha
  for i=1,math.min(#row,count or #row) do
   local glyph=row[i]
-  cam.PushModelMatrix(glyph.matrix,true)
+  if toImage and not glyph.imageMatrix then
+   glyph.imageMatrix=Matrix()
+   glyph.imageMatrix:SetAngles(Angle(0,glyph.angle,0))
+   glyph.imageMatrix:SetTranslation(Vector(glyph.tx-cache.imageX,glyph.ty-cache.imageY,0))
+  end
+  cam.PushModelMatrix(toImage and glyph.imageMatrix or glyph.matrix,true)
+  imageGlyphPushed=toImage or false
   draw.SimpleText(glyph.char,row.font,glyph.x+1,glyph.y+1,shadow)
   draw.SimpleText(glyph.char,row.font,glyph.x,glyph.y,color)
   cam.PopModelMatrix()
+  imageGlyphPushed=false
  end
 end
-local function paintStroke(points,r,g,b,alpha)
+local function paintStroke(points,r,g,b,alpha,toImage)
  surface.SetDrawColor(r,g,b,alpha)
+ local ox,oy=toImage and cache.imageX or 0,toImage and cache.imageY or 0
  for i=2,#points do
-  local a,c=points[i-1],points[i];surface.DrawLine(a.x,a.y,c.x,c.y)
+  local a,c=points[i-1],points[i];surface.DrawLine(a.x-ox,a.y-oy,c.x-ox,c.y-oy)
  end
 end
-function P:HUDPaint()
- if not state.enabled or state.text=='' then return end
- local client=LocalPlayer()
- if not IsValid(client) or not client:Alive() or not client:GetCharacter() then return end
- if gui.IsGameUIVisible() or (ix.gui and (IsValid(ix.gui.foundationNetwork) or IsValid(ix.gui.characterMenu) or IsValid(ix.gui.menu) or IsValid(ix.gui.fieldlink))) then return end
- if not cache or cache.screenHeight~=ScrH() or cache.screenWidth~=ScrW() then rebuild() end
- local reduced=ix.option and ix.option.Get('disableAnimations',false)
- local elapsed=RealTime()-state.received
+local function paint(reduced,elapsed,toImage)
  local reveal=reduced and 1 or math.Clamp(elapsed/.35,0,1)
- for _,path in ipairs(cache.paths) do paintStroke(path,102,211,224,135*reveal) end
- paintStroke(cache.accent,255,87,105,230*reveal)
- paintText(cache.title,heading,reveal)
- paintText(cache.footer,muted,reveal)
- paintText(cache.revision,muted,reveal)
+ for _,path in ipairs(cache.paths) do paintStroke(path,102,211,224,135*reveal,toImage) end
+ paintStroke(cache.accent,255,87,105,230*reveal,toImage)
+ paintText(cache.title,heading,reveal,nil,toImage)
+ paintText(cache.footer,muted,reveal,nil,toImage)
+ paintText(cache.revision,muted,reveal,nil,toImage)
  for index,row in ipairs(cache.rows) do
   local elapsedRow=elapsed-(index-1)*.075
   local fade=reduced and 1 or math.Clamp(elapsedRow/.3,0,1)
   local count=reduced and #row or math.max(0,math.floor(elapsedRow*100))
-  paintText(row,ink,fade,count)
+  paintText(row,ink,fade,count,toImage)
  end
+end
+local function canCacheImage()
+ -- Linux blend-state restoration is affected by engine issue #5693. Keep its
+ -- original renderer, also used by nested VR/other RTs and panel alpha fades.
+ return not image.failed and system and system.IsWindows and system.IsWindows() and GetRenderTargetEx and CreateMaterial and
+  render and render.GetRenderTarget and render.GetRenderTarget()==nil and render.OverrideBlend and render.OverrideAlphaWriteEnable and
+  surface.GetAlphaMultiplier and surface.GetAlphaMultiplier()==1 and cache.imageW<=imageWidth and cache.imageH<=imageHeight
+end
+local function buildImage()
+ local pushed,started,clipping=false,false,nil
+ local ok,err=xpcall(function()
+  if not image.target then
+   -- A single bounded target survives revisions and resolution changes. Never
+   -- allocate a new engine texture name for each message/font/viewport.
+   image.target=GetRenderTargetEx('ix_status_visor_v1',imageWidth,imageHeight,RT_SIZE_NO_CHANGE,MATERIAL_RT_DEPTH_NONE,0,0,IMAGE_FORMAT_RGBA8888)
+   assert(targetFits(image.target),'render target dimensions unavailable or unsupported')
+   image.material=CreateMaterial('ix_status_visor_v1','UnlitGeneric',{
+    ['$basetexture']=image.target:GetName(),['$translucent']=1,['$vertexcolor']=1,['$vertexalpha']=1,['$ignorez']=1
+   })
+  end
+  render.PushRenderTarget(image.target);pushed=true
+  render.OverrideAlphaWriteEnable(true,true);render.Clear(0,0,0,0,false,false)
+  render.OverrideBlend(true,BLEND_SRC_ALPHA,BLEND_ONE_MINUS_SRC_ALPHA,BLENDFUNC_ADD,BLEND_ONE,BLEND_ONE_MINUS_SRC_ALPHA,BLENDFUNC_ADD)
+  clipping=DisableClipping(true)
+  cam.Start2D();started=true
+  paint(true,0,true)
+ end,debug.traceback)
+ if imageGlyphPushed then cam.PopModelMatrix();imageGlyphPushed=false end
+ if started then cam.End2D() end
+ if clipping~=nil then DisableClipping(clipping) end
+ render.OverrideBlend(false);render.OverrideAlphaWriteEnable(false)
+ if pushed then render.PopRenderTarget() end
+ if not ok then
+  image.failed=true
+  ErrorNoHalt('[Status HUD] Image cache disabled: '..tostring(err)..'\n')
+ end
+ cache.imageReady=ok
+ return ok
+end
+local function paintImage()
+ if image.target and not targetFits(image.target) then
+  image.failed=true
+  ErrorNoHalt('[Status HUD] Image cache disabled: render target dimensions changed.\n')
+  return false
+ end
+ if not cache.imageReady and not buildImage() then return false end
+ surface.SetMaterial(image.material);surface.SetDrawColor(255,255,255,255)
+ -- The cached texture contains premultiplied RGB, so retain its antialiasing
+ -- and shadows without applying coverage alpha to the RGB a second time.
+ render.OverrideBlend(true,BLEND_ONE,BLEND_ONE_MINUS_SRC_ALPHA,BLENDFUNC_ADD)
+ -- Undo the surface helper's half-texel correction; otherwise the already
+ -- rasterised glyphs are resampled with slightly inset texture coordinates.
+ -- https://wiki.facepunch.com/gmod/surface.DrawTexturedRectUV
+ local ok,err=pcall(surface.DrawTexturedRectUV,cache.imageX,cache.imageY,cache.imageW,cache.imageH,
+  -.5/(imageWidth-1),-.5/(imageHeight-1),(cache.imageW-.5)/(imageWidth-1),(cache.imageH-.5)/(imageHeight-1))
+ render.OverrideBlend(false)
+ if not ok then image.failed=true;ErrorNoHalt('[Status HUD] Image draw disabled: '..tostring(err)..'\n') end
+ return ok
+end
+function P:HUDPaint()
+ if not state.enabled or state.text=='' then return end
+ local client=LocalPlayer()
+ if not P:CanSeeStatus(client) or not client:Alive() then return end
+ if gui.IsGameUIVisible() or (ix.gui and (IsValid(ix.gui.foundationNetwork) or IsValid(ix.gui.characterMenu) or IsValid(ix.gui.menu) or IsValid(ix.gui.fieldlink))) then return end
+ if not cache or cache.screenHeight~=ScrH() or cache.screenWidth~=ScrW() then rebuild() end
+ local reduced=ix.option and ix.option.Get('disableAnimations',false)
+ local elapsed=RealTime()-state.received
+ -- Keep every animated frame on the existing renderer until all rows finish.
+ if (reduced or elapsed>=cache.settledAt) and canCacheImage() and paintImage() then return end
+ paint(reduced,elapsed)
 end
 net.Receive('ixStatusHUDEdit',function()
  local text=net.ReadString();local enabled=net.ReadBool();local revision=net.ReadUInt(31)
@@ -176,7 +275,7 @@ net.Receive('ixStatusHUDEdit',function()
   surface.SetDrawColor(150,43,57,180);surface.DrawOutlinedRect(0,0,w,h)
   surface.SetDrawColor(255,53,76);surface.DrawRect(16,30,w-32,2)
  end
- local help=frame:Add('DLabel');help:Dock(TOP);help:SetTall(44);help:SetText('Сообщение для всех игроков. До 8 строк, 64 символов в строке.\nПустой текст скрывает сводку. Изменения сохраняются после перезапуска.')
+ local help=frame:Add('DLabel');help:Dock(TOP);help:SetTall(44);help:SetText('Сообщение только для сотрудников МОГ. До 8 строк, 64 символов в строке.\nПустой текст скрывает сводку. Изменения сохраняются после перезапуска.')
  local controls=frame:Add('DPanel');controls:Dock(BOTTOM);controls:SetTall(46)
  controls.Paint=function() end
  local show=controls:Add('DCheckBoxLabel');show:Dock(LEFT);show:SetWide(300);show:SetText('Показывать оперативную сводку');show:SetValue(enabled and 1 or 0)

@@ -290,7 +290,7 @@ function HEALTH:SetBleedingFX(bool)
 	
 	local client = self:GetPlayer()
 	if IsValid(client) then
-		client:SetNetVar("isBleeding", bool)
+		if client:GetNetVar("isBleeding") ~= bool then client:SetNetVar("isBleeding", bool) end
 	end
 end
 

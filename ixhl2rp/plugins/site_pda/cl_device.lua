@@ -21,14 +21,26 @@ end
 local nextSync=0
 local sessionCharacter
 local sessionDevice
+local closeWeapon, nextClose = nil, 0
+function F.CloseDevice()
+ local w=Device()
+ if not w or not w:GetPDAEquipped() then closeWeapon=nil;nextClose=0;return end
+ -- Reliable net messages already retry in the transport. Allow a slow retry
+ -- for a still-open device, not one request per rendered frame during lag.
+ if closeWeapon==w and RealTime()<nextClose then return end
+ closeWeapon=w;nextClose=RealTime()+1
+ if ix.performance then ix.performance.Count("pda_close_requests") end
+ net.Start("ixFieldlinkClose");net.SendToServer()
+end
 hook.Add("Think","FieldlinkDevice",function()
  local blocked=gui.IsConsoleVisible() or gui.IsGameUIVisible() or IsValid(ix.gui.menu) or IsValid(ix.gui.characterMenu)
  local p=LocalPlayer(); local c=IsValid(p) and p:GetCharacter()
  local w=Device()
+ if not w or not w:GetPDAEquipped() then closeWeapon=nil;nextClose=0 end
  local valid=w and w:GetPDAEquipped() and c and not blocked
  if not valid or (sessionCharacter and sessionCharacter~=c:GetID()) or (sessionDevice and sessionDevice~=c:GetData("fieldlinkDevice")) then
   if IsValid(ix.gui.fieldlink) then ix.gui.fieldlink:Remove() end
-  if blocked and w and w:GetPDAEquipped() then net.Start("ixFieldlinkClose"); net.SendToServer() end
+  if blocked then F.CloseDevice() end
   sessionCharacter=nil; sessionDevice=nil; return
  end
  if not IsValid(ix.gui.fieldlink) and w.GetPDAFraction and w:GetPDAFraction()>0.94 and RealTime()>=(F.closeUntil or 0) then
@@ -45,7 +57,7 @@ hook.Add("CreateMove","FieldlinkDevice",function(cmd)
 end)
 concommand.Add("ix_pda_close",function()
  if IsValid(ix.gui.fieldlink) then ix.gui.fieldlink:Remove() end
- net.Start("ixFieldlinkClose"); net.SendToServer()
+ F.CloseDevice()
 end)
 -- The complete application is painted into the actual screen material.
 local rt,material

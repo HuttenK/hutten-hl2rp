@@ -49,6 +49,13 @@ function P:UpdateAnimation(p)
  local angle = p:GetNetVar("bedRestAngle")
  if angle then p:SetRenderAngles(angle) end
 end
+function P:CalcMainActivity(p)
+ if not S.IsResting(p) then return end
+ -- Resolve separately on each realm; numeric sequence IDs are not portable
+ -- across clients with different included animation packs.
+ local _,sequence=S.RestSequence(p)
+ if sequence then return -1,sequence end
+end
 function P:StartCommand(p, command)
  if not S.IsResting(p) then return end
  command:ClearMovement()

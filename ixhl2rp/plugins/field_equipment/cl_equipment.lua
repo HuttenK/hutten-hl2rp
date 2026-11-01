@@ -107,7 +107,18 @@ net.Receive("ixPlateInspect",function()
  end
 end)
 local function play(name)
- if VManip and VManip.PlayAnim then return VManip:PlayAnim(name) end
+ if not VManip or not VManip.PlayAnim then return end
+ -- The schema owns this gesture. Workshop GCAL supplies its model, but
+ -- clean clients do not have the old companion addon's registration hook.
+ -- Check at playback so late loading and registry reloads recover too.
+ if name=="ix_field_pickup" and VManip.RegisterAnim
+  and (not VManip.GetAnim or not VManip:GetAnim(name)) then
+  VManip:RegisterAnim(name,{
+   model="c_vmanipinteract.mdl",lerp_peak=.4,lerp_speed_in=1,
+   lerp_speed_out=.8,lerp_curve=2.5,speed=1,startcycle=.1,loop=false
+  })
+ end
+ return VManip:PlayAnim(name)
 end
 net.Receive("ixFieldAnim",function()
  local name=net.ReadString()

@@ -23,7 +23,11 @@ function PLUGIN:HUDPaint()
 		surface.DrawLine(x + 15, y, x - 15, y)
 		surface.DrawLine(x, y + 15, x, y - 15)
 		surface.DrawOutlinedRect(x - 8, y - 8, 17, 17)
-		if (LocalPlayer():IsLineOfSightClear(waypoint.pos)) then
+		if (waypoint.nextSight or 0) <= CurTime() then
+			waypoint.nextSight = CurTime() + .1
+			waypoint.clearSight = LocalPlayer():IsLineOfSightClear(waypoint.pos)
+		end
+		if (waypoint.clearSight) then
 			surface.DrawOutlinedRect(x - 5, y - 5, 11, 11)
 		end
 

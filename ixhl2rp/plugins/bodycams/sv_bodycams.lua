@@ -60,7 +60,7 @@ function B.Change(p,helmet,action,camera)
  return false,"Неизвестное действие."
 end
 function P:Think()
- if (self.nextBodycamCheck or 0)>CurTime() then return end;self.nextBodycamCheck=CurTime()+.25
+ if (self.nextBodycamCheck or 0)>CurTime() then return end;self.nextBodycamCheck=CurTime()+1
  for _,p in ipairs(player.GetAll()) do B.Refresh(p) end
  for p in pairs(B.records) do if not IsValid(p) then B.RemoveFeed(p) end end
 end

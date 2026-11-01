@@ -66,3 +66,5 @@ ITEM.displayID = ix.Appearance:New("nato_helmet", {
 	}
 })
 ]]
+-- Explicit SD mapping; armor stats and item model remain unchanged.
+ITEM.bodyGroupsSD = {[1] = 5}

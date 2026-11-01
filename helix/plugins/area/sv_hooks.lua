@@ -39,6 +39,10 @@ function PLUGIN:PlayerSpawn(client)
 end
 
 function PLUGIN:AreaThink()
+	local locations={}
+	for id,info in pairs(ix.area.stored) do
+		if not (ix.area.typeOptions[info.type] or {}).nonLocation then locations[#locations+1]={id=id,info=info} end
+	end
 	for _, client in ipairs(player.GetAll()) do
 		local character = client:GetCharacter()
 
@@ -46,19 +50,16 @@ function PLUGIN:AreaThink()
 			continue
 		end
 
-		local overlappingBoxes = {}
+		local selected
 		local position = client:GetPos() + client:OBBCenter()
 
-		for id, info in pairs(ix.area.stored) do
-			local options = ix.area.typeOptions[info.type] or {}
-			if (!options.nonLocation and ix.area.Contains(info, position)) then
-				overlappingBoxes[#overlappingBoxes + 1] = id
-			end
+		for _,entry in ipairs(locations) do
+			if ix.area.Contains(entry.info,position) then selected=entry.id break end
 		end
 
-		if (#overlappingBoxes > 0) then
+		if selected then
 			local oldID = client:GetArea()
-			local id = overlappingBoxes[1]
+			local id = selected
 
 			if (oldID != id) then
 				hook.Run("OnPlayerAreaChanged", client, client.ixArea, id)

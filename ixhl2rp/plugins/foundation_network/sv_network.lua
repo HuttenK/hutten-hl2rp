@@ -10,12 +10,45 @@ local function text(v,max)
  return v
 end
 function P:LoadData()
- local saved=self:GetData(nil,false,true)
+ self.persistenceUnavailable=true
+ local saved
+ if ix.recordStore then
+  local records,err=ix.recordStore.Load("foundation_network")
+  if err then error("Foundation persistence load failed: "..err) end
+  if records then
+   saved,err=ix.recordStore.Join(records);if err then error(err) end
+   -- An initialized store is authoritative. Never turn malformed committed
+   -- collections into defaults and subsequently overwrite the original rows.
+   if not istable(saved.accounts) or not istable(saved.documents) or not istable(saved.tickets)
+    or not isnumber(saved.nextID) or saved.nextID<1 or saved.nextID%1~=0 or saved.nextID==math.huge then error("Invalid Foundation record metadata") end
+   for _,account in pairs(saved.accounts) do
+    if not istable(account) or (account.bookmarks~=nil and not istable(account.bookmarks)) then error("Invalid Foundation account record") end
+   end
+   local ids={}
+   for _,field in ipairs({"documents","tickets"}) do
+    local count=0
+    for key,row in pairs(saved[field]) do
+     if not isnumber(key) or key<1 or key%1~=0 or not istable(row) or not isnumber(row.id)
+      or row.id<1 or row.id%1~=0 or row.id>=saved.nextID or ids[row.id] then error("Invalid Foundation "..field.." record") end
+     count=count+1;ids[row.id]=true
+    end
+    if count~=#saved[field] then error("Sparse Foundation "..field.." records") end
+   end
+  end
+ end
+ saved=saved or self:GetData(nil,false,true)
  if istable(saved) and istable(saved.accounts) and istable(saved.documents) and istable(saved.tickets) then self.store=saved end
  self.store.nextID=tonumber(self.store.nextID) or 1
+ self.persistenceUnavailable=false
  if self.SeedWebCatalog and self:SeedWebCatalog() then self:SaveData() end
 end
-function P:SaveData() self:SetData(self.store,false,true) end
+function P:SaveData()
+ if self.persistenceUnavailable then error("Foundation persistence is unavailable after a failed load") end
+ if ix.recordStore then
+  local ok,err=ix.recordStore.Save("foundation_network",ix.recordStore.Split(self.store))
+  if not ok then error("Foundation persistence failed: "..tostring(err)) end
+ else self:SetData(self.store,false,true) end
+end
 function P:Identity(p)
  local card=p.GetIDCard and p:GetIDCard()
  local identity=ix.Fieldlink and ix.Fieldlink.CardIdentity(card)

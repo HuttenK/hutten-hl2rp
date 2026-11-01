@@ -8,56 +8,60 @@ function P:LoadSurfacePresets()
 end
 function P:RestoreSurface(row)
  local binding=row.binding
- if row.kind~="terminal" or not C.ID(row.id) or self.devices[row.id] or not self:HasSpace("terminal")
+ if not C.SurfaceKind(row.kind) or not C.ID(row.id) or self.devices[row.id] or not self:HasSpace(row.kind)
   or not C.PropModel(row.model) or not C.SurfaceConfig(row.config) or not istable(binding) or not C.Vector(binding.pos) then return end
- self.devices[row.id]={id=row.id,kind="terminal",surface=true,name=C.Name(row.name) or "Экран CCTV",on=row.on~=false,
-  model=row.model,config=C.SurfaceConfig(row.config),binding={pos=binding.pos,mapid=C.Number(binding.mapid,-1,1000000) and binding.mapid or -1}}
+ self.devices[row.id]={id=row.id,kind=row.kind,surface=true,name=C.Name(row.name) or "Экран CCTV",on=row.on~=false,
+  terminal=C.ID(row.terminal) and row.terminal or 0,camera=C.ID(row.camera) and row.camera or 0,
+  model=row.model,config=C.SurfaceConfig(row.config),binding={pos=binding.pos,mapid=C.Number(binding.mapid,-1,1000000) and binding.mapid or -1,
+   class=isstring(binding.class) and binding.class or nil,hostID=ix.PropScreens.ValidHostID(binding.hostID) and binding.hostID or nil}}
  self.nextID=math.max(self.nextID,row.id+1)
 end
 function P:PostLoadData()
  self:Ensure()
- local missing={}
- for id,d in pairs(self.devices) do
-  if d.surface then
-   local pos=C.Vector(d.binding and d.binding.pos);local ent
-   local function matches(candidate)
-    return C.SurfaceParent(candidate) and candidate:GetModel()==d.model
-   end
-   if d.binding and d.binding.mapid>=0 then ent=ents.GetMapCreatedEntity(d.binding.mapid) end
-   if not matches(ent) then
-    ent=nil
-    if pos then for _,candidate in ipairs(ents.FindByModel(d.model)) do
-     if matches(candidate) and candidate:GetPos():DistToSqr(pos)<16 then ent=candidate;break end
-    end end
-   end
-   if IsValid(ent) then d.entity=ent;ix.PropScreens.Bind(ent,"ixCCTVSurfaceID",id) else missing[#missing+1]=id end
-  end
- end
- -- All persistence plugins have now restored their props. Only the server
- -- removes missing bindings; a client's PVS updates must never delete them.
- for _,id in ipairs(missing) do self:DeleteRecord(id) end
+ self:RestoreSurfaceBindings()
  self.surfaceRestoring=false;self:SaveData();self:Sync()
 end
+function P:RestoreSurfaceBindings()
+ local changed=false
+ for id,d in pairs(self.devices) do
+  if d.surface and not IsValid(d.entity) then
+   local ent=ix.PropScreens.ResolveBinding(d.binding,d.model)
+   if C.SurfaceParent(ent) then
+    d.entity=ent;ix.PropScreens.Bind(ent,"ixCCTVSurfaceID",id);self:SendDevice(d);changed=true
+   end
+  end
+ end
+ -- Prop restore order is not deletion. Keep unresolved screens and links on
+ -- disk until their host returns or an administrator explicitly removes them.
+ if changed then self:SaveData() end
+end
+function P:Think()
+ if not self.loaded or self.restoring or self.surfaceRestoring or self.stopping or ix.shuttingDown then return end
+ if CurTime()<(self.nextBindingRetry or 0) then return end
+ self.nextBindingRetry=CurTime()+2;self:RestoreSurfaceBindings()
+end
 function P:PlaceSurface(p,v)
+ local kind=v.kind or "terminal"
+ if not C.SurfaceKind(kind) then return false,"Выберите монитор или пульт CCTV." end
  local cfg,ent=C.SurfacePlacement(p,p:GetEyeTrace())
  if not cfg then return false,"Наведите на поверхность prop не дальше 256 ед." end
  local d
  if v.id~=nil and v.id~=0 then
-  if not C.ID(v.id) or not self.devices[v.id] or self.devices[v.id].kind~="terminal" then return false,"Пульт не найден." end
+  if not C.ID(v.id) or not self.devices[v.id] or self.devices[v.id].kind~=kind then return false,"Экран не найден." end
   d=self.devices[v.id]
- elseif not self:HasSpace("terminal") then return false,"Достигнут лимит экранов управления." end
+ elseif not self:HasSpace(kind) then return false,"Достигнут лимит экранов этого типа." end
  -- Additional screens start at the aimed spot instead of stacking onto the
  -- model's single saved preset. Each can still be calibrated independently.
  if v.preset==true and not ix.PropScreens.Occupied(ent) and self.surfacePresets and self.surfacePresets[ent:GetModel()] then cfg=table.Copy(self.surfacePresets[ent:GetModel()]) end
  if not d then
-  d={id=self.nextID,kind="terminal",name="Экран CCTV "..self.nextID,on=true}
+  d={id=self.nextID,kind=kind,name=(kind=="monitor" and "Монитор CCTV " or "Экран CCTV ")..self.nextID,on=true,camera=0,terminal=0}
   self.nextID=self.nextID+1;self.devices[d.id]=d
  end
  local old,wasSurface=d.entity,d.surface
  if wasSurface then ix.PropScreens.Unbind(old,"ixCCTVSurfaceID",d.id) end
  d.surface=true;d.entity=ent;d.config=cfg;d.model=ent:GetModel()
  ix.PropScreens.Bind(ent,"ixCCTVSurfaceID",d.id)
- -- Move a legacy terminal's logical ID to the new prop, preserving links.
+ -- Move a legacy screen's logical ID to the new prop, preserving links.
  -- Its OnRemove callback sees a different bound entity and leaves the ID alone.
  if not wasSurface and IsValid(old) and old~=ent then old:Remove() end
  self:SaveData();self:SendDevice(d)
@@ -84,6 +88,10 @@ function P:KeyPress(p,key)
  if not target or target.kind~="cctv" then return end
  local d=target.row
  p.ixCCTVUseAt=CurTime()+.5
+ if d.kind=="monitor" then
+  if p:IsAdmin() then self:OpenAdmin(p,nil,d.id) end
+  return
+ end
  if self:CanOperate(p,d.id) then self:SendOpen(p,"terminal",d.id) else p:Notify("Экран недоступен или обесточен.") end
 end
 function P:PlayerUse(p,ent)

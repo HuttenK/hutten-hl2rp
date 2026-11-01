@@ -1,4 +1,4 @@
-RECIPE.name = "Белая майка"
+RECIPE.name = "Старая гражданская куртка с короткими рукавами"
 RECIPE.category = "recipe.category.body"
 RECIPE.requirements = {
 	mat_cloth_reclaimed = 3,
@@ -6,7 +6,7 @@ RECIPE.requirements = {
 	mat_resine = 1,
 }
 RECIPE.results = {
-	tshirt_white = 1
+	sd_citizen_dirty_short = 1
 }
 RECIPE.skill = {"tailoring", 5}
 RECIPE.tools = {"tool_scissors"}

@@ -293,7 +293,7 @@ function PANEL:Equipment()
 	grid:SetSpaceX(S(14)); grid:SetSpaceY(S(14))
 	for _, slot in ipairs({{"head", "tab_slot_head"}, {"mask", "tab_slot_face"}, {"glasses", "equip.glasses"},
 		{"ears", "tab_slot_ears"}, {"torso", "tab_slot_torso"}, {"vest", "equip.vest"}, {"hands", "tab_slot_hands"}, {"armprotection", "equip.armprotection"},
-		{"legs", "tab_slot_legs"}, {"legprotection", "equip.legprotection"}, {"radio", "tab_radio"}, {"cid", "label_cid"}, {"backpack", "tab_backpack"}}) do
+		{"legs", "tab_slot_legs"}, {"legprotection", "equip.legprotection"}, {"radio", "tab_radio"}, {"cid", "label_cid"}, {"backpack", "tab_backpack"}, {"satchel", "equip.satchel"}}) do
 		local inventory = client:GetInventory(slot[1])
 		if inventory then
 			local card = grid:Add("Panel"); card:SetSize(S(112), S(110))

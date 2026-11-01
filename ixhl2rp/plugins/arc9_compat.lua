@@ -8,10 +8,20 @@ if SERVER then
 	-- associated hints for every client, while leaving customization usable.
 	local function HideWeaponHUD()
 		local setting = GetConVar("arc9_hud_force_disable")
-		if setting then setting:SetBool(true) end
+		if setting and not setting:GetBool() then setting:SetBool(true) end
+		-- ARC9's penetration switch exits before its material tracing/ricochet path.
+		-- Damage at the first impact and explicit rocket/projectile weapons remain.
+		for _, name in ipairs({"arc9_bullet_physics", "arc9_bullet_physics_shotguns",
+			"arc9_mod_penetration", "arc9_ricochet"}) do
+			local convar = GetConVar(name)
+			if convar and convar:GetBool() then convar:SetBool(false) end
+		end
 	end
 	function PLUGIN:InitPostEntity() HideWeaponHUD() end
 	timer.Simple(0, HideWeaponHUD)
+	-- server.cfg and addon reloads must not silently restore per-bullet simulation.
+	timer.Create("ixARC9ServerPolicy", 5, 0, HideWeaponHUD)
+	function PLUGIN:OnUnload() timer.Remove("ixARC9ServerPolicy") end
 end
 
 local function GetOwner(weapon)
@@ -22,6 +32,15 @@ local function GetOwner(weapon)
 end
 
 if CLIENT then
+	local function PrintContentFingerprint(path)
+		local data = file.Read(path, "GAME")
+		if data then
+			print("[ARC9/Helix] Content:", path, "bytes:", #data, "CRC:", util.CRC(data))
+		else
+			print("[ARC9/Helix] Content:", path, "MISSING")
+		end
+	end
+
 	concommand.Add("ix_arc9_pose_info", function(_, _, args)
 		local viewer = LocalPlayer()
 		if not IsValid(viewer) then return end
@@ -34,7 +53,8 @@ if CLIENT then
 			end
 			client = target
 		end
-		for _, name in ipairs({"arc9_tpik", "arc9_tpik_others", "arc9_tpik_framerate_others"}) do
+		for _, name in ipairs({"arc9_tpik", "arc9_tpik_others", "arc9_tpik_framerate_local",
+			"arc9_tpik_framerate_others", "arc9_eft_nontpik_mode"}) do
 			local setting = GetConVar(name)
 			print("[ARC9/Helix]", name, setting and setting:GetString() or "MISSING")
 		end
@@ -43,6 +63,18 @@ if CLIENT then
 		local weapon = client:GetActiveWeapon()
 		if not IsValid(weapon) or not weapon.ARC9 then print("[ARC9/Helix] Select an ARC9 weapon first.") return end
 		print("[ARC9/Helix] Model:", client:GetModel(), "class:", client.ixAnimModelClass)
+		-- Run only on request. Sequence IDs and pose parameters depend on the
+		-- mounted animation libraries, even when both clients use the same model.
+		-- Count alone cannot detect reordered clips or a stale addon version.
+		print("[ARC9/Helix] Sequence-list CRC:", util.CRC(table.concat(client:GetSequenceList(), "\n")))
+		PrintContentFingerprint(client:GetModel())
+		for _, path in ipairs({"models/humans/male_gestures.mdl", "models/humans/male_shared.mdl",
+			"models/humans/female_gestures.mdl", "models/humans/female_shared.mdl",
+			"models/cellar/male_anims.mdl", "models/cellar/female_anims.mdl",
+			"models/m_anm.mdl", "models/f_anm.mdl"}) do
+			PrintContentFingerprint(path)
+		end
+		print("[ARC9/Helix] To identify an override, run: whereis <content path above>")
 		print("Weapon:", weapon:GetClass(), "raised:", client:IsWepRaised(), "hold:", weapon:GetHoldType(), "sequences:", client:GetSequenceCount())
 		print("Activity:", client.CalcIdeal, "sequence:", client:GetSequenceName(client:GetSequence()))
 		print("Native pose:", ix.anim.CanUseARC9NativePose(client, weapon), "TPIK:", weapon:ShouldTPIK())

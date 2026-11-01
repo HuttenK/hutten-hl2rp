@@ -37,7 +37,7 @@ local PushCart = ix.PushCart
 -- before Helix registers the entity files.
 PushCart.GEOMETRY_VERSION = 3
 -- Метка версии кода для отладки (ix_pushcart_debug): видно, что сервер крутит свежий файл.
-PushCart.BUILD = "foundation-2026-10-13.ep2"
+PushCart.BUILD = "foundation-2026-10-16.wheelchair-riders"
 PushCart.ITEM = "pushcart"
 PushCart.MAX_CRATES = 8
 PushCart.INV_WIDTH = 6
@@ -123,7 +123,7 @@ function PushCart:GetPushedCart(client)
 
 	local cart = client:GetNW2Entity("ixPushCart")
 
-	return IsValid(cart) and cart:GetClass() == "ix_pushcart" and cart.GetPusher and cart:GetPusher() == client and cart or nil
+	return IsValid(cart) and cart.ixIsPushCart and cart.GetPusher and cart:GetPusher() == client and cart or nil
 end
 
 function PushCart:IsPushing(client)
@@ -237,10 +237,12 @@ end
 ix.util.Include("sh_kinematics.lua")
 ix.util.Include("sh_drive.lua")
 ix.util.Include("sh_patient.lua")
+ix.util.Include("sh_rider.lua")
 ix.util.Include("sh_interaction.lua")
 ix.util.Include("sv_plugin.lua")
 ix.util.Include("sv_interaction.lua")
 ix.util.Include("sv_patient.lua")
+ix.util.Include("sv_rider.lua")
 ix.util.Include("sv_legacy.lua")
 ix.util.Include("cl_plugin.lua")
 ix.util.Include("cl_interaction.lua")

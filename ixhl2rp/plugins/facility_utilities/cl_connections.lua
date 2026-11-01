@@ -111,7 +111,7 @@ hook.Add("HUDPaint","ixFacilityGeneratorPlacement",function()
  local c=H.skins.generator;draw.RoundedBox(4,x,y,w,96,c.bg);surface.SetDrawColor(c.edge);surface.DrawOutlinedRect(x,y,w,96)
  H.Lamp(x+22,y+24,mode.valid,c.accent)
  H.Text(mode.placing and "УСТАНОВКА РЕЗЕРВНОГО ИСТОЧНИКА" or mode.kind=="disconnect" and "СНЯТИЕ КАБЕЛЯ" or "ПОДКЛЮЧЕНИЕ КАБЕЛЯ","FacilityTitle",x+44,y+12,c.text,w-58)
- H.Text(mode.placing and "ЛКМ — установить · Колесо — повернуть · ПКМ — отмена" or mode.kind=="source" and "ЛКМ по генератору / аккумулятору — начало кабеля · ПКМ — отмена" or mode.kind=="disconnect" and "ЛКМ по подключённому устройству — снять входящий кабель · ПКМ — отмена" or "ЛКМ по устройству / щитку — подключить · ПКМ — отмена","FacilityText",x+16,y+42,c.text,w-32)
+ H.Text(mode.placing and "ЛКМ — установить · Колесо — повернуть · ПКМ — отмена" or mode.kind=="source" and "ЛКМ по генератору / аккумулятору — начало кабеля · ПКМ — отмена" or mode.kind=="disconnect" and "ЛКМ по подключённому устройству — снять входящий кабель · ПКМ — отмена" or "ЛКМ по устройству / двери / кнопке / щитку — подключить · ПКМ — отмена","FacilityText",x+16,y+42,c.text,w-32)
  H.Text(mode.placing and (mode.valid and "Свободный ровный пол" or "Найдите свободный ровный пол рядом") or
   (mode.kind=="source" and "1 предмет = 1 подключение. Кабель расходуется только после второго клика." or mode.kind=="disconnect" and "Кабель вернётся в инвентарь. Снять также можно через E на источнике." or "Длина: "..tostring(mode.distance or 0).." / 15 м · Кабель не проходит сквозь стены"),"FacilityPlate",x+16,y+70,c.muted,w-32)
 end)

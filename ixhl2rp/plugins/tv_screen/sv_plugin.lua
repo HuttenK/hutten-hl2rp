@@ -10,10 +10,10 @@ function P:SaveTV()
  for id,s in pairs(self.screens) do
   -- Do not copy an engine entity into persistent data.
   local copy={}
-  for k,v in pairs(s) do if k~="entity" and k~="entityIndex" then copy[k]=v end end
+  for k,v in pairs(s) do if k~="entity" and k~="entityIndex" and k~="pending" then copy[k]=v end end
   copy.origin=position(s.origin)
   if IsValid(s.entity) then
-   s.binding={mapid=s.entity:MapCreationID(),pos=position(s.entity:GetPos())}
+   s.binding=ix.PropScreens.CaptureBinding(s.entity)
    copy.binding=s.binding
   end
   screens[id]=copy
@@ -69,7 +69,7 @@ function P:Initialize()
   id=tonumber(id)
   if id and id%1==0 and id>0 and id<1000000 and count<T.maxScreens and istable(s) and T.Config(s.config)
    and ((s.world==true and T.Position(s.origin)) or T.Model(s.model)) then
-   s.id=id;s.config=T.UpgradeConfig(s.world and "" or s.model,s.config);s.entity=nil;s.entityIndex=nil
+   s.id=id;s.config=T.UpgradeConfig(s.world and "" or s.model,s.config);s.entity=nil;s.entityIndex=nil;s.pending=s.world~=true
    s.name=T.Text(s.name,48) or ("Экран "..id);s.channel=self.channels[s.channel] and s.channel or 1
    s.on=s.on~=false;s.world=s.world==true
    s.origin=s.world and T.Position(s.origin) or nil
@@ -80,30 +80,38 @@ function P:Initialize()
  file.CreateDir("ix_tv_subtitles")
 end
 function P:LoadData()
- self.tvRestoring=true;self.tvBindingsReady=false
+ self.tvRestoring=true;self.tvBindingsReady=false;self.nextBindingRetry=nil
  self:Initialize()
 end
 function P:PostLoadData()
  -- Helix persistence restores props during LoadData; resolve their bindings
  -- only after every plugin has completed that phase.
  self:Initialize()
- for _,s in pairs(self.screens) do
-  local boundPos=istable(s.binding) and T.Position(s.binding.pos)
-  if not s.world and boundPos then
-   local ent=s.binding.mapid and s.binding.mapid>=0 and ents.GetMapCreatedEntity(s.binding.mapid)
-   if not IsValid(ent) or ent:GetModel()~=s.model then
-    ent=nil
-    for _,candidate in ipairs(ents.FindByModel(s.model)) do
-     if candidate:GetPos():DistToSqr(boundPos)<16 then ent=candidate;break end
-    end
-   end
-   if IsValid(ent) then s.entity=ent;ix.PropScreens.Bind(ent,"ixTVScreenID",s.id) end
-  end
- end
+ self:RestoreScreenBindings()
  self.tvRestoring=false;self.tvCleaningUp=false;self.tvBindingsReady=true
  self:PruneMissingScreens()
  if self:DiscoverLegacy() then self:SaveTV() end
  self:Sync()
+end
+function P:RestoreScreenBindings()
+ local changed=false
+ for _,s in pairs(self.screens or {}) do
+  if not s.world and not IsValid(s.entity) then
+   s.pending=true;s.entity=nil
+   local ent=ix.PropScreens.ResolveBinding(s.binding,s.model)
+   if IsValid(ent) then
+    s.entity=ent;s.pending=nil;ix.PropScreens.Bind(ent,"ixTVScreenID",s.id)
+    self:SendScreen(s);changed=true
+   end
+  end
+ end
+ if changed then self:SaveTV() end
+end
+function P:Think()
+ if not self.tvBindingsReady or self.tvRestoring or self.tvCleaningUp or self.tvShuttingDown or ix.shuttingDown then return end
+ if CurTime()<(self.nextBindingRetry or 0) then return end
+ self.nextBindingRetry=CurTime()+2
+ self:RestoreScreenBindings()
 end
 function P:DiscoverLegacy()
  -- Import old automatic TVs once. A removed screen must stay removed after
@@ -135,13 +143,13 @@ function P:PruneMissingScreens()
  if not self.tvBindingsReady or self.tvRestoring or self.tvCleaningUp or self.tvShuttingDown then return end
  local changed=false
  for id,s in pairs(self.screens) do
-  if not s.world and not IsValid(s.entity) then self:RemoveScreen(id);changed=true end
+  if not s.world and not s.pending and not IsValid(s.entity) then self:RemoveScreen(id);changed=true end
  end
  if changed then self:SaveTV() end
 end
 function P:EntityRemoved(ent)
  -- Server-side identity check: client PVS/full updates are not deletions.
- if not self.tvInitialized or self.tvRestoring or self.tvCleaningUp or self.tvShuttingDown then return end
+ if not self.tvInitialized or self.tvRestoring or self.tvCleaningUp or self.tvShuttingDown or ix.shuttingDown then return end
  local changed=false
  for id,s in pairs(self.screens) do
   if not s.world and s.entity==ent then self:RemoveScreen(id);changed=true end
@@ -153,7 +161,7 @@ function P:PreCleanupMap()
  self.tvCleaningUp=true;self.tvBindingsReady=false
  if self.tvInitialized then self:SaveTV() end
 end
-function P:ShutDown() self.tvShuttingDown=true end
+function P:ShutDown() if self.tvInitialized then self:SaveTV() end;self.tvShuttingDown=true end
 function P:SendChannel(c,target) transmit("ixTVChannel",c,target) end
 function P:SendScreen(s,target)
  local out={id=s.id,name=s.name,channel=s.channel,on=s.on,world=s.world,origin=position(s.origin),model=s.model,config=s.config,entityIndex=IsValid(s.entity) and s.entity:EntIndex() or 0}

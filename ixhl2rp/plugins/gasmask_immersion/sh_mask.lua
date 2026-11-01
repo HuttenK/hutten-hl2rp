@@ -25,7 +25,7 @@ end
 function M.Profile(item)
     if not item then return end
     local visor = item.gasMaskVisor
-    if visor == nil then visor = item.uniqueID ~= "gasmask_early" end
+    if visor == nil then visor = item.uniqueID ~= "respirator_af" and item.uniqueID ~= "gasmask_early" end
     return {visor = visor, overlay = item.gasMaskOverlay or "black_ops_1/screenoverlays/hazmatmask_001",
         breath = item.gasMaskBreath or "black_ops_1/wep/gasmask/breath.wav"}
 end

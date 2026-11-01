@@ -43,10 +43,25 @@ local function lightState(ent)
     end
 end
 
+local lights
+local function trackLight(ent)
+    if lights and IsValid(ent) and LIGHT_CLASSES[ent:GetClass()] then lights[ent]=true end
+end
+hook.Add("OnEntityCreated", "ixBlackoutLightRegistry", function(ent)
+    timer.Simple(0,function() trackLight(ent) end)
+end)
+hook.Add("EntityRemoved", "ixBlackoutLightRegistry", function(ent) if lights then lights[ent]=nil end end)
+hook.Add("PostCleanupMap", "ixBlackoutLightRegistry", function() lights=nil end)
 function PLUGIN:RefreshLights()
-    for _, ent in ipairs(ents.GetAll()) do
+    if not lights then
+        lights=setmetatable({}, {__mode="k"})
+        for _,ent in ipairs(ents.GetAll()) do trackLight(ent) end
+        for ent in pairs(self.lightStates) do if IsValid(ent) then lights[ent]=true end end
+    end
+    for ent in pairs(lights) do
+        if not IsValid(ent) then lights[ent]=nil continue end
         if LIGHT_CLASSES[ent:GetClass()] or self.lightStates[ent] then
-            local off = LIGHT_CLASSES[ent:GetClass()] and not self.unloading and (self.IsElectronicsOffAt or self.IsPosBlackedOut)(self, ent:GetPos())
+            local off = LIGHT_CLASSES[ent:GetClass()] and not self.unloading and (self.IsElectronicsOffAt or self.IsPosBlackedOut)(self, ent:GetPos(), ent)
             local saved = self.lightStates[ent]
             if off and not saved then
                 local on = lightState(ent)
@@ -790,6 +805,7 @@ function PLUGIN:PlayerDisconnected(client)
 end
 
 function PLUGIN:OnUnload()
+ for _,event in ipairs({"OnEntityCreated","EntityRemoved","PostCleanupMap"}) do hook.Remove(event,"ixBlackoutLightRegistry") end
  self:SaveFuseboxes()
  self:SaveData()
  self.unloading = true

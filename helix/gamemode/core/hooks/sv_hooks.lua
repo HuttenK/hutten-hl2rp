@@ -734,7 +734,7 @@ function GM:ShutDown()
 	ix.shuttingDown = true
 	ix.config.Save()
 
-	hook.Run("SaveData")
+	hook.SafeRun("SaveData")
 
 	for _, v in ipairs(player.GetAll()) do
 		v:SaveData()
@@ -811,7 +811,7 @@ function GM:AllowPlayerPickup(client, entity)
 end
 
 function GM:PreCleanupMap()
-	hook.Run("SaveData")
+	hook.SafeRun("SaveData")
 	hook.Run("PersistenceSave")
 end
 

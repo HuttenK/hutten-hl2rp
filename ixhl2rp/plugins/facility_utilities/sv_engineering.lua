@@ -2,12 +2,16 @@ local P,F=PLUGIN,ix.Facility
 util.AddNetworkString("ixFacilityEngineeringInput")
 function P:EngineeringKind(w)
  if w.sabotage then return end -- retain the existing five increasingly fast sabotage contacts
+ local job=self.store.jobs[w.job]
+ -- Camera repair always uses physical fasteners, independently of the global
+ -- fusebox game override. Enter through the camera's Use interaction.
+ if job and job.targetKind=="cctv" then return "bolts" end
  local mode=ix.config.Get("facilityRepairGame","auto")
  if mode=="contacts" then return end
  if F.engineeringNames[mode] then return mode end
  if w.fusebox then return "probe" end
- local job=self.store.jobs[w.job];local d=job and job.targetKind=="device" and self.store.devices[job.target]
- return d and d.kind=="generator" and "pressure" or job and job.targetKind=="cctv" and "bolts" or "probe"
+ local d=job and job.targetKind=="device" and self.store.devices[job.target]
+ return d and d.kind=="generator" and "pressure" or "probe"
 end
 function P:NewEngineeringStage(p,w)
  local r=w.repair

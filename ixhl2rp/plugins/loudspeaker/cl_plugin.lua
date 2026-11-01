@@ -5,12 +5,15 @@ for _, channel in pairs(PLUGIN.lsChannels or {}) do if IsValid(channel) then cha
 PLUGIN.lsChannels = nil
 PLUGIN.audio = M.NewAudio("Loudspeaker", 400, 2100)
 local cache, refresh, ready, requestAt = {}, 0, false, 0
+local nextAudio=0
 local path, started, loop = "", 0, true
 net.Receive("ix_ls_state2", function()
  path, started, loop = net.ReadString(), net.ReadDouble(), net.ReadBool()
  ready = true
 end)
 hook.Add("Think", "ix_ls_sound_update", function()
+ if CurTime()<nextAudio then return end
+ nextAudio=CurTime()+.05
  if not ready and IsValid(LocalPlayer()) and CurTime() >= requestAt then
   requestAt = CurTime() + 5; net.Start("ix_ls_ready2"); net.SendToServer()
  end

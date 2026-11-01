@@ -376,22 +376,23 @@ if SERVER then
 	function Item:LoadInstanceCount()
 		if self.idsLoading then return end
 		self.idsLoading = true
-		local query = mysql:Select("ix_items")
-			query:Select("item_id")
-			query:Callback(function(result)
-				if istable(result) and #result > 0 then
-					local count = 0
+		-- Select() quotes field names, so use a fixed raw expression for this
+		-- aggregate. Even an empty table returns one row with a zero high-water mark.
+		mysql:RawQuery("SELECT COALESCE(MAX(item_id), 0) AS max_id FROM ix_items", function(result)
+			local row = istable(result) and result[1]
+			local count = istable(row) and tonumber(row.max_id)
+			local valid = isnumber(count) and count >= 0 and count < math.huge and count % 1 == 0
 
-					for k, v in ipairs(result) do
-						count = math.max(count, tonumber(v.item_id) or 0)
-					end
+			if valid then
+				-- A delayed response must never rewind IDs allocated or restored meanwhile.
+				self.instance_count = math.max(self.instance_count or 0, count)
+			else
+				ErrorNoHalt("[Helix] Item allocation refused: database ID lookup returned an invalid result.\n")
+			end
 
-					self.instance_count = math.max(self.instance_count or 0, count)
-				end
-				self.idsLoading = nil
-				self.idsReady = result ~= false
-			end)
-		query:Execute()
+			self.idsLoading = nil
+			self.idsReady = valid
+		end)
 	end
 
 	function Item:Instance(uniqueID, itemData, forcedID, characterID, playerID)

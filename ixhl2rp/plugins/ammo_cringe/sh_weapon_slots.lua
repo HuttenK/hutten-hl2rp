@@ -109,7 +109,7 @@ if CLIENT then
    if item and not W.Accepts(item, slot) then item = nil end
    local entry = {ixWeaponSlot = slot, itemID = item and item.id or 0}
    entry.name = "[" .. slot .. "] " .. (item and item:GetPrintName() or "Пустой слот")
-   entry.Instructions = item and "Оружие экипировано. Нажмите ЛКМ, чтобы взять в руки." or W.Label(slot) .. ": перенесите оружие в слот в меню экипировки."
+   entry.Instructions = item and "Оружие экипировано. Нажмите ЛКМ, чтобы взять в руки." or "Пустой слот. Нажмите ЛКМ, чтобы убрать оружие и освободить руки."
    function entry:GetPrintName() return self.name end
    result[#result + 1] = entry
    if item then classes[item.class] = true end
@@ -121,7 +121,7 @@ if CLIENT then
  end
 
  function W.Select(entry)
-  if entry.itemID == 0 then return end
+  W.pendingDraw = nil
   net.Start("ixWeaponSlotDraw")
    net.WriteUInt(entry.ixWeaponSlot, 2)
    net.WriteUInt(entry.itemID, 32)
@@ -139,6 +139,15 @@ if CLIENT then
   if not IsValid(client) then return end
   local item = pending.slot == 0 and ix.Item.instances[pending.id] or W.Item(client, pending.slot)
   local weapon = Entity(pending.entity)
+  if pending.id == 0 then
+   local inventory = client:GetInventory("weapon" .. pending.slot)
+   if pending.slot >= 1 and pending.slot <= W.count and inventory and inventory.owner == client and
+    not inventory:GetFirstAtSlot(1, 1) and IsValid(weapon) and weapon:GetOwner() == client and weapon:GetClass() == "ix_hands" then
+    W.pendingDraw = nil
+    input.SelectWeapon(weapon)
+   end
+   return
+  end
   -- Wait for the replacement entity and its identity to arrive. Selecting on
   -- the client preserves ARC9's predicted draw animation and switch hooks.
   if item and W.Owns(client, item) and W.Equipped(item) and item.id == pending.id and IsValid(weapon) and weapon:GetOwner() == client and
@@ -153,13 +162,32 @@ end
 util.AddNetworkString("ixWeaponSlotDraw")
 util.AddNetworkString("ixWeaponSlotReady")
 
-function W.SelectLive(client, item, weapon)
- if client:IsBot() then client:SelectWeapon(item.class) return end
+function W.SelectLive(client, item, weapon, emptySlot)
+ if client:IsBot() then client:SelectWeapon(weapon:GetClass()) return end
  net.Start("ixWeaponSlotReady")
   net.WriteUInt(weapon:EntIndex(), 16)
-  net.WriteUInt(W.Slot(item) or 0, 2)
-  net.WriteUInt(item.id, 32)
+  net.WriteUInt(emptySlot or W.Slot(item) or 0, 2)
+  net.WriteUInt(item and item.id or 0, 32)
  net.Send(client)
+end
+
+function W.Holster(client, slot)
+ if not isnumber(slot) or slot % 1 ~= 0 or slot < 1 or slot > W.count then return false end
+ if not IsValid(client) or not client:IsPlayer() or not client:GetCharacter() or
+  not client:Alive() or client:IsRestricted() or client.bUsingMedical or
+  (client.GetNoDraw and client:GetNoDraw()) then return false end
+ local inventory = client:GetInventory("weapon" .. slot)
+ if not inventory or inventory.owner ~= client or inventory:GetFirstAtSlot(1, 1) then return false end
+ if W.Busy(client:GetActiveWeapon()) then
+  client:Notify("Сначала завершите действие с оружием.")
+  return false
+ end
+ local hands = client:GetWeapon("ix_hands")
+ if not IsValid(hands) then return false end
+ -- Use the same predicted switch as occupied slots. Keep the equipped item,
+ -- its live SWEP and ammunition intact; normal Holster/switch hooks still run.
+ W.SelectLive(client, nil, hands, slot)
+ return true
 end
 
 hook.Add("CreatePlayerInventories", "ixUniversalWeaponSlots", function(client, inventories)
@@ -434,6 +462,7 @@ net.Receive("ixWeaponSlotDraw", function(length, client)
  if (client.ixNextWeaponSlot or 0) > CurTime() then return end
  client.ixNextWeaponSlot = CurTime() + 0.2
  local slot, id = net.ReadUInt(2), net.ReadUInt(32)
+ if id == 0 then W.Holster(client, slot) return end
  local item = W.Item(client, slot)
  if item and item.id == id then W.Activate(client, item) end
 end)

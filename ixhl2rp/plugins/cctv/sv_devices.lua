@@ -9,18 +9,19 @@ function P:HasSpace(kind)
 end
 function P:Snapshot(d)
  local pos,ang=C.Transform(d)
- return {id=d.id,kind=d.kind,name=d.name,on=d.on,terminal=d.terminal or 0,camera=d.camera or 0,fov=d.fov or 75,
+ return {id=d.id,kind=d.kind,name=d.name,on=d.on,broken=d.broken==true,terminal=d.terminal or 0,camera=d.camera or 0,fov=d.fov or 75,
   pos=pos and {x=pos.x,y=pos.y,z=pos.z},ang=ang and {p=ang.p,y=ang.y,r=ang.r},entityIndex=IsValid(d.entity) and d.entity:EntIndex() or 0,
   surface=d.surface==true,config=d.config,model=d.model,binding=d.binding,bodycam=d.bodycam==true,cameraRig=d.cameraRig}
 end
 function P:SaveData()
+ if self.persistenceUnavailable then error("CCTV persistence is unavailable after a failed load") end
  if not self.loaded or self.restoring then return end
  local rows={}
  for _,d in pairs(self.devices) do
   if d.surface and IsValid(d.entity) then
-   local pos=d.entity:GetPos();d.binding={mapid=d.entity:MapCreationID(),pos={x=pos.x,y=pos.y,z=pos.z}}
+   d.binding=ix.PropScreens.CaptureBinding(d.entity)
   end
-  if not d.bodycam and (IsValid(d.entity) or (d.surface and self.surfaceRestoring)) then
+  if not d.bodycam and (IsValid(d.entity) or d.surface) then
    local row=self:Snapshot(d);row.entityIndex=nil
    -- Dynamic wearable IDs must never bind a restored monitor to an unrelated
    -- device after a map/restart. Re-select the wearer from the terminal.
@@ -28,7 +29,12 @@ function P:SaveData()
    rows[#rows+1]=row
   end
  end
- ix.data.Set("foundation_cctv_v1",{nextID=self.nextID,devices=rows})
+ local snapshot={nextID=self.nextID,devices=rows}
+ if ix.recordStore then
+  local keyed={};for _,row in ipairs(rows) do keyed[row.id]=row end;snapshot.devices=keyed
+  local ok,err=ix.recordStore.Save("foundation_cctv/"..game.GetMap(),ix.recordStore.Split(snapshot))
+  if not ok then error("CCTV persistence failed: "..tostring(err)) end
+ else ix.data.Set("foundation_cctv_v1",snapshot) end
 end
 function P:RegisterDevice(ent,kind)
  self:Ensure()
@@ -40,25 +46,70 @@ function P:RegisterDevice(ent,kind)
  ent:SetNW2Int("ixCCTVID",d.id);ent.cctvRestore=nil;self.devices[d.id]=d
  if not self.restoring then self:SaveData();self:SendDevice(d) end
 end
+function P:BreakCamera(d,impact)
+ if not d or not self.devices or self.devices[d.id]~=d or d.kind~="camera" or d.bodycam or not IsValid(d.entity) then return false end
+ -- Even an already broken camera reacts to a fresh shot. Coalesce shotgun
+ -- pellets/rapid impacts so they cannot stack dozens of sounds per frame.
+ if impact then self:CameraImpact(d) end
+ if d.broken then return false end
+ -- Physical damage is independent of the switch and power supply. Neither
+ -- reconfiguring the camera nor restoring mains/backup power repairs it.
+ d.broken=true;self:SendDevice(d);self:SaveData()
+ local facility=ix.plugin.list.facility_utilities
+ if facility and facility.loaded and not facility.restoring then facility:DiscoverJobs() end
+ return true
+end
+function P:CameraImpact(d)
+ if (d.entity.nextCCTVImpact or 0)>CurTime() then return end
+ d.entity.nextCCTVImpact=CurTime()+.2
+ local pos,ang=C.Lens(d);local effect=EffectData()
+ effect:SetOrigin(pos or d.entity:WorldSpaceCenter());effect:SetNormal(ang and ang:Forward() or Vector(0,0,1))
+ effect:SetMagnitude(2);effect:SetScale(1);effect:SetRadius(3)
+ d.entity:EmitSound("ambient/energy/zap1.wav",80,math.random(95,105),1)
+ util.Effect("Sparks",effect,true,true)
+end
 function P:LoadData()
- self:Ensure();self.restoring=true;self.surfaceRestoring=true;self.watchers={};self:LoadSurfacePresets()
+ self.persistenceUnavailable=true
+ local saved
+ if ix.recordStore then
+  local records,err=ix.recordStore.Load("foundation_cctv/"..game.GetMap())
+  if err then error("CCTV persistence load failed: "..err) end
+  if records then
+   saved,err=ix.recordStore.Join(records);if err then error(err) end
+   if not istable(saved.devices) or not C.Number(saved.nextID,1,1000001) or saved.nextID%1~=0 then error("Invalid CCTV record metadata") end
+   local ids,counts={},{}
+   for _,row in pairs(saved.devices) do
+    if not istable(row) or not C.ID(row.id) or ids[row.id] or row.id>=saved.nextID or not C.kinds[row.kind] or row.bodycam then error("Invalid CCTV device record") end
+    ids[row.id]=true;counts[row.kind]=(counts[row.kind] or 0)+1
+    if counts[row.kind]>C.kinds[row.kind].limit then error("CCTV saved device limit exceeded; refusing to discard records") end
+    if row.surface then
+     if row.surface~=true or not C.SurfaceKind(row.kind) or not C.PropModel(row.model) or not C.SurfaceConfig(row.config)
+      or not istable(row.binding) or not C.Vector(row.binding.pos) then error("Invalid CCTV surface record") end
+    elseif not C.Vector(row.pos) or not C.Angle(row.ang) then error("Invalid CCTV device transform") end
+   end
+  end
+ end
+ saved=saved or ix.data.Get("foundation_cctv_v1",{})
+ -- Validate before removing any live equipment, including during hot reload.
+ self:Ensure();self.restoring=true;self.surfaceRestoring=true;self.nextBindingRetry=nil;self.watchers={};self:LoadSurfacePresets()
  for _,d in pairs(self.devices) do if d.surface then ix.PropScreens.Unbind(d.entity,"ixCCTVSurfaceID",d.id) end end
  for _,def in pairs(C.kinds) do for _,ent in ipairs(ents.FindByClass(def.class)) do ent:Remove() end end
  self.devices={};self.nextID=1
- local saved=ix.data.Get("foundation_cctv_v1",{})
- for _,row in ipairs(istable(saved) and istable(saved.devices) and saved.devices or {}) do
+ for _,row in pairs(istable(saved) and istable(saved.devices) and saved.devices or {}) do
   if istable(row) and row.surface==true then
    self:RestoreSurface(row)
   elseif istable(row) and not row.bodycam and C.ID(row.id) and C.kinds[row.kind] and C.Vector(row.pos) and C.Angle(row.ang)
    and not self.devices[row.id] and self:HasSpace(row.kind) then
-   local d={id=row.id,kind=row.kind,name=C.Name(row.name) or C.kinds[row.kind].name,on=row.on~=false,
+   local d={id=row.id,kind=row.kind,name=C.Name(row.name) or C.kinds[row.kind].name,on=row.on~=false,broken=row.kind=="camera" and row.broken==true,
     terminal=C.ID(row.terminal) and row.terminal or 0,camera=C.ID(row.camera) and row.camera or 0,
     fov=C.Number(row.fov,30,110) and row.fov or 75}
    local ent=ents.Create(C.kinds[d.kind].class)
    if d.kind=="camera" then
     -- A saved explicit custom model keeps its transform. Legacy default
     -- cameras migrate to the new body while preserving the viewed scene.
-    local custom=isstring(row.model) and row.model~=C.cameraRig.legacyModel and row.model~=C.cameraRig.model
+    -- The previous default has the same idle rig. Replace its mesh without
+    -- moving saved cameras or treating it as an administrator's custom model.
+    local custom=isstring(row.model) and row.model~=C.cameraRig.legacyModel and row.model~=C.cameraRig.previousModel and row.model~=C.cameraRig.model
     if custom and util.IsValidModel(row.model) then d.model=row.model end
    end
    if IsValid(ent) then
@@ -73,7 +124,7 @@ function P:LoadData()
   if not self.devices[d.camera] or self.devices[d.camera].kind~="camera" then d.camera=0 end
   if not self.devices[d.terminal] or self.devices[d.terminal].kind~="terminal" then d.terminal=0 end
  end
- self.loaded=true;self.restoring=false;self.stopping=false;self:Sync()
+ self.loaded=true;self.restoring=false;self.stopping=false;self.persistenceUnavailable=false;self:Sync()
 end
 function P:RemoveDevice(ent)
  if self.restoring or self.stopping or ix.shuttingDown then return end
@@ -96,11 +147,12 @@ end
 function P:PreCleanupMap() self:SaveData();self.restoring=true;self.watchers={} end
 function P:PostCleanupMap()
  -- Helix normally calls LoadData itself. Only restore here if it has not.
- timer.Simple(0,function() if ix.plugin.list.cctv==P and P.restoring then P:LoadData() end end)
+ timer.Simple(0,function() if ix.plugin.list.cctv==P and P.restoring then P:LoadData();P:PostLoadData() end end)
 end
 function P:ShutDown() self:SaveData();self.stopping=true end
 function P:OnUnload()
  self:SaveData();self.stopping=true;self.watchers={}
+ timer.Remove("ixCCTVSubscriptions");self.subscribers={}
  for _,d in pairs(self.devices or {}) do
   if IsValid(d.entity) and not d.bodycam then
    if d.surface then ix.PropScreens.Unbind(d.entity,"ixCCTVSurfaceID",d.id) else d.entity:Remove() end
@@ -131,8 +183,13 @@ function P:CanOperate(p,id)
  return C.TerminalReach(p,d) and hook.Run("CanUseCCTVTerminal",p,d.entity)~=false
 end
 function P:UseDevice(p,ent)
- self:Ensure();local id=ent:GetNW2Int("ixCCTVID",0);local d=self.devices[id];if not d then return end
- if d.kind=="terminal" then
+ self:Ensure();local id=ent:GetNW2Int("ixCCTVID",0);local d=self.devices[id];if not d or d.entity~=ent then return end
+ if d.kind=="camera" and d.broken and not (p:IsAdmin() and p:KeyDown(IN_WALK)) then
+  local facility=ix.plugin.list.facility_utilities
+  if not facility or not facility.BeginCameraWork then p:Notify("Система ремонта недоступна.");return end
+  local ok,message=facility:BeginCameraWork(p,d)
+  if message then p:Notify(message) end
+ elseif d.kind=="terminal" then
   if self:CanOperate(p,id) then self:Sync(p);self:SendOpen(p,"terminal",id) else p:Notify("Пульт недоступен или обесточен.") end
  elseif p:IsAdmin() then self:OpenAdmin(p,nil,id) end
 end
@@ -156,7 +213,7 @@ function P:Action(p,action,v)
  if action=="placeSurface" then return self:PlaceSurface(p,v) end
  if action=="surfacePreset" then return self:SaveSurfacePreset(v) end
  if action=="place" then
-  if v.kind=="terminal" then return self:PlaceSurface(p,v) end
+  if C.SurfaceKind(v.kind) then return self:PlaceSurface(p,v) end
   if not self:HasSpace(v.kind) then return false,"Достигнут лимит устройств." end
   local pos,ang=C.Placement(p,p:GetEyeTrace(),v.kind);if not pos then return false,"Выберите поверхность не дальше 256 ед." end
   local ent=ents.Create(C.kinds[v.kind].class);if not IsValid(ent) then return false,"Не удалось создать устройство." end
@@ -164,18 +221,22 @@ function P:Action(p,action,v)
   undo.Create("CCTV");undo.AddEntity(ent);undo.SetPlayer(p);undo.Finish();p:AddCleanup("props",ent)
   return true,"Устройство размещено. Нажмите E для настройки."
  end
- local d=self.devices[v.id];if not d or not IsValid(d.entity) then return false,"Устройство не найдено." end
+ local d=self.devices[v.id];if not d then return false,"Устройство не найдено." end
  if d.bodycam then return false,"Камерой управляет владелец через меню шлема." end
+ -- An unresolved saved surface can still be deliberately removed by an admin.
+ if action=="remove" and d.surface then self:DeleteRecord(d.id);return true,"Устройство удалено." end
+ if not IsValid(d.entity) then return false,"Устройство не найдено." end
  if action=="remove" then
-  if d.surface then self:DeleteRecord(d.id) else d.entity:Remove() end
+  d.entity:Remove()
   return true,"Устройство удалено."
  end
  if action~="configure" then return false,"Неизвестная команда." end
  local name=C.Name(v.name);if not name or not isbool(v.on) then return false,"Проверьте название и питание." end
+ local config
  if d.surface and v.config~=nil then
-  local config=C.SurfaceConfig(v.config);if not config then return false,"Проверьте размеры и положение экрана." end
-  d.config=config
- elseif d.kind=="monitor" then
+  config=C.SurfaceConfig(v.config);if not config then return false,"Проверьте размеры и положение экрана." end
+ end
+ if d.kind=="monitor" then
   if v.terminal~=0 and (not self.devices[v.terminal] or self.devices[v.terminal].kind~="terminal") then return false,"Пульт не найден." end
   if v.camera~=0 and (not self.devices[v.camera] or self.devices[v.camera].kind~="camera") then return false,"Камера не найдена." end
   d.terminal=v.terminal;d.camera=v.camera
@@ -183,5 +244,6 @@ function P:Action(p,action,v)
   local ang=C.Angle(v.ang);if not ang or not C.Number(v.fov,30,110) then return false,"Неверные углы или поле зрения." end
   d.entity:SetAngles(ang);d.fov=v.fov
  end
+ if config then d.config=config end
  d.name=name;d.on=v.on;self:SendDevice(d);self:SaveData();return true,"Настройки сохранены."
 end

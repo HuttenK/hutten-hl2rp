@@ -73,6 +73,7 @@ end
 
 function P:HasContents(entity)
 	if self.GetPatient and self:GetPatient(entity) then return true end
+	if self.GetRider and self:GetRider(entity) then return true end
 	local inv = entity:GetInventory()
 	return entity.cargoLoading or (entity.pendingItems and #entity.pendingItems > 0)
 		or (entity.unplacedItems and #entity.unplacedItems > 0)
@@ -220,7 +221,7 @@ function P:RestoreRecord(record, live)
 			if previous and previous.ixPushCargo and previous.type == record.inventoryType and !IsValid(previous.owner) then live = previous break end
 		end
 	end
-	local class = record.class == "ix_pushcart" and "ix_pushcart" or "ix_cargo_crate"
+	local class = self.Transports[record.class] and record.class or "ix_cargo_crate"
 	local entity = ents.Create(class)
 	if !IsValid(entity) then return end
 	entity.cargoRecord = table.Copy(record)
@@ -314,7 +315,7 @@ function P:Removed(entity)
 end
 
 function P:Pack(client, entity, itemID)
-	if !IsValid(entity) or !entity.ixIsPushCart or itemID != self.ITEM then return false end
+	if !IsValid(entity) or !entity.ixIsPushCart or itemID != self:CartItem(entity) then return false end
 	if !self:Near(client, entity) or self:HasContents(entity) or entity.cargoPacking then return false end
 	if IsValid(entity:GetParent()) or IsValid(entity.ixHeldOwner) then return false end
 	if entity.GetPusher and IsValid(entity:GetPusher()) then return false end
@@ -349,7 +350,8 @@ function P:Deploy(item, class)
 		client:Notify("Сначала переместите предмет в свой инвентарь.")
 		return false
 	end
-	local cart = class == "ix_pushcart"
+	local cart = self.Transports[class]
+	local Kin = cart and (cart.kin or self.Kin) or self.Kin
 	local yaw = client:EyeAngles().y
 	local forward = Angle(0, client:EyeAngles().y, 0):Forward()
 	local point = client:GetPos() + forward * (cart and 76 or 48)
@@ -357,14 +359,14 @@ function P:Deploy(item, class)
 	if !floor.Hit or floor.HitNormal.z < 0.8 then client:Notify("Нужна ровная свободная площадка.") return false end
 	local pos = floor.HitPos + Vector(0, 0, 1)
 	local half = cart and 49 or 17
-	local tr = util.TraceHull({start = pos, endpos = pos, mins = Vector(-half, -half, 1), maxs = Vector(half, half, cart and self.Kin.BODY_TOP_EMPTY or 30), filter = client, mask = MASK_SOLID})
+	local tr = util.TraceHull({start = pos, endpos = pos, mins = Vector(-half, -half, 1), maxs = Vector(half, half, cart and Kin.BODY_TOP_EMPTY or 30), filter = client, mask = MASK_SOLID})
 	if tr.Hit or tr.StartSolid then client:Notify("Недостаточно места для установки.") return false end
 	local entity = ents.Create(class)
 	if !IsValid(entity) then
 		client:Notify("Не удалось создать оборудование. Предмет остался в инвентаре; сообщите администратору.")
 		return false
 	end
-	entity:SetPos(cart and (pos - Vector(0, 0, self.Kin.WHEEL_BOTTOM)) or pos) entity:SetAngles(Angle(0, yaw, 0)) entity:Spawn()
+	entity:SetPos(cart and (pos - Vector(0, 0, Kin.WHEEL_BOTTOM)) or pos) entity:SetAngles(Angle(0, yaw, 0)) entity:Spawn()
 	if !IsValid(entity) or !entity.GetInventory or !entity:GetInventory() then
 		if IsValid(entity) then entity.cargoConsumed = true entity:Remove() end
 		client:Notify("Не удалось подготовить оборудование. Предмет остался в инвентаре; сообщите администратору.")
@@ -422,6 +424,7 @@ function PLUGIN:CanPlayerHoldObject(client, entity)
 end
 function PLUGIN:PhysgunPickup(client, entity)
 	if entity.ixIsPushCart and IsValid(entity:GetPusher()) then return false end
+	if P.GetRider and P:GetRider(entity) then return false end
 	if entity.isCargoCrate and IsValid(entity:GetParent()) then return false end
 end
 function PLUGIN:CanTool(client, trace)

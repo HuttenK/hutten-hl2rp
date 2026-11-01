@@ -113,6 +113,6 @@ end
 
 if (SERVER) then
 	timer.Create("ixSaveData", 600, 0, function()
-		hook.Run("SaveData")
+		hook.SafeRun("SaveData") -- One broken plugin must not prevent other saves.
 	end)
 end

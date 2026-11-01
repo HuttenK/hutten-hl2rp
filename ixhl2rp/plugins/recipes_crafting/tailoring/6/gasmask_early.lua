@@ -1,4 +1,4 @@
-RECIPE.name = "recipe.tailoring.gasmask_early"
+RECIPE.name = "Респиратор"
 RECIPE.category = "recipe.category.gasmasks"
 RECIPE.requirements = {
 	mat_plastic = 2,
@@ -6,7 +6,7 @@ RECIPE.requirements = {
 	//mat_glass = 1,
 }
 RECIPE.results = {
-	gasmask_early = 1
+	respirator_af = 1
 }
 RECIPE.skill = {"tailoring", 6}
 RECIPE.tools = {"tool_scissors"}

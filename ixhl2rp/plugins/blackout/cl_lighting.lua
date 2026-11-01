@@ -22,6 +22,8 @@ end
 local active,late=true,false
 local wrapped=setmetatable({}, {__mode="k"})
 local opaqueModes=setmetatable({}, {__mode="k"})
+local opaqueCandidates=setmetatable({}, {__mode="k"})
+local nextModeCheck=0
 local weaponsWrapped=setmetatable({}, {__mode="k"})
 local handColors={}
 local propClasses={prop_physics=true,prop_physics_multiplayer=true,prop_physics_override=true,prop_dynamic=true,prop_dynamic_override=true,prop_ragdoll=true}
@@ -63,8 +65,44 @@ local function propMaterials(e)
  end
  return result
 end
-local function drawProp(e,flags,draw)
- local darkness=not depthPass(flags) and P:DarknessAt(e:WorldSpaceCenter()) or 0
+-- A stationary prop's result is independent of the camera. Snapshot scalars,
+-- not Vector/table identities: map edits can mutate either one in place.
+local zoneSource,zoneValues,zoneRevision=nil,{},0
+local function refreshZones()
+ local changed=zoneSource~=P.zones
+ local index=0
+ local function value(v)
+  index=index+1
+  if zoneValues[index]~=v then zoneValues[index]=v;changed=true end
+ end
+ local function point(v) value(v.x);value(v.y);value(v.z) end
+ for _,z in ipairs(P.zones) do
+  point(z.min);point(z.max);point(z.fadeMin or z.min);point(z.fadeMax or z.max)
+  value(z.softness or P.maskSoftness or 24)
+  value(z.darkness or (P.maskDarkness or 220)/2.55)
+ end
+ if #zoneValues~=index then
+  changed=true
+  for i=#zoneValues,index+1,-1 do zoneValues[i]=nil end
+ end
+ zoneSource=P.zones
+ if changed then zoneRevision=zoneRevision+1 end
+end
+local function propDarkness(e,row)
+ if zoneSource~=P.zones then refreshZones() end
+ local pos=e:WorldSpaceCenter()
+ if row.zoneRevision~=zoneRevision or row.x~=pos.x or row.y~=pos.y or row.z~=pos.z then
+  row.darkness=P:DarknessAt(pos)
+  row.zoneRevision=zoneRevision;row.x=pos.x;row.y=pos.y;row.z=pos.z
+ end
+ return row.darkness
+end
+local function drawProp(e,flags,draw,row)
+ if #P.zones==0 or depthPass(flags) then return draw(e,flags) end
+ -- A previously opaque prop may be made translucent by another addon. Its
+ -- draw discovers this before the bounded background reconciliation does.
+ if not opaqueCandidates[e] and e:GetRenderMode()==RENDERMODE_TRANSCOLOR then opaqueCandidates[e]=row end
+ local darkness=propDarkness(e,row)
  if darkness<=0 then return draw(e,flags) end
  local changed={}
  for _,mat in ipairs(propMaterials(e)) do
@@ -95,12 +133,14 @@ local function wrapModel(e,viewmodel)
  if not viewmodel and not propClasses[e:GetClass()] then return end
  local old=e.RenderOverride
  local draw=old or function(ent,flags) ent:DrawModel(flags) end
+ local row={original=old,viewmodel=viewmodel}
  local fn=function(ent,flags)
   if not active then return draw(ent,flags) end
-  if not viewmodel then return drawProp(ent,flags,draw) end
+  if not viewmodel then return drawProp(ent,flags,draw,row) end
   return shaded(not depthPass(flags) and viewDarkness() or 0,draw,ent,flags)
  end
- wrapped[e]={original=old,wrapper=fn,viewmodel=viewmodel};e.RenderOverride=fn
+ row.wrapper=fn;wrapped[e]=row;e.RenderOverride=fn
+ if not viewmodel and e:GetRenderMode()==RENDERMODE_TRANSCOLOR then opaqueCandidates[e]=row end
 end
 local function restorePropMode(e)
  local original=opaqueModes[e]
@@ -113,13 +153,31 @@ end
 -- materials get the same per-pixel blackout and beam recovery as the world.
 -- Material transparency is untouched; entity fades return to their old mode.
 hook.Add("PreRender","ixBlackoutOpaqueProps",function()
- for e,row in pairs(wrapped) do
-  if not IsValid(e) then opaqueModes[e]=nil
-  elseif not row.viewmodel then
+ refreshZones()
+ if #P.zones==0 then
+  for e in pairs(opaqueModes) do restorePropMode(e) end
+  return
+ end
+ local now=RealTime()
+ if now>=nextModeCheck then
+  nextModeCheck=now+.1
+  -- Ordinary opaque props do not need color/position/zone checks. Discover
+  -- their rare mode changes on a 100 ms interval; known translucent props
+  -- remain live every frame, so fades and motion have no polling delay.
+  for e,row in pairs(wrapped) do
+   if not IsValid(e) then wrapped[e]=nil;opaqueModes[e]=nil;opaqueCandidates[e]=nil
+   elseif not row.viewmodel and not opaqueCandidates[e] and e:GetRenderMode()==RENDERMODE_TRANSCOLOR then
+    opaqueCandidates[e]=row
+   end
+  end
+ end
+ for e,row in pairs(opaqueCandidates) do
+  if not IsValid(e) then opaqueModes[e]=nil;opaqueCandidates[e]=nil
+  else
    local mode=e:GetRenderMode()
    local eligible=(mode==RENDERMODE_TRANSCOLOR or (opaqueModes[e] and mode==RENDERMODE_NORMAL))
     and e.RenderOverride==row.wrapper and e:GetColor().a==255
-    and P:DarknessAt(e:WorldSpaceCenter())>0
+    and propDarkness(e,row)>0
    if eligible then
     if mode==RENDERMODE_TRANSCOLOR then
      opaqueModes[e]=mode;e:SetRenderMode(RENDERMODE_NORMAL)
@@ -208,7 +266,7 @@ function P:GetFlashlightBeam(p)
   and RealTime()-beam.updatedAt<=.25 and beam.fade>0 then return beam end
 end
 local beamMeshes={};local sceneMaterial,sceneTexture
-local levels,sides=64,64
+local levels,sides=24,64
 local beamVolumeMaterial=CreateMaterial("ixBlackoutBeamVolume_v1","UnlitGeneric",{
  ["$basetexture"]="color/white",["$nocull"]="1",["$ignorez"]="0",
  ["$translucent"]="0",["$vertexcolor"]="0",["$vertexalpha"]="0"})

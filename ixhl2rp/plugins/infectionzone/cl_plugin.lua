@@ -359,6 +359,7 @@ end)
 -- Постоянный жёлтый дым у распакованных пропов отходов (помечены NWBool на сервере).
 local wasteEmitter
 local wasteNext = 0
+local wasteCandidates, wasteSearchAt = {}, 0
 
 hook.Add("Think", "ixInfectionWasteSmoke", function()
 	local client = LocalPlayer()
@@ -374,9 +375,13 @@ hook.Add("Think", "ixInfectionWasteSmoke", function()
 	local eye = client:EyePos()
 	local found = false
 
-	for _, e in ipairs(ents.FindInSphere(eye, 1400)) do
+	if CurTime() >= wasteSearchAt then
+		wasteSearchAt = CurTime()+1
+		wasteCandidates = ents.FindInSphere(eye, 1600)
+	end
+	for _, e in ipairs(wasteCandidates) do
 		if (!IsValid(e) or e:GetClass() != "prop_physics") then continue end
-		if (!e:GetNWBool("ixInfectWaste", false)) then continue end
+		if (!e:GetNWBool("ixInfectWaste", false) or e:GetPos():DistToSqr(eye)>1400^2) then continue end
 
 		found = true
 

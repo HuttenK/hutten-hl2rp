@@ -21,6 +21,7 @@ function P:Audit(p,action,target)
  if n and n.store and n.Audit then n:Audit(p,"Инфраструктура",target,"Выполнено",action) end
 end
 function P:SaveData()
+ if self.persistenceUnavailable then error("Facility persistence is unavailable after a failed load") end
  if not self.loaded or self.restoring then return end
  local saved={nextID=self.store.nextID,circuits={},devices={},doors={},jobs={}}
  for kind,rows in pairs(self.store) do if istable(rows) then for _,v in pairs(rows) do
@@ -28,13 +29,17 @@ function P:SaveData()
   if kind=="devices" and IsValid(v.entity) then
    row.pos=v.entity:GetPos();row.ang=v.entity:GetAngles()
    if IsValid(v.entity:GetParent()) then
-    local parent=v.entity:GetParent();row.binding={mapid=parent:MapCreationID(),model=parent:GetModel(),pos=parent:GetPos()}
+    local parent=v.entity:GetParent();row.binding=ix.PropScreens.CaptureBinding(parent);v.binding=row.binding
     row.localPos=v.entity:GetLocalPos();row.localAng=v.entity:GetLocalAngles()
    end
   end
-  saved[kind][#saved[kind]+1]=row
+  saved[kind][v.id]=row
  end end end
- ix.data.Set("foundation_utilities_v1",saved);self.dirty=false
+ if ix.recordStore then
+  local ok,err=ix.recordStore.Save("facility_utilities/"..game.GetMap(),ix.recordStore.Split(saved))
+  if not ok then error("Facility records not saved: "..tostring(err)) end
+ else ix.data.Set("foundation_utilities_v1",saved) end
+ self.dirty=false
 end
 function P:SpawnDevice(d,parent)
  local ent=ents.Create("ix_facility_"..d.kind);if not IsValid(ent) then return end
@@ -66,15 +71,36 @@ function P:SyncDevice(d)
   or d.kind=="battery" and (d.chargeSource or "РЕЗЕРВ") or "") end
 end
 function P:LoadData()
+ self.persistenceUnavailable=true
+ local saved
+ if ix.recordStore then
+  local records,err=ix.recordStore.Load("facility_utilities/"..game.GetMap())
+  if err then error("Facility records unreadable: "..tostring(err)) end
+  if records then
+   saved,err=ix.recordStore.Join(records);if err then error(err) end
+   if not F.Number(saved.nextID,1,1000001) or saved.nextID%1~=0 then error("Invalid facility record metadata") end
+   local ids={}
+   for _,kind in ipairs({"circuits","devices","doors","jobs"}) do
+    if not istable(saved[kind]) then error("Missing facility record collection: "..kind) end
+    for _,row in pairs(saved[kind]) do
+     if not istable(row) or not F.ID(row.id) or ids[row.id] or row.id>=saved.nextID or not F.Text(row.name or row.title or "",80) then error("Invalid facility "..kind.." record") end
+     ids[row.id]=true
+     if kind=="devices" and (not F.kinds[row.kind] or not F.Vector(row.pos) or not F.Angle(row.ang)
+      or (row.binding~=nil and (not istable(row.binding) or not F.Vector(row.localPos) or not F.Angle(row.localAng)))) then error("Invalid facility device transform or binding") end
+    end
+   end
+  end
+ end
+ saved=saved or ix.data.Get("foundation_utilities_v1",{})
+ -- A failed read must leave existing entities and their power links intact.
  self:ClearGeneratorPower();self.linkEntities={}
  for p in pairs(self.cableModes) do if IsValid(p) then self:SetCableMode(p) end end
  if self.CancelWork then for p in pairs(self.work) do self:CancelWork(p,"Ремонт остановлен при перезагрузке.",true) end end
  self.restoring=true;self.calls={};self.broadcasts={};self.work={};self.approvals={};self.previews={};self.powerTopologyChanged=true
  for _,d in pairs(self.store.devices) do if IsValid(d.entity) then d.entity:Remove() end end
- local saved=ix.data.Get("foundation_utilities_v1",{})
  self.store={nextID=1,circuits={},devices={},doors={},jobs={}}
  for _,kind in ipairs({"circuits","devices","doors","jobs"}) do
-  for _,row in ipairs(istable(saved[kind]) and saved[kind] or {}) do
+  for _,row in pairs(istable(saved[kind]) and saved[kind] or {}) do
    if istable(row) and F.ID(row.id) and F.Text(row.name or row.title or "",80) then
     if kind~="devices" or (F.kinds[row.kind] and F.Vector(row.pos) and F.Angle(row.ang)) then
      row.entity=nil;row.powered=nil;row.pending=nil;row.lockApplied=nil;row.nextRing=nil;self.store[kind][row.id]=row;self.store.nextID=math.max(self.store.nextID,row.id+1)
@@ -89,21 +115,20 @@ function P:LoadData()
   end
  end
  if F.ID(saved.nextID) then self.store.nextID=math.max(self.store.nextID,saved.nextID) end
- self.loaded=true;self.restoring=false;self.bindUntil=CurTime()+30;self.dirty=true
+ self.loaded=true;self.restoring=false;self.nextBindingRetry=nil;self.dirty=true;self.persistenceUnavailable=false
  self:RecomputePower(0)
  if self.ConvertExistingSourceItems then self:ConvertExistingSourceItems() end
 end
 function P:RestoreBindings()
+ if CurTime()>=(self.nextBindingRetry or 0) then
+ self.nextBindingRetry=CurTime()+2
  for _,d in pairs(self.store.devices) do if d.binding and not IsValid(d.entity) then
-  local b=d.binding;local parent=b.mapid and b.mapid>=0 and ents.GetMapCreatedEntity(b.mapid)
-  if not IsValid(parent) and F.Vector(b.pos) then
-   for _,e in ipairs(ents.FindByClass("prop_physics")) do
-    if e:GetModel()==b.model and e:GetPos():DistToSqr(F.Vector(b.pos))<16 then parent=e;break end
-   end
+  local parent=ix.PropScreens.ResolveBinding(d.binding,d.binding.model)
+  if IsValid(parent) and F.Vector(d.localPos) and F.Angle(d.localAng) then self:SpawnDevice(d,parent)
+   self.dirty=true
   end
-  if IsValid(parent) and parent:GetModel()==b.model and F.Vector(d.localPos) and F.Angle(d.localAng) then self:SpawnDevice(d,parent)
-  elseif CurTime()>(self.bindUntil or 0) then self.store.devices[d.id]=nil;self.dirty=true end
  end end
+ end
  for _,d in pairs(self.store.doors) do
   if not IsValid(d.entity) then local e=ents.GetMapCreatedEntity(d.mapid);if F.Door(e) then d.entity=e end end
  end
@@ -127,6 +152,7 @@ function P:OnUnload()
  for p in pairs(self.cableModes) do if IsValid(p) then self:SetCableMode(p) end end
  for p in pairs(self.work) do self:CancelWork(p,"Работа остановлена.",true) end
  self:SaveData();self.stopping=true
+ if ix.runtime then ix.runtime.Cancel("facility.discovery");ix.runtime.Cancel("facility.save") end
  for _,d in pairs(self.store.doors) do if d.wasLocked~=nil and IsValid(d.entity) then d.entity:Fire(d.wasLocked and "Lock" or "Unlock") end end
  for _,d in pairs(self.store.devices) do if IsValid(d.entity) then d.entity:Remove() end end
  self.calls={};self.broadcasts={};self.work={};self.previews={};self.approvals={}

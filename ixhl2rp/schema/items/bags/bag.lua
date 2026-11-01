@@ -10,3 +10,7 @@ ITEM.inventory_data = {
 	type = 'item_container',
 	multislot = true
 }
+ITEM.sdDisplayID = ix.Appearance:New("sd_bag", {
+ slot = ix.Appearance.Slot.Backpack, layer = ix.Appearance.Layer.Main,
+ bodyGroups = {}, variants = {sd = {bodyGroups = {[10] = 1}}}
+})

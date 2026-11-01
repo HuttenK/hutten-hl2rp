@@ -96,6 +96,8 @@ if (SERVER) then
 			local entity = ents.Create(v.Class)
 
 			if (IsValid(entity)) then
+				-- Screen bindings follow this prop even if physics changes its position.
+				if ix.PropScreens and ix.PropScreens.ValidHostID(v.ScreenHostID) then entity.ixPropScreenHostID = v.ScreenHostID end
 				entity:SetPos(v.Pos)
 				entity:SetAngles(v.Angle)
 				entity:SetModel(v.Model)
@@ -145,6 +147,7 @@ if (SERVER) then
 			if (IsValid(v)) then
 				local data = {}
 				data.Class = v.ClassOverride or v:GetClass()
+				data.ScreenHostID = v.ixPropScreenHostID
 				data.Pos = v:GetPos()
 				data.Angle = v:GetAngles()
 				data.Model = GetRealModel(v)

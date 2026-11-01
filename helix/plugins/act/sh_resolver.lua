@@ -1,6 +1,8 @@
 -- Acts probe the current model independently of its locomotion class.
 function ix.act.Sequence(entity, candidates)
-	if not IsValid(entity) or entity:GetSequenceCount() < 2 then return end
+	-- A compatible mesh with only its reference/ragdoll sequence can still
+	-- borrow poses. Missing native animation libraries must not disable that path.
+	if not IsValid(entity) then return end
 	for _, candidate in ipairs(candidates) do
 		local id = isnumber(candidate) and entity:SelectWeightedSequence(candidate) or entity:LookupSequence(candidate)
 		if isnumber(id) and id >= 0 then

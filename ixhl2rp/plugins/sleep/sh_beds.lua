@@ -4,11 +4,21 @@ local S = ix.sleep
 -- without necessarily including the optional prone extension. The compiled
 -- male/female down01..03 bounds fit the same conservative clearance used below.
 -- Never substitute a standing idle, client-provided sequence, or donor model.
-S.restSequences={"prone_passive","stances_down02","stances_down01","stances_down03"}
+S.restSequences={"custom_male_down02","custom_female_down02","stances_down02","stances_down01","stances_down03","prone_passive"}
 function S.RestSequence(p)
  for _,name in ipairs(S.restSequences) do
   local sequence=p:LookupSequence(name)
-  if sequence and sequence>=0 then return name,sequence end
+  local info=sequence and sequence>=0 and p:GetSequenceInfo(sequence)
+  if info and info.bbmin and info.bbmax then
+   local low,high=info.bbmin,info.bbmax
+   local size=high-low
+   -- Some included animation names are present as empty/standing aliases.
+   -- Match the lying clearance used by BedTransform/ClearPlacement.
+   if size.x>1 and size.y>1 and size.z>1 and size.z<math.max(size.x,size.y)
+    and low.x>=-44 and low.y>=-23 and low.z>=-3 and high.x<=44 and high.y<=23 and high.z<=25 then
+    return name,sequence
+   end
+  end
  end
 end
 

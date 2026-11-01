@@ -58,7 +58,7 @@ function P:Place(p,kind,trace)
   if not ix.PropScreens.Occupied(parent) and istable(preset) and F.Vector(preset.pos) and F.Angle(preset.ang) and F.Number(preset.width,8,100) then
    d.localPos=preset.pos;d.localAng=preset.ang;d.width=preset.width
   else d.localPos=Vector(cfg.x,cfg.y,cfg.z);d.localAng=Angle(cfg.p,cfg.yaw,cfg.r) end
-  d.binding={mapid=parent:MapCreationID(),model=parent:GetModel(),pos=parent:GetPos()}
+  d.binding=ix.PropScreens.CaptureBinding(parent)
  end
  self.store.devices[d.id]=d
  if not self:SpawnDevice(d,parent) then self.store.devices[d.id]=nil;return false,"Не удалось создать устройство." end
@@ -118,11 +118,10 @@ function P:AdminAction(p,a)
   if not d.fault then for _,j in pairs(self.store.jobs) do if j.targetKind=="device" and j.target==d.id then j.status="closed" end end end
  elseif cmd=="cctvFault" then
   local c=ix.plugin.list.cctv;local camera=c and c.devices[a.id]
-  if not camera or camera.kind~="camera" then return false,"Камера не найдена." end
+  if not camera or camera.kind~="camera" or camera.bodycam or not IsValid(camera.entity) then return false,"Камера не найдена." end
   local j=self:NewJob("cctv",camera.id,"Ремонт камеры: "..camera.name,1)
   if not j then return false,"Очередь заявок заполнена." end
-  if j.previousOn==nil then j.previousOn=camera.on end
-  camera.on=false;c:SendDevice(camera);c:SaveData()
+  c:BreakCamera(camera)
  elseif cmd=="bindDoor" then
   return self:BindDoor(p,p:GetEyeTrace().Entity)
  elseif cmd=="doorConfig" then
@@ -184,6 +183,16 @@ net.Receive("ixFacilityRequest",function(length,p)
  end
 end)
 local nextTick,nextSave,nextDiscover=0,0,0
+function P:InstallMaintenance()
+ if not ix.runtime or not ix.runtime.active or (self.runtimeScheduled and ix.runtime.jobs["facility.save"] and ix.runtime.jobs["facility.discovery"]) then return end
+ self.runtimeScheduled=true
+ ix.runtime.Schedule("facility.discovery",5,function()
+  if P.loaded and not P.restoring and not P.stopping then P:DiscoverJobs() end
+ end)
+ ix.runtime.Schedule("facility.save",10,function()
+  if P.loaded and not P.restoring and not P.stopping and P.dirty then P:SaveData() end
+ end)
+end
 function P:Think()
  if not self.loaded or self.restoring or self.stopping or CurTime()<nextTick then return end
  local dt=nextTick==0 and 0 or math.min(1,CurTime()-(nextTick-.25));nextTick=CurTime()+.25
@@ -191,6 +200,10 @@ function P:Think()
  for p,m in pairs(self.cableModes) do if not F.Active(p) or m.expires<CurTime() or m.character~=p:GetCharacter():GetID() then
   if IsValid(p) then self:SetCableMode(p) else self.cableModes[p]=nil end
  end end
- if CurTime()>nextDiscover then nextDiscover=CurTime()+5;self:DiscoverJobs() end
- if self.dirty and CurTime()>nextSave then nextSave=CurTime()+10;self:SaveData() end
+ if ix.runtime and ix.runtime.active then self:InstallMaintenance()
+ else
+  self.runtimeScheduled=nil
+  if CurTime()>nextDiscover then nextDiscover=CurTime()+5;self:DiscoverJobs() end
+  if self.dirty and CurTime()>nextSave then nextSave=CurTime()+10;self:SaveData() end
+ end
 end

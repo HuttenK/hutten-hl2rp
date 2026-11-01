@@ -98,9 +98,19 @@ function A.Clear(entity)
  if IsValid(state.prop) then state.prop:Remove() end
  A.actors[entity]=nil
 end
+local nextActorDiscovery=0
 hook.Add("Think","ixContextActionActors",function()
  local viewer=LocalPlayer();if not IsValid(viewer) then return end
- for _,entity in ipairs(player.GetAll()) do
+ local candidates={[viewer]=true}
+ for entity in pairs(A.actors) do candidates[entity]=true end
+ if RealTime()>=nextActorDiscovery then
+  nextActorDiscovery=RealTime()+.1
+  for _,entity in ipairs(player.GetAll()) do
+   if entity:GetNW2String("ixContextAction","")~="" then candidates[entity]=true end
+  end
+ end
+ for entity in pairs(candidates) do
+  if not IsValid(entity) then A.Clear(entity) continue end
   local kind=entity:GetNW2String("ixContextAction","")
   local source=entity:GetNW2String("ixContextActionSource","")
   local water=waterKind(kind,source)

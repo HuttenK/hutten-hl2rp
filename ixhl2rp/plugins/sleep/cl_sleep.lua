@@ -1,5 +1,6 @@
 local P, S = PLUGIN, ix.sleep
 local fade, menu = 0
+local hintTrace, nextHint = nil, 0
 local function binding(name, fallback)
  return string.upper(input.LookupBinding(name) or fallback)
 end
@@ -48,7 +49,11 @@ function P:HUDPaint()
   draw.SimpleTextOutlined(detail,"DermaDefault",ScrW()/2,ScrH()*.65+38,color_white,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
  elseif not IsValid(menu) and p:GetCharacter() then
   local origin=p:GetShootPos()
-  local trace=util.TraceLine({start=origin,endpos=origin+p:GetAimVector()*S.USE_RANGE,filter=p,mask=MASK_SOLID})
+  if not hintTrace or RealTime()>=nextHint then
+   nextHint=RealTime()+.1
+   hintTrace=util.TraceLine({start=origin,endpos=origin+p:GetAimVector()*S.USE_RANGE,filter=p,mask=MASK_SOLID})
+  end
+  local trace=hintTrace
   if S.IsBed(trace.Entity) and p:GetShootPos():DistToSqr(trace.HitPos)<=S.USE_RANGE^2 then
    draw.SimpleTextOutlined(binding("+use","использование").." — отдохнуть / спать", "DermaDefaultBold",ScrW()/2,ScrH()*.7,color_white,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,color_black)
   end

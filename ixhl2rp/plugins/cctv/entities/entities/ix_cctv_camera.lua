@@ -8,3 +8,4 @@ ENT.CCTVKind="camera"
 ENT.Spawnable=true
 ENT.AdminOnly=true
 ENT.bNoPersist=true
+ENT.RenderGroup=RENDERGROUP_BOTH

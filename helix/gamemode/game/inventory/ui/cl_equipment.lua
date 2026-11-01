@@ -83,6 +83,13 @@ function PANEL:SetCharacter(client)
 	torso:MoveBelow(glasses or face, 16)
 	torso:SetTitle(L("equip.torso"))
 
+	local satchelInventory = client:GetInventory("satchel")
+	if satchelInventory then
+		local satchel = satchelInventory:CreatePanel(self)
+		satchel:SetSlotSize(64); satchel:Rebuild(); satchel:SizeToContents()
+		satchel:MoveBelow(torso, 16); satchel:SetTitle(L("equip.satchel"))
+	end
+
 	local cid = client:GetInventory("cid"):CreatePanel(self)
 	cid:SetSlotSize(64)
 	cid:Rebuild()

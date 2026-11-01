@@ -1,12 +1,16 @@
 local PLUGIN = PLUGIN
 if PLUGIN.OnUnload then PLUGIN:OnUnload() end
 local lamps = {}
+local candidates, nextCandidates = {}, 0
+local BRIGHTNESS = 1.35 * 0.65
 
 function PLUGIN:Think()
     self.localBeam = nil
     local viewer = LocalPlayer()
     if not IsValid(viewer) then return end
-    local candidates = {}
+    if RealTime() >= nextCandidates then
+    nextCandidates = RealTime() + .1
+    candidates = {}
     for _, client in ipairs(player.GetAll()) do
         if client:Alive() and not client:IsDormant() and client:GetNWBool("ixFieldFlashlight", false) then
             local distance = client:GetPos():DistToSqr(viewer:GetPos())
@@ -14,9 +18,11 @@ function PLUGIN:Think()
         end
     end
     table.sort(candidates, function(a, b) return a.distance < b.distance end)
+    end
     local keep = {}
     for index = 1, math.min(3, #candidates) do
         local client = candidates[index].client
+        if not IsValid(client) or not client:Alive() or client:IsDormant() or not client:GetNWBool("ixFieldFlashlight", false) then continue end
         keep[client] = true
         local entry = lamps[client]
         if not entry then
@@ -24,7 +30,7 @@ function PLUGIN:Think()
             if lamp then
                 lamp:SetTexture("effects/flashlight001")
                 lamp:SetNearZ(4); lamp:SetFarZ(1000); lamp:SetFOV(52)
-                lamp:SetColor(Color(255, 244, 226)); lamp:SetBrightness(1.35)
+                lamp:SetColor(Color(255, 244, 226)); lamp:SetBrightness(BRIGHTNESS)
                 -- Source clamps constant + linear/d + quadratic/d^2 to 1.
                 -- Extend the useful throw without raising point-blank intensity.
                 lamp:SetConstantAttenuation(0); lamp:SetLinearAttenuation(350); lamp:SetQuadraticAttenuation(0)
@@ -49,7 +55,7 @@ function PLUGIN:Think()
             entry.fade = math.Approach(entry.fade, 1, FrameTime() * 10)
             entry.lamp:SetPos(pos); entry.lamp:SetAngles(entry.angle)
             entry.lamp:SetColor(polish and Color(255, 244, 226) or color_white)
-            entry.lamp:SetBrightness(1.35 * entry.fade)
+            entry.lamp:SetBrightness(BRIGHTNESS * entry.fade)
             entry.lamp:Update()
             if localView then self.localBeam = {pos=pos,angle=entry.angle,fade=entry.fade,updatedAt=RealTime()} end
         end

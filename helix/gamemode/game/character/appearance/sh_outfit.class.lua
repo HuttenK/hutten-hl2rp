@@ -111,6 +111,7 @@ if SERVER then
 		self.prepareItems = true
 		self.character = character
 		self.model = character:GetModel()
+		self.fullBodyBaseSkin = nil
 
 		timer.Simple(0, function()
 			self:SetupItems()
@@ -148,6 +149,7 @@ if SERVER then
 		end
 
 		self.model = model
+		self.fullBodyBaseSkin = nil
 		self.prepareItems = true
 		self:SetupItems()
 	end
@@ -266,6 +268,32 @@ if SERVER then
 		local fallbackModel = self.model
 
 		self.modelClass = Appearance:GetModelClass(fallbackModel)
+
+		-- Cosmetic full-body uniforms use the equipment inventory lifecycle. The
+		-- character's saved model/chargen and equipped armor stats remain intact.
+		-- Do not apply SD clothing bodygroups or attachments to unrelated models.
+		local fullBodyModel
+		for _, info in pairs(self.displayIds) do
+			if info.fullBodyModel then fullBodyModel = info.fullBodyModel; break end
+		end
+
+		if fullBodyModel then
+			if self.fullBodyBaseSkin == nil then self.fullBodyBaseSkin = self.owner:GetSkin() end
+			if self.owner:GetModel() != fullBodyModel then
+				self.isModelChangedByOutfit = true
+				self.owner:SetModel(fullBodyModel)
+			end
+			self.modelClass = Appearance:GetModelClass(fullBodyModel)
+			self.owner:SetSkin(0)
+			for group = 0, self.owner:GetNumBodyGroups() - 1 do self.owner:SetBodygroup(group, 0) end
+			for parameter in pairs(self.lastPoseParams or {}) do self.owner:SetPoseParameter(parameter, 0) end
+			self.lastPoseParams = {}
+			for layer, part in pairs(self.layers) do
+				if IsValid(part) then part:SetNoDraw(layer != Appearance.Layer.Main) end
+			end
+			self:SendClientUpdate({})
+			return
+		end
 
 		-- определяем скрытые слоты и body-маски
 		local hiddenSlots = {}
@@ -416,6 +444,11 @@ if SERVER then
 				part:SetNoDraw(layer != 1) -- тело всегда видно
 			end
 
+   -- Restore the original skin after a cosmetic uniform, including non-SD models.
+   if layer == 1 and self.fullBodyBaseSkin ~= nil and part:GetModel() == fallbackModel then
+    part:SetSkin(math.Clamp(self.fullBodyBaseSkin, 0, math.max(0, part:SkinCount()-1)))
+    self.fullBodyBaseSkin = nil
+   end
    -- Model skins are independent of equipment bodygroups.
    if layer == 1 and self.character and self.character.GetSdSkin and
     part:GetModel() == fallbackModel and fallbackModel:lower():match("^models/sd/citizens/citizen_[%a]+_%d+_hair%d+%.mdl$") then

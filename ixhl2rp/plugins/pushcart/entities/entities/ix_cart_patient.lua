@@ -26,6 +26,14 @@ else
         end
     end
     function ENT:Draw()
+        -- Sequence indices can differ when clients mount different animation
+        -- packs. Resolve the server-selected name on this model locally.
+        local name = self:GetNW2String("ixPatientSequence", "")
+        if name ~= "" then
+            local sequence = self:LookupSequence(name)
+            if not sequence or sequence < 0 then return end
+            if self:GetSequence() ~= sequence then self:ResetSequence(sequence) end
+        end
         self:SetCycle(0)
         self:DrawModel()
     end

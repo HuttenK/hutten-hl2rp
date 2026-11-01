@@ -1,5 +1,38 @@
 ix.action = ix.action or {}
 ix.action.list = ix.action.list or {}
+if SERVER then
+    ix.action.pendingAwards = ix.action.pendingAwards or {}
+    function ix.action:FlushAwards(player)
+        for character,row in pairs(self.pendingAwards) do
+            if not player or row.client==player then
+                self.pendingAwards[character]=nil
+                local message=string.format("%s [%s / character %s]: '%s' x%d, %.2f XP (%s).",row.name,row.steam,row.character,row.action,row.count,row.total,row.skill)
+                if row.phase then
+                    Msg("[LOG] ",message.."\n")
+                    ix.log.CallHandler("Write",row.client,message,0)
+                else ix.log.AddRaw(message) end
+            end
+        end
+    end
+    function ix.action:QueueCombatAward(character,action,result)
+        local p=character:GetPlayer()
+        local row=self.pendingAwards[character]
+        if row and (row.phase~=p.phase or row.action~=action.name or row.skill~=action.skill) then
+            self:FlushAwards(p)
+            row=nil
+        end
+        if not row then
+            row={client=p,name=p:GetName(),steam=p:SteamID(),character=character:GetID(),
+                phase=p.phase,action=action.name,skill=action.skill,count=0,total=0}
+            self.pendingAwards[character]=row
+        end
+        row.count=row.count+1;row.total=row.total+result
+    end
+    timer.Create("ixCombatAwardLogs",2,0,function() ix.action:FlushAwards() end)
+    hook.Add("PlayerDisconnected","ixCombatAwardLogs",function(p) ix.action:FlushAwards(p) end)
+    hook.Add("PrePlayerLoadedCharacter","ixCombatAwardLogs",function(p) ix.action:FlushAwards(p) end)
+    hook.Add("ShutDown","ixCombatAwardLogs",function() ix.action:FlushAwards() end)
+end
 
 function ix.action:Register(uniqueID, skill, data)
 	if !uniqueID or !isstring(uniqueID) then
@@ -149,7 +182,8 @@ do
 				self:UpdateSkillProgress(action.skill, result)
 
 				if !action.noLogging then
-					ix.log.Add(self:GetPlayer(), "skillAction", action.name, result, action.skill)
+					if actionID == "shootSuccess" then ix.action:QueueCombatAward(self,action,result)
+					else ix.log.Add(self:GetPlayer(), "skillAction", action.name, result, action.skill) end
 				end
 			elseif action.alwaysLog then
 				ix.log.Add(self:GetPlayer(), "skillActionNoExp", action.name)

@@ -122,13 +122,21 @@ if (CLIENT) then
 			self.LegEnt:SetPlaybackRate(self.PlaybackRate)
 
 			self.Sequence = LocalPlayer():GetSequence()
+			if ix.sleep and ix.sleep.IsResting(LocalPlayer()) then
+				local _, sequence = ix.sleep.RestSequence(self.LegEnt)
+				self.Sequence = sequence or self.Sequence
+			end
 
 			if (self.LegEnt.Anim != self.Sequence) then
 				self.LegEnt.Anim = self.Sequence
 				self.LegEnt:ResetSequence(self.Sequence)
 			end
 
-			self.LegEnt:FrameAdvance(CurTime() - self.LegEnt.LastTick)
+			if ix.sleep and ix.sleep.IsResting(LocalPlayer()) then
+				self.LegEnt:SetCycle(0)
+			else
+				self.LegEnt:FrameAdvance(CurTime() - self.LegEnt.LastTick)
+			end
 			self.LegEnt.LastTick = CurTime()
 
 			Legs.BreathScale = sharpeye and sharpeye.GetStamina and math.Clamp(math.floor(sharpeye.GetStamina() * 5 * 10) / 10, 0.5, 5) or 0.5
@@ -163,7 +171,12 @@ if (CLIENT) then
 			if (ShouldDrawLegs()) then
 				self.RenderPos = LocalPlayer():GetPos()
 
-				if (LocalPlayer():InVehicle()) then
+				local bedAngle = LocalPlayer():GetNetVar("bedRestAngle")
+				if bedAngle then
+					-- A resting body is anchored to the mattress, not to eye yaw or
+					-- the standing camera's backward/airborne leg offsets.
+					self.RenderAngle = bedAngle
+				elseif (LocalPlayer():InVehicle()) then
 					self.RenderAngle = LocalPlayer():GetVehicle():GetAngles()
 					self.RenderAngle:RotateAroundAxis(self.RenderAngle:Up(), 90)
 				else

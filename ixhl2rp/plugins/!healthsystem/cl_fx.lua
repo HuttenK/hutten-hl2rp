@@ -1,5 +1,18 @@
 local BLEEDING_DISTANCE = 2048 ^ 2
 local bleedingPlayers = {}
+local EMISSION_INTERVAL = 1 / 20
+local MAX_EFFECTS_PER_STEP = 6
+local nextEmission, emissionCursor = 0, 0
+if PLUGIN.ClearBleedingEmitters then PLUGIN:ClearBleedingEmitters() end
+local bleedingEmitters = {}
+function PLUGIN:ClearBleedingEmitters()
+	for client, entry in pairs(bleedingEmitters) do
+		if IsValid(entry.emitter) then entry.emitter:Finish() end
+		bleedingEmitters[client] = nil
+	end
+end
+local healthPlugin = PLUGIN
+hook.Add("ShutDown", "ixBleedingEmitters", function() healthPlugin:ClearBleedingEmitters() end)
 
 local function BleedingObject(client)
 	-- Cart transport hides the original ragdoll. Its client bone cache may
@@ -14,6 +27,12 @@ local function BleedingObject(client)
 end
 
 timer.Create("ixBleedingUpdate", 1, 0, function()
+	for client, entry in pairs(bleedingEmitters) do
+		if not IsValid(client) or not client:Alive() or not client:GetNetVar("isBleeding") or CurTime()-entry.last>2 then
+			if IsValid(entry.emitter) then entry.emitter:Finish() end
+			bleedingEmitters[client] = nil
+		end
+	end
 	if !IsValid(LocalPlayer()) then return end
 
 	bleedingPlayers = {}
@@ -43,7 +62,8 @@ do
 				end
 			end
 			
-			if math.random() <= 0.005 then
+			-- Keep the approximate 60-FPS blood-trail rate with 20-Hz emission.
+			if math.random() <= 0.015 then
 				util.Decal("Blood", position + normal, position - normal, particle.Entity)
 			end
 
@@ -55,15 +75,23 @@ do
 		local pos = data:GetOrigin()
 		local ang = data:GetAngles()
 		self.Entity = data:GetEntity()
-		self.Emitter = ParticleEmitter(pos)
-
-		local lcol = render.GetLightColor(pos) * 255
-		lcol.r = math.Clamp(lcol.r, 50, 150)
+		if not IsValid(self.Entity) then return end
+		local entry = bleedingEmitters[self.Entity]
+		if not entry or not IsValid(entry.emitter) then
+			entry = {emitter=ParticleEmitter(pos)}
+			bleedingEmitters[self.Entity] = entry
+		end
+		entry.last = CurTime()
+		self.Emitter = entry.emitter
+		if not IsValid(self.Emitter) then return end
+		self.Emitter:SetPos(pos)
 
 		for i = 1, 5 do
 			local smoke = self.Emitter:Add("particle/smokesprites_000"..math.random(1,6), pos + VectorRand()*2)
+			if not smoke then continue end
 			smoke:SetVelocity(ang:Up())
-			smoke:SetDieTime(FrameTime() * 4)
+			-- Fixed lifetime keeps the visible cloud independent of client FPS.
+			smoke:SetDieTime(EMISSION_INTERVAL * 4)
 			smoke:SetStartAlpha(math.random(200,255))
 			smoke:SetStartSize(math.random(5,10))
 			smoke:SetEndSize(0)
@@ -73,6 +101,7 @@ do
 
 		for i = 1, 5 do
 			local smoke = self.Emitter:Add("effects/blooddrop", pos + VectorRand()*2)
+			if not smoke then continue end
 			smoke:SetVelocity((ang:Up()*-math.Rand(.5, 1) + ang:Forward()*math.Rand(-1, 1) + ang:Right()*math.Rand(-1, 1)) * 15)
 			smoke:SetDieTime(math.Rand(.12, .8))
 			smoke:SetStartSize(1)
@@ -84,7 +113,7 @@ do
 			smoke:SetCollide(true)
 		end
 
-		self.Emitter:Finish()
+		-- Reuse this patient's emitter; cleanup finishes it after emission stops.
 	end
 
 	function EFFECT:Think()
@@ -100,14 +129,28 @@ end
 local offset = Vector(0,0,32)
 function PLUGIN:DrawBleeding()
 	if !bleedingPlayers or #bleedingPlayers <= 0 then
+		nextEmission, emissionCursor = 0, 0
 		return
 	end
-	
-	for _, v in ipairs(bleedingPlayers) do
+	local now = CurTime()
+	if now + 0.000001 < nextEmission then return end
+	nextEmission = nextEmission + EMISSION_INTERVAL
+	-- Never replay a backlog of particles after a hitch.
+	if nextEmission <= now then nextEmission = now + EMISSION_INTERVAL end
+	local observer = LocalPlayer()
+	if not IsValid(observer) then return end
+	local origin = observer:EyePos()
+	local emitted = 0
+	-- Round-robin budgeting avoids starving patients at the end of the list.
+	for i = 1, #bleedingPlayers do
+		emissionCursor = emissionCursor % #bleedingPlayers + 1
+		local v = bleedingPlayers[emissionCursor]
 		if !IsValid(v) then continue end
 		if !v:Alive() or !v:GetNetVar("isBleeding") then continue end
 
 		local object = BleedingObject(v)
+		if not IsValid(object) or (object.IsDormant and object:IsDormant()) then continue end
+		if object:GetPos():DistToSqr(origin) > BLEEDING_DISTANCE then continue end
 		local boneID = object:LookupBone("ValveBiped.Bip01_Spine1")
 		if !boneID then continue end
 
@@ -117,6 +160,9 @@ function PLUGIN:DrawBleeding()
 			effectData:SetOrigin(pos or (object:GetPos() + offset))
 			effectData:SetAngles(ang or angle_zero)
 		util.Effect("bleeding", effectData, true, true)
+		if ix.performance then ix.performance.Count("bleeding_effect_bursts") end
+		emitted = emitted + 1
+		if emitted >= MAX_EFFECTS_PER_STEP then break end
 	end
 end
 

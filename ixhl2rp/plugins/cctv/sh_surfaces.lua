@@ -1,6 +1,7 @@
 local C=ix.CCTV
 C.terminalWidth=800;C.terminalHeight=580
 C.surfaceFields={"x","y","z","p","yaw","r","w","h"}
+function C.SurfaceKind(kind) return kind=="terminal" or kind=="monitor" end
 function C.SurfaceConfig(v)
  if not istable(v) then return end
  local out={}
@@ -60,8 +61,22 @@ end
 function C.AimTerminal(p,devices)
  local best,bestHit,depth=nil,nil,C.useDistance^2
  for _,d in pairs(devices) do
-  if d.kind=="terminal" and d.surface then
-   local _,_,hit=C.TerminalRay(d,p:GetShootPos(),p:GetAimVector())
+  if C.SurfaceKind(d.kind) and d.surface then
+   local hit
+   if d.kind=="terminal" then
+    local _,_,point=C.TerminalRay(d,p:GetShootPos(),p:GetAimVector());hit=point
+   else
+    -- Passive monitors use their entire rectangle for admin E interaction.
+    local center,ang,w,h=C.Screen(d)
+    if center then
+     local eye,dir=p:GetShootPos(),p:GetAimVector();local denominator=dir:Dot(ang:Up())
+     if denominator<-.001 then
+      local distance=(center-eye):Dot(ang:Up())/denominator
+      local point=eye+dir*distance;local delta=point-center
+      if distance>0 and math.abs(delta:Dot(ang:Forward()))<=w/2 and math.abs(delta:Dot(ang:Right()))<=h/2 then hit=point end
+     end
+    end
+   end
    if hit and hit:DistToSqr(p:GetShootPos())<depth and C.TerminalReach(p,d) then
     best=d;bestHit=hit;depth=hit:DistToSqr(p:GetShootPos())
    end

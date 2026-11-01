@@ -1,0 +1,16 @@
+{
+  "workshop": "3805951849",
+  "title": "Legends | EFT ARC9 Guns",
+  "files": [
+    {
+      "path": "lua/entities/arc9_eft_grenade_m18.lua",
+      "sha256": "c210bae02d58663e71cb3308ab99a6e59c2a3b24bd4467ccecbb6464f3b7948e",
+      "bytes": 3665
+    },
+    {
+      "path": "lua/entities/arc9_eft_grenade_m18y.lua",
+      "sha256": "8e151f28e6a2d03d5f37922ff39910c75bff1261214b2998ce468853d651148f",
+      "bytes": 3669
+    }
+  ]
+}

@@ -15,11 +15,18 @@ function A.Remove(host)
     if entry then P:RemovePreviewWeapon(entry.model); records[host] = nil end
 end
 
+local function sameTree(a,b)
+    if type(a)~=type(b) then return false end
+    if not istable(a) then return a==b end
+    for key,value in pairs(a) do if not sameTree(value,b[key]) then return false end end
+    for key in pairs(b) do if a[key]==nil then return false end end
+    return true
+end
 function A.Get(host, class, tree, rounds)
     if not ARC9 or not IsValid(LocalPlayer()) then return end
-    local signature = class .. ":" .. util.TableToJSON(tree or {}) .. ":" .. tostring(rounds or 0)
     local entry = records[host]
-    if entry and entry.signature == signature then
+    rounds=rounds or 0
+    if entry and entry.class==class and entry.rounds==rounds and sameTree(entry.tree,tree or {}) then
         if IsValid(entry.model) then return entry.model end
         if (entry.retry or 0) > RealTime() then return end
     end
@@ -27,7 +34,7 @@ function A.Get(host, class, tree, rounds)
     local source = {GetClass = function() return class end, Clip1 = function() return rounds or 0 end,
         Clip2 = function() return 0 end}
     local model = P:CreatePreviewWeapon(source, tree)
-    records[host] = {signature = signature, model = model, retry = RealTime() + 5}
+    records[host] = {class=class,rounds=rounds,tree=table.Copy(tree or {}),model=model,retry=RealTime()+5}
     if IsValid(model) then return model end
 end
 

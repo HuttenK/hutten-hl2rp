@@ -1247,7 +1247,15 @@ local buttons = {
  end
 
 
-					local cid = client:GetInventory("cid"):CreatePanel(parent)
+					local satchelInventory = client:GetInventory("satchel")
+ if satchelInventory then
+  local satchel = satchelInventory:CreatePanel(parent)
+  satchel:SetSlotSize(slot_size_small); satchel:Rebuild(); satchel:SizeToContents()
+  satchel:SetY(ears:GetY()); satchel:MoveRightOf(ears, 5)
+  satchel:SetTitle(L("equip.satchel"))
+ end
+
+ local cid = client:GetInventory("cid"):CreatePanel(parent)
 					cid:SetSlotSize(slot_size_small)
 					cid:Rebuild()
 					cid:SizeToContents()

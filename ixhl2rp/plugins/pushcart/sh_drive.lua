@@ -155,12 +155,14 @@ function PushCart:TraceFor(cart)
 end
 
 -- Driving uses +X towards the handle; the EP2 model has its handle on -X.
-function PushCart:PoseTransform(pose)
+function PushCart:PoseTransform(pose, cart)
+	local Kin = cart and self:GetKinematics(cart) or self.Kin
 	local fx, fy, fz, ux, uy, uz = Kin.Basis(pose)
 	local bottom = Kin.WHEEL_BOTTOM
 	local position = Vector(pose.x - ux * bottom, pose.y - uy * bottom, pose.z0 - uz * bottom)
 
-	return position, self:FlipModelAngles(Vector(fx, fy, fz):AngleEx(Vector(ux, uy, uz)))
+	local angles = Vector(fx, fy, fz):AngleEx(Vector(ux, uy, uz))
+	return position, cart and self:ModelAngles(cart, angles) or self:FlipModelAngles(angles)
 end
 
 --[[
@@ -444,6 +446,7 @@ local function PrepareServerMove(cart, origin)
 end
 
 local function ServerStep(client, mv, cart, command, input)
+	local Kin = PushCart:GetKinematics(cart)
 	local drive = cart.drive
 
 	if !drive then
@@ -535,6 +538,7 @@ end
 	настоящей, и при пинге в 200 мс на виражах тележку дёргало поправками до градуса каждый пинг.
 ]]
 local function Restep(cart, entry, base)
+	local Kin = PushCart:GetKinematics(cart)
 	local input = entry.input
 
 	filterCart = cart
@@ -969,6 +973,7 @@ end
 	шаг без единой трассы. Подрезка толкающего применяется каждый раз: mv каждый прогон свой.
 ]]
 local function ClientStep(client, mv, cart, command, input)
+	local Kin = PushCart:GetKinematics(cart)
 	local pred = cart.ixPred
 
 	if !pred then
@@ -1097,13 +1102,13 @@ local function CartFacing(client)
 
 		local _, angles = cart:GetDrawPose()
 
-		return angles.y, weight
+		return PushCart:ModelAngles(cart, angles, true).y + 180, weight
 	end
 
 	local cart = PushCart:GetPushedCart(client)
 
 	if cart then
-		return cart:GetAngles().y, 1
+		return PushCart:ModelAngles(cart, cart:GetAngles(), true).y + 180, 1
 	end
 end
 
@@ -1176,6 +1181,18 @@ if CLIENT then
 		return position, rotation
 	end
 
+	function PushCart:ClearChildRenderOverride(child)
+		child:SetRenderOrigin(nil)
+		-- Players shadow Entity:SetRenderAngles with a native method that
+		-- requires an Angle. Restore their current orientation; props instead
+		-- need nil to release the persistent entity render-angle override.
+		if child:IsPlayer() then
+			child:SetRenderAngles(child:GetAngles())
+		else
+			child:SetRenderAngles(nil)
+		end
+	end
+
 	local function ReleaseChildren(children, keep)
 		if !children then
 			return
@@ -1183,8 +1200,7 @@ if CLIENT then
 
 		for child in pairs(children) do
 			if (!keep or !keep[child]) and IsValid(child) then
-				child:SetRenderOrigin(nil)
-				child:SetRenderAngles(nil)
+				PushCart:ClearChildRenderOverride(child)
 			end
 		end
 	end
@@ -1222,6 +1238,14 @@ if CLIENT then
 				child:SetRenderAngles(childAngles)
 				overridden[child] = true
 			end
+		end
+
+		local rider = PushCart.GetRider and PushCart:GetRider(cart)
+		if IsValid(rider) then
+			local origin = LocalToWorld(cart:GetNW2Vector("ixCartRiderPos"), angle_zero, position, angles)
+			rider:SetRenderOrigin(origin)
+			rider:SetRenderAngles(angles)
+			overridden[rider] = true
 		end
 
 		-- Ящик сняли с тележки, пока его рисовали сдвинутым: вернуть ему его место.

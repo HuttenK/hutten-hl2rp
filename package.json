@@ -1,0 +1,12 @@
+{
+  "name": "hutten-hl2rp-validation",
+  "private": true,
+  "scripts": {
+    "audit": "node tools/audit.cjs",
+    "test": "node tools/test.cjs"
+  },
+  "devDependencies": {
+    "fengari": "0.1.5",
+    "luaparse": "0.3.1"
+  }
+}

@@ -64,13 +64,46 @@ function A.ReturnAmmo(client, ammo, count)
 	return true
 end
 
+local emptySlots = {}
+local function SameAttachments(saved, slots, depth)
+	if not istable(saved) then return false end
+	depth = depth or 0
+	if depth > 12 then return next(saved) == nil end
+	slots = slots or emptySlots
+	if #saved ~= #slots then return false end
+	for i, slot in ipairs(slots) do
+		local old = saved[i]
+		if not old or old.Installed ~= slot.Installed or old.ToggleNum ~= slot.ToggleNum or
+			not SameAttachments(old.SubAttachments or emptySlots, slot.SubAttachments, depth + 1) then return false end
+	end
+	return true
+end
+
 function A.Save(item, weapon)
 	if not IsValid(weapon) or not weapon.ARC9 or weapon.ixItem ~= item or not weapon.ixInventoryReady then return end
-	item:SetData("ammo", math.max(0, weapon:Clip1()))
-	item:SetData("ammo2", math.max(0, weapon:Clip2()))
-	item:SetData("ammoType", weapon:GetValue("Ammo"))
-	item:SetData("ammoType2", weapon:GetValue("UBGLAmmo"))
-	item:SetData("arc9_atts", A.AttachmentTree(weapon.Attachments))
+	local changes = {}
+	local function Changed(key, value)
+		if item:GetData(key) ~= value then changes[#changes + 1] = {key, value} end
+	end
+	Changed("ammo", math.max(0, weapon:Clip1()))
+	Changed("ammo2", math.max(0, weapon:Clip2()))
+	Changed("ammoType", weapon:GetValue("Ammo"))
+	Changed("ammoType2", weapon:GetValue("UBGLAmmo"))
+	-- Compare in place; allocate a serializable tree only after an actual edit.
+	-- Retain reconciliation for addons that mutate nested slots directly.
+	if not SameAttachments(item:GetData("arc9_atts"), weapon.Attachments) then
+		changes[#changes + 1] = {"arc9_atts", A.AttachmentTree(weapon.Attachments)}
+	end
+	if #changes == 0 then
+		if ix.performance then ix.performance.Count("arc9_unchanged_saves_skipped") end
+		return false
+	end
+	if ix.performance then ix.performance.Count("arc9_changed_fields", #changes) end
+	if item.SetDataBatch then item:SetDataBatch(changes)
+	else -- Compatible with an older Helix copy during staged deployment.
+		for _, change in ipairs(changes) do item:SetData(change[1], change[2]) end
+	end
+	return true
 end
 
 function A.Bind(item, weapon, client)

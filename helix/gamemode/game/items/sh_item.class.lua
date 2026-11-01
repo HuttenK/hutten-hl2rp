@@ -542,8 +542,12 @@ function ITEM:SetData(key, value, receivers, noSave, noCheckEntity)
 		end
 
 		if !self.vars[key].NoSave then
-			ix.Item.items_to_savedata[self:GetID()] = true
-			ix.Item:Async_SaveData()
+			if (self.ixDataBatchDepth or 0) > 0 then
+				self.ixDataBatchDirty = true
+			else
+				ix.Item.items_to_savedata[self:GetID()] = true
+				ix.Item:Async_SaveData()
+			end
 		end
 	end
 	
@@ -576,6 +580,26 @@ function ITEM:SetData(key, value, receivers, noSave, noCheckEntity)
 		query:Execute()
 	end
 	*/
+end
+
+-- A synchronous batch: callbacks and replication still run for each field,
+-- but the database sees the final item state once before this call returns.
+-- Entries are {key, value}, so a nil value can explicitly clear a field.
+function ITEM:SetDataBatch(changes)
+	self.ixDataBatchDepth = (self.ixDataBatchDepth or 0) + 1
+	local ok, err = pcall(function()
+		for _, change in ipairs(changes) do
+			self:SetData(change[1], change[2])
+		end
+	end)
+	self.ixDataBatchDepth = self.ixDataBatchDepth - 1
+	if SERVER and self.ixDataBatchDepth == 0 and self.ixDataBatchDirty then
+		self.ixDataBatchDirty = nil
+		ix.Item.items_to_savedata[self:GetID()] = true
+		ix.Item:Async_SaveData()
+	end
+	-- Do not leave a failed callback suppressing all later saves.
+	if not ok then error(err, 0) end
 end
 
 function ITEM:GetData(key, default)
@@ -649,7 +673,12 @@ if SERVER then
 				data[key] = saveValue or value
 			end
 
-			query:Update("data", util.TableToJSON(data))
+			local encoded = util.TableToJSON(data)
+			if ix.performance then
+				ix.performance.Count("item_save_requests")
+				ix.performance.Count("item_save_json_bytes", isstring(encoded) and #encoded or 0)
+			end
+			query:Update("data", encoded)
 			query:Where("item_id", self:GetID())
 		query:Execute()
 	end

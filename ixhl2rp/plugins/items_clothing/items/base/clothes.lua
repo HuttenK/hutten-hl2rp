@@ -38,6 +38,7 @@ local EQUIP_INV_TO_APPEARANCE_SLOT = {
 
 	-- Очки носятся отдельным слотом от 'mask' (маски/противогазы), поэтому у них
 	-- собственный Appearance-слот: иначе очки вытесняли бы маску и наоборот.
+	satchel        = 19, -- separate from backpacks
 	glasses        = 17, -- equip_inv 'glasses' (очки)
 }
 
@@ -56,6 +57,11 @@ function ItemCloth:Init()
 		if success then target:SendDeltaTransfer(item.id, old, x, y, w, h)
 		else old:SyncTo(item.player); item.player:NotifyLocalized(reason or "unknownError") end
 		return false
+	end
+	self.functions.unequip.OnCanRun = function(item)
+		local inventory = ix.Inventory:Get(item.inventory_id)
+		return IsValid(item.player) and item:CanUnequip(item.player) and
+			(item:IsEquipped() or (item.sdClothing and inventory and inventory.isEquipment))
 	end
 
 	self.category = "item.category.clothing"
@@ -115,6 +121,11 @@ function ItemCloth:Init()
 			end
 		end
 	end
+end
+
+function ItemCloth:CanEquip(client)
+ if self.sdClothing and (not IsValid(client) or ix.Appearance:GetModelClass(client:GetModel()) ~= "sd") then return false end
+ return ix.meta.ItemEquipable.CanEquip(self, client)
 end
 
 function ItemCloth:OnEquipped(client)
@@ -186,7 +197,7 @@ function ItemCloth:OnRegistered()
 	-- Auto-register with ix.Appearance system for items that have bodyGroups
 	-- but were not manually given a displayID. This allows Outfit:Update() to
 	-- apply the bodygroup changes through the new appearance pipeline.
-	if not self.displayID and self.bodyGroups and next(self.bodyGroups) then
+	if not self.displayID and ((self.bodyGroups and next(self.bodyGroups)) or (self.bodyGroupsSD and next(self.bodyGroupsSD))) then
 		local slot = EQUIP_INV_TO_APPEARANCE_SLOT[self.equip_inv] or ix.Appearance.Slot.Torso
 		local info = {
 			slot       = slot,
@@ -214,6 +225,11 @@ function ItemCloth:OnRegistered()
 		if istable(self.bodyGroupsMilitia) then
 			info.variants = info.variants or {}
 			info.variants.militia = { bodyGroups = self.bodyGroupsMilitia }
+		end
+
+		if istable(self.bodyGroupsSD) then
+			info.variants = info.variants or {}
+			info.variants.sd = {bodyGroups = self.bodyGroupsSD}
 		end
 
 		self.displayID = ix.Appearance:New(self.uniqueID, info)

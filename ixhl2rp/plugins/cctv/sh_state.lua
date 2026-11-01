@@ -1,6 +1,6 @@
 ix.CCTV=ix.CCTV or {}
 local C=ix.CCTV
-C.cameraRig={version=1,model="models/props_glackmesa/securitycamera.mdl",legacyModel="models/dav0r/camera.mdl",
+C.cameraRig={version=1,model="models/props_blackmesa/securitycamera.mdl",previousModel="models/props_glackmesa/securitycamera.mdl",legacyModel="models/dav0r/camera.mdl",
  lens=Vector(18.58,0,7.46),angle=Angle(25,0,0),wall=Vector(-11,0,1.8)}
 C.kinds={camera={class="ix_cctv_camera",model=C.cameraRig.model,name="Камера",limit=64},
  monitor={class="ix_cctv_monitor",model="models/props_c17/tv_monitor01.mdl",name="Монитор",limit=64},
@@ -43,8 +43,13 @@ end
 -- Calibrated against the model's idle skeleton, not its unposed VVD bounds.
 -- The camera head is tilted 25 degrees; both preview and capture use this lens.
 function C.CameraLens(pos,ang,model)
- if model and model~=C.cameraRig.model then return pos+ang:Forward()*12,ang end
+ if model and model~=C.cameraRig.model and model~=C.cameraRig.previousModel then return pos+ang:Forward()*12,ang end
  return LocalToWorld(C.cameraRig.lens,C.cameraRig.angle,pos,ang)
+end
+function C.CameraIndicator(d)
+ local pos,ang=C.Lens(d);if not pos or not ang then return end
+ -- Small status LED beside the lens, following the same tilted head frame.
+ return pos+ang:Right()*2.3-ang:Up()*1.8+ang:Forward()*.2
 end
 function C.RestoreCameraTransform(row)
  local pos,ang=C.Vector(row.pos),C.Angle(row.ang)
@@ -64,7 +69,7 @@ function C.Screen(d)
  return center,a,14.5,10.5,ent
 end
 function C.Powered(d)
- if not d or d.on==false then return false end
+ if not d or d.on==false or d.broken==true then return false end
  -- A helmet camera is self-powered: blacked-out rooms remain visible as dark
  -- scenes. The destination monitor still uses ordinary facility power.
  if d.bodycam then return ix.bodycams and ix.bodycams.Active(d) or false end

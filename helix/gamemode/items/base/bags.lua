@@ -193,12 +193,17 @@ function Item:CanEquip(client)
 end
 
 function Item:OnEquipped(client)
-	client.char_outfit:AddItem(self, false, self.bodyGroups or {})
+	if self.sdDisplayID and ix.Appearance:GetModelClass(client:GetModel()) == "sd" then
+  client.char_outfit:Add(self.sdDisplayID)
+ else
+  client.char_outfit:AddItem(self, false, self.bodyGroups or {})
+ end
 	client.char_outfit:Update()
 end
 
 function Item:OnUnequipped(client)
 	client.char_outfit:RemoveItem(self)
+ if self.sdDisplayID then client.char_outfit:Remove(self.sdDisplayID) end
 	client.char_outfit:Update()
 end
 

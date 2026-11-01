@@ -54,6 +54,49 @@ function S.Occupied(ent)
  end
  return false
 end
+if SERVER then
+ function S.ValidHostID(id)
+  return isstring(id) and #id>0 and #id<=96 and id:match("^[%w_%-]+$")~=nil
+ end
+ function S.CaptureBinding(ent)
+  if not IsValid(ent) then return end
+  local pos=ent:GetPos()
+  if ent:MapCreationID()<0 and not S.ValidHostID(ent.ixPropScreenHostID) then
+   ent.ixPropScreenHostID="screen_"..os.time().."_"..ent:EntIndex().."_"..math.random(1,2147483646)
+  end
+  return {mapid=ent:MapCreationID(),pos={x=pos.x,y=pos.y,z=pos.z},model=ent:GetModel(),
+   class=ent:GetClass(),hostID=ent.ixPropScreenHostID}
+ end
+ function S.ResolveBinding(binding,model)
+  if not istable(binding) or not isstring(model) then return end
+  local function matches(ent)
+   return IsValid(ent) and ent:GetModel()==model and (not binding.class or ent:GetClass()==binding.class)
+  end
+  if isnumber(binding.mapid) and binding.mapid>=0 then
+   local ent=ents.GetMapCreatedEntity(binding.mapid)
+   if matches(ent) then return ent end
+  end
+  local candidates=ents.FindByModel(model)
+  if S.ValidHostID(binding.hostID) then
+   for _,ent in ipairs(candidates) do
+    if matches(ent) and ent.ixPropScreenHostID==binding.hostID then return ent end
+   end
+  end
+  -- Older saves and third-party prop persistence have no stable host ID.
+  -- Match only the saved location; never attach to an arbitrary same-model prop.
+  local p=binding.pos
+  if not (istable(p) or isvector(p)) or not isnumber(p.x) or not isnumber(p.y) or not isnumber(p.z) then return end
+  local pos=Vector(p.x,p.y,p.z);local found,distance=nil,16
+  for _,ent in ipairs(candidates) do
+   if matches(ent) and (not S.ValidHostID(binding.hostID) or not S.ValidHostID(ent.ixPropScreenHostID)) then
+    local delta=ent:GetPos():DistToSqr(pos)
+    if delta<distance then found,distance=ent,delta end
+   end
+  end
+  if found and S.ValidHostID(binding.hostID) then found.ixPropScreenHostID=binding.hostID end
+  return found
+ end
+end
 -- Resolve one physical screen across all overlay types. A single E press must
 -- not open a terminal and toggle the TV behind it, regardless of hook order.
 function S.Aim(p,limit)

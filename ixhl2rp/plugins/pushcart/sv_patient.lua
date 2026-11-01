@@ -29,7 +29,8 @@ function P:PatientExit(state, actor, carrierOverlap)
             return (position+WorldOffset(a)):DistToSqr(actor:GetPos()) < (position+WorldOffset(b)):DistToSqr(actor:GetPos())
         end)
     end
-    local f, r = yaw:Forward(), yaw:Right()
+    local facing = Angle(0, angles.y + (state.footprintYaw or 0), 0)
+    local f, r = facing:Forward(), facing:Right()
     local halfLength, halfWidth = state.halfLength or 55, state.halfWidth or 26
     local extent = Vector(math.abs(f.x)*halfLength+math.abs(r.x)*halfWidth,
         math.abs(f.y)*halfLength+math.abs(r.y)*halfWidth,0)
@@ -81,60 +82,70 @@ end
 function P:PreparePatient(client, cart, body, patient, display)
     display:SetNoDraw(true)
     display:SetModel(body:GetModel())
-    local sequence, low, high = self:PatientSequence(display)
-    if not sequence then display:Remove(); return false, "У этой модели нет подходящей позы лежания." end
+    local sequence, low, high, sequenceName = self:PatientSequence(display, cart.PatientSeated)
+    if not sequence then return nil, "Эта модель не поддерживает нужную позу пациента." end
     local scale = body:GetModelScale()
     low, high = low * scale, high * scale
-    local size = high - low
-    if math.max(size.x,size.y) > 110 or math.min(size.x,size.y) > 52 or size.z > 40 then
-        display:Remove(); return false, "Эта модель не помещается на тележке."
+    local size = high-low
+    if math.max(size.x,size.y)>110 or math.min(size.x,size.y)>52 or size.z>(cart.PatientSeated and 65 or 40) then
+        return nil, "Эта модель слишком велика для этого транспорта."
     end
-    local heading = Angle(0, size.y > size.x and 90 or 0, 0)
-    local center = (low + high) * 0.5
-    local localPos = Vector((cart.BedMinX+cart.BedMaxX)*0.5, 0, cart.BedZ+1-low.z)
-        - heading:Forward()*center.x + heading:Right()*center.y
-    local position, angles = LocalToWorld(localPos, heading, cart:GetPos(), cart:GetAngles())
-    local state = {cart=cart, body=body, patient=patient, display=display, character=patient:GetCharacter(),
-        position=cart:GetPos(), angles=cart:GetAngles(), bones={}, noDraw=body:GetNoDraw(), notSolid=not body:IsSolid(),
-        model=body:GetModel(), halfLength=math.max(size.x,size.y)*0.5+2,
-        halfWidth=math.min(size.x,size.y)*0.5+2, height=size.z, low=low, high=high, heading=heading}
-    state.safeExit = self:PatientExit(state, client)
-    if not state.safeExit then display:Remove(); return false, "Освободите место рядом с тележкой для погрузки и выгрузки." end
-    local deck = cart:LocalToWorld(Vector((cart.BedMinX+cart.BedMaxX)*0.5,0,cart.BedZ+2))
-    local f, r = cart:GetAngles():Forward(), cart:GetAngles():Right()
-    local extent = Vector(math.abs(f.x)*state.halfLength+math.abs(r.x)*state.halfWidth,
-        math.abs(f.y)*state.halfLength+math.abs(r.y)*state.halfWidth,0)
-    local clearance = util.TraceHull({start=deck,
-        endpos=deck, mins=-extent, maxs=extent+Vector(0,0,size.z+4),
-        filter={client,patient,body,cart,display}, mask=MASK_SOLID})
-    if not ClearTrace(clearance) then display:Remove(); return false, "Над тележкой недостаточно места." end
     display:SetModelScale(scale,0)
-    display:SetSkin(body:GetSkin())
-    display:SetColor(body:GetColor())
-    display:SetMaterial(body:GetMaterial())
+    display:SetSkin(body:GetSkin()); display:SetColor(body:GetColor()); display:SetMaterial(body:GetMaterial())
     for _, group in ipairs(body:GetBodyGroups()) do display:SetBodygroup(group.id,body:GetBodygroup(group.id)) end
     for index in ipairs(body:GetMaterials()) do display:SetSubMaterial(index-1,body:GetSubMaterial(index-1)) end
-    if ix.SDHair then ix.SDHair.Copy(body, display) end
-    display:SetPos(position); display:SetAngles(angles); display:Spawn()
+    if ix.SDHair and ix.SDHair.Copy then ix.SDHair.Copy(patient,display) end
+    -- Sample the patient's own skeleton once at the cart origin. Server-side
+    -- GetBoneMatrix builds it; SetupBones/InvalidateBoneCache are client-only.
+    local origin = cart:GetPos()
+    display:SetPos(origin); display:SetAngles(angle_zero); display:Spawn()
     display:ResetSequence(sequence); display:SetCycle(0); display:SetPlaybackRate(0)
-    -- SetupBones and InvalidateBoneCache are client-only. On the server,
-    -- GetBoneMatrix queries the animation pose through the engine bone cache.
-    -- Capture once, outside rendering. Frozen backing physics retains Helix's
-    -- original ragdoll ownership, inventory, wake timer and removal callbacks.
+    display:SetNW2String("ixPatientSequence",sequenceName or "")
+    local heading = Angle(0, (cart.PatientYaw or 0) + (not cart.PatientSeated and size.y>size.x and 90 or 0), 0)
+    local center = (low+high)*0.5
+    local localPos = Vector((cart.BedMinX+cart.BedMaxX)*0.5, 0, cart.BedZ+1-low.z)
+        -heading:Forward()*center.x+heading:Right()*center.y
+    if cart.PatientSeated then
+        local pelvis = display:LookupBone("ValveBiped.Bip01_Pelvis")
+        local matrix = pelvis and display:GetBoneMatrix(pelvis)
+        if not matrix then return nil, "У модели нет позы таза для сидения." end
+        local point = matrix:GetTranslation()-origin
+        -- Seat the pelvis above the cushion, preserving the patient's height.
+        localPos = cart.PatientSeat+Vector(0,0,4*scale)-heading:Forward()*point.x+heading:Right()*point.y-Vector(0,0,point.z)
+        localPos.z = math.max(localPos.z, .5-low.z)
+    end
+    local position, angles = LocalToWorld(localPos,heading,cart:GetPos(),cart:GetAngles())
+    local bodyCenter = LocalToWorld(center,angle_zero,position,angles)
+    local worldAngles = angles
+    local forward,right,up = worldAngles:Forward(),worldAngles:Right(),worldAngles:Up()
+    local x=(math.abs(forward.x)*size.x+math.abs(right.x)*size.y+math.abs(up.x)*size.z)*.5
+    local y=(math.abs(forward.y)*size.x+math.abs(right.y)*size.y+math.abs(up.y)*size.z)*.5
+    local z=(math.abs(forward.z)*size.x+math.abs(right.z)*size.y+math.abs(up.z)*size.z)*.5
+    local state={cart=cart,body=body,patient=patient,display=display,character=patient:GetCharacter(),
+        position=cart:GetPos(),angles=cart:GetAngles(),bones={},noDraw=body:GetNoDraw(),notSolid=not body:IsSolid(),
+        model=body:GetModel(),halfLength=math.max(size.x,size.y)*.5+2,halfWidth=math.min(size.x,size.y)*.5+2,
+        height=size.z,top=localPos.z+high.z,low=low,high=high,heading=heading,footprintYaw=cart.PatientYaw or 0}
+    state.safeExit=self:PatientExit(state,client)
+    if not state.safeExit then return nil,"Рядом нет свободного места для безопасной выгрузки." end
+    local clear=util.TraceHull({start=bodyCenter,endpos=bodyCenter,
+        mins=Vector(-x,-y,-z),maxs=Vector(x,y,z),
+        filter={client,cart,body,patient,display},mask=MASK_SOLID})
+    if not ClearTrace(clear) then return nil,"Место для пациента занято." end
     for index=0,body:GetPhysicsObjectCount()-1 do
-        local physics = body:GetPhysicsObjectNum(index)
-        local bodyBone = body:TranslatePhysBoneToBone(index)
-        local displayBone = bodyBone and bodyBone >= 0 and display:LookupBone(body:GetBoneName(bodyBone))
-        local matrix = displayBone and display:GetBoneMatrix(displayBone)
-        if IsValid(physics) then
-            if not matrix then display:Remove(); return false, "Не удалось подготовить позу этой модели." end
-            local point, angle = WorldToLocal(matrix:GetTranslation(),matrix:GetAngles(),position,angles)
-            state.bones[#state.bones+1] = {index=index, physics=physics, position=point, angles=angle,
-                motion=physics:IsMotionEnabled(), collisions=physics:IsCollisionEnabled()}
+        local physics=body:GetPhysicsObjectNum(index)
+        local bone=body:TranslatePhysBoneToBone(index)
+        local name=bone and body:GetBoneName(bone)
+        local target=name and display:LookupBone(name)
+        local matrix=target and display:GetBoneMatrix(target)
+        if IsValid(physics) and not matrix then return nil,"Не удалось получить позу костей этой модели." end
+        if IsValid(physics) and matrix then
+            state.bones[#state.bones+1]={index=index,physics=physics,position=matrix:GetTranslation()-origin,
+                angles=matrix:GetAngles(),motion=physics:IsMotionEnabled(),collisions=physics:IsCollisionEnabled()}
         end
     end
-    if #state.bones == 0 then display:Remove(); return false, "У тела отсутствует физическая модель." end
-    return state, localPos
+    if #state.bones==0 then return nil,"У тела нет доступных физических костей." end
+    display:SetPos(position); display:SetAngles(angles)
+    return state,localPos
 end
 
 function P:LoadPatient(client, cart)
@@ -172,7 +183,7 @@ function P:LoadPatient(client, cart)
     self:SyncPatient(state)
     display:SetNoDraw(false)
     cart:UpdateLoad(); cart:LayoutCrates()
-    client:Notify("Персонаж уложен на тележку.")
+    client:Notify(cart.PatientSeated and "Персонаж усажен в коляску." or "Персонаж уложен на тележку.")
     return true
 end
 

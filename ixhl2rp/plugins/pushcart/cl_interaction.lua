@@ -11,10 +11,12 @@ net.Receive("ixPushCartMenu", function()
 	local character, parent, chosen = client:GetCharacter(), entity:GetParent(), false
 	local function occupant() return P:GetPatient(entity.isCartPatient and P:PatientCart(entity) or entity) end
 	local patient = occupant()
+	local rider = P.GetRider and P:GetRider(entity)
 	local expires = CurTime() + 15
 	local function valid()
 		return IsValid(menu) and !chosen and client == LocalPlayer() and client:GetCharacter() == character
 			and CurTime() <= expires and P:CanInteract(client, entity) and entity:GetParent() == parent and occupant() == patient
+			and (P.GetRider and P:GetRider(entity)) == rider
 	end
 	for _, action in ipairs(options) do
 		local info = P.actions[action]

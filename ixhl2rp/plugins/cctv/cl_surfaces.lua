@@ -16,12 +16,12 @@ function P:OpenSurfaceEditor(id)
  local f=vgui.Create("DFrame");self.window=f
  f:SetSize(480,math.min(ScrH()-40,940));f:SetPos(ScrW()-500,20);f:SetTitle("");f:MakePopup();f:DockPadding(18,78,18,18)
  D.Close(f,480)
- f.Paint=function(_,w,h) D.Shell(w,h,"КАЛИБРОВКА ПУЛЬТА","CCTV / МОНТАЖ ЭКРАНА") end
+ f.Paint=function(_,w,h) D.Shell(w,h,d.kind=="monitor" and "КАЛИБРОВКА МОНИТОРА" or "КАЛИБРОВКА ПУЛЬТА","CCTV / МОНТАЖ ЭКРАНА") end
  f.status=label(f,"Изменения видны на prop. Нажмите «Сохранить экран».",48);f.status:Dock(BOTTOM);f.status:DockMargin(0,10,0,0)
  local scroll=f:Add("DScrollPanel");scroll:Dock(FILL)
  local preview={};for k,v in pairs(d) do preview[k]=v end
  preview.config=table.Copy(d.config);preview.preview=true;self.editSurface=preview
- f.OnRemove=function() P.editSurface=nil;P.nextInterest=0 end
+ f.OnRemove=function() P.editSurface=nil;P.preview=0;P.nextInterest=0 end
  f.OnKeyCodePressed=function(_,key) if key==KEY_ESCAPE then f:Remove() end end
  f.Think=function() if not LocalPlayer():IsAdmin() or not P.devices[id] then f:Remove() end end
  button(scroll,"‹ Все устройства CCTV",function() P:OpenAdminUI(0) end)
@@ -30,6 +30,12 @@ function P:OpenSurfaceEditor(id)
  name.OnValueChange=function(_,v) preview.name=v end
  local enabled=scroll:Add("DCheckBoxLabel");enabled:Dock(TOP);enabled:SetTall(30);enabled:SetText("Экран включён");enabled:SetTextColor(colors.text);enabled:SetValue(d.on)
  enabled.OnChange=function(_,v) preview.on=v end
+ if d.kind=="monitor" then
+  preview.terminal=d.terminal or 0;preview.camera=d.camera or 0;self.preview=preview.camera;self.nextInterest=0
+  D.Group(scroll,"КОММУТАЦИЯ МОНИТОРА")
+  D.SelectDevice(scroll,"Пульт управления","terminal",preview.terminal,function(v) preview.terminal=v end)
+  D.SelectDevice(scroll,"Текущая камера","camera",preview.camera,function(v) preview.camera=v;P.preview=v;P.nextInterest=0 end)
+ end
  D.Group(scroll,"КРЕПЛЕНИЕ / ПОЛОЖЕНИЕ И РАЗМЕР")
  local cfg=preview.config;local controls={};local fine=true
  local function limits(key)
@@ -64,17 +70,20 @@ function P:OpenSurfaceEditor(id)
   D.Slider(slider);slider.OnValueChanged=function(self,v) if not self.cctvUpdating then cfg[field]=v;P.nextInterest=0 end end
   controls[field]=slider;setRange(slider,cfg[field])
  end
- button(scroll,"Пропорции интерфейса CCTV",function() setField("h",cfg.w*C.terminalHeight/C.terminalWidth) end)
- button(scroll,"Сохранить экран",function() P:Request("configure",{id=id,name=name:GetValue(),on=enabled:GetChecked(),config=cfg}) end)
+ button(scroll,d.kind=="monitor" and "Пропорции видео 16:9" or "Пропорции интерфейса CCTV",function()
+  setField("h",cfg.w*(d.kind=="monitor" and 9/16 or C.terminalHeight/C.terminalWidth))
+ end)
+ button(scroll,"Сохранить экран",function() P:Request("configure",{id=id,name=name:GetValue(),on=enabled:GetChecked(),config=cfg,
+  terminal=preview.terminal or 0,camera=preview.camera or 0}) end)
  button(scroll,"Сохранить размещение для модели",function() P:Request("surfacePreset",{id=id,config=cfg}) end)
  button(scroll,"Загрузить пресет модели",function()
   local preset=P.surfacePresets[d.model]
   if not preset then f.status:SetText("Для этой модели ещё нет пресета.");return end
   for _,key in ipairs(C.surfaceFields) do setField(key,preset[key]) end
  end)
- button(scroll,"Перенести экран на другой prop",function() P:BeginPlacement("terminal",id) end)
- button(scroll,"Добавить ещё один экран",function() P:BeginPlacement("terminal") end)
- button(scroll,"Открыть пульт",function() P:OpenTerminalUI(id) end)
+ button(scroll,"Перенести экран на другой prop",function() P:BeginPlacement(d.kind,id) end)
+ button(scroll,"Добавить ещё один экран",function() P:BeginPlacement(d.kind) end)
+ if d.kind=="terminal" then button(scroll,"Открыть пульт",function() P:OpenTerminalUI(id) end) end
  button(scroll,"Отменить изменения",function() P:OpenSurfaceEditor(id) end)
  button(scroll,"Удалить экран · оставить prop",function()
   Derma_Query("Удалить экран CCTV? Prop останется на месте.","CCTV","Удалить",function() P:Request("remove",{id=id}) end,"Отмена")
@@ -92,14 +101,14 @@ function P:UpdateSurfacePlacement(cmd)
  self.surfacePlacement=nil
  if cfg then
   if self.useSurfacePreset and not ix.PropScreens.Occupied(ent) and self.surfacePresets[ent:GetModel()] then cfg=table.Copy(self.surfacePresets[ent:GetModel()]) end
-  self.surfacePlacement={id=self.replaceTerminal or 0,kind="terminal",surface=true,preview=true,on=true,
+  self.surfacePlacement={id=self.replaceTerminal or 0,kind=self.placing,surface=true,preview=true,on=true,
    model=ent:GetModel(),entity=ent,config=cfg,name="Новый экран CCTV"}
  end
  if not self.placeArmed then return end
  if right then self:EndPlacement();return end
  if left and self.surfacePlacement then
-  local id,preset=self.replaceTerminal,self.useSurfacePreset;self:EndPlacement()
-  self:Request("placeSurface",{id=id,preset=preset})
+  local id,preset,kind=self.replaceTerminal,self.useSurfacePreset,self.placing;self:EndPlacement()
+  self:Request("placeSurface",{id=id,preset=preset,kind=kind})
  end
 end
 

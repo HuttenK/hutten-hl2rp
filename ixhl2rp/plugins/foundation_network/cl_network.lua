@@ -407,7 +407,10 @@ function PANEL:ApplyPage(data)
   timer.Simple(0,function() if IsValid(bar) then bar:SetScroll(scroll) end end);return
  end
  if data.mapUpdate then
-  if self.route=="scip://map" and self.token==data.token and IsValid(self.mapPanel) then self.mapPanel:SetData(data.mapData) end
+  if self.route=="scip://map" and self.token==data.token and IsValid(self.mapPanel) then
+   self.mapPanel:SetData(data.mapData)
+   if self.requestAction=='mapHeightLimit' then self.busyAt=nil;self.requestAction=nil end
+  end
   return
  end
  self.busyAt=nil;self.pageAt=RealTime()
@@ -446,7 +449,7 @@ function PANEL:ApplyPage(data)
   tool(toolbar,'Моя позиция',210,function() map:Home() end)
   local projection=tool(toolbar,'2D / 3D',150,function() map.threeD=not map.threeD;map.dirty=true end,function() return map.threeD end)
   projection.Think=function(b) b:SetText(map.threeD and 'Ракурс: 3D' or 'Ракурс: 2D') end
-  tool(toolbar,'Срез этажа',185,function() map.cutaway=not map.cutaway;map.dirty=true end,function() return map.cutaway end)
+  tool(toolbar,'Срез по высоте',185,function() map.cutaway=not map.cutaway;map.dirty=true end,function() return N.MapSliceBounds(map)~=nil end)
   local mode=tool(toolbar,'ЛКМ: вращение',260,function() map.panMode=not map.panMode end)
   mode.Think=function(b) b:SetText((map.panMode or not map.threeD) and 'ЛКМ: перемещение' or 'ЛКМ: вращение') end
   local bar=self.body:Add('DPanel');bar:Dock(TOP);bar:SetTall(52);bar:DockMargin(0,12,0,12);bar.Paint=function() end
@@ -459,6 +462,15 @@ function PANEL:ApplyPage(data)
   end
   local props=tool(bar,'Модели: вкл',180,function() map.mapProps=not map.mapProps;map.dirty=true end,function() return map.mapProps and map.useSolid end)
   props.Think=function(b) b:SetText(map.mapProps and 'Модели: вкл' or 'Модели: выкл') end
+  if data.mapData.canSetHeight then
+   local limits=self.body:Add('DPanel');limits:Dock(TOP);limits:SetTall(48);limits:DockMargin(0,0,0,12);limits.Paint=function() end
+   tool(limits,'Предел игроков: текущая высота',435,function()
+    local _,height=N.MapSliceBounds(map)
+    if not height then local _,top=N.MapHeightRange(map);height=top end
+    N.Request('mapHeightLimit',{height=height})
+   end)
+   tool(limits,'Снять предел высоты',310,function() N.Request('mapHeightLimit',{clear=true}) end)
+  end
   local retry=self.body:Add('DPanel');retry:Dock(TOP);retry:SetTall(0);retry.Paint=function() end
   tool(retry,'Повторить загрузку 3D-карты',360,function() if N.Map3D then N.Map3D.Retry();map.dirty=true end end)
   retry.Think=function(p) local show=N.Map3D and (N.Map3D.error or N.Map3D.waiting) and map.useSolid;p:SetTall(show and 48 or 0) end

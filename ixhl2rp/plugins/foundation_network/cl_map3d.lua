@@ -156,8 +156,8 @@ local function drawScene(panel,w,h,key)
   return failed("В карте аддона нет видимой геометрии. Доступна схема.")
  end
  local low,high=N.MapSliceBounds(panel);local sky=R.SkyFilter()
- local current=key..":"..(e.Bake.Version or 0)..":"..tostring(panel.mapProps~=false)..":"..tostring(low)..":"..tostring(high)..":"..tostring(sky)
- if current==R.renderKey and R.material and not panel.dirty and RealTime()<(R.nextRefresh or 0) then
+ local current=key..":"..(e.Bake.Version or 0)..":"..tostring(panel.mapProps~=false)..":"..tostring(low)..":"..tostring(high)..":"..tostring(sky)..":"..tostring(e.Themes and e.Themes.GetActive().background)
+ if current==R.renderKey and R.material and not panel.dirty then
   panel.solidMaterial=R.material;panel.solidU=R.u;panel.solidV=R.v;return true
  end
  local view=R.BuildView(panel,w,h)
@@ -170,7 +170,7 @@ local function drawScene(panel,w,h,key)
  local scale=math.min(1536/w,1024/h,1)
  view.w=math.max(1,math.floor(w*scale));view.h=math.max(1,math.floor(h*scale))
  -- Honour the addon's clipping convention while imposing both floor bounds.
- local clip=panel.cutaway and (e.Config.Get("dm_cl_clip_invert") and low or high) or nil
+ local clip=low and (e.Config.Get("dm_cl_clip_invert") and low or high) or nil
  local bg=e.Themes and e.Themes.GetActive().background or Color(5,13,20)
  local pushed=false
  local ok,err=xpcall(function()
@@ -188,7 +188,6 @@ local function drawScene(panel,w,h,key)
  if pushed then render.PopRenderTarget() end
  if not ok then return failed("Ошибка 3D-вида аддона. Доступна схема и повторная загрузка.",err) end
  R.u=view.w/R.target:Width();R.v=view.h/R.target:Height();R.renderKey=current
- R.nextRefresh=RealTime()+.25
  panel.solidMaterial=R.material;panel.solidU=R.u;panel.solidV=R.v
  return true
 end

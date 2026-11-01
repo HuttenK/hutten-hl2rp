@@ -5,8 +5,21 @@ local function hasLive(t)
  for ent in pairs(t or {}) do if IsValid(ent) then return true end end
  return false
 end
+local function validHeight(value)
+ return isnumber(value) and value==value and math.abs(value)<=32768
+end
+function P:MapSettings()
+ local map=game.GetMap()
+ if self.mapSettingsMap~=map then
+  local saved=ix.data.Get('foundation_map_settings_v1',{},false,false,true)
+  self.mapSettings={maxHeight=istable(saved) and validHeight(saved.maxHeight) and saved.maxHeight or nil}
+  self.mapSettingsMap=map
+ end
+ return self.mapSettings
+end
 function P:MapSnapshot(p)
- local data={name=game.GetMap(),origin=xyz(p:GetPos()),areas={},alerts={},terminals={}}
+ local data={name=game.GetMap(),origin=xyz(p:GetPos()),areas={},alerts={},terminals={},
+  maxHeight=self:MapSettings().maxHeight,canSetHeight=p:IsAdmin()}
  local power=ix.plugin.list.blackout
  local infection=ix.plugin.list.infectionzone
  local function alert(name,kind,a,b)
@@ -71,8 +84,19 @@ function P:Page(p,s,identity,card,route)
 end
 function P:Action(p,action,data)
  if not istable(data) then return end
- if action~='mapSync' and not (action=='navigate' and data.route=='scip://map') then return oldAction(self,p,action,data) end
+ if action~='mapSync' and action~='mapHeightLimit' and not (action=='navigate' and data.route=='scip://map') then return oldAction(self,p,action,data) end
  local s,identity,card=self:Session(p,data.token);if not s then return end
+ if action=='mapHeightLimit' then
+  if not p:IsAdmin() or (s.nextMapEdit or 0)>CurTime() then return end
+  if data.clear~=true and not validHeight(data.height) then return end
+  s.nextMapEdit=CurTime()+.5
+  local settings=self:MapSettings()
+  settings.maxHeight=data.clear~=true and math.floor(data.height) or nil
+  ix.data.Set('foundation_map_settings_v1',settings,false,false)
+  s.mapUpdate=true;self:SendPage(p,s,identity,card,'scip://map');s.mapUpdate=nil
+  p:Notify(settings.maxHeight and 'Максимальная высота карты для игроков сохранена.' or 'Ограничение высоты карты снято.')
+  return
+ end
  if action=='mapSync' and (s.nextMapSync or 0)>CurTime() then return end
  s.nextMapSync=CurTime()+5;s.mapUpdate=action=='mapSync'
  -- Background telemetry does not keep an abandoned session alive.

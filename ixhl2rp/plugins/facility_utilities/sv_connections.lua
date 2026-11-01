@@ -89,6 +89,28 @@ end
 local function bind(e)
  return {class=e:GetClass(),model=e:GetModel(),mapid=e:MapCreationID(),pos=e:GetPos()}
 end
+function P:MapDoorPowerGroup(e)
+ local access=ix.plugin.list.map_keycards
+ local group=access and access.FindGroup and access:FindGroup(e)
+ if not group or group.kind~="door" or not group.complete or not next(group.controls) then return end
+ for _,member in ipairs(group.members) do if not IsValid(member) then return end end
+ return group,access
+end
+function P:SamePowerTarget(a,b)
+ if not IsValid(a) or not IsValid(b) then return false end
+ if a==b then return true end
+ local group=self:MapDoorPowerGroup(a)
+ return group~=nil and group==self:MapDoorPowerGroup(b)
+end
+function P:PowerConsumers(link,e)
+ -- A mapped door is one electrical mechanism, including both buttons and leaves.
+ -- Legacy facility-door cables receive the same treatment after upgrading.
+ if link.kind=="mapdoor" or link.kind=="door" then
+  local group=self:MapDoorPowerGroup(e)
+  if group then return group.members end
+ end
+ return {e}
+end
 function P:PowerTarget(e,p)
  if not IsValid(e) or e:IsPlayer() or e:IsNPC() then return end
  local selected=IsValid(p) and ix.PropScreens.Aim(p,140)
@@ -109,12 +131,16 @@ function P:PowerTarget(e,p)
   local name;for key,value in pairs(b.zones) do if value==zone then name=key;break end end
   if name then return {kind="zone",zone=name,name="Щиток: "..name,binding=bind(e)},e end
  end
+ local group,access=self:MapDoorPowerGroup(e)
+ if group and access.profile then
+  return {kind="mapdoor",group=group.id,crc=access.profile.crc,name="Дверь: "..group.name,binding=bind(e)},e
+ end
  for _,row in pairs(self.store.doors) do if row.entity==e then return {kind="door",id=row.id,name=row.name},e end end
  local c=ix.plugin.list.cctv
  for _,row in pairs(c and c.devices or {}) do if row.entity==e then return {kind="cctv",id=row.id,name=row.name},e end end
  local t=ix.plugin.list.tv_screen
  for _,row in pairs(t and t.screens or {}) do if row.entity==e then return {kind="tv",id=row.id,name="ТВ #"..row.id},e end end
- if b and b:IsPoweredClass(e:GetClass()) then return {kind="entity",name=e.PrintName or e:GetClass(),binding=bind(e)},e end
+ if b and (b:IsPoweredClass(e:GetClass()) or (b.electronicClasses or {})[e:GetClass()]) then return {kind="entity",name=e.PrintName or e:GetClass(),binding=bind(e)},e end
 end
 function P:ResolvePowerTarget(link)
  if link.kind=="device" or link.kind=="battery" then local d=self.store.devices[link.id];return d and d.entity end
@@ -124,20 +150,25 @@ function P:ResolvePowerTarget(link)
   local rows=plugin and (plugin.devices or plugin.screens);local d=rows and rows[link.id];return d and d.entity
  end
  local b=link.binding;if not b then return end
+ local function matchesGroup(e)
+  if link.kind~="mapdoor" then return true end
+  local group,access=self:MapDoorPowerGroup(e)
+  return group and group.id==link.group and access.profile and access.profile.crc==link.crc
+ end
  -- The registered fusebox keeps its class and saved position after the stock
  -- model replacement. Upgrade only that old binding, not arbitrary props.
  if b.class=="ix_blackout_fusebox" and b.model=="models/props_se/propper/power_box_2.mdl" then
   b.model="models/props_c17/powerbox.mdl";self.dirty=true
  end
  local cached=self.linkEntities[link]
- if cached then return IsValid(cached) and cached or nil end -- never rebind a removed live entity
+ if cached then return IsValid(cached) and matchesGroup(cached) and cached or nil end -- never rebind a removed live entity
  local e=b.mapid and b.mapid>=0 and ents.GetMapCreatedEntity(b.mapid)
  if not IsValid(e) and F.Vector(b.pos) then
   for _,candidate in ipairs(ents.FindByClass(b.class or "")) do
    if candidate:GetModel()==b.model and candidate:GetPos():DistToSqr(F.Vector(b.pos))<16 then e=candidate;break end
   end
  end
- if IsValid(e) and e:GetClass()==b.class and e:GetModel()==b.model then self.linkEntities[link]=e;return e end
+ if IsValid(e) and e:GetClass()==b.class and e:GetModel()==b.model and matchesGroup(e) then self.linkEntities[link]=e;return e end
 end
 function P:CableValid(d,link)
  local e=self:ResolvePowerTarget(link)
@@ -158,7 +189,7 @@ function P:ConnectGenerator(p,d,e,hitPos,start)
  local cableItem=self:CableItem(p)
  if not cableItem then return false,"Нужен предмет «Силовой кабель»: один на подключение." end
  local link,target=self:PowerTarget(e,p)
- if not link then return false,"Выберите щиток, терминал, CCTV, телевизор или другое электрическое устройство." end
+ if not link then return false,"Выберите дверь или её кнопку, щиток, терминал, CCTV, телевизор или другое электрическое устройство." end
  if target==d.entity or (d.kind=="battery" and link.kind=="battery") then return false,"Аккумулятор подключается к потребителю или щитку; заряжается от генератора." end
  if start then link.start=F.Vector(start) end
  if hitPos~=nil then
@@ -170,7 +201,7 @@ function P:ConnectGenerator(p,d,e,hitPos,start)
  if not self:CableValid(d,link) then self.linkEntities[link]=nil;return false,"Кабель слишком короткий или проходит сквозь стену (максимум 15 м)." end
  -- A target has one incoming supply, preventing ambiguous load sharing and backfeed.
  for _,g in pairs(self.store.devices) do for _,other in ipairs(g.links or {}) do
-  if (link.kind=="zone" and other.kind=="zone" and link.zone==other.zone) or self:ResolvePowerTarget(other)==target then
+  if (link.kind=="zone" and other.kind=="zone" and link.zone==other.zone) or self:SamePowerTarget(self:ResolvePowerTarget(other),target) then
    self.linkEntities[link]=nil;return false,"К этому устройству уже подключён источник питания."
   end
  end end
@@ -195,14 +226,14 @@ function P:ConnectionAction(p,a)
   if not tr.Hit or not d or (d.kind~="generator" and d.kind~="battery") or not self:GeneratorOperator(p,d) or not F.Near(p,d.entity,140)
    or not F.Vector(tr.HitPos) or p:GetShootPos():DistToSqr(tr.HitPos)>140^2 then return false,"Выберите генератор или аккумулятор рядом." end
   if not self:CableItem(p) then self:SetCableMode(p);return false,"Нужен силовой кабель." end
-  self:SetCableMode(p,"connect",d.id,d.entity:WorldToLocal(tr.HitPos));return true,"Теперь выберите точку на устройстве или щитке."
+  self:SetCableMode(p,"connect",d.id,d.entity:WorldToLocal(tr.HitPos));return true,"Теперь выберите точку на устройстве, двери, её кнопке или щитке."
  end
  if mode.mode=="disconnect" and a.command=="connect" then
   local tr=p:GetEyeTrace();if not F.Near(p,tr.Entity,140) then return false,"Подойдите к подключённому устройству." end
   local _,target=self:PowerTarget(tr.Entity,p)
   if not IsValid(target) then return false,"Выберите подключённое устройство." end
   for _,d in pairs(self.store.devices) do for i,link in ipairs(d.links or {}) do
-   if self:ResolvePowerTarget(link)==target and self:GeneratorOperator(p,d) then
+   if self:SamePowerTarget(self:ResolvePowerTarget(link),target) and self:GeneratorOperator(p,d) then
     local ok,msg=self:DisconnectCable(p,d,i);if ok then self:SetCableMode(p) end;return ok,msg
    end
   end end
@@ -227,7 +258,9 @@ end
 function P:EntityIsolated(e)
  local blackout=ix.plugin.list.blackout
  local override=blackout and blackout.ElectronicsOverride and blackout:ElectronicsOverride(e:GetPos())
- if override~=nil then return override end
+ -- A global mains outage is not a disconnected safety circuit: reserve
+ -- cables may still energize devices outside the exempt zones.
+ if override==false then return false end
  if e:GetClass()=="ix_combinelock" and IsValid(e.door) and self:EntityIsolated(e.door) then return true end
  local b=ix.plugin.list.blackout;local pos=e:GetPos()
  for _,z in pairs(b and b.zones or {}) do if z.remoteIsolation and ix.area.Contains(z,pos) then return true end end

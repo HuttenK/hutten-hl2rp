@@ -4,6 +4,7 @@ ENT.PrintName="Foundation SCiPNet Terminal"
 ENT.Category="Foundation"
 ENT.Spawnable=true
 ENT.AdminOnly=true
+ENT.bNoPersist=true -- Saved automatically by world_persistence.
 ENT.Model="models/props/cs_office/TV_plasma.mdl"
 if SERVER then
  function ENT:Initialize()

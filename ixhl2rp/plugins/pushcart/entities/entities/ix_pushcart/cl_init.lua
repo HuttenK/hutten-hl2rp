@@ -328,7 +328,7 @@ function ENT:DrawCart(position, angles)
 	end
 	-- This model combines wheels and body in one mesh/material. Never split
 	-- it using the recovered separate-wheel bodygroup assumptions.
-	local built = self:GetModel() != ix.PushCart.MODEL and WHEELS_CONVAR:GetBool() and GetBuilt(self:GetModel())
+	local built = self:GetModel() == "models/props_junk/pushcart02a.mdl" and WHEELS_CONVAR:GetBool() and GetBuilt(self:GetModel())
 
 	if !built or EyePos():DistToSqr(position) > MESH_DRAW_RANGE * MESH_DRAW_RANGE then
 		self:DrawModel()
@@ -485,7 +485,7 @@ function ENT:GetSourcePose()
 			or PushCart.Pred:ObservedPose(self, client, origin)
 
 		if pose then
-			local position, angles = PushCart:PoseTransform(pose)
+			local position, angles = PushCart:PoseTransform(pose, self)
 
 			self.handsFrame, self.handsOrigin, self.handsPos, self.handsAng = frame, origin, position, angles
 
@@ -651,11 +651,11 @@ function ENT:OnRemove()
 	ix.PushCart:Unregister(self)
 	self:ClearCargoModels()
 
-	-- Ящикам - их место: подмену отрисовки ставил PreRender (sh_drive.lua).
+	-- Restore cargo, patient displays and voluntary riders after removal or
+	-- a client full update. Player render angles cannot be reset with nil.
 	for child in pairs(self.overriddenChildren or {}) do
 		if IsValid(child) then
-			child:SetRenderOrigin(nil)
-			child:SetRenderAngles(nil)
+			ix.PushCart:ClearChildRenderOverride(child)
 		end
 	end
 
@@ -672,19 +672,28 @@ function ENT:GetTooltipLines()
 		{text = string.format("Ящиков: %d из %d", self:GetCrateCount(), ix.PushCart.MAX_CRATES), color = labelColor}
 	}
 	local patient = ix.PushCart.GetPatient and ix.PushCart:GetPatient(self)
-	if patient then lines = {{text = "Занята персонажем · весь кузов", color = labelColor}} end
+	local rider = ix.PushCart.GetRider and ix.PushCart:GetRider(self)
+	if self.PatientOnly then
+		lines = {{text = (patient or rider) and "Занята персонажем" or "Место для одного персонажа", color = labelColor}}
+	elseif patient then lines = {{text = "Занята персонажем · весь кузов", color = labelColor}} end
 
 	if IsValid(self:GetPusher()) then
 		lines[#lines + 1] = {text = "Везут", color = labelColor}
 	end
 
 	lines[#lines + 1] = {text = "E — ДЕЙСТВИЯ"}
-	if !patient then
-		lines[#lines + 1] = {text = ix.BodyDrag and ix.BodyDrag.Body(LocalPlayer()) and "E — уложить персонажа" or "Поднесите грузовой ящик — он закрепится автоматически"}
+	if !patient and !rider then
+		if self.PatientSeated then
+			lines[#lines + 1] = {text = "Можно сесть самому или усадить пострадавшего"}
+		elseif self.PatientOnly then
+			lines[#lines + 1] = {text = "Подведите пострадавшего и нажмите E — уложить"}
+		else
+			lines[#lines + 1] = {text = ix.BodyDrag and ix.BodyDrag.Body(LocalPlayer()) and "E — уложить персонажа" or "Поднесите грузовой ящик — он закрепится автоматически"}
+		end
 	end
 
 	return {
-		title = "ГРУЗОВАЯ ТЕЛЕЖКА",
+		title = self.PrintName,
 		lines = lines
 	}
 end

@@ -1,13 +1,13 @@
 local PLUGIN = PLUGIN
 
 ix.command.Add("BlackoutElectronics", {
-	description = "Restrict electronics to active blackout zones (true); restore normal power rules (false).",
+	description = "Cut mains except in active blackout zones; connected generators/batteries still work (true). Restore normal power rules (false).",
 	privilege = "Manage Blackouts",
 	adminOnly = true,
 	arguments = {ix.type.bool},
 	OnRun = function(self, client, enabled)
 		PLUGIN:SetElectronicsRestricted(enabled)
-		return enabled and "Электроника отключена везде, кроме активных зон блэкаута."
+		return enabled and "Электроника работает только в активных зонах блэкаута или от подключённого генератора/аккумулятора."
 			or "Восстановлены обычные правила электроснабжения."
 	end
 })

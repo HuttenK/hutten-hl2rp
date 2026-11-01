@@ -1,0 +1,139 @@
+{
+  "version": 3,
+  "model": "models/sd/citizens/citizen_male_05_hair3.mdl",
+  "cycle": 0,
+  "loop": true,
+  "frames": [
+    {
+      "duration": 1,
+      "bones": {
+        "ValveBiped.Bip01_R_Finger41": {
+          "a": [
+            0,
+            27.743,
+            0
+          ],
+          "p": [
+            0,
+            0,
+            0
+          ]
+        },
+        "ValveBiped.Bip01_R_Finger1": {
+          "a": [
+            0,
+            29.739,
+            0
+          ],
+          "p": [
+            0,
+            0,
+            0
+          ]
+        },
+        "ValveBiped.Bip01_R_Finger4": {
+          "a": [
+            0,
+            35.166,
+            0
+          ],
+          "p": [
+            0,
+            0,
+            0
+          ]
+        },
+        "ValveBiped.Bip01_R_UpperArm": {
+          "a": [
+            48.047,
+            -60.995,
+            3.278
+          ],
+          "p": [
+            0,
+            0,
+            0
+          ]
+        },
+        "ValveBiped.Bip01_R_Hand": {
+          "a": [
+            0,
+            0,
+            25.3
+          ],
+          "p": [
+            0,
+            0,
+            0
+          ]
+        },
+        "ValveBiped.Bip01_R_Finger2": {
+          "a": [
+            0,
+            29.961,
+            0
+          ],
+          "p": [
+            0,
+            0,
+            0
+          ]
+        },
+        "ValveBiped.Bip01_L_UpperArm": {
+          "a": [
+            31.859,
+            0,
+            0
+          ],
+          "p": [
+            0,
+            0,
+            0
+          ]
+        },
+        "ValveBiped.Bip01_R_Finger3": {
+          "a": [
+            0,
+            37.425,
+            0
+          ],
+          "p": [
+            0,
+            0,
+            0
+          ]
+        },
+        "ValveBiped.Bip01_R_Forearm": {
+          "a": [
+            1.668,
+            -117.338,
+            11.465
+          ],
+          "p": [
+            0,
+            0,
+            0
+          ]
+        },
+        "ValveBiped.Bip01_R_Finger0": {
+          "a": [
+            15.432,
+            32.929,
+            0
+          ],
+          "p": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    }
+  ],
+  "props": [],
+  "smooth": true,
+  "mask": "upper",
+  "portable": true,
+  "name": "Отдать честь",
+  "base": "idle"
+}

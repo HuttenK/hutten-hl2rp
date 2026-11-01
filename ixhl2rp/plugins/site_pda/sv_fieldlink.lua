@@ -64,10 +64,16 @@ end
 function PLUGIN:PdaOff(p)
  local device=p:GetWeapon(F.class)
  if not IsValid(device) then return end
+ if device.GetPDAEquipped and not device:GetPDAEquipped() then return end
  device:CustomEquip(false)
  if p:GetActiveWeapon()==device and p.SetWepRaised then p:SetWepRaised(false,device) end
 end
-net.Receive("ixFieldlinkClose",function(_,p) PLUGIN:PdaOff(p) end)
+net.Receive("ixFieldlinkClose",function(length,p)
+ if length>0 or not IsValid(p) then return end
+ if (p.ixFieldlinkNextClose or 0)>CurTime() then return end
+ p.ixFieldlinkNextClose=CurTime()+.25
+ PLUGIN:PdaOff(p)
+end)
 function PLUGIN:Snapshot(p)
  local c=p:GetCharacter(); local level=F.Clearance(p); local item=F.DeviceItem(p); local identity=F.Identity(p)
  local data={recipient=c:GetID(),device=item:GetID(),registered=identity~=nil,character=identity and identity.id or 0,

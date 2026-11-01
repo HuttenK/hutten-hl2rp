@@ -1,4 +1,4 @@
-RECIPE.name = "Милитари куртка"
+RECIPE.name = "Куртка карго"
 RECIPE.category = "recipe.category.body"
 RECIPE.requirements = {
 	mat_cloth_reclaimed = 1,
@@ -6,7 +6,7 @@ RECIPE.requirements = {
 	mat_resine = 1,
 }
 RECIPE.results = {
-	jacket_military = 1
+	sd_cargo_jacket = 1
 }
 RECIPE.skill = {"tailoring", 5}
 RECIPE.tools = {"tool_scissors"}

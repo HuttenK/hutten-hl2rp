@@ -36,40 +36,59 @@ function V.Transmission(p)
  hook.Run("AdjustRadioTransmitInfo",info)
  if info.bShouldSend then return info end
 end
+local stations
+local function trackStation(ent)
+ if stations and IsValid(ent) and ent:GetClass()=="ix_stationary_radio" then stations[ent]=true end
+end
+function PLUGIN:OnEntityCreated(ent) timer.Simple(0,function() trackStation(ent) end) end
+function PLUGIN:EntityRemoved(ent) if stations then stations[ent]=nil end end
+function PLUGIN:PostCleanupMap() stations=nil end
 function V.RadioListener(listener,info)
  -- Reuse channel matching, but prevent stale item channel grants after unequip.
  for id,number in pairs(info.data.transmitTable) do
   if V.ChannelAccess(listener,id,number) then return true end
  end
- for _,radio in ipairs(ents.FindByClass("ix_stationary_radio")) do
+ if not stations then
+  stations=setmetatable({}, {__mode="k"})
+  for _,radio in ipairs(ents.FindByClass("ix_stationary_radio")) do trackStation(radio) end
+ end
+ for radio in pairs(stations) do
+  if not IsValid(radio) then stations[radio]=nil continue end
   if radio:IsOn() and radio:GetFrequency()==info.data.channelID and
    V.Position(listener):DistToSqr(radio:GetPos())<ix.config.Get("chatRange",280)^2 then return true end
  end
  return false
 end
-function V.Route(listener,talker)
+function V.Route(listener,talker,context)
  if not V.Active(listener) or not V.CanSpeak(talker) then return false,false,"" end
  local held=talker.ixRadioVoice
  if held and held.character==talker:GetCharacter() and held.expires>CurTime() then
-  local info=V.Transmission(talker)
+  -- Only shared inside one synchronous listener sweep, never across ticks.
+  local info
+  if context and context.transmissionChecked then info=context.transmission
+  else
+   info=V.Transmission(talker)
+   if context then context.transmissionChecked=true;context.transmission=info end
+  end
   if info and info.data.channelID==held.channel and (listener==talker or V.RadioListener(listener,info)) then
-   return true,false,tostring(info.data.channel or "RADIO")
+   return true,false,tostring(info.data.channel or "RADIO"),nil,"radio"
   end
  end
  local facility=ix.plugin.list.facility_utilities
- if facility then local hear,spatial,label,gain=facility:VoiceRoute(listener,talker);if hear then return hear,spatial,label,gain end end
+ if facility then local hear,spatial,label,gain,effect=facility:VoiceRoute(listener,talker);if hear then return hear,spatial,label,gain,effect end end
  if V.Position(listener):DistToSqr(V.Position(talker))<=ix.config.Get("voiceRange",600)^2 then return true,true,"" end
  return false,false,""
 end
 function PLUGIN:PlayerCanHearPlayersVoice(listener,talker)
- local hear,spatial,label,gain=V.Route(listener,talker)
- if V.ApplyRadioFilter then V.ApplyRadioFilter(listener,talker,hear,spatial) end
+ local hear,spatial,label,gain,effect=V.Route(listener,talker)
+ if V.ApplyRadioFilter then V.ApplyRadioFilter(listener,talker,hear,spatial,effect) end
  listener.ixVoiceRoutes=listener.ixVoiceRoutes or {}
  local old=listener.ixVoiceRoutes[talker]
  local mode=hear and (gain and 3 or spatial and 1 or 2) or 0
- if not old or old.mode~=mode or old.label~=label or old.at+1<CurTime() or math.abs((old.gain or 1)-(gain or 1))>.1 then
-  listener.ixVoiceRoutes[talker]={mode=mode,label=label,gain=gain,at=CurTime()}
-  net.Start("ixVoiceRoute"); net.WriteEntity(talker); net.WriteUInt(mode,2); net.WriteString(label);if mode==3 then net.WriteFloat(gain) end; net.Send(listener)
+ if not old or old.mode~=mode or old.label~=label or old.effect~=effect or old.at+1<CurTime() or math.abs((old.gain or 1)-(gain or 1))>.1 then
+  listener.ixVoiceRoutes[talker]={mode=mode,label=label,gain=gain,effect=effect,at=CurTime()}
+  net.Start("ixVoiceRoute"); net.WriteEntity(talker); net.WriteUInt(mode,2); net.WriteString(label);if mode==3 then net.WriteFloat(gain) end
+  net.WriteBool(effect=="pa");net.Send(listener)
  end
  return hear,spatial
 end

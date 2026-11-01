@@ -1,7 +1,7 @@
 local PLUGIN = PLUGIN
 
 PLUGIN.level   = PLUGIN.level or {}
-PLUGIN.wetEnts = PLUGIN.wetEnts or {} -- [ent] = true: предметы, которым мы выставили водное демпфирование
+PLUGIN.wetEnts = PLUGIN.wetEnts or {} -- [ent] = original physics damping and applied settings
 
 -- ==== Синхронизация уровня воды клиентам ====
 function PLUGIN:Sync(target)
@@ -165,12 +165,22 @@ local function isBuoyant(ent)
 	return class == "prop_physics" or class == "ix_item"
 end
 
+local buoyancyCandidates = setmetatable({}, {__mode="k"})
 function PLUGIN:ApplyBuoyancy(name, area, lvl)
 	local d = self.defaults
 
 	local boxMin, boxMax = self:GetAreaBounds(area)
 
-	for _, ent in ipairs(ents.FindInBox(boxMin, boxMax)) do
+	local cache = buoyancyCandidates[area]
+	if not cache or cache.expires <= CurTime() then
+		cache={expires=CurTime()+.2,entities={}}
+		-- Include nearby moving props; exact union membership is still tested below.
+		for _, ent in ipairs(ents.FindInBox(boxMin-Vector(128,128,128),boxMax+Vector(128,128,128))) do
+			if IsValid(ent) and isBuoyant(ent) then cache.entities[#cache.entities+1]=ent end
+		end
+		buoyancyCandidates[area]=cache
+	end
+	for _, ent in ipairs(cache.entities) do
 		if (!IsValid(ent) or !isBuoyant(ent)) then continue end
 
 		local phys = ent:GetPhysicsObject()
@@ -190,9 +200,17 @@ function PLUGIN:ApplyBuoyancy(name, area, lvl)
 		phys:ApplyForceCenter(Vector(0, 0, mass * d.buoyancyAccel * submerge))
 
 		-- Вязкость воды.
-		phys:SetDamping(d.linearDamp, d.angularDamp)
+		local wet=self.wetEnts[ent]
+		if not istable(wet) or wet.physics~=phys then
+			local linear,angular=phys:GetDamping()
+			wet={physics=phys,linear=linear,angular=angular}
+			self.wetEnts[ent]=wet
+		end
+		if wet.appliedLinear~=d.linearDamp or wet.appliedAngular~=d.angularDamp then
+			phys:SetDamping(d.linearDamp,d.angularDamp)
+			wet.appliedLinear,wet.appliedAngular=d.linearDamp,d.angularDamp
+		end
 		ent.ixFloodWet = CurTime()
-		self.wetEnts[ent] = true
 	end
 end
 
@@ -236,13 +254,17 @@ function PLUGIN:DrownTick()
 		end
 	end
 
-	-- Высохшим предметам возвращаем нулевое демпфирование.
+	-- Restore the object's original damping once it leaves the water.
 	for ent in pairs(self.wetEnts) do
 		if (!IsValid(ent)) then
 			self.wetEnts[ent] = nil
 		elseif ((CurTime() - (ent.ixFloodWet or 0)) > 0.4) then
 			local phys = ent:GetPhysicsObject()
-			if (IsValid(phys)) then phys:SetDamping(0, 0) end
+			local wet=self.wetEnts[ent]
+			if IsValid(phys) then
+				if istable(wet) and wet.physics==phys then phys:SetDamping(wet.linear,wet.angular)
+				else phys:SetDamping(0,0) end
+			end
 			self.wetEnts[ent] = nil
 		end
 	end
@@ -330,6 +352,18 @@ function PLUGIN:PlayerSpawn(client)
 	if (client.ixFloodSwim) then
 		client:SetGravity(1)
 		client.ixFloodSwim = nil
+	end
+end
+
+function PLUGIN:OnUnload()
+	timer.Remove("ixFloodDrown")
+	for ent,wet in pairs(self.wetEnts) do
+		if istable(wet) and IsValid(wet.physics) then wet.physics:SetDamping(wet.linear,wet.angular) end
+		if IsValid(ent) then ent.ixFloodWet=nil end
+	end
+	self.wetEnts={}
+	for _,client in ipairs(player.GetAll()) do
+		if client.ixFloodSwim then client:SetGravity(1);client.ixFloodSwim=nil end
 	end
 end
 

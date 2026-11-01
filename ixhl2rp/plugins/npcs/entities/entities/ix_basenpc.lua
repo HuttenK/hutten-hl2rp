@@ -68,7 +68,7 @@ if CLIENT then
 	end
 else
 	function ENT:Think()
-		self:NextThink(CurTime())
+		self:NextThink(CurTime()+1)
 		return true
 	end
 

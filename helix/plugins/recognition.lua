@@ -24,6 +24,15 @@ ix.Net:AddPlayerVar("hide", false, nil, ix.Net.Type.CharacterID)
 do
 	local character = ix.meta.character
 
+	-- Faction familiarity is live, not saved into the player's remembered aliases.
+	function character:RecognizesFaction(other)
+		if not other or self:GetFaction() ~= other:GetFaction() then return false end
+		local faction = ix.faction.indices[other:GetFaction()]
+		if not faction or not faction.recognizeMembers then return false end
+		local client = other:GetPlayer()
+		return not (IsValid(client) and client:GetNetVar("hide", 0) == other:GetID())
+	end
+
 	function character:DoesRecognize(id)
 		if (!isnumber(id) and id.GetID) then
 			id = id:GetID()
@@ -50,6 +59,8 @@ do
 			
 			local faction = ix.faction.indices[other:GetFaction()]
 
+			if char:RecognizesFaction(other) then return true end
+
 			if (faction and faction.isGloballyRecognized) then
 				if client and client:IsCityAdmin() then
 					return true
@@ -59,9 +70,10 @@ do
 			end
 		end
 
-		local owner = LocalPlayer()
+		local owner = CLIENT and LocalPlayer()
+		local remembered = IsValid(owner) and owner.recognize
 
-		if owner.recognize[id] and owner.recognize[id] != "" then
+		if remembered and remembered[id] and remembered[id] != "" then
 			return true
 		end
 	end
@@ -117,6 +129,10 @@ if (CLIENT) then
 					return L"unknown"
 				end
 			else
+				if ourCharacter and character and ourCharacter:RecognizesFaction(character) then
+					local remembered = owner.recognize[character:GetID()]
+					return remembered and remembered ~= "" and remembered or character:GetName()
+				end
 				local faction = ix.faction.indices[client:Team()]
 
 				if (faction and faction.isGloballyRecognized) then

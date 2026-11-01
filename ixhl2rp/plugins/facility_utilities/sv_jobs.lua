@@ -30,7 +30,7 @@ function P:JobAction(p,data)
  if data.command=="claim" then
   if j.owner and j.owner~=cid then return false,"Заявка уже принята." end
   j.owner=cid;j.ownerName=p:Name();j.status="assigned";self.dirty=true
-  return true,"Заявка принята. Устройства: подойдите и нажмите E. Камеры: подойдите и используйте /MaintenanceWork."
+  return true,"Заявка принята. Подойдите к оборудованию и нажмите E."
  elseif data.command=="release" then
   if j.owner~=cid and not p:IsAdmin() then return false,"Это чужая заявка." end
   j.owner=nil;j.ownerName=nil;j.status="open";self.dirty=true;return true,"Назначение освобождено."
@@ -42,10 +42,31 @@ local function item(p,id)
  local found,instance=p:HasItem(id);return found and instance or nil
 end
 local function screwdriver(p) return item(p,"tool_screw") end
-function P:BeginWork(p,j)
+function P:BeginCameraWork(p,d)
+ local c=ix.plugin.list.cctv
+ if not self.loaded or not c or c.devices[d.id]~=d or d.kind~="camera" or d.bodycam or not d.broken
+  or not F.Near(p,d.entity,110) or p:GetEyeTrace().Entity~=d.entity then return false,"Подойдите и наведите на повреждённую камеру." end
+ if self.work[p] then return false,"Работа уже выполняется." end
+ if not screwdriver(p) or not item(p,"facility_spares") then return false,"Нужны отвёртка и комплект запчастей." end
+ local j=self:NewJob("cctv",d.id,"Ремонт камеры: "..d.name,1)
+ if not j then return false,"Очередь обслуживания заполнена. Попробуйте позже." end
+ if not self:JobAllowed(p,j) then return false,"Недостаточный допуск для ремонта камеры." end
+ local cid=p:GetCharacter():GetID()
+ if j.owner and j.owner~=cid then return false,"Камеру уже обслуживает другой персонаж." end
+ local status,owner,ownerName=j.status,j.owner,j.ownerName
+ j.owner=cid;j.ownerName=p:Name();j.status="assigned"
+ local ok,message=self:BeginWork(p,j,true)
+ if not ok then j.status=status;j.owner=owner;j.ownerName=ownerName end
+ self.dirty=true
+ return ok,message
+end
+function P:BeginWork(p,j,physicalUse)
  if not F.Active(p) or not j or j.status~="assigned" or not self:JobAllowed(p,j) then return false,"Заявка недоступна." end
  if j.owner~=p:GetCharacter():GetID() then return false,"Сначала примите заявку." end
  local e=self:JobTarget(j);if not F.Near(p,e,110) then return false,"Подойдите к указанному оборудованию." end
+ if j.targetKind=="cctv" and (not physicalUse or p:GetEyeTrace().Entity~=e) then
+  return false,"Для ремонта камеры наведите на неё и нажмите E."
+ end
  if self.work[p] then return false,"Работа уже выполняется." end
  if j.targetKind=="fusebox" then
   local b=ix.plugin.list.blackout
@@ -66,7 +87,8 @@ function P:BeginWork(p,j)
   return true,"Работа начата. Оставайтесь рядом и смотрите на оборудование."
  end
  self:StartRepair(p,w)
- return true,"Восстановите пять контактов в окне ремонта. Оставайтесь рядом с оборудованием."
+ return true,j.targetKind=="cctv" and "Затяните крепёж накрест: наведите на болт, удерживайте ЛКМ и отпустите в зелёной зоне. ПКМ — отмена."
+  or "Восстановите пять контактов в окне ремонта. Оставайтесь рядом с оборудованием."
 end
 function P:WorkValid(p,w)
  if w.fusebox then return self:FuseboxWorkValid(p,w) end
@@ -76,7 +98,9 @@ function P:WorkValid(p,w)
  if j.targetKind=="device" and not self.store.devices[j.target].fault then return false end
  if j.targetKind=="cctv" then
   local c=ix.plugin.list.cctv;local d=c and c.devices[j.target]
-  if not d or d.on~=false then return false end
+  -- Older manually faulted cameras stored only a forced-off switch plus the
+  -- job's previousOn value. Keep those outstanding jobs repairable too.
+  if not d or d.kind~="camera" or d.bodycam or not (d.broken or (j.previousOn~=nil and d.on==false)) then return false end
  end
  if w.cleaning then
   local tr=p:GetEyeTrace();local parent=w.entity:GetParent()
@@ -96,7 +120,9 @@ function P:CompleteWork(p,w)
  if not w.cleaning then item(p,"facility_spares"):Remove(true) end
  if j.targetKind=="device" then local d=self.store.devices[j.target];d.fault=false;self:SyncDevice(d)
  elseif j.targetKind=="cctv" then
-  local c=ix.plugin.list.cctv;local d=c.devices[j.target];d.on=j.previousOn~=false;c:SendDevice(d);c:SaveData()
+  local c=ix.plugin.list.cctv;local d=c.devices[j.target]
+  if j.previousOn~=nil then d.on=j.previousOn~=false;j.previousOn=nil end
+  d.broken=false;c:SendDevice(d);c:SaveData()
  end
  j.status="closed";j.closed=os.time();self.dirty=true;self:Audit(p,"Завершение работ",j.title)
  if w.repair then self:SendRepair(p,w,"complete","Все контакты восстановлены. Ремонт завершён.") else p:SetAction() end
@@ -122,6 +148,12 @@ function P:DiscoverJobs()
  local b=ix.plugin.list.blackout
  for _,e in ipairs(b and b.fuseboxes or {}) do if IsValid(e) and e:GetBroken() then self:NewJob("fusebox",e:EntIndex(),"Ремонт электрощита #"..e:EntIndex(),1) end end
  for _,d in pairs(self.store.devices) do if d.fault then self:NewJob("device",d.id,(d.kind=="workpoint" and "Обслуживание: " or "Ремонт: ")..d.name,d.kind=="workpoint" and (d.level or 0) or 1,d.department) end end
+ -- Rebuild missing jobs from durable camera damage, including after restart
+ -- or when the maintenance queue was full at the time of the shot.
+ local c=ix.plugin.list.cctv
+ for _,d in pairs(c and c.devices or {}) do
+  if d.kind=="camera" and not d.bodycam and d.broken and IsValid(d.entity) then self:NewJob("cctv",d.id,"Ремонт камеры: "..d.name,1) end
+ end
 end
 function P:Refuel(p,id)
  local d=self.store.devices[id]

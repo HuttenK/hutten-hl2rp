@@ -2,7 +2,7 @@ local PLUGIN = PLUGIN
 
 PLUGIN.name = "Clothing Items"
 PLUGIN.author = "Schwarz Kruppzo"
-PLUGIN.description = "Adds a clothing items from HL2TS2."
+PLUGIN.description = "Sectorial District clothing, equipment slots and armor bodygroups."
 
 -- Помечаем модели ополченца (conscript) отдельным Appearance modelClass, чтобы
 -- броня и одежда могли задать для них свой набор бодигрупп через
@@ -27,24 +27,28 @@ ix.lang.AddTable("ru", {
 	["equip.legprotection"] = "ЗАЩИТА НОГ",
 	["equip.armprotection"] = "ЗАЩИТА РУК",
 	["equip.glasses"] = "ОЧКИ",
+	["equip.satchel"] = "СУМКА",
 })
 ix.lang.AddTable("en", {
 	["equip.vest"] = "VEST",
 	["equip.legprotection"] = "LEG PROTECTION",
 	["equip.armprotection"] = "ARM PROTECTION",
 	["equip.glasses"] = "GLASSES",
+	["equip.satchel"] = "SATCHEL",
 })
 ix.lang.AddTable("fr", {
 	["equip.vest"] = "GILET",
 	["equip.legprotection"] = "PROTECTION DES JAMBES",
 	["equip.armprotection"] = "PROTECTION DES BRAS",
 	["equip.glasses"] = "LUNETTES",
+	["equip.satchel"] = "SACOCHE",
 })
 ix.lang.AddTable("es-es", {
 	["equip.vest"] = "CHALECO",
 	["equip.legprotection"] = "PROTECCIÓN DE PIERNAS",
 	["equip.armprotection"] = "PROTECCIÓN DE BRAZOS",
 	["equip.glasses"] = "GAFAS",
+	["equip.satchel"] = "BOLSO",
 })
 
 ix.lang.AddTable("ru", {
@@ -103,7 +107,7 @@ end
 function PLUGIN:CreatePlayerInventories(client, inventories)
 	if !inventories then return end
 
-	for _, slotType in ipairs({"vest", "legprotection", "armprotection", "glasses"}) do
+	for _, slotType in ipairs({"vest", "legprotection", "armprotection", "glasses", "satchel"}) do
 		local slot = ix.meta.Inventory:New()
 		slot.type = slotType
 		slot.multislot = false
@@ -158,6 +162,11 @@ if SERVER then
 
 		if character then
 			client.char_outfit:LoadCharacter(character)
+			timer.Simple(0, function()
+				if IsValid(client) and client:GetCharacter() == character then
+					ix.SDClothing.RepairLegacySlots(client)
+				end
+			end)
 		end
 	end
 
@@ -172,6 +181,9 @@ if SERVER then
 	end
 	
 	local function CacheBodygroups(client, oldcharacter)
+		-- A full-body uniform is temporary; never save its skin/bodygroups over
+		-- the character's normal appearance on disconnect or character switch.
+		if client.char_outfit and client.char_outfit.fullBodyBaseSkin ~= nil then return end
 		if oldcharacter then
 			local bgs = {}
 			

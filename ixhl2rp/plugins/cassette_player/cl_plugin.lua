@@ -3,8 +3,11 @@ local M=ix.BroadcastMedia
 if PLUGIN.audio then PLUGIN.audio:Destroy() end
 PLUGIN.audio=M.NewAudio("Cassette",80,600)
 local cache,refresh={},0
+local nextAudio=0
 hook.Add("Think","ix_boombox_audio",function()
  if not IsValid(LocalPlayer()) then return end
+ if CurTime()<nextAudio then return end
+ nextAudio=CurTime()+.05
  if CurTime()>=refresh then cache=ents.FindByClass("ix_boombox"); refresh=CurTime()+2 end
  local sources={}
  for _,ent in ipairs(cache) do

@@ -93,7 +93,13 @@ function P:CommsAction(p,s,data)
  return true,"Связь установлена. Используйте обычную кнопку голосового чата."
 end
 function P:PruneComms()
+ local active=next(self.calls)~=nil or next(self.broadcasts)~=nil
+ local devices=self:PowerOrder("devices")
+ if not active and not self.commsHadActivity and self.commsIdleDevices==devices and CurTime()<(self.nextIdleComms or 0) then return end
  if (self.nextCommsPrune or 0)>CurTime() then return end;self.nextCommsPrune=CurTime()+.1
+ -- A throttled call must not consume a pending idle transition or hardware
+ -- change. Publish first on the next eligible pass, then remember the state.
+ self.commsHadActivity=active;self.commsIdleDevices=devices;self.nextIdleComms=CurTime()+5
  for id,c in pairs(self.calls) do
   local d=self.store.devices[id]
   if not d or not self:DevicePowered(d) or not F.Near(c.player,d.entity) or c.player:GetCharacter():GetID()~=c.character
@@ -134,19 +140,19 @@ function P:VoiceRoute(listener,talker)
  self:PruneComms()
  if not F.Active(listener) or not F.Active(talker) then return end
  local b=self.broadcasts[talker];local gain=0
- if b and b.global then return true,false,"ОБЩИЙ ЭФИР",1 end
+ if b and b.global then return true,false,"ОБЩИЙ ЭФИР",1,"pa" end
  if b then
   for _,d in pairs(self.store.devices) do if d.kind=="speaker" and d.circuit==b.circuit and self:DevicePowered(d) then
    local radius=d.radius or 300;local distance=listener:GetPos():Distance(d.entity:GetPos())
    if distance<radius then gain=math.max(gain,(1-distance/radius)^.5) end
   end end
-  if gain>0 then return true,false,"ОПОВЕЩЕНИЕ / "..self.store.circuits[b.circuit].name,gain end
+  if gain>0 then return true,false,"ОПОВЕЩЕНИЕ / "..self.store.circuits[b.circuit].name,gain,"radio" end
  end
  for id,c in pairs(self.calls) do if c.operator then
   local d=self.store.devices[id]
-  if talker==c.player and listener==c.operator then return true,false,"ИНТЕРКОМ / "..d.name,1 end
+  if talker==c.player and listener==c.operator then return true,false,"ИНТЕРКОМ / "..d.name,1,"radio" end
   if talker==c.operator and listener:GetPos():DistToSqr(d.entity:GetPos())<180^2 then
-   return true,false,"ИНТЕРКОМ / "..d.name,math.max(.1,1-listener:GetPos():Distance(d.entity:GetPos())/180)
+   return true,false,"ИНТЕРКОМ / "..d.name,math.max(.1,1-listener:GetPos():Distance(d.entity:GetPos())/180),"radio"
   end
  end end
 end

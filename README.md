@@ -1,7 +1,22 @@
-## Current SCP schema snapshot (2026-10-15)
+## Current SCP schema snapshot (2026-11-02)
 
 The `scp-schema` branch contains the current Helix framework, SCP schema, and
 companion addons used by this version.
+
+Development branches:
+
+- `scp-schema`: the SCP version, including the latest local fixes and optimizations.
+- `medieval`: an independent medieval adaptation, starting from this SCP snapshot.
+  Medieval gameplay and content changes will be developed on that branch.
+
+The legacy `main` branch is not the current SCP build. Select `scp-schema` when
+downloading the SCP server files from GitHub.
+
+This snapshot also includes the later CCTV/bodycam and terminal updates,
+persistent screens and entities, medical beds and wheelchairs, character and
+clothing improvements, and server/client performance work. The latest ARC9 fix
+keeps complete equipped weapons visible instead of their CSS fallback models.
+See [release notes](docs/releases/scp-2026-11-02.md).
 
 Installation:
 

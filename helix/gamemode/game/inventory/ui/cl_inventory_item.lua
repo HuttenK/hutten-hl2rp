@@ -351,9 +351,55 @@ local function SetModel(self, strModelName, skin, mat)
 	end
 end
 
+-- Reuse only the ordinary, definition-driven preview. Custom getters, LayoutIcon,
+-- late custom-item content and ARC9 keep their existing model creation paths.
+-- This is one live child per slot, not an image/render-target cache: animated
+-- materials and slot overlays still draw normally and no GPU targets accumulate.
+local previewGetters = {"GetIconModel", "GetModel", "GetSkin", "GetMaterial", "GetIconData"}
+local function StaticPreviewState(slot, model, skin, material)
+	local item = slot.item_data
+	local base = ix.meta and ix.meta.Item
+	if !base or item.LayoutIcon or item.isCustomBase then return end
+
+	local state = {
+		item = item, model = model, skin = skin, material = material,
+		rotated = slot:IsRotated(), width = item.width, height = item.height
+	}
+
+	for _, name in ipairs(previewGetters) do
+		if !base[name] or item[name] != base[name] then return end
+		state[name] = item[name]
+	end
+
+	local camera = item.iconCam
+	if camera then
+		-- Copy scalar values: camera tables/vectors can be edited in place.
+		if !camera.pos or !camera.ang then return end
+		state.x, state.y, state.z = camera.pos.x, camera.pos.y, camera.pos.z
+		state.p, state.yaw, state.r = camera.ang.p, camera.ang.y, camera.ang.r
+		state.fov = camera.fov
+		state.customCamera = true
+	end
+
+	return state
+end
+
+local function SameStaticPreview(previous, current)
+	if !previous or !current then return false end
+	for key, value in pairs(previous) do
+		if current[key] != value then return false end
+	end
+	for key, value in pairs(current) do
+		if previous[key] != value then return false end
+	end
+	return true
+end
+
 function PANEL:Rebuild()
 	if !self.item_data then
 		self:Undraggable()
+		if IsValid(self.mdl) then self.mdl:Remove() end
+		self.mdl = nil
 
 		return
 	else
@@ -380,11 +426,28 @@ function PANEL:Rebuild()
 	if icon then
 
 	else
+		local model = self.item_data:GetIconModel() or self.item_data:GetModel()
+		local skin, material = self.item_data:GetSkin(), self.item_data:GetMaterial()
+		local previewState = StaticPreviewState(self, model, skin, material)
+
+		if IsValid(self.mdl) and !self.mdl.reload
+		and SameStaticPreview(self.mdl.ixStaticPreviewState, previewState)
+		and self.mdl.GetEntity and IsValid(self.mdl:GetEntity())
+		and self.mdl:GetEntity():GetModel() == string.lower(model)
+		and self.mdl:GetEntity():GetModel() != "models/error.mdl"
+		and self.mdl:GetEntity():GetSkin() == (skin or 0)
+		and self.mdl:GetEntity():GetMaterial() == (material or "") then
+			-- InvPopulateSlot rebuilds multislot previews again after resizing.
+			-- Keep normal docking and camera setup, avoiding a second client model.
+			self.mdl:Dock(FILL)
+			self.mdl:DockMargin(1, 1, 1, 1)
+			self.mdl:SetupCamera()
+			return
+		end
+
 		if IsValid(self.mdl) then
 			self.mdl:Remove()
 		end
-
-		local model = self.item_data:GetIconModel() or self.item_data:GetModel()
 
 		self.mdl = vgui.Create('DModelPanel', self)
 		if self.item_data.isCustomBase and !ix.CustomItem.stored[self.item_data:GetData("checksum")] then
@@ -393,7 +456,7 @@ function PANEL:Rebuild()
 		self.mdl.SetModel = SetModel
 		self.mdl:Dock(FILL)
 		self.mdl:DockMargin(1, 1, 1, 1)
-		self.mdl:SetModel(model, self.item_data:GetSkin(), self.item_data:GetMaterial())
+		self.mdl:SetModel(model, skin, material)
 		self.mdl:SetMouseInputEnabled(false)
 		self.mdl:SetAnimated(true)
 		self.mdl:SetAmbientLight(Color(32, 64, 128))
@@ -427,6 +490,7 @@ function PANEL:Rebuild()
 		self.mdl:SetPaintedManually(true)
 		self.mdl.SetupCamera = function(_)
 			local entity = _:GetEntity()
+			if !IsValid(entity) then return end
 			local cam_data = table.Copy(self.item_data.GetIconData and self.item_data:GetIconData() or self.item_data.iconCam)
 
 			entity:SetSequence(ACT_IDLE)
@@ -451,6 +515,9 @@ function PANEL:Rebuild()
 		end
 
 		self.mdl:SetupCamera()
+		if IsValid(self.mdl:GetEntity()) then
+			self.mdl.ixStaticPreviewState = previewState
+		end
 	end
 end
 

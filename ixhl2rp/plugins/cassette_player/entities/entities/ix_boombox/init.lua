@@ -29,7 +29,7 @@ end
 
 
 function ENT:OnRemove()
-	if self.bPickedUp or (PLUGIN and PLUGIN.shuttingDown) then return end
+	if self.bPickedUp or ix.shuttingDown or (PLUGIN and (PLUGIN.shuttingDown or PLUGIN.cleaning)) then return end
 	local pos = self:GetPos()
 	if self.cassetteInstanceID then
 		local item = ix.Item.instances[self.cassetteInstanceID]

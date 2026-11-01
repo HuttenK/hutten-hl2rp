@@ -6,6 +6,7 @@ ENT.PrintName = "NPC Apartaments"
 ENT.Category = "Fun + Games"
 
 ENT.Spawnable = true
+ENT.bNoPersist = true -- Saved automatically by world_persistence.
 ENT.AdminOnly = false
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 ENT.AutomaticFrameAdvance = true

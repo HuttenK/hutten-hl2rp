@@ -149,7 +149,7 @@ function H.Draw()
  local p=LocalPlayer(); local values=H.ReadVitals(p,p:GetCharacter())
  -- A small open composition at the safe edge leaves the world unobstructed.
  local x,y=S(128),S(66)
- if values.anatomy then ix.Anatomy.Draw(S(40),S(38),S(66),S(158),values.anatomy) end
+ if values.anatomy then ix.Anatomy.DrawHUD(S(40),S(38),S(66),S(158),values.anatomy) end
  if values.blood then Meter("blood",x,y,S(210),values.blood) end
  if values.stamina then Meter("stamina",x,y+S(25),S(210),values.stamina) end
  if values.food then Meter("food",x,y+S(59),S(65),values.food) end

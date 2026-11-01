@@ -1,0 +1,140 @@
+PASS XP cap, rollover, losses, donor bonus, admin idempotency and non-finite input
+PASS Skill allocation is atomic and rejects forged totals, signs, IDs, NaN and fractional costs
+PASS City stock conservation, shortage fulfillment, live orders and finite prices
+PASS Task access respects power; invalid posts and full boards preserve active work; completion is owner-only
+PASS TAB registration avoids shared-table base cycles and survives reload
+PASS Animation classification preserves native rigs, Cellar mappings and scoped knife fallback
+PASS Character creation rejects invalid SPECIAL values and forged primary attributes
+PASS Crafting station delayed opens respect close, replacement, removal and range
+PASS Hairstyles group base models without changing faction indices or losing orphan variants
+PASS HUD and chat tolerate menus without legacy currentAlpha and respect explicit fade state
+PASS Performance startup and setting callbacks never issue reported blocked commands
+PASS SCiPNet introduction waits for input, gates reveal on readiness, and respects reduced motion
+PASS TAB resumes the last primary app per character and ignores stale app IDs
+PASS Embedded modules receive body dimensions before construction and cannot become detached popups
+PASS Embedded crafting columns resize with their panel, standalone station layout is preserved
+PASS Terminal controls stay inside hitboxes with stationary text and accessible states
+PASS Act capabilities: native, Cellar, hybrid, zero, missing and unloaded models
+PASS Forced sequence cancellation restores state, accepts zero and clears callbacks/timers
+PASS Sit server rejects unsupported/forged poses and failed playback before position or collision changes
+PASS Sit preview handshake advertises only server-resolved poses
+PASS Sit client intersects server capabilities and ignores replies after key release or model change
+PASS Sit contact epsilon accepts flat support, rejects blocked/steep/missing support and exposes native variants
+PASS Minimal gameplay HUD respects visibility, bounds, reserve semantics and excludes numerical readouts
+PASS Character menu waits for LocalPlayer readiness and tolerates early layout
+PASS Anatomy hover follows rounded body contours at multiple sizes
+PASS Development preview preserves point costs, undo, deficit and submission limits
+PASS Cinematic effects cache monochrome grain, respect switches and balance rendering state
+PASS Immersion bounds, steady-state exposure, equipment and weather adapters
+PASS Immersion lifecycle, material safety, damage fade, suppression and weapon compatibility
+PASS Immersion impacts notify only damaged players and throttle duplicate events
+PASS FIELDLINK CID registration, device transfer, impersonation, clearance and stale requests
+PASS PDA animation reversals remain continuous and repeated state changes do not duplicate sounds
+PASS PDA inventory activation grants a selectable SWEP; lowering retains it; deactivation removes it
+PASS PDA screen projection follows perspective, rejects outside/degenerate quads and clips scrolled children
+PASS PDA projected input requires matching press/release, supports focus and wheel, and blocks boot/closing input
+PASS PDA screen rendering unwinds camera and render target even when a child paint fails
+PASS Shared poses transfer bind-relative rotation and scale pelvis displacement without stretching limbs
+PASS Shared pose resolution preserves native clips, rejects incompatible rigs and limits fallback to static acts
+PASS Shared pose renderer installs one callback, transfers the preview skeleton, and releases it on exit/model changes
+PASS PDA photo validation rejects malformed headers, oversized payloads and wrong dimensions
+PASS PDA media validates uploads, transfers devices, delivers offline messages and retains shared photos
+PASS PDA camera input arms after release, debounces shutter, exits on RMB and restores popup input
+PASS PDA camera render failure restores target and camera stacks and exits capture mode
+PASS Corpse pickup respects persistence and keeps living ragdoll/prop ownership in server realm
+PASS Corpse pickup respects persistence and keeps living ragdoll/prop ownership in client realm
+PASS Corpse death callbacks are idempotent, reuse downed bodies, and reset only on spawn
+PASS Corpse cleanup respects limit under removal callbacks; old bodies cannot clear a newer death camera
+PASS Bodies ignore players while staying physical; successful physgun pickup cancels animation without granting permissions
+PASS No-player ragdoll filtering is also present on the client
+PASS Death controller skips extra bones, never creates invisible support props, and releases held bodies
+PASS Server death controller runs active physics updates without client-only SetupBones
+PASS Death animation anchors at physical pelvis once and fades control before completion
+PASS Death controller has bounded lifetime and safely releases removed bodies or unsupported rigs
+PASS Helix disables stock death bodies; disabled player animations never remove players; delayed fallover validates ownership
+PASS Gas mask integration uses equipment and rejects unequipped, transferred, or missing linked filters
+PASS Gas mask breathing/visor follows equip, death, water, camera and character lifecycle without duplicated loops
+PASS Missing gas mask audio fails quietly without creating sound patches
+PASS Mask hand animation waits for inventory close, synchronizes visor, and cleans up after completion or weapon changes
+PASS Mask rendering failure restores camera state and releases models; unavailable clips fail safely
+PASS Giving up requires a completed hold in the same critical episode and cannot execute twice
+PASS Gunfire cannot finish a downed player; blood and recovery follow real health data
+PASS Critical entry is idempotent, tolerates missing ragdolls, and recovery invalidates pending surrender
+PASS Blood loss stays critical instead of killing over prolonged bleeding
+PASS Downed UI cancels released holds, submits only once, fits small screens and closes on rescue
+PASS Interrupted amputation operations release both participants on tool loss and character change
+PASS Amputation consent expires on the server and stale replies cannot approve a new request
+PASS Amputation restoration preserves unrelated bones and clears same-model character changes
+PASS Holster replication requires owned equipped item/SWEP pair and clears stale eligibility
+PASS Client holster cleanup removes cached models and releases references
+PASS ARC9 uses live raised stances, distinct lowered pistol/rifle poses and respects roleplay/attachment blocks
+PASS ARC9 native lowered poses bypass Cellar labels only when movement clips and arm bones exist
+PASS Crafting accepts legacy tools and capability-tagged EFT tools without accepting unrelated items
+PASS Legacy broken weapon condition migrates without losing identity; repeated wear cannot break it
+PASS Disposable EFT item receives one shot and is removed only after firing completes
+PASS ARC9 item equip restores both magazines and attachments without initialization grants
+PASS ARC9 equip rejects legacy, duplicate, occupied, spent and failed grants without destroying items
+PASS ARC9 reserve settlement consumes exact stacks, handles ammo ID zero and prevents recount duplication
+PASS ARC9 unload returns bounded item stacks and preserves ammunition when inventory is full
+PASS ARC9 dropped weapons save their previous owner state and cannot strip an unrelated weapon
+PASS ARC9 grenade consumption blocks re-equip immediately and waits for projectile creation
+PASS ARC9 character switches discard the previous reserve ledger and ignore stale load callbacks
+PASS ARC9 class or magazine changes refund old-caliber and excess rounds instead of converting them
+PASS ARC9 converted caliber survives a fresh weapon, delayed PostModify, relog and transfer without affecting another item
+PASS ARC9 missing attachment content refuses equip without destroying stored parts or converted rounds
+PASS Native ARC9 UI is blocked before drawing without touching preview carriers
+PASS Workbench point projection uses panel dimensions and rejects points behind the camera
+PASS Gunsmith signatures ignore ARC9 defaults and rail expansion includes empty nested sockets
+PASS Gunsmith sessions reject walls, range, dead/restricted users, wrong items, tokens, character changes and stale revisions
+PASS Gunsmith transactions charge once, preserve item persistence, return old magazines and reject incompatible or failed changes
+PASS Gunsmith failures cannot convert rounds, debit resin, grant ARC9 stock or leave service scope active
+PASS Gunsmith network revalidates paid operations, rejects replay, pages parts and restores authoritative native state
+PASS Gunsmith stale slot trees cannot target a different component; read-only refresh recovers revision drift
+PASS First bench visit refreshes detached address caches before preview and first paid installation
+PASS Gunsmith preview is free, restores attachments and ammo, and does not save or replicate a trial
+PASS Gunsmith renderer owns independent models, tables and data accessors; cleanup also covers failed assembly
+PASS Gunsmith client rejects stale part lists, retains selection, disables double submission and fits supported windows
+PASS Medical catalog loads before item definitions and all EFT items have concrete names, models and doses
+PASS Legacy Workshop medicine weapons cannot call missing wound globals or bypass inventory treatment
+PASS Examination reports visible injuries and limb-specific medicines only while the patient is reachable
+PASS Medicine fractures restrict the correct limbs; analgesic expiry restores restrictions without healing
+PASS Medicine selected-limb treatment preserves unrelated fractures and blood; kits cannot mend bones
+PASS Volume budgets charge actual healing and dressing, preserve leftovers and restrict fracture repair
+PASS CMS consumes one of five uses per fracture and cannot treat ordinary wounds
+PASS Volume completion spends only the current plan and cancellation preserves capacity
+PASS Epinephrine wakes a stabilized patient on completion, preserves wounds, and expires without a cached consciousness boost
+PASS Revival rejects unstable patients without consumption and other stimulants cannot wake them
+PASS Medical completion is once-only, animation-driven and consumes a charge only on success
+PASS Treatment cancels safely on range, restriction, patient character change, ownership loss and missing animation
+PASS Transfusion items stay usable and donation refuses injured or critically ill donors
+PASS Severe limb injury adds one fracture; mild, torso and fracture damage cannot recurse
+PASS Broken-leg movement removes sprint and applies the same walking cap on client and server
+PASS Medical inventory actions pass selected patient and limb through the actual inventory argument order
+PASS Medical examination tolerates synchronous layout before and during child creation
+PASS H opens one combined menu per press in single-player, ignores text input and leaves E world use intact
+PASS Radial personal actions work without a target, paginate large inventories and keep medical targets
+PASS Inventory action network IDs use stable ordering in both realms
+PASS Datafile shutdown saves safely before load and deduplicates existing dirty records
+PASS Portraits follow live bodygroups and skin, reset inactive groups and never copy another character
+PASS Downed eyelid shading draws without materials or texture APIs
+PASS Proximity, radio union, live radio switch-off, tuning and unconscious/dead isolation
+PASS Radio voice uses subchannel/global permissions and nearby powered stationary radios
+PASS Radio PTT validates server access and release clears even during request cooldown
+PASS Client radio PTT only activates microphone after acknowledgement and stops on release
+PASS Radio effects isolate receivers, obey mute/volume, expire routes and cancel late audio callbacks
+[ix radio filter] ready: radio-only receiver filtering
+[ix radio filter] module unavailable: [string "SERVER=true
+..."]:152: missing binary
+PASS Radio packet effects isolate recipients and clear on release, disable and disconnect
+PASS Carriers start empty; sequential 60 pistol / 30 rifle hits; head/arms protected, legs untouched
+PASS Plate replacement rejects foreign items; preserves used durability; full inventory cannot lose plates
+PASS NVG activation requires equipped item, active character and conscious player
+PASS NVG item registers glasses-slot toggle at load time
+PASS Inventory rejects missing rows, fractional coordinates and stale stack anchors
+PASS Only pickups trigger generic gestures; cigarette packs have no smoking action
+PASS Third-person poses write only in bone build; skip invalid/unused bones and expire stale models
+PASS Item updates use stable keys across different field orders and preserve explicit false
+PASS New item IDs cannot replace unloaded saved items or existing live items
+PASS Eyewear reach preserves arm lengths for reachable, distant and degenerate targets
+PASS GLua normalization protects strings and comments
+136 regression suites passed. These run in a Lua VM with mocked GMod APIs, not the game engine.

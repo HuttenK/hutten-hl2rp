@@ -1,5 +1,11 @@
 local M = ix.Medicine
 util.AddNetworkString("ixMedicalProgress")
+M.activeSessions = M.activeSessions or {}
+-- Recover existing sessions on Lua refresh; steady-state Think only visits
+-- active treatments, while retaining their original per-tick validation.
+for _, client in ipairs(player.GetAll()) do
+ if client.ixMedicalSession then M.activeSessions[client]=client.ixMedicalSession end
+end
 
 -- Health:Sync has an unfinished generic char-var codec in this schema.
 -- Use the injury protocol already consumed by the limb HUD instead.
@@ -278,6 +284,7 @@ function M.Finish(client, success)
  end
  item.inUse = nil
  client.ixMedicalSession, client.bUsingMedical = nil, false
+ M.activeSessions[client] = nil
  client.ixMedicalCleanup = true
  client:SetAction()
  net.Start("ixMedicalProgress") net.WriteString("") net.WriteFloat(0) net.Send(client)
@@ -313,6 +320,7 @@ function M.Begin(item, target, hitgroup)
   item.inUse=nil client:Notify("Не установлены модели EFT Medicine. Лечение не начато.") return false
  end
  client.bUsingMedical, client.ixMedicalSession = true, session
+ M.activeSessions[client] = session
  session.rate = math.Clamp(1 + (tonumber(session.character:GetSkillModified("medicine")) or 0) * .025, 1, 1.25)
  session.started, session.deadline = CurTime(), CurTime() + 120
  if def then
@@ -335,18 +343,25 @@ function M.Begin(item, target, hitgroup)
 end
 
 hook.Add("Think", "ixMedicalSessions", function()
- for _, client in ipairs(player.GetAll()) do
+ for client, tracked in pairs(M.activeSessions) do
+  if not IsValid(client) then
+   if tracked.item.inUse==client then tracked.item.inUse=nil end
+   M.activeSessions[client]=nil
+   continue
+  end
   local s = client.ixMedicalSession
   if s then
+   if ix.performance then ix.performance.Count("medical_session_checks") end
    local invalid = not M.ValidSession(client, s) or CurTime() > s.deadline or client:KeyDown(IN_RELOAD)
    if s.weapon and (not IsValid(s.weapon) or (CurTime() > s.selectDeadline and client:GetActiveWeapon() ~= s.weapon)) then invalid=true end
    if invalid then M.Finish(client, false)
    elseif s.ends and CurTime() >= s.ends then M.Finish(client, true) end
-  end
+  else M.activeSessions[client]=nil end
  end
 end)
 
 hook.Add("PlayerDisconnected", "ixMedicalCleanup", function(client)
+ M.activeSessions[client]=nil
  local s = client.ixMedicalSession
  if s then s.item.inUse=nil client.ixMedicalSession=nil client.bUsingMedical=false end
 end)

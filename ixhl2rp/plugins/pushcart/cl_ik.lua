@@ -461,10 +461,12 @@ local function PlaceArm(entity, arm, cart, weight, rightDir, withFingers)
 		с ними кисти уезжали с трубы на поворотах и уклонах.
 	]]
 	local cartPos, cartAngles = cart:GetDrawPose()
-	local front = cartAngles:Forward()
+	local driveAngles = PushCart:ModelAngles(cart, cartAngles, true)
+	local front = -driveAngles:Forward()
 	local up = cartAngles:Up()
-	local along = -cartAngles:Right()
-	local grip = LocalToWorld(arm.side > 0 and PushCart.GRIP_RIGHT or PushCart.GRIP_LEFT, angle_zero,
+	local along = driveAngles:Right()
+	local profile = PushCart:Transport(cart)
+	local grip = LocalToWorld(arm.side > 0 and (profile.gripRight or PushCart.GRIP_RIGHT) or (profile.gripLeft or PushCart.GRIP_LEFT), angle_zero,
 		cartPos, cartAngles)
 	local knuckleAngle = math.rad(PushCart.KNUCKLE_ANGLE)
 	local handForward = front * math.cos(knuckleAngle) - up * math.sin(knuckleAngle)

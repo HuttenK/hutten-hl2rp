@@ -31,30 +31,29 @@
 ix.PushCart = ix.PushCart or {}
 
 local PushCart = ix.PushCart
-local Kin = PushCart.Kin or {}
-
-PushCart.Kin = Kin
+local function BuildKinematics(Kin, geometry)
+geometry = geometry or {}
 
 -- EP2 VVD wheel centers, rotated into the driving frame (+X to the handle).
-local HALF_BASE = 24.3965
-local WHEEL_CENTER_X = -1.9975
-local HALF_TRACK = 14.47
-local BODY_MIN_X = -39.72
-local BODY_MAX_X = 38
-local BODY_HALF_Y = 23
+local HALF_BASE = geometry.HALF_BASE or 24.3965
+local WHEEL_CENTER_X = geometry.WHEEL_CENTER_X or -1.9975
+local HALF_TRACK = geometry.HALF_TRACK or 14.47
+local BODY_MIN_X = geometry.BODY_MIN_X or -39.72
+local BODY_MAX_X = geometry.BODY_MAX_X or 38
+local BODY_HALF_Y = geometry.BODY_HALF_Y or 23
 -- Низ настила по .phy.
-local CLEARANCE = 13
+local CLEARANCE = geometry.CLEARANCE or 13
 -- Верх ручки. Ящики поднимают его (BodyTop в дататейбле тележки).
-local BODY_TOP_EMPTY = 52.25
+local BODY_TOP_EMPTY = geometry.BODY_TOP_EMPTY or 52.25
 -- EP2 model origin is roughly 16 units above its wheel contact plane.
-local WHEEL_BOTTOM = -15.96365
+local WHEEL_BOTTOM = geometry.WHEEL_BOTTOM or -15.96365
 -- Пятно колеса (-2, -2, 0)..(2, 2, 1).
 local PROBE = 2
 -- Полуширина столбика по периметру кузова и зазор над CLEARANCE.
 local COLUMN = 0.5
 local LIFT = 0.1
 -- Полосы под днищем: тянутся вдоль тележки на этих y.
-local BELLY_LINES = {-15, -9, -3, 3, 9, 15}
+local BELLY_LINES = geometry.BELLY_LINES or {-15, -9, -3, 3, 9, 15}
 local BELLY_HALF = 3
 local BELLY_HEIGHT = 3
 --[[
@@ -62,27 +61,27 @@ local BELLY_HEIGHT = 3
 	отвергают. Лестница 8/12 даёт на пике около 38°. На 10/10 вверх следующая
 	поза круче 45° - тележка встаёт; вниз раньше ложится днищем на кромки.
 ]]
-local MAX_PITCH = 45
-local MAX_ROLL = 25
+local MAX_PITCH = geometry.MAX_PITCH or 45
+local MAX_ROLL = geometry.MAX_ROLL or 25
 -- Pusher feet stay at x=52 in the driving frame, roughly 18 units behind
 -- the handle. HandleShift compensates for the 51.2-unit grip height when
 -- the cart pitches/rolls, keeping the wrists reachable on slopes.
-local REACH = 52
+local REACH = geometry.REACH or 52
 local HOLD_EASE = 60
 local HOLD_TAU = 0.2
 local HOLD_CREEP = 5
 -- В каких пределах хват (за вычетом сдвига перекладины на уклоне) можно взять и удержать.
-local HOLD_MIN_X = 30
-local HOLD_MAX_X = 100
-local HOLD_MAX_Y = 45
+local HOLD_MIN_X = geometry.HOLD_MIN_X or 30
+local HOLD_MAX_X = geometry.HOLD_MAX_X or 100
+local HOLD_MAX_Y = geometry.HOLD_MAX_Y or 45
 -- Хват, пересчитанный HoldOf, совпадает с прежним до этого шума: поворачивать и доводить нечего.
 local HOLD_SAME = 1e-9
 -- Reject a pose when the handle is more than HANDLE_DZ above/below its
 -- level-ground height relative to the pusher's feet.
 -- Tops of the two curved handles: model (-34.006, +/-12, 35.236).
-local HANDLE_X = 34.006
+local HANDLE_X = geometry.HANDLE_X or 34.006
 local HANDLE_DZ = 30
-local GRIP_Z = 35.236
+local GRIP_Z = geometry.GRIP_Z or 35.236
 local GRIP_HEIGHT = GRIP_Z - WHEEL_BOTTOM
 --[[
 	Шагов деления пополам, когда ход упёрся: точность 1/16 хода команды (сотые
@@ -809,4 +808,22 @@ function Kin.Step(trace, S, input)
 	end
 
 	return NewState(S, T, rate, hx, hy), ax, ay, info
+end
+
+end
+
+PushCart.Kin = PushCart.Kin or {}
+BuildKinematics(PushCart.Kin, {})
+for _, profile in pairs(PushCart.Transports or {}) do
+ if profile.geometry then
+  profile.kin = profile.kin or {}
+  BuildKinematics(profile.kin, profile.geometry)
+  if profile.loadedGeometry then
+   local loaded = {}
+   for key,value in pairs(profile.geometry) do loaded[key]=value end
+   for key,value in pairs(profile.loadedGeometry) do loaded[key]=value end
+   profile.loadedKin = profile.loadedKin or {}
+   BuildKinematics(profile.loadedKin, loaded)
+  end
+ end
 end

@@ -120,6 +120,9 @@ end
 do
 	if SERVER then
 		function net.WriteNetVar(var, varType, value)
+			if ix.performance and ix.performance.capture then
+				ix.performance.Count("netvar:"..varType..":"..tostring(Net.vars_id[varType][var.index]))
+			end
 			net.WriteUInt(var.index, Net.var_max[varType])
 			var.Write(value)
 		end

@@ -133,13 +133,16 @@ function P:CardAllowed(p, rule)
 end
 
 function P:Powered(e)
+    if not IsValid(e) then return false end
     local f = ix.plugin.list.facility_utilities
     local b = ix.plugin.list.blackout
     local override = b and b.ElectronicsOverride and b:ElectronicsOverride(e:GetPos())
-    if override ~= nil then return not override end
+    if override == false then return true end
     if f and f.loaded then
         if f:EntityIsolated(e) then return false end
-        return ix.Facility.EntityBackup(e) or f:DirectGrid(e)
+        if ix.Facility.EntityBackup(e) then return true end
+        if override == true then return false end
+        return f:DirectGrid(e)
     end
     return not b or not b:IsElectronicsOffAt(e:GetPos(), e)
 end

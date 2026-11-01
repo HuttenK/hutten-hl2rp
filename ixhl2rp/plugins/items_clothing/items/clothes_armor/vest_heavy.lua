@@ -5,3 +5,6 @@ ITEM.width=2; ITEM.height=2; ITEM.equip_inv="vest"; ITEM.equip_slot=nil
 ITEM.plateCapacity=3
 ITEM.bodyGroups = {[6] = 3}
 ITEM.armor={class=3,max_durability=1,coverage={},density=0,damage={},penetration={}}
+
+-- Explicit SD mapping; armor stats and item model remain unchanged.
+ITEM.bodyGroupsSD = {[6] = 3}

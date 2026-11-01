@@ -308,6 +308,11 @@ if SERVER then
 		return out
 	end
 
+	function PLUGIN:SyncSubtitlePoints(target)
+		if not target then self.subtitleRevision=(self.subtitleRevision or 0)+1 end
+		netstream.Start(target,"ixSubtitlePointSync",serializePoints(self.subtitlePoints),self.subtitleRevision or 0)
+	end
+
 	-- Создать точку
 	function PLUGIN:CreateSubtitlePoint(pos, payload)
 		-- Извлекаем данные привязки из payload и убираем их оттуда
@@ -333,14 +338,14 @@ if SERVER then
 
 		self.subtitlePoints[#self.subtitlePoints + 1] = point
 		self:SaveData()
-		netstream.Start(nil, "ixSubtitlePointSync", serializePoints(self.subtitlePoints))
+		self:SyncSubtitlePoints()
 	end
 
 	-- Удалить точку по индексу
 	function PLUGIN:RemoveSubtitlePoint(index)
 		table.remove(self.subtitlePoints, index)
 		self:SaveData()
-		netstream.Start(nil, "ixSubtitlePointSync", serializePoints(self.subtitlePoints))
+		self:SyncSubtitlePoints()
 	end
 
 	-- Сохранение
@@ -368,7 +373,7 @@ if SERVER then
 	function PLUGIN:PlayerInitialSpawn(client)
 		timer.Simple(2, function()
 			if IsValid(client) then
-				netstream.Start(client, "ixSubtitlePointSync", serializePoints(self.subtitlePoints))
+				self:SyncSubtitlePoints(client)
 			end
 		end)
 	end
@@ -380,24 +385,24 @@ if SERVER then
 		if now - lastPropSync < 0.1 then return end
 		lastPropSync = now
 
-		local changed = false
+		local changed = {}
 
-		for _, point in ipairs(PLUGIN.subtitlePoints) do
+		for index, point in ipairs(PLUGIN.subtitlePoints) do
 			if not point.attachEnt then continue end
 			-- IsValid проверяет что Entity существует и не удалена
 			if not IsValid(point.attachEnt) then continue end
 
-			local off    = point.attachOffset
+			local off    = point.attachOffset or {0,0,0}
 			local newPos = point.attachEnt:LocalToWorld(Vector(off[1], off[2], off[3]))
 
 			if newPos:DistToSqr(point.pos) > 1 then
 				point.pos = newPos
-				changed   = true
+				changed[#changed+1] = {index,newPos}
 			end
 		end
 
-		if changed then
-			netstream.Start(nil, "ixSubtitlePointSync", serializePoints(PLUGIN.subtitlePoints))
+		if #changed>0 then
+			netstream.Start(nil,"ixSubtitlePointPositions",PLUGIN.subtitleRevision or 0,changed)
 		end
 	end)
 
@@ -422,7 +427,7 @@ if SERVER then
 		-- срабатывает ПОСЛЕ того как ShutDown/PreCleanupMap уже сохранил корректные данные,
 		-- из-за чего файл перезаписывается неполным списком. Сохранение происходит
 		-- автоматически через хуки ShutDown, PreCleanupMap и таймер каждые 10 минут.
-		netstream.Start(nil, "ixSubtitlePointSync", serializePoints(PLUGIN.subtitlePoints))
+		PLUGIN:SyncSubtitlePoints()
 	end)
 
 	-- Игрок нажал E рядом с точкой
@@ -482,7 +487,16 @@ if CLIENT then
 		subtitle.expireAt = 0
 	end)
 
-	netstream.Hook("ixSubtitlePointSync", function(points)
+	local pointRevision=0
+	netstream.Hook("ixSubtitlePointPositions",function(revision,changes)
+		if revision~=pointRevision then return end
+		for _,change in ipairs(changes) do
+			local point=subtitlePoints[change[1]]
+			if point and isvector(change[2]) then point.pos=change[2] end
+		end
+	end)
+	netstream.Hook("ixSubtitlePointSync", function(points,revision)
+		pointRevision=revision or 0
 		subtitlePoints = {}
 		for _, entry in ipairs(points) do
 			local p = entry.pos

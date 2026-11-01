@@ -8,7 +8,7 @@ function P:BeginPlacement(kind,id)
  self:CloseTerminalUI()
  if IsValid(self.window) then self.window:Remove() end
  self:EndPlacement();self.placing=kind;self.placeArmed=false
- if kind=="terminal" then self.replaceTerminal=id;self.useSurfacePreset=true;return end
+ if C.SurfaceKind(kind) then self.replaceTerminal=id;self.useSurfacePreset=true;return end
  self.ghost=ClientsideModel(C.kinds[kind].model,RENDERGROUP_TRANSLUCENT)
  if IsValid(self.ghost) then self.ghost:SetNoDraw(true);self.ghost:SetMaterial("models/wireframe") end
  if kind=="camera" and IsValid(self.ghost) then self.ghost:ResetSequence("idle");self.ghost:SetCycle(0);self.ghost:SetPlaybackRate(0) end
@@ -16,7 +16,7 @@ end
 hook.Add("CreateMove","ixCCTVPlacement",function(cmd)
  if not P.placing then return end
  local p=LocalPlayer();if not IsValid(p) or not p:IsAdmin() then P:EndPlacement();return end
- if P.placing=="terminal" then P:UpdateSurfacePlacement(cmd);return end
+ if C.SurfaceKind(P.placing) then P:UpdateSurfacePlacement(cmd);return end
  local left=cmd:KeyDown(IN_ATTACK);local right=cmd:KeyDown(IN_ATTACK2)
  cmd:RemoveKey(IN_ATTACK);cmd:RemoveKey(IN_ATTACK2)
  if not left and not right then P.placeArmed=true end
@@ -45,6 +45,6 @@ hook.Add("HUDPaint","ixCCTVPlacement",function()
  draw.SimpleText("МОНТАЖ CCTV / "..C.kinds[P.placing].name,"ixCCTVTitle",x+28,y+8,c.text)
  draw.SimpleText("ЛКМ — установить     ПКМ / Esc — отмена","ixCCTVBody",x+16,y+48,c.accent)
  local text=P.placementPos and "После установки: E — имя, направление и подключение" or "Наведите на поверхность поблизости"
- if P.placing=="terminal" then text="Наведите на prop · R — пресет / поверхность · После установки — точная настройка" end
+ if C.SurfaceKind(P.placing) then text="Наведите на prop · R — пресет / поверхность · После установки — точная настройка" end
  draw.SimpleText(C.FitText(text,"ixCCTVPlate",w-32),"ixCCTVPlate",x+16,y+79,c.muted)
 end)

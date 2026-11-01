@@ -9,6 +9,10 @@ local required={"Pelvis","Spine","Spine1","Spine2","Neck1","Head1",
 local prefix="ValveBiped.Bip01_"
 local providers={"models/cellar/characters/oldcitizens/male_01.mdl",
  "models/cellar/characters/oldcitizens/female_01.mdl",
+ -- The server's SD pack also includes the Cellar sitting/lying libraries.
+ -- Older Cellar character meshes are optional and absent on clean installs.
+ "models/sd/citizens/citizen_male_01_hair1.mdl",
+ "models/sd/citizens/citizen_female_01_hair1.mdl",
  "models/Humans/Group01/male_07.mdl","models/Humans/Group01/female_01.mdl","models/police.mdl","models/player/kleiner.mdl"}
 R.providers=providers
 ix.Net:AddPlayerVar("sharedPose",false,nil,ix.Net.Type.Table)

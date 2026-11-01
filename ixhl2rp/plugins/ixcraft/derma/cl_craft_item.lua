@@ -384,7 +384,11 @@ end
 function PANEL:Paint() end
 
 function PANEL:Think()
+	if (self.nextColorCheck or 0) > RealTime() then return end
+	self.nextColorCheck = RealTime() + .1
 	local color = self:GetColor()
+	if self.lastRecipeColor == color then return end
+	self.lastRecipeColor = color
 	self.recipeButton:SetTextColor(color)
 
 	if self.experienceText then

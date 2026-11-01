@@ -98,6 +98,7 @@ local function selectDevice(parent,title,kind,value,fn)
  select.OnSelect=function(_,_,_,id) fn(id) end
  return select
 end
+D.SelectDevice=selectDevice
 function P:AdminDetail(id)
  local f=self.window;if not IsValid(f) then return end;f.body:Clear();self.preview=0;f.selected=id
  local d=self.devices[id];if not d then label(f.body,"Разместите устройство или выберите его слева.",64);return end
@@ -138,6 +139,7 @@ function P:AdminDetail(id)
   selectDevice(body,"Пульт управления","terminal",state.terminal,function(v) state.terminal=v end)
   selectDevice(body,"Текущая камера","camera",state.camera,function(v) state.camera=v end)
   label(body,"Пульт сможет переключать этот монитор. Один пульт может управлять несколькими мониторами.",64)
+  button(body,"Перенести экран на выбранный prop",function() P:BeginPlacement("monitor",id) end)
  else
   label(body,"Связанные мониторы",28)
   local linked=sorted("monitor",id)

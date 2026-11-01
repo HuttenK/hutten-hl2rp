@@ -2,6 +2,9 @@ local V=ix.voice
 local noise, pending, desired, serial = nil, false, 0, 0
 local retryAt=0
 local affected={}
+local function RadioRoute(route,now)
+ return route and now-route.at<2 and (route.mode==2 or (route.mode==3 and route.effect=="radio"))
+end
 function V.StopRadioEffects()
  desired=0; serial=serial+1; pending=false
  if IsValid(noise) then noise:Stop() end
@@ -22,16 +25,16 @@ function V.UpdateRadioEffects(listener,speakers,routes)
  local now=RealTime()
  for p in pairs(affected) do
   local r=routes[p]
-  if not speakers[p] or not IsValid(p) or p:IsMuted() or not r or r.mode~=2 or now-r.at>=2 or amount==0 then
+  if not speakers[p] or not IsValid(p) or p:IsMuted() or not RadioRoute(r,now) or amount==0 then
    if IsValid(p) then p:SetVoiceVolumeScale(1) end
    affected[p]=nil
   end
  end
  for p in pairs(speakers) do
   local r=routes[p]
-  if p~=listener and IsValid(p) and not p:IsMuted() and r and r.mode==2 and now-r.at<2 and amount>0 then
+  if p~=listener and IsValid(p) and not p:IsMuted() and RadioRoute(r,now) and amount>0 then
    receiving=true; affected[p]=true
-   p:SetVoiceVolumeScale(V.RadioEffectGain(p,amount,now))
+   p:SetVoiceVolumeScale((r.mode==3 and (r.gain or 1) or 1)*V.RadioEffectGain(p,amount,now))
   end
  end
  local voiceScale=GetConVar("voice_scale")

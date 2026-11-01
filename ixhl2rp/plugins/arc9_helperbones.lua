@@ -111,8 +111,11 @@ end
 
 function H.Install(weapon)
  if not IsValid(weapon) or not weapon.ARC9 or not isfunction(weapon.DoTPIK) then return end
- if wrapped[weapon] then return end
- local original = H.UnwrapLegacy(weapon.DoTPIK)
+ local installed = wrapped[weapon]
+ if installed and (installed.budgetVersion == 1 or weapon.DoTPIK ~= installed.wrapper) then return end
+ -- Auto-refresh may retain our pre-budget wrapper. Replace only a wrapper we
+ -- still own; an external decorator must keep its chain and native behavior.
+ local original = installed and installed.original or H.UnwrapLegacy(weapon.DoTPIK)
  local wrapper = function(self, ...)
   local player = self:GetOwner()
   local captured, model
@@ -122,7 +125,10 @@ function H.Install(weapon)
   end
   -- Remain inside ARC9's bone-write render context. Do not write bones in Think.
   if IsValid(player) and player:IsPlayer() then hook.Run("ixARC9PreArmPose", self, player) end
-  local result = original(self, ...)
+  local budget = ix.RenderBudget
+  local result
+  if budget and budget.RunTPIK then result = budget.RunTPIK(self, original, ...)
+  else result = original(self, ...) end
   if captured and IsValid(player) and self:GetOwner() == player and player:GetModel() == model then
    H.Apply(player, captured)
   end
@@ -134,11 +140,27 @@ function H.Install(weapon)
   return result
  end
  weapon.DoTPIK = wrapper
- wrapped[weapon] = {wrapper = wrapper, original = original}
+ wrapped[weapon] = {wrapper = wrapper, original = original, budgetVersion = 1}
 end
 
+function H.CanBudget()
+ for weapon, installed in pairs(wrapped) do
+  if IsValid(weapon) and installed.budgetVersion ~= 1 then return false end
+ end
+ return true
+end
+for weapon in pairs(wrapped) do H.Install(weapon) end
+if ix.RenderBudget and ix.RenderBudget.RefreshPolicy then ix.RenderBudget.RefreshPolicy() end
+
 -- Install on instances instead of replacing Workshop files or global SWEP tables.
--- Think runs before rendering, so this does not depend on PrePlayerDraw hook order.
+-- Local weapon changes are immediate; remote discovery is reconciled at 10 Hz.
+-- The visible-player hook also installs before a newly visible weapon draws.
+local nextDiscovery = 0
 hook.Add("Think", "ixARC9ArmHelpers", function()
+ local viewer = LocalPlayer()
+ if IsValid(viewer) then H.Install(viewer:GetActiveWeapon()) end
+ if CurTime() < nextDiscovery then return end
+ nextDiscovery = CurTime() + .1
  for _, player in ipairs(player.GetAll()) do H.Install(player:GetActiveWeapon()) end
 end)
+hook.Add("PrePlayerDraw", "ixARC9ArmHelpers", function(player) H.Install(player:GetActiveWeapon()) end)

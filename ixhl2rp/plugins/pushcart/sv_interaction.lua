@@ -29,6 +29,7 @@ function P:InteractionOptions(client, entity)
 		if IsValid(entity:GetPusher()) then return {} end
 		local options = {}
 		if !IsValid(client:GetLocalVar("holdingObject")) then table.insert(options, 1, "push") end
+		if self.CanSitWheelchair and self:CanSitWheelchair(client,entity) then options[#options + 1] = "sit" end
 		if !self:HasContents(entity) then options[#options + 1] = "pack" end
 		return options
 	end
@@ -52,7 +53,8 @@ function P:OpenInteraction(client, entity)
 	client.ixCartMenuSerial = ((client.ixCartMenuSerial or 0) + 1) % 65536
 	client.ixCartMenu = {entity = entity, parent = entity:GetParent(), character = client:GetCharacter(),
 		token = client.ixCartMenuSerial, expires = CurTime() + 15, options = options,
-		patient = self.GetPatient and self:GetPatient(entity.isCartPatient and self:PatientCart(entity) or entity)}
+		patient = self.GetPatient and self:GetPatient(entity.isCartPatient and self:PatientCart(entity) or entity),
+		rider = self.GetRider and self:GetRider(entity)}
 	net.Start("ixPushCartMenu")
 		net.WriteEntity(entity) net.WriteUInt(client.ixCartMenuSerial, 16) net.WriteUInt(#options, 3)
 		for _, action in ipairs(options) do net.WriteString(action) end
@@ -79,15 +81,20 @@ function P:PerformInteraction(client, entity, token, action)
 	if !table.HasValue(menu.options, action) or !table.HasValue(self:InteractionOptions(client, entity), action) then return false end
 	local cart = entity.isCartPatient and self:PatientCart(entity) or entity
 	if menu.patient != (self.GetPatient and self:GetPatient(cart)) then return false end
+	if menu.rider != (self.GetRider and self:GetRider(cart)) then return false end
 	local ok = false
-	if action == "takePatient" or action == "unloadPatient" then
+	if action == "sit" then
+		local reason
+		ok, reason = self:SitWheelchair(client,cart)
+		if reason then client:Notify(reason) end
+	elseif action == "takePatient" or action == "unloadPatient" then
 		local reason
 		ok, reason = self:UnloadPatient(client,cart,action=="takePatient")
 		if reason then client:Notify(reason) end
 	elseif action == "push" then ok = entity:StartPush(client)
 	elseif action == "stop" then entity:StopPush() ok = true
 	elseif action == "open" then ok = self:OpenInventory(client, entity)
-	elseif action == "pack" then ok = self:Pack(client, entity, self.ITEM)
+	elseif action == "pack" then ok = self:Pack(client, entity, self:CartItem(entity))
 	elseif action == "pickup" then ok = self:PickupCrate(client, entity)
 	elseif action == "detach" then ok = entity:GetParent():UnloadCrate(client, entity)
 	elseif action == "drop" then

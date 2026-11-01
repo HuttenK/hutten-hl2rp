@@ -93,12 +93,19 @@ function PLUGIN:DrawDoorInfo(door, width, position, angles, scale, clientPositio
 	end)
 end
 
+local nearbyDoors,nearbyOrigin,nearbyAt={},nil,0
+local doorFrames=setmetatable({}, {__mode="k"})
 function PLUGIN:PostDrawTranslucentRenderables(bDepth, bSkybox)
 	if (bDepth or bSkybox or !LocalPlayer():GetCharacter()) then
 		return
 	end
 
-	local entities = ents.FindInSphere(EyePos(), 256)
+	local eye=EyePos()
+	if not nearbyOrigin or nearbyOrigin:DistToSqr(eye)>64^2 or RealTime()>=nearbyAt then
+		nearbyAt=RealTime()+.2;nearbyOrigin=Vector(eye);nearbyDoors={}
+		for _,ent in ipairs(ents.FindInSphere(eye,320)) do if IsValid(ent) and ent:IsDoor() then nearbyDoors[#nearbyDoors+1]=ent end end
+	end
+	local entities = nearbyDoors
 	local clientPosition = LocalPlayer():GetPos()
 
 	for _, v in ipairs(entities) do
@@ -114,6 +121,9 @@ function PLUGIN:PostDrawTranslucentRenderables(bDepth, bSkybox)
 
 		local position = v:LocalToWorld(v:OBBCenter())
 		local mins, maxs = v:GetCollisionBounds()
+		local frame=doorFrames[v]
+		local pos,ang=v:GetPos(),v:GetAngles()
+		if not frame or frame.pos~=pos or frame.ang~=ang or frame.model~=v:GetModel() or frame.mins~=mins or frame.maxs~=maxs or RealTime()>=frame.expires then
 		local width = 0
 		local size = maxs - mins
 		local trace = {
@@ -129,7 +139,7 @@ function PLUGIN:PostDrawTranslucentRenderables(bDepth, bSkybox)
 		elseif (size.x < size.y) then
 			trace.start = position - v:GetForward() * size.x
 			width = size.y
-		elseif (size.y < size.x) then
+		else
 			trace.start = position - v:GetRight() * size.y
 			width = size.x
 		end
@@ -147,8 +157,14 @@ function PLUGIN:PostDrawTranslucentRenderables(bDepth, bSkybox)
 
 		local positionFront = trace.HitPos - (((position - trace.HitPos):Length() * 2) + 1) * trace.HitNormal
 		local positionOpposite = trace.HitPos + (trace.HitNormal * 2)
+		frame={pos=pos,ang=ang,model=v:GetModel(),mins=mins,maxs=maxs,expires=RealTime()+1,
+			width=width,normal=trace.HitNormal,front=positionFront,back=positionOpposite,angles=angles,opposite=anglesOpposite}
+		doorFrames[v]=frame
+		end
+		local width,angles,anglesOpposite=frame.width,frame.angles,frame.opposite
+		local positionFront,positionOpposite=frame.front,frame.back
 
-		if (trace.HitNormal:Dot((clientPosition - position):GetNormalized()) < 0) then
+		if (frame.normal:Dot((clientPosition - position):GetNormalized()) < 0) then
 			-- draw front
 			cam.Start3D2D(positionFront, angles, 0.1)
 				self:DrawDoorInfo(v, width * 8, positionFront, angles, 0.1, clientPosition)

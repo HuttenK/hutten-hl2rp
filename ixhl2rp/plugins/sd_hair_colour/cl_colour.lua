@@ -19,6 +19,10 @@ end
 local models, materials = {}, {}
 local states, tracked = setmetatable({}, {__mode="k"}), setmetatable({}, {__mode="k"})
 local enabled = true
+local sourceFlags = {
+ ["$alphatest"]=256, ["$nocull"]=8192, ["$translucent"]=2097152,
+ ["$nodecal"]=67108864, ["$allowalphatocoverage"]=536870912
+}
 
 local function Normalize(name)
  return string.lower(name):gsub("\\", "/"):gsub("%.vmt$", "")
@@ -49,8 +53,13 @@ function H.Material(name, colour)
  -- Keep the source's alpha cutoff, normal map and strand detail. Each family
  -- uses one neutral atlas, retaining its UV layout and authored strand cutouts.
  local params = { ["$basetexture"]=neutral, ["$model"]=1, ["$phong"]=0, ["$color2"]="[1 1 1]" }
- for _, key in ipairs({"$alphatest", "$alphatestreference", "$allowalphatocoverage", "$nocull", "$nodecal",
-  "$detailscale", "$detailblendmode", "$detailblendfactor", "$translucent"}) do
+ -- These switches are packed into $flags by Source. GetFloat("$alphatest")
+ -- returns nil, so copying them as ordinary parameters loses the cutouts.
+ local flags = source:GetInt("$flags") or 0
+ for key, mask in pairs(sourceFlags) do
+  params[key] = bit.band(flags, mask) ~= 0 and "1" or "0"
+ end
+ for _, key in ipairs({"$alphatestreference", "$detailscale", "$detailblendmode", "$detailblendfactor"}) do
   local value = source:GetFloat(key)
   if value ~= nil then params[key] = tostring(value) end
  end
@@ -58,7 +67,9 @@ function H.Material(name, colour)
   local texture = source:GetTexture(key)
   if texture and texture:GetName() ~= "error" then params[key] = texture:GetName() end
  end
- local runtimeName = "ix_sd_hair_v1_" .. name:match("([^/]+)$") .. "_" .. colour
+ -- CreateMaterial reuses existing names, even after a Lua reload. Version the
+ -- name so existing clients cannot retain a material without alpha testing.
+ local runtimeName = "ix_sd_hair_v2_" .. name:match("([^/]+)$") .. "_" .. colour
  local material = CreateMaterial(runtimeName, "VertexLitGeneric", params)
  local rgb = preset.rgb
  material:SetVector("$color2", Vector((rgb[1]/190)^2.2, (rgb[2]/190)^2.2, (rgb[3]/190)^2.2))

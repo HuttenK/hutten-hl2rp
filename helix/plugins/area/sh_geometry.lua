@@ -3,16 +3,35 @@
 ix.area = ix.area or {}
 ix.area.maxVolumes = 32
 local cached = setmetatable({}, {__mode = "k"})
+local legacy = setmetatable({}, {__mode = "k"})
 
 function ix.area.GetVolumes(info)
 	if (info.volumes and #info.volumes > 0) then return info.volumes end
 	local a, b = info.startPosition or info.min, info.endPosition or info.max
-	return {{min = Vector(math.min(a.x, b.x), math.min(a.y, b.y), math.min(a.z, b.z)),
+	local old = legacy[info]
+	if old and old.ax==a.x and old.ay==a.y and old.az==a.z and old.bx==b.x and old.by==b.y and old.bz==b.z then return old.boxes end
+	local boxes = {{min = Vector(math.min(a.x, b.x), math.min(a.y, b.y), math.min(a.z, b.z)),
 		max = Vector(math.max(a.x, b.x), math.max(a.y, b.y), math.max(a.z, b.z))}}
+	legacy[info] = {ax=a.x,ay=a.y,az=a.z,bx=b.x,by=b.y,bz=b.z,boxes=boxes}
+	return boxes
 end
 
+local bounds=setmetatable({}, {__mode="k"})
 function ix.area.Contains(info, position)
-	for _, box in ipairs(ix.area.GetVolumes(info)) do
+	local volumes=ix.area.GetVolumes(info)
+	if #volumes>1 then
+		local broad=bounds[info]
+		if not broad or broad.source~=volumes then
+			local first=volumes[1]
+			broad={source=volumes,min=Vector(first.min.x,first.min.y,first.min.z),max=Vector(first.max.x,first.max.y,first.max.z)}
+			for _,box in ipairs(volumes) do for _,axis in ipairs({"x","y","z"}) do
+				broad.min[axis]=math.min(broad.min[axis],box.min[axis]);broad.max[axis]=math.max(broad.max[axis],box.max[axis])
+			end end
+			bounds[info]=broad
+		end
+		if not position:WithinAABox(broad.min,broad.max) then return false end
+	end
+	for _, box in ipairs(volumes) do
 		if (position:WithinAABox(box.min, box.max)) then return true end
 	end
 	return false
@@ -50,8 +69,8 @@ end
 
 function ix.area.GetDisjointVolumes(info)
 	local old = cached[info]
-	local a, b = info.startPosition or info.min, info.endPosition or info.max
-	if (old and old.source == info.volumes and old.a == a and old.b == b) then return old.boxes end
+	local source = ix.area.GetVolumes(info)
+	if (old and old.source == source) then return old.boxes end
 	local boxes = {}
 	for _, volume in ipairs(ix.area.GetVolumes(info)) do
 		local parts = {volume}
@@ -65,16 +84,20 @@ function ix.area.GetDisjointVolumes(info)
 		for _, part in ipairs(parts) do boxes[#boxes + 1] = part end
 		if (#boxes > 256) then return nil end
 	end
-	cached[info] = {source = info.volumes, a = a, b = b, boxes = boxes}
+	cached[info] = {source = source, boxes = boxes}
 	return boxes
 end
 
+local measures=setmetatable({}, {__mode="k"})
 function ix.area.Measure(info)
+	local boxes=ix.area.GetDisjointVolumes(info) or ix.area.GetVolumes(info)
+	if measures[boxes] then return measures[boxes] end
 	local size = 0
-	for _, box in ipairs(ix.area.GetDisjointVolumes(info) or ix.area.GetVolumes(info)) do
+	for _, box in ipairs(boxes) do
 		local v = box.max - box.min
 		size = size + v.x*v.y*v.z
 	end
+	measures[boxes]=size
 	return size
 end
 

@@ -36,7 +36,8 @@ function Appearance:SetModelClass(model, class)
 end
 
 function Appearance:GetModelClass(model)
-	return self._models[model:lower()]
+	local path = tostring(model or ""):lower()
+	return self._models[path] or (path:match("^models/sd/citizens/citizen_[%a]+_%d+_hair%d+%.mdl$") and "sd" or nil)
 end
 
 function Appearance:AddBodyMask(name, info)

@@ -3,6 +3,10 @@ PLUGIN.author = "Hutten"
 PLUGIN.description = "Administrator-operated helmet-style status messages."
 local P=PLUGIN
 P.maxBytes=1024
+function P:CanSeeStatus(client)
+ local character=IsValid(client) and client:GetCharacter()
+ return character and FACTION_MTF~=nil and character:GetFaction()==FACTION_MTF or false
+end
 function P:ValidateStatus(value)
  if not isstring(value) or #value>self.maxBytes or value:find('[%z\1-\8\11\12\14-\31]') then return end
  value=string.Trim(value:gsub('\r\n','\n'):gsub('\r','\n'))
@@ -19,6 +23,6 @@ ix.command.Add('StatusHUD',{
  OnRun=function(_,client) P:OpenStatusEditor(client) end
 })
 ix.command.Add('StatusHUDClear',{
- description='Очистить оперативную сводку у всех игроков.',OnCheckAccess=adminAccess,
+ description='Очистить оперативную сводку у сотрудников МОГ.',OnCheckAccess=adminAccess,
  OnRun=function(_,client) if P:SetStatus(client,'',false,P.status.revision) then return 'Оперативная сводка очищена.' end end
 })

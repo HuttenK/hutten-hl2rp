@@ -40,3 +40,6 @@ ITEM.armor = {
 		fists = 1
 	}
 }
+
+-- Explicit SD mapping; armor stats and item model remain unchanged.
+ITEM.bodyGroupsSD = {[5] = 1}

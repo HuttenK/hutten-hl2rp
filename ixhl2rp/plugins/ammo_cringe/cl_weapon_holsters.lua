@@ -93,6 +93,8 @@ function W.DrawHolsters(plugin, client)
  end
  local active = client:GetActiveWeapon()
  local activeID = IsValid(active) and active:GetNWInt("ixWeaponItem", 0) or 0
+ local interval = ix.RenderBudget and ix.RenderBudget.Interval(client) or 0
+ local now, ownerModel = RealTime(), client:GetModel()
  for slot = 1, W.count do
   repeat
   local row, entry = rows[slot], cache[slot]
@@ -100,14 +102,25 @@ function W.DrawHolsters(plugin, client)
   local hip = slot == 3
   local profile = W.HolsterProfile(plugin, row.class, hip, slot)
   local boneName = profile.bone
-  local bone = client:LookupBone(boneName)
+  -- Skeleton indices are stable for a model; matrices still follow every draw.
+  if entry.bone == nil or entry.boneModel ~= ownerModel or entry.boneName ~= boneName then
+   entry.boneModel, entry.boneName, entry.bone = ownerModel, boneName, client:LookupBone(boneName)
+  end
+  local bone = entry.bone
   local matrix = bone and client:GetBoneMatrix(bone)
   if not matrix then break end
   local facing = plugin:HolsterBoneFrame(client, boneName, matrix)
   local scale = client:GetModelScale()
   local A = ix.WeaponAssembly
   if not profile.staticModel and A and ix.arc9Inventory.IsClass(row.class) then
-   local assembly = A.Get(entry.host, row.class, row.tree, row.rounds)
+   -- Remote cosmetic attachment-tree comparison/rebuild is bounded. New rows,
+   -- weapons and destroyed preview models still invalidate immediately.
+   if interval == 0 or now >= (entry.nextAssembly or 0) or entry.row ~= row or
+    entry.class ~= row.class or not IsValid(entry.assembly) then
+    entry.assembly = A.Get(entry.host, row.class, row.tree, row.rounds)
+    entry.nextAssembly, entry.row, entry.class = now + interval, row, row.class
+   end
+   local assembly = entry.assembly
    if not assembly then break end
    local mount, rotation = W.HolsterMount(slot)
    -- Follow the body, but retain enough lateral separation for two full-size guns.

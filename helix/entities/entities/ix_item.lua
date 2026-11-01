@@ -220,9 +220,17 @@ if SERVER then
 
 	net.Receive('item.entity.action', function(len, client)
 		local entity = net.ReadEntity()
+		-- A delayed request can arrive after pickup/removal or entity-index reuse.
+		if not IsValid(entity) or entity:GetClass() ~= "ix_item" then return end
 		local item = entity:GetItem()
-
-		ix.Item:PerformItemEntityAction(client, item, entity, net.ReadUInt(item.functions_bits))
+		if not item or item.entity ~= entity or not isnumber(item.functions_bits) or
+			not istable(item.functions_id) or not istable(item.functions) then return end
+		if not IsValid(client) or not client:GetCharacter() then return end
+		if entity:GetPos():DistToSqr(client:GetPos()) > 96 ^ 2 then return end
+		local actionID = net.ReadUInt(item.functions_bits)
+		local key = item.functions_id[actionID]
+		if not key or not item.functions[key] then return end
+		ix.Item:PerformItemEntityAction(client, item, entity, actionID)
 	end)
 else
 	function ENT:Initialize() self:UpdateAssemblyTrace() end

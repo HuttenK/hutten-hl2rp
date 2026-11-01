@@ -12,10 +12,12 @@ function P:RawGrid(c)
 end
 function P:DevicePowered(d)
  if not d or d.fault or d.enabled==false or not IsValid(d.entity) then return false end
+ if d.kind=="generator" or d.kind=="battery" then return true end
+ if F.EntityBackup(d.entity) and not self:EntityIsolated(d.entity) then return true end
  local b=ix.plugin.list.blackout
  local override=b and b.ElectronicsOverride and b:ElectronicsOverride(d.entity:GetPos())
  if override~=nil then return not override end
- if d.kind=="generator" or d.kind=="battery" or d.kind=="workpoint" then return true end
+ if d.kind=="workpoint" then return true end
  if self:EntityIsolated(d.entity) then return false end
  return F.EntityBackup(d.entity) or self:DirectGrid(d.entity)
 end
@@ -32,72 +34,91 @@ function P:BatteryMains(d)
  end
  return true
 end
-function P:RecomputePower(dt)
- if not self.loaded then return end
- dt=math.Clamp(dt or 0,0,2)
- local demand,sources,gens,bats={},{},{},{}
- for _,c in pairs(self.store.circuits) do
-  local grid,isolated=self:RawGrid(c);c.wasPowered=c.powered;c.powered=grid and not isolated;c.source=c.powered and "СЕТЬ" or "ОТКЛЮЧЕНА"
-  if not grid and not isolated then demand[#demand+1]=c end
+-- Cache ordering, not power/access decisions. Membership, replacements and
+-- priority/kind edits invalidate it; moving cables are still checked each solve.
+function P:PowerOrder(kind)
+ local records=self.store[kind]
+ self.powerOrders=self.powerOrders or {}
+ local cache=self.powerOrders[kind]
+ local changed=not cache or cache.records~=records
+ local count=0
+ if not changed then
+  for key,row in pairs(records) do
+   count=count+1
+   local old=cache.keys[key]
+   if not old or old.row~=row or old.id~=row.id or old.kind~=row.kind or old.priority~=row.priority then changed=true break end
+  end
+  if count~=cache.count then changed=true end
  end
- local direct,chargers,batterySources,mainsCharging={},{},{},{}
- for _,d in pairs(self.store.devices) do if d.kind=="battery" then d.chargeSource=nil end end
- for _,d in pairs(self.store.devices) do
-  if d.kind=="generator" or d.kind=="battery" then
-   local battery=d.kind=="battery"
-   local available=self:DevicePowered(d) and not self:EntityIsolated(d.entity)
-   local output=battery and math.min(d.capacity or 30,(d.charge or 0)/math.max(dt,1)) or (d.running and (d.fuel or 0)>0 and (d.capacity or 60) or 0)
-   local source={d=d,remaining=available and output or 0,zones={},used=0}
-   d.links=d.links or {}
-   for _,link in ipairs(d.links) do
-    local valid,e=self:CableValid(d,link)
-    if valid then
-     if link.binding then link.binding.pos=e:GetPos() end
-     if link.kind=="zone" then source.zones[link.zone]=true
-     elseif link.kind=="battery" and not battery then chargers[#chargers+1]={source=source,entity=e,id=link.id}
-     elseif link.kind~="battery" then direct[#direct+1]={source=source,entity=e,link=link} end
-    end
-    -- Invalid or removed endpoints leave a recoverable cable on the source's E menu.
+ if changed then
+  cache={records=records,keys={},rows={},count=0}
+  for key,row in pairs(records) do
+   cache.count=cache.count+1;cache.rows[#cache.rows+1]=row
+   cache.keys[key]={row=row,id=row.id,kind=row.kind,priority=row.priority}
+  end
+  table.sort(cache.rows,function(a,b)
+   if kind=="circuits" and a.priority~=b.priority then return a.priority<b.priority end
+   if kind=="devices" and (a.kind=="generator")~=(b.kind=="generator") then return a.kind=="generator" end
+   return a.id<b.id
+  end)
+  self.powerOrders[kind]=cache
+ end
+ return cache.rows
+end
+-- Dependency snapshots contain only power inputs, never authorization results.
+-- Cable obstruction remains checked every resource tick. Unchanged allocations
+-- are reused, while fuel and charge continue advancing at the original cadence.
+function P:PowerInputs(dt)
+ local state={};local function add(v) state[#state+1]=v==nil and "<nil>" or v end
+ local function vector(v) if v then add(v.x);add(v.y);add(v.z) else add(false) end end
+ local function entity(e,seen)
+  add(e);add(IsValid(e))
+  if IsValid(e) then
+   vector(e:GetPos());local a=e:GetAngles();add(a.p);add(a.y);add(a.r);add(e:GetParent());add(e:GetModel())
+   -- Combine locks inherit mains and isolation from their door, which may
+   -- move independently or be replaced without moving the lock itself.
+   if e:GetClass()=="ix_combinelock" then
+    seen=seen or {};seen[e]=true
+    if seen[e.door] then add(e.door) else entity(e.door,seen) end
    end
-   if IsValid(d.entity) then for i=1,F.cablePorts do
-    local link=d.links[i];local valid,e=false,nil
-    if link then valid,e=self:CableValid(d,link) end
-    d.entity:SetNW2Entity("ixGeneratorCable"..i,valid and e or NULL)
-    local point=link and F.Vector(link.point)
-    d.entity:SetNW2Vector("ixGeneratorCablePoint"..i,point or (IsValid(e) and e:WorldToLocal(e:WorldSpaceCenter()) or Vector()))
-    d.entity:SetNW2Vector("ixGeneratorCableStart"..i,link and F.Vector(link.start) or d.entity:WorldToLocal(F.GeneratorSocket(d.entity)))
-   end end
-   sources[#sources+1]=source
-   if battery then
-    bats[#bats+1]=source;batterySources[d.id]=source
-    mainsCharging[d.id]=available and self:BatteryMains(d)
-   elseif source.remaining>0 then gens[#gens+1]=d end
   end
  end
- table.sort(sources,function(a,b) if a.d.kind~=b.d.kind then return a.d.kind=="generator" end;return a.d.id<b.d.id end)
- table.sort(demand,function(a,b) if a.priority~=b.priority then return a.priority<b.priority end;return a.id<b.id end)
- for _,c in ipairs(demand) do
-  local capacity=0;for _,s in ipairs(sources) do if s.zones[c.zone] then capacity=capacity+s.remaining end end
-  c.powered=capacity>=c.load;c.source=c.powered and "РЕЗЕРВ" or "НЕТ ПОДКЛЮЧЁННОГО РЕЗЕРВА"
-  if c.powered then local needed=c.load;for _,s in ipairs(sources) do if s.zones[c.zone] then
-   local n=math.min(needed,s.remaining);s.remaining=s.remaining-n;s.used=(s.used or 0)+n;needed=needed-n
-  end end end
+ local b=ix.plugin.list.blackout
+ add(b);add(b and b.electronicsRestricted);add(b and b.unloading)
+ for name,z in pairs(b and b.zones or {}) do
+  add(name);add(z);add(z.active);add(z.remoteIsolation)
+  for _,v in ipairs(ix.area.GetVolumes(z)) do vector(v.min);vector(v.max) end
  end
- -- Zone loads have priority. A direct cable only powers its endpoint, never its neighbours.
- table.sort(direct,function(a,b) if a.source.d.id~=b.source.d.id then return a.source.d.id<b.source.d.id end;return a.entity:EntIndex()<b.entity:EntIndex() end)
- local powered={}
- for _,target in ipairs(direct) do
-  local e,s=target.entity,target.source
-  local b=ix.plugin.list.blackout
-  local blocked=b and b.ElectronicsOverride and b:ElectronicsOverride(e:GetPos())
-  if not blocked and not self:EntityIsolated(e) and not self:DirectGrid(e) and s.remaining>=5 then
-   powered[e]=true;s.remaining=s.remaining-5;s.used=s.used+5
+ for _,c in ipairs(self:PowerOrder("circuits")) do
+  add(c);add(c.id);add(c.zone);add(c.load);add(c.priority);add(c.isolated);add(c.mainsOff)
+ end
+ self.currentPowerLinks={}
+ for _,d in ipairs(self:PowerOrder("devices")) do
+  add(d);add(d.id);add(d.kind);add(d.enabled);add(d.fault);add(d.capacity);add(d.circuit);entity(d.entity)
+  if d.kind=="generator" or d.kind=="battery" then
+   add(d.running);add((d.fuel or 0)>0)
+   if d.kind=="battery" then
+    add(math.min(d.capacity or 30,(d.charge or 0)/math.max(dt,1)))
+    add(math.min(10,math.max(0,6000-(d.charge or 0))/math.max(dt,1)))
+   end
+   for _,link in ipairs(d.links or {}) do
+    add(link);add(link.kind);add(link.id);add(link.zone);add(link.group);add(link.crc);vector(F.Vector(link.point));vector(F.Vector(link.start))
+    local valid,e=self:CableValid(d,link);self.currentPowerLinks[link]={valid,e};add(valid);entity(e)
+    if valid then for _,member in ipairs(self:PowerConsumers(link,e)) do entity(member) end end
+   end
   end
  end
- local entityChanged=false
- for e in pairs(self.backupEntities) do if not powered[e] and IsValid(e) then e:SetNW2Bool("ixGeneratorPower",false);entityChanged=true end end
- for e in pairs(powered) do if not self.backupEntities[e] then e:SetNW2Bool("ixGeneratorPower",true);entityChanged=true end end
- self.backupEntities=powered
+ return state
+end
+local function sameInputs(a,b)
+ if not a or #a~=#b then return false end
+ for i=1,#b do if a[i]~=b[i] then return false end end
+ return true
+end
+function P:AdvancePowerResources(plan,dt)
+ local orderedDevices,gens,bats,mainsCharging,chargers,batterySources=plan.devices,plan.gens,plan.bats,plan.mains,plan.chargers,plan.batterySources
+ for _,s in ipairs(plan.sources) do s.remaining=s.chargeBudget end
+ for _,d in ipairs(orderedDevices) do if d.kind=="battery" then d.chargeSource=nil end end
  for _,s in ipairs(bats) do
   s.d.charge=math.max(0,s.d.charge-(s.used or 0)*dt)
   if (s.used or 0)>0 then s.d.chargeSource="РЕЗЕРВ: ПО КАБЕЛЮ" end
@@ -109,7 +130,6 @@ function P:RecomputePower(dt)
   s.d.chargeSource=s.used>0 and "СЕТЬ / РЕЗЕРВ ПО КАБЕЛЮ" or "ЗАРЯД: СЕТЬ"
  end end
  -- Generator charging uses only its remaining budget, after zone and direct loads.
- table.sort(chargers,function(a,b) if a.source.d.id~=b.source.d.id then return a.source.d.id<b.source.d.id end;return a.id<b.id end)
  local charged={}
  for _,target in ipairs(chargers) do
   local d,s=self.store.devices[target.id],target.source
@@ -124,11 +144,121 @@ function P:RecomputePower(dt)
    end
   end
  end
- for _,d in pairs(self.store.devices) do if d.kind=="battery" and (d.charge or 0)>=6000 then d.chargeSource="ЗАРЯЖЕН" end end
+ for _,d in ipairs(orderedDevices) do if d.kind=="battery" and (d.charge or 0)>=6000 then d.chargeSource="ЗАРЯЖЕН" end end
  for _,d in ipairs(gens) do d.fuel=math.max(0,d.fuel-dt);if d.fuel<=0 then d.running=false end end
+
+ if dt>0 and (#gens>0 or #bats>0) then self.dirty=true end
+end
+function P:RecomputePower(dt)
+ if not self.loaded then return end
+ dt=math.Clamp(dt or 0,0,2)
+ local inputs=self:PowerInputs(dt)
+ local reuse=dt>0 and not self.powerTopologyChanged and self.powerPlan and sameInputs(self.powerInputs,inputs)
+  and CurTime()<(self.nextPowerReconcile or 0)
+ if reuse then
+  self:AdvancePowerResources(self.powerPlan,dt)
+  for _,d in ipairs(self.powerPlan.devices) do if d.kind=="generator" or d.kind=="battery" then self:SyncDevice(d) end end
+  if ix.performance then ix.performance.Count("power_plan_reused") end
+ else
+  self.powerInputs=inputs;self.nextPowerReconcile=CurTime()+1
+  self:RebuildPowerPlan(dt)
+  if ix.performance then ix.performance.Count("power_plan_rebuilt") end
+ end
+ -- Resource exhaustion must revoke reserve power in this same tick.
+ for _,s in ipairs(self.powerPlan and self.powerPlan.sources or {}) do
+  if (s.d.kind=="generator" and (s.d.fuel or 0)<=0 and s.output>0)
+   or (s.d.kind=="battery" and (s.d.charge or 0)<=0 and s.used>0) then
+   self:RecomputePower(0);break
+  end
+ end
+ self.currentPowerLinks=nil
+end
+function P:RebuildPowerPlan(dt)
+ if not self.loaded then return end
+ dt=math.Clamp(dt or 0,0,2)
+ local orderedDevices,orderedCircuits=self:PowerOrder("devices"),self:PowerOrder("circuits")
+ local demand,sources,gens,bats={},{},{},{}
+ for _,c in ipairs(orderedCircuits) do
+  local grid,isolated=self:RawGrid(c);c.wasPowered=c.powered;c.powered=grid and not isolated;c.source=c.powered and "СЕТЬ" or "ОТКЛЮЧЕНА"
+  if not grid and not isolated then demand[#demand+1]=c end
+ end
+ local direct,chargers,batterySources,mainsCharging={},{},{},{}
+ for _,d in ipairs(orderedDevices) do if d.kind=="battery" then d.chargeSource=nil end end
+ for _,d in ipairs(orderedDevices) do
+  if d.kind=="generator" or d.kind=="battery" then
+   local battery=d.kind=="battery"
+   local available=self:DevicePowered(d) and not self:EntityIsolated(d.entity)
+   local output=battery and math.min(d.capacity or 30,(d.charge or 0)/math.max(dt,1)) or (d.running and (d.fuel or 0)>0 and (d.capacity or 60) or 0)
+   local source={d=d,remaining=available and output or 0,output=available and output or 0,zones={},used=0}
+   d.links=d.links or {}
+   local cableStates={}
+   for _,link in ipairs(d.links) do
+    local cached=self.currentPowerLinks and self.currentPowerLinks[link]
+    local valid,e
+    if cached then valid,e=cached[1],cached[2] else valid,e=self:CableValid(d,link) end
+    cableStates[link]={valid,e}
+    if valid then
+     if link.binding then link.binding.pos=e:GetPos() end
+     if link.kind=="zone" then source.zones[link.zone]=true
+     elseif link.kind=="battery" and not battery then chargers[#chargers+1]={source=source,entity=e,id=link.id}
+     elseif link.kind~="battery" then direct[#direct+1]={source=source,entity=e,link=link} end
+    end
+    -- Invalid or removed endpoints leave a recoverable cable on the source's E menu.
+   end
+   if IsValid(d.entity) then for i=1,F.cablePorts do
+    local link=d.links[i];local valid,e=false,nil
+    if link then
+     local state=cableStates[link]
+     if state then valid,e=state[1],state[2] else valid,e=self:CableValid(d,link) end
+    end
+    d.entity:SetNW2Entity("ixGeneratorCable"..i,valid and e or NULL)
+    local point=link and F.Vector(link.point)
+    d.entity:SetNW2Vector("ixGeneratorCablePoint"..i,point or (IsValid(e) and e:WorldToLocal(e:WorldSpaceCenter()) or Vector()))
+    d.entity:SetNW2Vector("ixGeneratorCableStart"..i,link and F.Vector(link.start) or d.entity:WorldToLocal(F.GeneratorSocket(d.entity)))
+   end end
+   sources[#sources+1]=source
+   if battery then
+    bats[#bats+1]=source;batterySources[d.id]=source
+    mainsCharging[d.id]=available and self:BatteryMains(d)
+   elseif source.remaining>0 then gens[#gens+1]=d end
+  end
+ end
+ -- Filtering the cached ordered lists preserves the allocation priority.
+ for _,c in ipairs(demand) do
+  local capacity=0;for _,s in ipairs(sources) do if s.zones[c.zone] then capacity=capacity+s.remaining end end
+  c.powered=capacity>=c.load;c.source=c.powered and "РЕЗЕРВ" or "НЕТ ПОДКЛЮЧЁННОГО РЕЗЕРВА"
+  if c.powered then local needed=c.load;for _,s in ipairs(sources) do if s.zones[c.zone] then
+   local n=math.min(needed,s.remaining);s.remaining=s.remaining-n;s.used=(s.used or 0)+n;needed=needed-n
+  end end end
+ end
+ -- Zone loads have priority. One mapped door mechanism is one direct load;
+ -- its linked controls/leaves share power, but unrelated neighbours never do.
+ table.sort(direct,function(a,b) if a.source.d.id~=b.source.d.id then return a.source.d.id<b.source.d.id end;return a.entity:EntIndex()<b.entity:EntIndex() end)
+ local powered={}
+ for _,target in ipairs(direct) do
+  local e,s=target.entity,target.source
+  local consumers=self:PowerConsumers(target.link,e)
+  local isolated,needsPower=false,false
+  for _,member in ipairs(consumers) do
+   if self:EntityIsolated(member) then isolated=true end
+   if not self:DirectGrid(member) then needsPower=true end
+  end
+  if not isolated and needsPower and s.remaining>=5 then
+   for _,member in ipairs(consumers) do powered[member]=true end
+   s.remaining=s.remaining-5;s.used=s.used+5
+  end
+ end
+ local entityChanged=false
+ for e in pairs(self.backupEntities) do if not powered[e] and IsValid(e) then e:SetNW2Bool("ixGeneratorPower",false);entityChanged=true end end
+ for e in pairs(powered) do if not self.backupEntities[e] then e:SetNW2Bool("ixGeneratorPower",true);entityChanged=true end end
+ self.backupEntities=powered
+ table.sort(chargers,function(a,b) if a.source.d.id~=b.source.d.id then return a.source.d.id<b.source.d.id end;return a.id<b.id end)
+ for _,source in ipairs(sources) do source.chargeBudget=source.remaining end
+ self.powerPlan={devices=orderedDevices,gens=gens,bats=bats,mains=mainsCharging,chargers=chargers,batterySources=batterySources,sources=sources}
+ self:AdvancePowerResources(self.powerPlan,dt)
  local changed=false
- for _,c in pairs(self.store.circuits) do if c.wasPowered~=c.powered then changed=true end;c.wasPowered=nil end
- for _,d in pairs(self.store.devices) do self:SyncDevice(d) end
+ for _,c in ipairs(orderedCircuits) do if c.wasPowered~=c.powered then changed=true end;c.wasPowered=nil end
+ for _,d in ipairs(orderedDevices) do self:SyncDevice(d) end
  if changed or entityChanged or self.powerTopologyChanged then self.powerTopologyChanged=nil;self:RefreshBlackouts() end
  if dt>0 and (#gens>0 or #bats>0) then self.dirty=true end
 end

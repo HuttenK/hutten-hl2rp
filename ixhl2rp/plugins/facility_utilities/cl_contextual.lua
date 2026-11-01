@@ -112,6 +112,14 @@ function Q.OpenMenu(spec)
  end
 end
 function Q.Input(cmd)
+ -- Native vehicles, including the wheelchair helper seat, own +use for exit.
+ -- F.Active rejects occupants; treating that rejection as a captured press
+ -- previously stripped IN_USE forever and left them unable to get up.
+ local p=LocalPlayer()
+ if IsValid(p) and p:InVehicle() then
+  Q.Clear();Q.CloseMenu();Q.useDown=false;Q.consumeUse=false
+  return
+ end
  local down=cmd:KeyDown(IN_USE)
  -- Match the engine's existing IMGUI binding path. Other CreateMove hooks can
  -- ClearButtons while a menu is open; that must not re-arm a physically held E.

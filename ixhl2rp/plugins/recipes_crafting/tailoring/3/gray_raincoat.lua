@@ -1,11 +1,11 @@
-RECIPE.name = "Пончо"
+RECIPE.name = "Зелёная вязаная шапка"
 RECIPE.category = "recipe.category.head"
 RECIPE.requirements = {
 	mat_cloth_reclaimed = 3,
 	mat_resine = 1
 }
 RECIPE.results = {
-	poncho = 1
+	sd_beanie_green = 1
 }
 RECIPE.skill = {"tailoring", 3}
 RECIPE.tools = {"tool_scissors"}

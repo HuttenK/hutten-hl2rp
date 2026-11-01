@@ -73,7 +73,7 @@ else
 			self.panel = nil
 		end
 
-		self:NextThink(CurTime() + 0.5)
+		self:SetNextClientThink(CurTime() + 0.5)
 		return true
 	end
 

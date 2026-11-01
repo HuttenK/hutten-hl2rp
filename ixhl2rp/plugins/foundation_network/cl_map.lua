@@ -108,45 +108,59 @@ local function finite(v,fallback)
  v=tonumber(v);if not v or v~=v or math.abs(v)==math.huge then return fallback end
  return v
 end
-function N.MapSliceBounds(panel)
- if not panel.cutaway or not panel.center then return end
- local half=math.Clamp(finite(panel.sliceSpan,minimumSlice),minimumSlice,131072)*.5
- local middle=panel.center.z-40
- return middle-half,middle+half
-end
-function N.MapMaxSliceSpan(panel)
+function N.MapHeightRange(panel)
  local e=N.Map3D and N.Map3D.engine
  local low,high
  if e and e.Bake.IsReady() and N.Map3D.MapBounds then low,high=N.Map3D.MapBounds(false)
- elseif panel.geometry then low,high=panel.geometry.low,panel.geometry.high end
- local middle=panel.center and panel.center.z-40 or 0
+ elseif panel.geometry then low,high=panel.geometry.detailLow or panel.geometry.low,panel.geometry.detailHigh or panel.geometry.high end
+ local bottom,top
  if low and high and finite(low.z) and finite(high.z) and high.z>=low.z then
-  return math.Clamp(2*math.max(math.abs(low.z-middle),math.abs(high.z-middle))+32,1024,131072)
+  bottom,top=low.z-8,high.z+8
+ else
+  bottom=((panel.data and panel.data.origin or {})[3] or 0)-128;top=bottom+8192
  end
- return 8192
+ local limit=panel.data and panel.data.canSetHeight~=true and finite(panel.data.maxHeight) or nil
+ return bottom,math.max(bottom+1,top),limit
+end
+function N.MapMaxSliceSpan(panel)
+ local low,high=N.MapHeightRange(panel);return high-low
+end
+function N.MapSliceBounds(panel)
+ if not panel.center then return end
+ local low,top,limit=N.MapHeightRange(panel)
+ local high=panel.cutaway and finite(panel.sliceTop,math.min(low+minimumSlice,top)) or top
+ high=math.Clamp(high,math.min(low+minimumSlice,top),top)
+ if limit then high=math.min(high,limit) end
+ -- Even a full-map/reset button cannot remove the player's configured cap.
+ if not panel.cutaway and high>=top then return end
+ return math.min(low,high-1),high
 end
 local PANEL={}
 function PANEL:Init()
  self:SetTall(660);self.foundationControl='map';self.layers={areas=true,power=true,infection=true,terminals=true}
- self.useSolid=N.Map3D~=nil;self.mapProps=true;self.sliceSpan=minimumSlice
+ self.useSolid=N.Map3D~=nil;self.mapProps=true
  self.yaw=45;self.pitch=55;self.orbitZoom=1;self.threeD=self.useSolid;self.cutaway=true;self.nextSync=RealTime()+5
  self.geometry=N.BeginMapGeometry()
 end
 function PANEL:SetData(data) self.data=data;self.dirty=true;if not self.center then self:Home() end end
 function PANEL:Home()
  if not self.data then return end
- local o=self.data.origin;self.center=Vector(o[1],o[2],o[3]);self.radius=1400;self.orbitZoom=1;self.cutaway=true;self.sliceSpan=minimumSlice;self.dirty=true
+ local o=self.data.origin;self.center=Vector(o[1],o[2],o[3]);self.radius=1400;self.orbitZoom=1;self.cutaway=true;self.sliceTop=nil;self.bottomFrame=true;self.dirty=true
+end
+function PANEL:MaxLayerFraction()
+ local bottom,top,limit=N.MapHeightRange(self);local first=math.min(bottom+minimumSlice,top)
+ return limit and math.sqrt(math.Clamp((limit-first)/math.max(1,top-first),0,1)) or 1
 end
 function PANEL:SetLayerFraction(value)
- value=math.Clamp(finite(value,0),0,1);self.cutaway=value<1
- -- A quadratic track leaves more travel for the first few storeys. Maps
- -- do not have uniform floor heights, so expose a height band, not a count.
- if self.cutaway then self.sliceSpan=minimumSlice+(N.MapMaxSliceSpan(self)-minimumSlice)*value^2 end
+ value=math.Clamp(finite(value,0),0,self:MaxLayerFraction());self.cutaway=value<1
+ local bottom,top=N.MapHeightRange(self);local first=math.min(bottom+minimumSlice,top)
+ self.sliceTop=first+(top-first)*value^2
  self.dirty=true
 end
 function PANEL:GetLayerFraction()
- if not self.cutaway then return 1 end
- return math.sqrt(math.Clamp((finite(self.sliceSpan,minimumSlice)-minimumSlice)/(N.MapMaxSliceSpan(self)-minimumSlice),0,1))
+ local bottom,top=N.MapHeightRange(self);local first=math.min(bottom+minimumSlice,top)
+ local _,height=N.MapSliceBounds(self)
+ return math.sqrt(math.Clamp(((height or top)-first)/math.max(1,top-first),0,1))
 end
 function N.SetupMapLayerSlider(slider,panel)
  slider.foundationControl='slider'
@@ -165,17 +179,25 @@ function N.SetupMapLayerSlider(slider,panel)
  slider.OnSurfaceWheel=function(_,delta) panel:SetLayerFraction(panel:GetLayerFraction()+delta*.02);return true end
  slider.Paint=function(self,w,h)
   local c=Color(96,226,216);local low,high=N.MapSliceBounds(panel)
-  local info=low and ('Z '..math.floor(low)..' … '..math.ceil(high)..'  /  высота '..math.floor(high-low)) or 'Весь объект'
+  local info=low and ('Снизу до Z '..math.ceil(high)) or 'Весь объект'
+  local saved=panel.data and finite(panel.data.maxHeight)
+  if saved then info=info..'  /  предел игроков: '..math.floor(saved) end
   draw.SimpleText('ВИДИМЫЕ ЭТАЖИ','FoundationMono',24,2,c)
   draw.SimpleText(info,'FoundationMono',w-24,2,Color(207,228,236),TEXT_ALIGN_RIGHT)
   local x=24+(w-48)*panel:GetLayerFraction()
   surface.SetDrawColor(31,60,72);surface.DrawRect(24,36,w-48,4)
+  local bottom,top=N.MapHeightRange(panel);local first=math.min(bottom+minimumSlice,top)
+  if saved then
+   local cap=24+(w-48)*math.sqrt(math.Clamp((saved-first)/math.max(1,top-first),0,1))
+   surface.SetDrawColor(148,73,63);surface.DrawRect(cap,36,w-24-cap,4);surface.DrawRect(cap-1,27,2,22)
+  end
   surface.SetDrawColor(c);surface.DrawRect(24,36,x-24,4);surface.DrawRect(x-5,28,10,20)
-  draw.SimpleText('Один срез','FoundationMono',24,52,Color(174,193,204))
+  draw.SimpleText('Нижний этаж','FoundationMono',24,52,Color(174,193,204))
   draw.SimpleText('Все этажи','FoundationMono',w-24,52,Color(174,193,204),TEXT_ALIGN_RIGHT)
  end
 end
 function PANEL:ResetOrbit(full)
+ self.bottomFrame=nil
  local e=self.useSolid and N.Map3D and N.Map3D.engine
  if e and e.Bake.IsReady() and e.Bake.GetBounds then
   local low,high
@@ -196,6 +218,7 @@ function PANEL:Zoom(delta) self.orbitZoom=math.Clamp(self.orbitZoom*(delta>0 and
 function PANEL:OnSurfaceWheel(delta) self:Zoom(delta);return true end
 function PANEL:OnSurfaceDrag(dx,dy,key)
  if not self.center then return end
+ self.bottomFrame=nil
  if not self.threeD or self.panMode or key==MOUSE_RIGHT then
   local right,up=N.MapAxes(self.threeD and self.yaw or -90,self.threeD and self.pitch or 90)
   local pixels=math.max(1,self:GetTall()-70)
@@ -203,7 +226,13 @@ function PANEL:OnSurfaceDrag(dx,dy,key)
  else self.yaw=(self.yaw+dx*.3)%360;self.pitch=math.Clamp(self.pitch+dy*.25,5,89) end
  self.dirty=true
 end
-function PANEL:Floor(delta) if self.center then self.center.z=self.center.z+delta*128;self.cutaway=true;self.dirty=true end end
+function PANEL:Floor(delta)
+ if not self.center then return end
+ local bottom,top,limit=N.MapHeightRange(self);local _,current=N.MapSliceBounds(self)
+ self.sliceTop=math.Clamp((current or top)+delta*128,math.min(bottom+minimumSlice,top),top)
+ if limit then self.sliceTop=math.min(self.sliceTop,limit) end
+ self.cutaway=true;self.dirty=true
+end
 function PANEL:Pan(x,y) if self.center then self.center=self.center+Vector(x,y,0)*self.radius/self.orbitZoom*.15;self.dirty=true end end
 function PANEL:Scan() self:ResetOrbit() end
 function PANEL:Think()
@@ -289,8 +318,13 @@ function N.RenderMap(panel)
  local w,h=panel:GetWide(),panel:GetTall()-70
  if w<=0 or h<=0 then return end
  local sliceLow,sliceHigh=N.MapSliceBounds(panel)
+ if panel.bottomFrame and sliceLow and (g.ready or (N.Map3D and N.Map3D.engine and N.Map3D.engine.Bake.IsReady())) then
+  -- Starting at the lowest storey must also frame it when the terminal is
+  -- upstairs. Wait for real bounds, then leave subsequent camera pans alone.
+  panel.center.z=(sliceLow+sliceHigh)*.5;panel.bottomFrame=nil
+ end
  local sky=N.Map3D and N.Map3D.SkyFilter and N.Map3D.SkyFilter()
- local key=table.concat({'terminal-map-v9',w,h,panel.radius,panel.yaw,panel.pitch,panel.orbitZoom,panel.center.x,panel.center.y,panel.center.z,tostring(sliceLow),tostring(sliceHigh),tostring(sky),tostring(panel.threeD),tostring(panel.cutaway),tostring(panel.useSolid),tostring(panel.layers.areas),tostring(panel.layers.power),tostring(panel.layers.infection),tostring(panel.layers.terminals)},':')
+ local key=table.concat({'terminal-map-v11',w,h,panel.radius,panel.yaw,panel.pitch,panel.orbitZoom,panel.center.x,panel.center.y,panel.center.z,tostring(sliceLow),tostring(sliceHigh),tostring(sky),tostring(panel.threeD),tostring(panel.cutaway),tostring(panel.useSolid),tostring(panel.layers.areas),tostring(panel.layers.power),tostring(panel.layers.infection),tostring(panel.layers.terminals)},':')
  if RealTime()<(panel.nextRender or 0) then return end
  panel.nextRender=RealTime()+.06
  local solid=panel.useSolid and N.Map3D and N.Map3D.Draw(panel,w,h,key) or false
@@ -338,7 +372,7 @@ function N.RenderMap(panel)
   for y=h*.5%spacing,h,spacing do view.grid[#view.grid+1]={0,y,w,y} end
   local section=sliceHigh or panel.center.z+48
   if not solid then
-  if panel.cutaway and not panel.threeD and sliceHigh-sliceLow<=minimumSlice then
+  if sliceLow and not panel.threeD and sliceHigh-sliceLow<=minimumSlice then
    if panel.sectionZ~=section then
     panel.sectionZ=section;panel.sections={}
     for _,face in ipairs(g.faces) do if face.low<=section and face.high>=section then
@@ -356,7 +390,7 @@ function N.RenderMap(panel)
   else
    ink(outlineColor)
    for _,edge in ipairs(g.edges) do if not edge.shared or edge.corner then
-    if panel.cutaway then
+    if sliceLow then
      local a,b=N.MapClipHeight(edge.a,edge.b,sliceLow,sliceHigh);if a then line(a,b) end
     else line(edge.a,edge.b) end
    end end
@@ -376,33 +410,46 @@ function N.RenderMap(panel)
    end
    view.markers[#view.markers+1]={x=x/w,y=y/h,title=title,id=id}
   end
+  local areaLabels={}
   if panel.layers.areas then for _,z in ipairs(panel.data.areas or {}) do
    local a,b=world(z.min),world(z.max);local c=colors.areas
    if z.color then c=Color(math.Clamp(tonumber(z.color[1]) or 102,80,255),math.Clamp(tonumber(z.color[2]) or 231,80,255),math.Clamp(tonumber(z.color[3]) or 208,80,255)) end
-   if (not sky or ((a+b)*.5):Dot(sky.normal)>=sky.distance) and (not panel.cutaway or (b.z>=sliceLow and a.z<=sliceHigh)) then
-    local height=panel.cutaway and math.Clamp(section,a.z,b.z) or a.z
+   if (not sky or ((a+b)*.5):Dot(sky.normal)>=sky.distance) and (not sliceLow or (b.z>=sliceLow and a.z<=sliceHigh)) then
+    local height=sliceLow and math.Clamp(section,a.z,b.z) or a.z
     local corners={Vector(a.x,a.y,height),Vector(b.x,a.y,height),Vector(b.x,b.y,height),Vector(a.x,b.y,height)}
     ink(c);for i=1,4 do line(corners[i],corners[i%4+1],2.2) end
     local x,y=project(Vector((a.x+b.x)*.5,(a.y+b.y)*.5,height))
     if x>=0 and y>=0 and x<=w and y<=h then
-     view.labels[#view.labels+1]={text=z.name,x=x,y=y,color=c,area=true}
+     -- Snapshot entries are volumes, not separate named areas. Label the
+     -- largest visible volume once; hidden floors/offscreen additions cannot
+     -- claim its label, and concave areas keep the name inside a real volume.
+     local size=(b.x-a.x)*(b.y-a.y)
+     local polygon={}
+     for _,corner in ipairs(corners) do local px,py=project(corner);polygon[#polygon+1]={x=px,y=py} end
+     local entry=areaLabels[z.name]
+     if not entry then
+      entry={text=z.name,x=x,y=y,color=c,area=true,size=size,polygon=polygon}
+      areaLabels[z.name]=entry;view.labels[#view.labels+1]=entry
+     elseif size>entry.size then
+      entry.x,entry.y,entry.color,entry.size,entry.polygon=x,y,c,size,polygon
+     end
     end
    end
   end end
   for _,v in ipairs(panel.data.alerts or {}) do
    if v.active==true and (v.kind=='power' or v.kind=='infection') and panel.layers[v.kind] then
     local pos=world(v.pos);local low,high=v.low or pos.z,v.high or pos.z
-    if not panel.cutaway or (high>=sliceLow and low<=sliceHigh) then
-     if panel.cutaway then pos.z=math.Clamp(pos.z,math.max(low,sliceLow),math.min(high,sliceHigh)) end
+    if not sliceLow or (high>=sliceLow and low<=sliceHigh) then
+     if sliceLow then pos.z=math.Clamp(pos.z,math.max(low,sliceLow),math.min(high,sliceHigh)) end
      marker(pos,v.name..(v.kind=='power' and ' / НЕТ ПИТАНИЯ' or ' / ЗАРАЖЕНИЕ'),colors[v.kind],v.kind)
     end
    end
   end
   if panel.layers.terminals then for i,t in ipairs(panel.data.terminals or {}) do
-   local pos=world(t.pos);if not panel.cutaway or (pos.z>=sliceLow and pos.z<=sliceHigh) then marker(pos,'T'..i..(t.off and ' / OFF' or ''),colors.terminals,'terminals') end
+   local pos=world(t.pos);if not sliceLow or (pos.z>=sliceLow and pos.z<=sliceHigh) then marker(pos,'T'..i..(t.off and ' / OFF' or ''),colors.terminals,'terminals') end
   end end
   local playerPos=world(panel.data.origin)
-  if not panel.cutaway or (playerPos.z>=sliceLow and playerPos.z<=sliceHigh) then marker(playerPos,'ВЫ',Color(255,255,255)) end
+  if not sliceLow or (playerPos.z>=sliceLow and playerPos.z<=sliceHigh) then marker(playerPos,'ВЫ',Color(255,255,255)) end
   label(solid and 'ОБЪЁМНАЯ КАРТА' or (panel.threeD and 'AXONOMETRIC' or 'FLOOR PLAN'),28,24,Color(176,226,238))
   label(panel.threeD and 'ПОВОРОТ '..math.floor(panel.yaw)..'°' or 'N ↑',w-245,24,Color(188,221,230))
   local units=128;while units*scale<100 do units=units*2 end
@@ -415,6 +462,74 @@ function N.RenderMap(panel)
   panel.mapView=view;panel.markers=view.markers;panel.sectionEmpty=view.sectionEmpty
   panel.renderKey=key;panel.dirty=false
  end
+end
+
+local areaFonts={'FoundationMapArea22','FoundationMapArea20','FoundationMapArea18'}
+-- Width of a centred label rectangle entirely inside the projected room,
+-- including oblique views. Every edge supplies one half-plane constraint.
+function N.MapAreaLabelWidth(label,height,w,h)
+ local half=math.min(label.x-8,w-label.x-8,180)
+ if label.y-height*.5<8 or label.y+height*.5>h-8 then return 0 end
+ for i,a in ipairs(label.polygon) do
+  local b=label.polygon[i%#label.polygon+1];local dx,dy=b.x-a.x,b.y-a.y
+  local distance=math.abs(dx*(label.y-a.y)-dy*(label.x-a.x))-5*math.sqrt(dx*dx+dy*dy)
+  local room=distance-math.abs(dx)*height*.5
+  if room<0 then return 0 end
+  if math.abs(dy)>.001 then half=math.min(half,room/math.abs(dy)) end
+ end
+ return math.max(0,half*2)
+end
+local function wrapAreaName(text,width,maxLines)
+ local lines,line={},''
+ for word in text:gmatch('%S+') do
+  if surface.GetTextSize(word)>width then return end
+  local trial=line=='' and word or line..' '..word
+  if surface.GetTextSize(trial)>width then
+   lines[#lines+1]=line;line=word
+   if #lines>=maxLines then return end
+  else line=trial end
+ end
+ if line~='' then lines[#lines+1]=line end
+ if #lines>0 then return lines end
+end
+function N.LayoutMapAreaLabels(view)
+ if not N.mapAreaFontsReady then
+  for i,size in ipairs({22,20,18}) do surface.CreateFont(areaFonts[i],{font='Roboto',size=size,weight=600,extended=true}) end
+  N.mapAreaFontsReady=true
+ end
+ local candidates,occupied={},{}
+ for _,v in ipairs(view.labels) do
+  if v.area then candidates[#candidates+1]=v
+  elseif v.incident then occupied[#occupied+1]={x=v.x-40,y=v.y-40,w=80,h=80} end
+ end
+ table.sort(candidates,function(a,b) if a.size==b.size then return a.text<b.text end;return a.size>b.size end)
+ local result={}
+ for _,v in ipairs(candidates) do
+  local chosen
+  for _,font in ipairs(areaFonts) do
+   surface.SetFont(font);local _,lineHeight=surface.GetTextSize('Ag')
+   for count=1,3 do
+    local height=lineHeight*count+8;local width=N.MapAreaLabelWidth(v,height,view.width,view.height)
+    local lines=width>=48 and wrapAreaName(v.text,width-12,count)
+    if lines then
+     local tw=0;for _,line in ipairs(lines) do tw=math.max(tw,surface.GetTextSize(line)) end
+     local bw,bh=tw+12,#lines*lineHeight+8
+     local box={x=v.x-bw*.5,y=v.y-bh*.5,w=bw,h=bh}
+     local free=true
+     for _,other in ipairs(occupied) do
+      if box.x<other.x+other.w+4 and box.x+box.w+4>other.x and box.y<other.y+other.h+4 and box.y+box.h+4>other.y then free=false;break end
+     end
+     if free then
+      chosen={box=box,lines=lines,font=font,lineHeight=lineHeight,color=v.color,source=v}
+      break
+     end
+    end
+   end
+   if chosen then break end
+  end
+  if chosen then result[#result+1]=chosen;occupied[#occupied+1]=chosen.box end
+ end
+ view.areaLayout=result;return result
 end
 
 local paintQuad={{},{},{},{}}
@@ -440,19 +555,16 @@ function N.PaintMap(panel,w,h)
   end
  end
  for _,v in ipairs(view.rects) do surface.SetDrawColor(v.color);surface.DrawRect(v.x,v.y,v.w,v.h) end
+ for _,v in ipairs(view.areaLayout or N.LayoutMapAreaLabels(view)) do
+  local b=v.box
+  surface.SetDrawColor(areaLabelBackground);surface.DrawRect(b.x,b.y,b.w,b.h)
+  surface.SetDrawColor(v.color);surface.DrawRect(b.x,b.y+b.h-2,b.w,2)
+  for i,line in ipairs(v.lines) do
+   draw.SimpleText(line,v.font,b.x+b.w*.5,b.y+4+(i-1)*v.lineHeight,areaTextColor,TEXT_ALIGN_CENTER)
+  end
+ end
  for _,v in ipairs(view.labels) do
-  if v.area then
-   -- The text and backing share the projected area's exact centre. Keep a
-   -- fixed UI font size so zooming out never turns names into tiny map lines.
-   surface.SetFont('FoundationTitle')
-   local tw,th=surface.GetTextSize(v.text)
-   local bw,bh=tw+28,th+16;local x,y=v.x-bw*.5,v.y-bh*.5
-   if x>=0 and y>=0 and x+bw<=view.width and y+bh<=view.height then
-    surface.SetDrawColor(areaLabelBackground);surface.DrawRect(x,y,bw,bh)
-    surface.SetDrawColor(v.color);surface.DrawRect(x,y+bh-2,bw,2)
-    draw.SimpleText(v.text,'FoundationTitle',v.x,v.y,areaTextColor,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
-   end
-  elseif not v.incident then draw.SimpleText(v.text,'FoundationMono',v.x,v.y,v.color) end
+  if not v.area and not v.incident then draw.SimpleText(v.text,'FoundationMono',v.x,v.y,v.color) end
  end
  -- Alert icons remain on top of architectural labels and linework.
  for _,v in ipairs(view.labels) do if v.incident then N.PaintMapIncident(v) end end
@@ -470,7 +582,7 @@ function PANEL:Paint(w,h)
  local low,high=N.MapSliceBounds(self)
  local mode=low and ('Слои Z '..math.floor(low)..' … '..math.ceil(high)) or 'Все этажи'
  draw.SimpleText(mode..'  /  '..(self.threeD and '3D' or '2D')..'  /  '..(self.data and self.data.name or ''),'FoundationMono',18,h-57,Color(142,205,218))
- draw.SimpleText(self.sectionEmpty and 'На этой высоте нет стен. Измените Z или откройте весь объект.' or 'ЛКМ: вращение в 3D / сдвиг в 2D     ПКМ: сдвиг     Колесо: масштаб','FoundationMono',18,h-28,Color(174,193,204))
+ draw.SimpleText(self.sectionEmpty and 'На этой высоте нет стен. Поднимите верхнюю границу.' or 'ЛКМ: вращение / сдвиг     ПКМ: сдвиг     Колесо: масштаб и названия малых зон','FoundationMono',18,h-28,Color(174,193,204))
  if g.limited then draw.SimpleText('Достигнут лимит геометрии','FoundationMono',w-360,20,Color(255,184,92)) end
 end
 vgui.Register('ixFoundationMap',PANEL,'DPanel')

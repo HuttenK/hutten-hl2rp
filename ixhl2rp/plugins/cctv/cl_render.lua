@@ -75,6 +75,7 @@ end
 function P:CaptureFeed(feed,slot)
  local origin,angles=C.Vector(feed.pos),C.Angle(feed.ang)
  local device=self.devices[feed.id];local owner
+ if not C.Powered(device) then unavailable(slot);return end
  if feed.bodycam or (device and device.bodycam) then
   owner=self:BodycamOwner(feed)
   if not owner then unavailable(slot);return end
@@ -108,7 +109,7 @@ hook.Add("PostRender","ixCCTVFeeds",function()
  -- the budget, and duplicate monitors use the very same texture.
  local valid={}
  for id,feed in pairs(P.feeds) do
-  if P.demand[id] and RealTime()-feed.received<1.5 and RealTime()-feed.first>.2 then valid[id]=feed end
+  if P.demand[id] and C.Powered(P.devices[id]) and RealTime()-feed.received<1.5 and RealTime()-feed.first>.2 then valid[id]=feed end
  end
  for _,s in pairs(C.slots) do if not valid[s.camera] then s.camera=nil;s.updated=nil;s.recognition=nil end end
  local selected,chosen,oldest=nil,nil,math.huge
@@ -139,7 +140,7 @@ function P:PaintFeed(id,w,h,caption,x,y)
   surface.DrawTexturedRectUV(x+(w-width)/2,y+(h-height)/2,width,height,0,0,W/512,H/256)
   if self.PaintRecognition then self:PaintRecognition(feed,slot,x+(w-width)/2,y+(h-height)/2,width,height) end
  else
-  draw.SimpleText(d and (powered and not (slot and slot.unavailable) and "ПОДКЛЮЧЕНИЕ" or "НЕТ СИГНАЛА") or "НЕТ КАМЕРЫ","ixCCTVTitle",x+w/2,y+h/2,accent,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
+  draw.SimpleText(d and (d.broken and "КАМЕРА ПОВРЕЖДЕНА" or powered and not (slot and slot.unavailable) and "ПОДКЛЮЧЕНИЕ" or "НЕТ СИГНАЛА") or "НЕТ КАМЕРЫ","ixCCTVTitle",x+w/2,y+h/2,accent,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
  end
  surface.SetDrawColor(1,9,12,85);for line=0,h,4 do surface.DrawRect(x,y+line,w,1) end
  surface.SetDrawColor(3,12,16,230);surface.DrawRect(x,y,w,22);surface.DrawRect(x,y+h-20,w,20)

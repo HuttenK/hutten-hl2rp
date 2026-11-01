@@ -12,3 +12,7 @@ ITEM.inventory_data = {
 }
 
 ITEM.displayID = "backpack_medic"
+ITEM.sdDisplayID = ix.Appearance:New("sd_medicbag", {
+ slot = ix.Appearance.Slot.Backpack, layer = ix.Appearance.Layer.Main,
+ bodyGroups = {}, variants = {sd = {bodyGroups = {[10] = 1}}}
+})

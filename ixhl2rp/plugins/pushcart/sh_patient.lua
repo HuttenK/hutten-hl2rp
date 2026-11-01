@@ -53,17 +53,21 @@ function P:PatientReachable(client, patient, range)
     return not trace.Hit or trace.Entity==display
 end
 
-function P:PatientSequence(entity)
+function P:PatientSequence(entity, seated)
     -- Resolve on the patient's own model. Never display a standing/T pose when
     -- the optional animation packs are absent.
-    for _, name in ipairs({"custom_male_down02", "custom_female_down02", "stances_down02",
-        "stances_down01", "prone_passive", "stances_down03"}) do
+    local names = seated and {"custom_male_sit01", "custom_female_sit01", "stances_sit01"}
+        or {"custom_male_down02", "custom_female_down02", "stances_down02",
+        "stances_down01", "prone_passive", "stances_down03"}
+    for _, name in ipairs(names) do
         local sequence = entity:LookupSequence(name)
         local info = sequence and sequence >= 0 and entity:GetSequenceInfo(sequence)
         if info and info.bbmin and info.bbmax then
             local size = info.bbmax - info.bbmin
-            if size.x > 1 and size.y > 1 and size.z > 1 and size.z < math.max(size.x, size.y) then
-                return sequence, info.bbmin, info.bbmax
+            local posture = seated and size.z >= 25 and size.z <= 60 and size.x <= 55 and size.y <= 40
+                or not seated and size.z < math.max(size.x, size.y) and size.z <= 30
+            if size.x > 1 and size.y > 1 and size.z > 1 and posture then
+                return sequence, info.bbmin, info.bbmax, name
             end
         end
     end

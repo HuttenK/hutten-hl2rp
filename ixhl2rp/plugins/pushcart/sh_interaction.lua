@@ -1,6 +1,7 @@
 local P = ix.PushCart
 
 P.actions = {
+	sit = {label = "Сесть в коляску", icon = "icon16/user.png"},
 	takePatient = {label = "Снять и тащить", icon = "icon16/hand.png"},
 	unloadPatient = {label = "Положить рядом", icon = "icon16/arrow_down.png"},
 	examinePatient = {label = "Осмотреть ранения", icon = "icon16/heart.png"},

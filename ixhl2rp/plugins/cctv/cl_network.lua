@@ -13,7 +13,10 @@ net.Receive("ixCCTVDevice",function()
  if d.removed then
   P.devices[d.id]=nil;P.feeds[d.id]=nil
   if P.terminalViews then P.terminalViews[d.id]=nil end
- else P.devices[d.id]=d end
+ else
+  P.devices[d.id]=d
+  if d.broken then P.feeds[d.id]=nil end
+ end
  P.nextInterest=0;P.sight[d.id]=nil
  if IsValid(P.window) then P.window.refresh=true end
 end)
@@ -79,11 +82,12 @@ hook.Add("Think","ixCCTVClient",function()
  -- Rebuild interest every Think so leaving a page stops capture immediately.
  -- Network refreshes remain bounded; changed selections are sent as soon as
  -- the server's watch rate limit permits, then refreshed every 0.6 seconds.
- local key=table.concat(monitors,",")..":"..tostring(preview)..":"..(terminal and terminal.id.."/"..terminal.camera or "")
+ local admin=IsValid(P.window) and p:IsAdmin()
+ local key=tostring(admin)..":"..table.concat(monitors,",")..":"..tostring(preview)..":"..(terminal and terminal.id.."/"..terminal.camera or "")
  if RealTime()<nextWatch and (P.lastWatchKey==key or RealTime()<(P.watchSentAt or 0)+.45) then return end
  nextWatch=RealTime()+.6
- if count>0 or P.lastWatchKey~=key then
-  net.Start("ixCCTVWatch");net.WriteString(util.TableToJSON({monitors=monitors,preview=preview,terminal=terminal}));net.SendToServer()
+ if count>0 or admin or P.lastWatchKey~=key then
+  net.Start("ixCCTVWatch");net.WriteString(util.TableToJSON({monitors=monitors,preview=preview,terminal=terminal,admin=admin==true}));net.SendToServer()
   P.watchSentAt=RealTime()
  end
  P.lastWatchKey=key

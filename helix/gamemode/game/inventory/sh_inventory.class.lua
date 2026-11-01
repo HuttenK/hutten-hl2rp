@@ -1766,6 +1766,7 @@ else
 		["vest"] = true,
 		["legprotection"] = true,
 		["armprotection"] = true,
+		["satchel"] = true,
 		["glasses"] = true,
 	}
 

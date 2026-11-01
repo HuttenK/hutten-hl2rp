@@ -21,6 +21,13 @@ if SERVER then
   self.nextCCTVUse=CurTime()+.5
   local plugin=ix.plugin.list.cctv;if plugin then plugin:UseDevice(p,self) end
  end
+ function ENT:OnTakeDamage(damage)
+  if self.CCTVKind~="camera" or damage:GetDamage()<=0 or not (damage:IsBulletDamage() or damage:IsDamageType(DMG_BUCKSHOT)) then return 0 end
+  local plugin=ix.plugin.list.cctv
+  local d=plugin and plugin.devices and plugin.devices[self:GetNW2Int("ixCCTVID",0)]
+  if d and d.entity==self and plugin:BreakCamera(d,true) then return damage:GetDamage() end
+  return 0
+ end
  function ENT:OnRemove() local plugin=ix.plugin.list.cctv;if plugin then plugin:RemoveDevice(self) end end
  function ENT:SpawnFunction(p,tr,class)
   if not IsValid(p) or not p:IsAdmin() then return end
@@ -32,5 +39,8 @@ if SERVER then
 else
  function ENT:Draw()
   self:DrawModel()
+ end
+ function ENT:DrawTranslucent()
+  if self.CCTVKind=="camera" and ix.CCTV.DrawIndicator then ix.CCTV.DrawIndicator(self) end
  end
 end

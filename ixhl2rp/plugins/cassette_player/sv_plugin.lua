@@ -59,6 +59,7 @@ end)
 -- We save every live ix_boombox: position, angles, loaded cassette info.
 
 function PLUGIN:SaveData()
+ if self.cleaning or not self.boomboxesLoaded then return end
 	local boomboxes = {}
 	for _, ent in ipairs(ents.FindByClass("ix_boombox")) do
 		if not IsValid(ent) then continue end
@@ -79,7 +80,8 @@ end
 -- from the database so the player can still eject and reclaim it.
 
 function PLUGIN:LoadData()
- if self.boomboxesLoaded then return end
+ if self.boomboxesLoaded and not self.cleaning then return end
+ self.cleaning=nil
  self.boomboxesLoaded=true
  for _,v in ipairs(self:GetData() or {}) do
   local ent=ents.Create("ix_boombox")
@@ -106,5 +108,11 @@ function PLUGIN:LoadData()
    end
   end
  end
+end
+function PLUGIN:PreCleanupMap()
+ self:SaveData();self.cleaning=true
+end
+function PLUGIN:PostCleanupMap()
+ if self.cleaning then self:LoadData() end
 end
 function PLUGIN:ShutDown() self.shuttingDown=true end

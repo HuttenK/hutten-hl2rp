@@ -110,6 +110,99 @@ function A.Draw(x,y,w,h,state,hovered)
  end
 end
 
+-- The compact gameplay silhouette is unchanged between health colour changes.
+-- Keep its original strokes in one fixed-size transparent image; the larger,
+-- interactive medical diagrams continue to use Draw directly.
+-- API contracts: https://wiki.facepunch.com/gmod/render.PushRenderTarget
+-- https://wiki.facepunch.com/gmod/render.OverrideBlend (separate coverage alpha)
+-- Renderer fallback: https://github.com/Facepunch/garrysmod-issues/issues/5693
+local hudImage={}
+local imageWidth,imageHeight,padding=256,512,16
+local function HUDTargetFits(target)
+ -- Hardware/device resets must not silently change the UV denominator.
+ -- https://wiki.facepunch.com/gmod/ITexture:Width (and ITexture:Height)
+ local ok,width,height=pcall(function() return target:Width(),target:Height() end)
+ return ok and width==imageWidth and height==imageHeight
+end
+local function CanCacheHUD()
+ -- Blend override restoration has an outstanding Linux renderer issue (#5693).
+ -- Unsupported renderers, panel fades and nested targets keep the direct path.
+ return system and system.IsWindows and system.IsWindows() and GetRenderTargetEx and CreateMaterial and
+  render and render.GetRenderTarget and render.GetRenderTarget()==nil and render.OverrideBlend and
+  render.OverrideAlphaWriteEnable and surface.GetAlphaMultiplier and surface.GetAlphaMultiplier()==1
+end
+local function HUDSignature(w,h,state,hovered)
+ local values={w,h}
+ for _,part in ipairs(state.parts) do
+  if A.Shapes[part.hitgroup] then
+   local color=part.id==hovered and Color(255,224,217) or (part.amputated and Color(125,64,73) or (part.fractured and Color(244,77,91) or A.Color(part.ratio)))
+   values[#values+1]=part.hitgroup
+   values[#values+1]=color.r;values[#values+1]=color.g;values[#values+1]=color.b
+  end
+ end
+ return table.concat(values,":")
+end
+local function BuildHUDImage(w,h,state,hovered)
+ local pushed,started,clipping=false,false,nil
+ local ok,err=xpcall(function()
+  if not hudImage.target then
+   hudImage.target=GetRenderTargetEx("ix_anatomy_hud_v1",imageWidth,imageHeight,RT_SIZE_NO_CHANGE,MATERIAL_RT_DEPTH_NONE,0,0,IMAGE_FORMAT_RGBA8888)
+   assert(HUDTargetFits(hudImage.target),"render target dimensions unavailable or unsupported")
+   hudImage.material=CreateMaterial("ix_anatomy_hud_v1","UnlitGeneric",{
+    ["$basetexture"]=hudImage.target:GetName(),["$translucent"]=1,["$vertexcolor"]=1,["$vertexalpha"]=1,["$ignorez"]=1
+   })
+  end
+  render.PushRenderTarget(hudImage.target);pushed=true
+  render.OverrideAlphaWriteEnable(true,true)
+  render.Clear(0,0,0,0,false,false)
+  -- Store premultiplied RGB and coverage alpha, including overlapping glow.
+  render.OverrideBlend(true,BLEND_SRC_ALPHA,BLEND_ONE_MINUS_SRC_ALPHA,BLENDFUNC_ADD,BLEND_ONE,BLEND_ONE_MINUS_SRC_ALPHA,BLENDFUNC_ADD)
+  clipping=DisableClipping(true)
+  cam.Start2D();started=true
+  A.Draw(padding,padding,w,h,state,hovered)
+ end,debug.traceback)
+ if started then cam.End2D() end
+ if clipping~=nil then DisableClipping(clipping) end
+ render.OverrideBlend(false)
+ render.OverrideAlphaWriteEnable(false)
+ if pushed then render.PopRenderTarget() end
+ if not ok then
+  hudImage.failed=true
+  ErrorNoHalt("[Anatomy HUD] Image cache disabled: "..tostring(err).."\n")
+ end
+ return ok
+end
+function A.DrawHUD(x,y,w,h,state,hovered)
+ if not state or w<=0 or h<=0 then return end
+ if hudImage.failed or not CanCacheHUD() or x%1~=0 or y%1~=0 or w%1~=0 or h%1~=0 or w+padding*2>imageWidth or h+padding*2>imageHeight then
+  return A.Draw(x,y,w,h,state,hovered)
+ end
+ if hudImage.target and not HUDTargetFits(hudImage.target) then
+  hudImage.failed=true
+  ErrorNoHalt("[Anatomy HUD] Image cache disabled: render target dimensions changed.\n")
+  return A.Draw(x,y,w,h,state,hovered)
+ end
+ local signature=HUDSignature(w,h,state,hovered)
+ if hudImage.signature~=signature or hudImage.draw~=A.Draw then
+  if not BuildHUDImage(w,h,state,hovered) then return A.Draw(x,y,w,h,state,hovered) end
+  hudImage.signature=signature;hudImage.draw=A.Draw
+ end
+ surface.SetMaterial(hudImage.material)
+ surface.SetDrawColor(255,255,255,255)
+ -- RGB already contains alpha: multiplying it again would darken thin strokes.
+ render.OverrideBlend(true,BLEND_ONE,BLEND_ONE_MINUS_SRC_ALPHA,BLENDFUNC_ADD)
+ -- Cancel DrawTexturedRectUV's half-texel inset for an exact 1:1 image crop.
+ -- https://wiki.facepunch.com/gmod/surface.DrawTexturedRectUV
+ local ok,err=pcall(surface.DrawTexturedRectUV,x-padding,y-padding,w+padding*2,h+padding*2,
+  -.5/(imageWidth-1),-.5/(imageHeight-1),(w+padding*2-.5)/(imageWidth-1),(h+padding*2-.5)/(imageHeight-1))
+ render.OverrideBlend(false)
+ if not ok then
+  hudImage.failed=true
+  ErrorNoHalt("[Anatomy HUD] Image draw disabled: "..tostring(err).."\n")
+  return A.Draw(x,y,w,h,state,hovered)
+ end
+end
+
 -- Hit-test the same rounded contours and aspect-fit transform used by drawing.
 function A.HitTest(mx,my,x,y,w,h,state)
  if not state or w<=0 or h<=0 then return nil end

@@ -60,7 +60,8 @@ end
 net.Receive("ixVoiceRoute",function()
  local p=net.ReadEntity(); local mode=net.ReadUInt(2); local label=net.ReadString()
  local gain=mode==3 and net.ReadFloat() or 1
- if IsValid(p) then routes[p]={mode=mode,label=label,gain=math.Clamp(gain,0,1),at=RealTime()} end
+ local effect=net.ReadBool() and "pa" or "radio"
+ if IsValid(p) then routes[p]={mode=mode,label=label,gain=math.Clamp(gain,0,1),effect=effect,at=RealTime()} end
 end)
 function PLUGIN:PlayerStartVoice(p)
  speakers[p]=true
@@ -107,7 +108,9 @@ timer.Create("ixVoiceOcclusion",.2,0,function()
   if not IsValid(talker) then speakers[talker]=nil; routes[talker]=nil
   elseif talker~=listener and not talker:IsMuted() then
    local route=routes[talker]
-   if route and route.mode==3 and RealTime()-route.at<2 then talker:SetVoiceVolumeScale(route.gain or 1)
+   if route and route.mode==3 and RealTime()-route.at<2 then
+    -- Radio-style intercom flutter has already been combined with distance gain.
+    if route.effect~="radio" or not V.UpdateRadioEffects or ix.option.Get("radioInterference",.35)==0 then talker:SetVoiceVolumeScale(route.gain or 1) end
    elseif route and route.mode==2 and RealTime()-route.at<2 then
     if not V.UpdateRadioEffects or ix.option.Get("radioInterference",.35)==0 then talker:SetVoiceVolumeScale(1) end
    else
@@ -127,9 +130,11 @@ function V.RadioSpeakerName(listener,talker)
  local character=IsValid(talker) and talker:GetCharacter()
  if not IsValid(listener) or not listener:GetCharacter() or not character then return "Неизвестный" end
  local id=character:GetID()
- -- Match F3's per-listener saved alias, never faction/admin automatic recognition.
+ -- Keep F3 aliases, with live same-faction familiarity as the name fallback.
  if talker:GetNetVar("hide",0)==id then return "Неизвестный" end
  local name=listener.recognize and listener.recognize[id]
+ local ours=listener:GetCharacter()
+ if (not isstring(name) or string.Trim(name)=="") and ours.RecognizesFaction and ours:RecognizesFaction(character) then name=character:GetName() end
  if not isstring(name) then return "Неизвестный" end
  name=string.Trim(name:gsub("[%c]"," "))
  return name~="" and name or "Неизвестный"

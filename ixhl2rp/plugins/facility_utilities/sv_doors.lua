@@ -15,9 +15,6 @@ function P:DoorAllowed(p,d)
  local powered
  powered=self:DirectGrid(d.entity)
  if F.EntityBackup(d.entity) and not self:EntityIsolated(d.entity) then powered=true end
- local b=ix.plugin.list.blackout
- local override=b and b.ElectronicsOverride and b:ElectronicsOverride(d.entity:GetPos())
- if override~=nil then powered=not override end
  return powered and F.Access(p,d.level,d.department)
 end
 function P:DoorAction(p,session,data)

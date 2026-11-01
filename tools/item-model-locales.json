@@ -1,0 +1,104 @@
+{
+  "canned_squash": {
+    "russian": ["Овощной салат", "Порция нарезанных овощей с лёгкой заправкой. Готова к употреблению."],
+    "english": ["Vegetable Salad", "A serving of chopped vegetables with a light dressing. Ready to eat."],
+    "french": ["Salade de légumes", "Une portion de légumes coupés avec une sauce légère. Prête à manger."],
+    "spanish": ["Ensalada de verduras", "Una ración de verduras cortadas con un aliño ligero. Lista para comer."]
+  },
+  "chocolatine": {
+    "russian": ["Плитка шоколада", "Плитка молочного шоколада в обёртке. Сладкий перекус, который удобно разделить на кусочки."],
+    "english": ["Chocolate Bar", "A wrapped bar of milk chocolate. A sweet snack that breaks into small pieces."],
+    "french": ["Tablette de chocolat", "Une tablette de chocolat au lait emballée, à partager en petits morceaux."],
+    "spanish": ["Tableta de chocolate", "Una tableta de chocolate con leche envuelta, fácil de dividir en trozos."]
+  },
+  "cook_spices": {
+    "russian": ["Кетчуп", "Бутылка томатного соуса. Используется как приправа при приготовлении пищи."],
+    "english": ["Ketchup", "A bottle of tomato sauce used to season food during cooking."],
+    "french": ["Ketchup", "Une bouteille de sauce tomate utilisée pour assaisonner les plats."],
+    "spanish": ["Kétchup", "Una botella de salsa de tomate para condimentar la comida."]
+  },
+  "combine_circuit": {
+    "russian": ["Электронная плата", "Обычная печатная плата с электронными компонентами. Подходит для сборки и ремонта устройств."],
+    "english": ["Circuit Board", "A conventional circuit board with electronic components, suitable for building and repairing devices."],
+    "french": ["Circuit imprimé", "Une carte électronique ordinaire pour fabriquer et réparer des appareils."],
+    "spanish": ["Placa de circuito", "Una placa electrónica convencional para fabricar y reparar dispositivos."]
+  },
+  "combine_resine": {
+    "russian": ["Набор материалов", "Небольшая кучка обычных материалов и обрезков для изготовления и ремонта предметов."],
+    "english": ["Crafting Materials", "An assortment of ordinary materials and offcuts for crafting and repairs."],
+    "french": ["Matériaux de fabrication", "Un assortiment de matériaux ordinaires et de chutes pour la fabrication et les réparations."],
+    "spanish": ["Materiales de fabricación", "Un surtido de materiales comunes y recortes para fabricar y reparar objetos."]
+  },
+  "resin": {
+    "russian": ["Редкие материалы", "Набор редких качественных материалов для сложных изделий и точного ремонта."],
+    "english": ["Rare Crafting Materials", "A collection of rare, high-quality materials for advanced crafting and precision repairs."],
+    "french": ["Matériaux rares", "Des matériaux rares de qualité pour les fabrications complexes et les réparations précises."],
+    "spanish": ["Materiales raros", "Materiales raros de calidad para trabajos complejos y reparaciones de precisión."]
+  },
+  "tool_scissors": {
+    "russian": ["Хирургические кусачки", "Старые хирургические кусачки, приспособленные для резки проволоки и небольших деталей."],
+    "english": ["Repurposed Surgical Clippers", "Old surgical clippers repurposed for cutting wire and small components."],
+    "french": ["Pinces chirurgicales adaptées", "D'anciennes pinces chirurgicales adaptées à la coupe de fils et de petites pièces."],
+    "spanish": ["Alicates quirúrgicos adaptados", "Antiguos alicates quirúrgicos reutilizados para cortar alambre y piezas pequeñas."]
+  },
+  "tool_woodhammer": {
+    "russian": ["Старый молоток", "Потёртый молоток с тяжёлым бойком. Всё ещё пригоден для сборки и ремонта."],
+    "english": ["Old Hammer", "A worn hammer with a heavy head, still useful for assembly and repairs."],
+    "french": ["Vieux marteau", "Un marteau usé à tête lourde, encore utile pour l'assemblage et les réparations."],
+    "spanish": ["Martillo viejo", "Un martillo gastado de cabeza pesada, todavía útil para montar y reparar objetos."]
+  },
+  "xen_extract": {
+    "russian": ["Нейротоксичное растение", "Растение, содержащее нейротоксичные соединения. Служит сырьём для изготовления нейротоксина."],
+    "english": ["Neurotoxic Plant", "A plant containing neurotoxic compounds, used as a raw material for producing neurotoxin."],
+    "french": ["Plante neurotoxique", "Une plante contenant des composés neurotoxiques, utilisée pour produire une neurotoxine."],
+    "spanish": ["Planta neurotóxica", "Una planta con compuestos neurotóxicos, usada como materia prima para producir neurotoxina."]
+  },
+  "bag": {
+    "russian": ["Небольшой рюкзак", "Компактный рюкзак для повседневных вещей и припасов."],
+    "english": ["Small Backpack", "A compact backpack for everyday belongings and supplies."],
+    "french": ["Petit sac à dos", "Un sac à dos compact pour les affaires courantes et les provisions."],
+    "spanish": ["Mochila pequeña", "Una mochila compacta para objetos personales y provisiones."]
+  },
+  "bag_cp": {
+    "russian": ["Большой рюкзак", "Вместительный обычный рюкзак с несколькими отделениями для снаряжения и припасов."],
+    "english": ["Large Backpack", "A spacious everyday backpack with several compartments for equipment and supplies."],
+    "french": ["Grand sac à dos", "Un grand sac à dos ordinaire avec plusieurs compartiments pour le matériel et les provisions."],
+    "spanish": ["Mochila grande", "Una mochila común espaciosa con varios compartimentos para equipo y provisiones."]
+  },
+  "junk_gurevich": {
+    "russian": ["Статуэтка лошади", "Небольшая декоративная статуэтка лошади. На поверхности заметны следы времени."],
+    "english": ["Horse Statuette", "A small decorative horse statuette with signs of age on its surface."],
+    "french": ["Statuette de cheval", "Une petite statuette décorative de cheval dont la surface porte les marques du temps."],
+    "spanish": ["Estatuilla de caballo", "Una pequeña estatuilla decorativa de caballo con señales del paso del tiempo."]
+  },
+  "junk_zippo": {
+    "russian": ["Необычная зажигалка", "Зажигалка в необычном корпусе, напоминающем миниатюрный прибор. Механизм требует ремонта."],
+    "english": ["Unusual Lighter", "A lighter with a distinctive casing resembling a miniature instrument. Its mechanism needs repairs."],
+    "french": ["Briquet insolite", "Un briquet dont le boîtier rappelle un instrument miniature. Son mécanisme doit être réparé."],
+    "spanish": ["Mechero singular", "Un mechero con una carcasa que recuerda a un instrumento en miniatura. Su mecanismo necesita reparación."]
+  },
+  "filter_epic": {
+    "russian": ["Подсумок с фильтром Mk. II", "Защитный подсумок с высококачественным сменным фильтром Mk. II для противогаза."],
+    "english": ["Mk. II Filter Pouch", "A protective pouch holding a high-quality Mk. II replacement gas-mask filter."],
+    "french": ["Pochette de filtre Mk. II", "Une pochette protectrice contenant un filtre de rechange Mk. II de haute qualité pour masque à gaz."],
+    "spanish": ["Bolsa de filtro Mk. II", "Una bolsa protectora con un filtro de repuesto Mk. II de alta calidad para máscara antigás."]
+  },
+  "filter_good": {
+    "russian": ["Подсумок с фильтром Mk. I", "Защитный подсумок со сменным фильтром Mk. I для противогаза. Фильтр хранится внутри."],
+    "english": ["Mk. I Filter Pouch", "A protective pouch containing a Mk. I replacement gas-mask filter."],
+    "french": ["Pochette de filtre Mk. I", "Une pochette protectrice contenant un filtre de rechange Mk. I pour masque à gaz."],
+    "spanish": ["Bolsa de filtro Mk. I", "Una bolsa protectora con un filtro de repuesto Mk. I para máscara antigás."]
+  },
+  "filter_medium": {
+    "russian": ["Подсумок с гражданским фильтром", "В подсумке хранится гражданский сменный фильтр для противогаза. Подходит для умеренного загрязнения воздуха."],
+    "english": ["Civilian Filter Pouch", "A pouch holding a civilian replacement gas-mask filter for moderate air contamination."],
+    "french": ["Pochette de filtre civil", "Une pochette contenant un filtre civil pour masque à gaz, adapté à une contamination modérée."],
+    "spanish": ["Bolsa de filtro civil", "Una bolsa con un filtro civil para máscara antigás, adecuado para contaminación moderada."]
+  },
+  "filter_standard": {
+    "russian": ["Подсумок со старым фильтром", "В подсумке хранится старый сменный фильтр для противогаза с небольшим оставшимся ресурсом."],
+    "english": ["Old Filter Pouch", "A pouch holding an old replacement gas-mask filter with limited service life remaining."],
+    "french": ["Pochette de vieux filtre", "Une pochette contenant un vieux filtre de masque à gaz dont la durée de service restante est limitée."],
+    "spanish": ["Bolsa de filtro viejo", "Una bolsa con un viejo filtro de repuesto para máscara antigás al que le queda poca vida útil."]
+  }
+}

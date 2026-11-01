@@ -89,8 +89,9 @@ function PLUGIN:IsPoweredClass(class)
 	return false
 end
 
--- The global electronics switch is independent of visual darkness and circuit
--- backup. Raw active zones are its exceptions, even when a generator lights one.
+-- Location-only mains override. Cable power is evaluated separately so a
+-- backed-up endpoint never becomes a free mains supply for its source.
+-- Raw active zones remain exceptions, even when a generator lights one.
 function PLUGIN:ElectronicsOverride(pos)
 	if self.unloading or not self.electronicsRestricted then return end
 	local zones = SERVER and self.zones or self.electronicsZones
@@ -102,9 +103,15 @@ end
 
 function PLUGIN:IsElectronicsOffAt(pos, entity)
 	if self.unloading then return false end
+	if IsValid(entity) then
+		if ix.Facility and ix.Facility.EntityBackup(entity) then return false end
+		-- Source controls must remain usable to start/refuel a generator or
+		-- connect a battery. Actual output still requires fuel/charge and a cable.
+		local class = entity:GetClass()
+		if self.electronicsRestricted and (class == "ix_facility_generator" or class == "ix_facility_battery") then return false end
+	end
 	local override = self:ElectronicsOverride(pos)
 	if override ~= nil then return override end
-	if IsValid(entity) and ix.Facility and ix.Facility.EntityBackup(entity) then return false end
 	if self:IsPosBlackedOut(pos) then return true end
 	-- Normal blackout rules also cover a lock mounted just outside its door.
 	return IsValid(entity) and entity:GetClass() == "ix_combinelock"
@@ -116,6 +123,7 @@ PLUGIN.electronicClasses = {
 	ix_boombox=true, ix_stationary_radio=true, ix_vendingmachine=true,
 	ix_rationdispenser=true, ix_factory_recycler=true, ix_flood_pump=true,
 	ix_scannerterminal=true, ix_unionlight=true,
+	light_dynamic=true, point_spotlight=true, env_projectedtexture=true, env_lightglow=true,
 }
 
 -- Only electronics are blocked; ordinary props, carts and medical beds stay usable.
