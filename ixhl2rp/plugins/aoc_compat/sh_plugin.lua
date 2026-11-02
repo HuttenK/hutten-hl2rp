@@ -41,6 +41,12 @@ function PLUGIN:DoAnimationEvent(client, event, data)
  return A.AnimationEvent(client, event, data)
 end
 
+function PLUGIN:UpdateAnimation(client)
+ -- Shared: the walking hold is applied to server bones and to every viewer.
+ -- Return nil so the normal playback speed, mouth and other hooks still run.
+ A.UpdateWalkLayer(client)
+end
+
 concommand.Add("ix_aoc_pose_info", function(client)
  if CLIENT then client = LocalPlayer() end
  if not IsValid(client) then print("[AoC/Helix] Run this command in a player's console.") return end
@@ -55,8 +61,14 @@ concommand.Add("ix_aoc_pose_info", function(client)
  if not IsValid(weapon) or not weapon.AOC_Base then print("[AoC/Helix] Hold an Age of Chivalry weapon first.") return end
  A.Prepare(weapon)
  print("[AoC/Helix] Weapon:", weapon:GetClass(), "hold:", weapon:GetHoldType())
- for _, act in ipairs({ACT_MP_STAND_IDLE, ACT_MP_RUN, ACT_MP_CROUCH_IDLE, ACT_MP_ATTACK_STAND_PRIMARYFIRE}) do
+ for _, act in ipairs({ACT_MP_STAND_IDLE, ACT_MP_WALK, ACT_MP_RUN, ACT_MP_CROUCH_IDLE, ACT_MP_ATTACK_STAND_PRIMARYFIRE}) do
   local entry = weapon.ActivityTranslate and weapon.ActivityTranslate[act]
-  print("[AoC/Helix] Pose:", act, tostring(entry), "sequence:", A.Sequence(client, entry) or "MISSING")
+  local walk, upper
+  if act == ACT_MP_WALK then walk, upper = A.WalkSequences(client, entry) end
+  if walk ~= nil then
+   print("[AoC/Helix] Walk:", client:GetSequenceName(walk), "sequence:", walk, "upper-body sequence:", upper)
+  else
+   print("[AoC/Helix] Pose:", act, tostring(entry), "sequence:", A.Sequence(client, entry) or "MISSING")
+  end
  end
 end)

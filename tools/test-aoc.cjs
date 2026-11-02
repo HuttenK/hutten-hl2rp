@@ -91,6 +91,66 @@ module.exports=(suite)=>{
   eq(#p.gestures,n)
  `,setup+'\nSERVER=false CLIENT=true\n');
 
+ for(const client of [true,false]){
+  suite(`AoC walk uses real steps and preserves the grip without restarting it per frame (${client?'client':'server'})`,files,`
+   local A=ix.AOC;local w=weapon('aoc_sword_shield');A.Prepare(w)
+   local clips={walk_all=10,wos_aoc_run_swordshield=20,wos_aoc_run_swordshield_mod=21,
+    wos_aoc_cwalk_swordshield=22,wos_aoc_sword_slash_01=23}
+   p.ixAOCSequences=nil;p.layers={};p.starts=0;p.sequence=10
+   function p:LookupSequence(name) return clips[name] or -1 end
+   function p:SelectWeightedSequence() return -1 end
+   function p:GetSequence() return self.sequence end
+   function p:Alive() return not self.dead end
+   function p:IsValidLayer(slot) return self.layers[slot]~=nil end
+   function p:GetLayerSequence(slot) return self.layers[slot].seq end
+   function p:GetLayerWeight(slot) return self.layers[slot].weight end
+   function p:AnimResetGestureSlot(slot) self.layers[slot]=nil end
+   function p:AnimSetGestureWeight(slot,weight) self.layers[slot].weight=weight end
+   function p:AddVCDSequenceToGestureSlot(slot,seq,cycle,auto)
+    self.layers[slot]={seq=seq,weight=1};self.starts=self.starts+1
+   end
+   w.ActivityTranslate[ACT_MP_WALK]='wos_aoc_run_swordshield'
+   w.ActivityTranslate[ACT_MP_RUN]='wos_aoc_run_swordshield'
+   w.ActivityTranslate[ACT_MP_CROUCHWALK]='wos_aoc_cwalk_swordshield'
+   local _,walk=A.MainActivity(p,ACT_MP_WALK);eq(walk,10)
+   for i=1,100 do A.MainActivity(p,ACT_MP_WALK);A.UpdateWalkLayer(p) end
+   eq(p.starts,1);eq(p:GetLayerSequence(GESTURE_SLOT_GRENADE),21)
+   local _,run=A.MainActivity(p,ACT_MP_RUN);eq(run,20);A.UpdateWalkLayer(p)
+   eq(p:IsValidLayer(GESTURE_SLOT_GRENADE),false)
+   local _,crouch=A.MainActivity(p,ACT_MP_CROUCHWALK);eq(crouch,22)
+   A.MainActivity(p,ACT_MP_WALK);A.UpdateWalkLayer(p)
+   p.layers[GESTURE_SLOT_ATTACK_AND_RELOAD]={seq=23,weight=1};A.UpdateWalkLayer(p)
+   eq(p:IsValidLayer(GESTURE_SLOT_GRENADE),false) -- swings and looping shield blocks win
+   p.layers[GESTURE_SLOT_ATTACK_AND_RELOAD]=nil;A.UpdateWalkLayer(p)
+   assert(p:IsValidLayer(GESTURE_SLOT_GRENADE))
+   p.layers[GESTURE_SLOT_CUSTOM]={seq=23,weight=1};A.UpdateWalkLayer(p)
+   eq(p:IsValidLayer(GESTURE_SLOT_GRENADE),false);p.layers[GESTURE_SLOT_CUSTOM]=nil
+   p.ixAOCWalkActionWeapon=w;p.ixAOCWalkActionUntil=clock+1;A.UpdateWalkLayer(p)
+   eq(p:IsValidLayer(GESTURE_SLOT_GRENADE),false)
+   clock=clock+2;A.UpdateWalkLayer(p);assert(p:IsValidLayer(GESTURE_SLOT_GRENADE))
+   p.ixAOCWalkActionWeapon={};p.ixAOCWalkActionUntil=clock+10;A.UpdateWalkLayer(p)
+   assert(p:IsValidLayer(GESTURE_SLOT_GRENADE)) -- a previous weapon cannot suppress the new grip
+   A.ClearWalkLayer(p)
+   p.layers[GESTURE_SLOT_GRENADE]={seq=90,weight=1};A.UpdateWalkLayer(p)
+   eq(p:GetLayerSequence(GESTURE_SLOT_GRENADE),90) -- another plugin owns this slot
+   p.layers[GESTURE_SLOT_GRENADE]=nil;A.UpdateWalkLayer(p)
+   for _,state in ipairs({'forced','prone','vehicle','dead'}) do
+    p[state]=true;A.UpdateWalkLayer(p);eq(p:IsValidLayer(GESTURE_SLOT_GRENADE),false)
+    p[state]=nil;A.UpdateWalkLayer(p)
+   end
+   p.sequence=20;A.UpdateWalkLayer(p);eq(p:IsValidLayer(GESTURE_SLOT_GRENADE),false)
+   p.sequence=10;A.UpdateWalkLayer(p)
+   p.model='other.mdl';A.UpdateWalkLayer(p);eq(p:IsValidLayer(GESTURE_SLOT_GRENADE),false)
+   A.MainActivity(p,ACT_MP_WALK);A.UpdateWalkLayer(p);assert(p:IsValidLayer(GESTURE_SLOT_GRENADE))
+   p.weapon=nil;A.UpdateWalkLayer(p);eq(p:IsValidLayer(GESTURE_SLOT_GRENADE),false);p.weapon=w
+   A.MainActivity(p,ACT_MP_WALK);A.UpdateWalkLayer(p)
+   A.revision=A.revision+1;A.UpdateWalkLayer(p);eq(p:IsValidLayer(GESTURE_SLOT_GRENADE),false)
+   clips.walk_all=nil;p.ixAOCSequences=nil;w.ixAOCRevision=A.revision
+   local _,fallback=A.MainActivity(p,ACT_MP_WALK);eq(fallback,20) -- no T-pose on incomplete models
+   eq(p.ixAOCWalkBase,nil)
+  `,setup+`\nSERVER=${!client};CLIENT=${client}\n`);
+ }
+
  const itemSource=fs.readFileSync(path.join(__dirname,'../ixhl2rp/plugins/ammo_cringe/items/base/weapon.lua'),'utf8');
  const {normalize}=require('./glua.cjs');
  const methods='Item={}\n'+normalize(itemSource.slice(itemSource.indexOf('function Item:Equip('),itemSource.indexOf('\nif CLIENT then')));

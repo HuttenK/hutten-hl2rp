@@ -24,12 +24,75 @@ local function Blocked(client)
   (client.IsProne and client:IsProne())
 end
 
+function A.WalkSequences(client, entry)
+ -- AoC maps WALK and RUN to the same running sequence. Its *_mod clips
+ -- contain the authored upper-body hold with zero weights on all leg bones.
+ if not isstring(entry) or not entry:find("^wos_aoc_run_") then return end
+ local upper = A.Sequence(client, entry .. "_mod")
+ if upper == nil then return end
+ local walk = A.Sequence(client, "walk_all") or A.Sequence(client, ACT_HL2MP_WALK) or A.Sequence(client, ACT_WALK)
+ if walk ~= nil then return walk, upper end
+end
+
+local walkSlot = GESTURE_SLOT_GRENADE -- AoC attacks/blocks use ATTACK_AND_RELOAD; draw uses CUSTOM.
+local actionSlots = {GESTURE_SLOT_ATTACK_AND_RELOAD, GESTURE_SLOT_CUSTOM}
+function A.ClearWalkLayer(client)
+ local sequence = client.ixAOCWalkLayer
+ if sequence == nil then return end
+ if client:IsValidLayer(walkSlot) and client:GetLayerSequence(walkSlot) == sequence then
+  client:AnimResetGestureSlot(walkSlot)
+ end
+ client.ixAOCWalkLayer = nil
+end
+
+function A.UpdateWalkLayer(client)
+ local weapon, base = client.ixAOCWalkWeapon, client.ixAOCWalkBase
+ if base == nil or not client:Alive() or Blocked(client) or client:GetMoveType() == MOVETYPE_NOCLIP or
+  not IsValid(weapon) or client:GetActiveWeapon() ~= weapon or client:GetSequence() ~= base or
+  client:GetModel() ~= client.ixAOCWalkModel or client.ixAOCWalkRevision ~= A.revision or
+  (client.ixAOCWalkActionWeapon == weapon and (client.ixAOCWalkActionUntil or 0) > CurTime()) then
+  A.ClearWalkLayer(client)
+  return
+ end
+ -- Do not let the resting grip cover a swing, block, draw or another gesture.
+ for _, slot in ipairs(actionSlots) do
+  if client:IsValidLayer(slot) and client:GetLayerWeight(slot) > 0 then
+   A.ClearWalkLayer(client)
+   return
+  end
+ end
+ local upper = client.ixAOCWalkUpper
+ if client.ixAOCWalkLayer ~= upper or client.ixAOCWalkLayerModel ~= client:GetModel() or
+  client.ixAOCWalkLayerRevision ~= A.revision then A.ClearWalkLayer(client) end
+ if client:IsValidLayer(walkSlot) and client.ixAOCWalkLayer == nil then return end -- Do not steal another addon's slot.
+ if not client:IsValidLayer(walkSlot) then
+  client:AddVCDSequenceToGestureSlot(walkSlot, upper, 0, false)
+  client.ixAOCWalkLayer = upper
+  client.ixAOCWalkLayerModel = client:GetModel()
+  client.ixAOCWalkLayerRevision = A.revision
+ elseif client:GetLayerSequence(walkSlot) ~= upper then
+  client.ixAOCWalkLayer = nil
+  return
+ end
+ client:AnimSetGestureWeight(walkSlot, 1)
+end
+
 function A.MainActivity(client, activity)
+ client.ixAOCWalkBase = nil
  local weapon = client:GetActiveWeapon()
  if not IsValid(weapon) or not weapon.AOC_Base or Blocked(client) or
   client:GetMoveType() == MOVETYPE_NOCLIP then return end
  A.Prepare(weapon)
  local entry = weapon.ActivityTranslate and weapon.ActivityTranslate[activity]
+ if activity == ACT_MP_WALK then
+  local walk, upper = A.WalkSequences(client, entry)
+  if walk ~= nil then
+   client.ixAOCWalkBase, client.ixAOCWalkUpper = walk, upper
+   client.ixAOCWalkWeapon, client.ixAOCWalkModel = weapon, client:GetModel()
+   client.ixAOCWalkRevision = A.revision
+   return nil, walk
+  end
+ end
  local sequence = A.Sequence(client, entry)
  if sequence ~= nil then
   -- A named override must win over ACT_MP_* even for NPC-style SD models.
@@ -41,6 +104,9 @@ local function Play(client, weapon, activity, slot, looping)
  local entry = weapon.ActivityTranslate and weapon.ActivityTranslate[activity]
  local sequence = A.Sequence(client, entry)
  if sequence == nil then return end
+ A.ClearWalkLayer(client)
+ client.ixAOCWalkActionWeapon = weapon
+ client.ixAOCWalkActionUntil = CurTime() + client:SequenceDuration(sequence)
  client:AddVCDSequenceToGestureSlot(slot or GESTURE_SLOT_ATTACK_AND_RELOAD, sequence, 0, not looping)
  return client:SequenceDuration(sequence)
 end
