@@ -20,19 +20,30 @@ end
 
 function Armor:OnRegistered()
 	self.plainDisplayID = ix.Appearance:New(self.uniqueID, {
-		slot = 13, layer = ix.Appearance.Layer.Main, fullBodyModel = self.replacement
+		slot = 13, layer = ix.Appearance.Layer.Main, fullBodyModel = self.replacement,
+		templarBodyGroups = self.capeBodygroup and {knight = {[self.capeBodygroup] = 1}} or nil
 	})
 	self.displayID = self.plainDisplayID
-	if self.cloakModel then
+	if self.cloakModel or self.capeBodygroup then
 		self.cloakDisplayID = ix.Appearance:New(self.uniqueID .. "_cloak", {
-			slot = 13, layer = ix.Appearance.Layer.Main, fullBodyModel = self.cloakModel
+			slot = 13, layer = ix.Appearance.Layer.Main, fullBodyModel = self.cloakModel or self.replacement,
+			templarBodyGroups = self.capeBodygroup and {knight = {[self.capeBodygroup] = 0}} or nil
 		})
+	end
+	if self.capeBodygroup then
+		self.functions.cloakOn.name = "Надеть плащ"
+		self.functions.cloakOff.name = "Убрать плащ"
 	end
 end
 
+function Armor:GetCloakEnabled()
+	-- Existing plate items keep the model's original visible cape by default.
+	return self:GetData("medCloak", self.capeBodygroup ~= nil)
+end
+
 function Armor:CanToggleCloak(current)
-	return self.cloakModel ~= nil and IsValid(self.player) and self:GetOwner() == self.player
-		and self:IsEquipped() and self:GetData("medCloak", false) == current
+	return (self.cloakModel ~= nil or self.capeBodygroup ~= nil) and IsValid(self.player) and self:GetOwner() == self.player
+		and self:IsEquipped() and self:GetCloakEnabled() == current
 end
 
 function Armor:ToggleCloak(enabled)
@@ -48,7 +59,7 @@ end
 
 function Armor:OnEquipped(client)
 	-- Per-instance choice: changing one tunic must not affect anybody else's.
-	self.displayID = self.cloakDisplayID and self:GetData("medCloak", false) and self.cloakDisplayID or self.plainDisplayID
+	self.displayID = self.cloakDisplayID and self:GetCloakEnabled() and self.cloakDisplayID or self.plainDisplayID
 	ix.meta.ItemClothArmor.OnEquipped(self, client)
 end
 

@@ -331,5 +331,41 @@
     "model": "models/irisitems3.mdl",
     "kind": "writable",
     "path": "ixhl2rp/plugins/paperwork/items/writable/med_scroll.lua"
+  },
+  {
+    "id": "med_helmet_kettle",
+    "name": "Капеллина Дорожного караула",
+    "model": "models/kettlehelm2.mdl",
+    "kind": "helmet",
+    "path": "ixhl2rp/plugins/items_clothing/items/medieval_helmet/med_helmet_kettle.lua",
+    "archer": 1,
+    "knight": 1
+  },
+  {
+    "id": "med_helmet_spangen",
+    "name": "Спангельхельм Старой дружины",
+    "model": "models/bascinet_novis.mdl",
+    "kind": "helmet",
+    "path": "ixhl2rp/plugins/items_clothing/items/medieval_helmet/med_helmet_spangen.lua",
+    "archer": 2,
+    "knight": 8
+  },
+  {
+    "id": "med_helmet_bascinet",
+    "name": "Бацинет Стального обета",
+    "model": "models/bascinet_cl.mdl",
+    "kind": "helmet",
+    "path": "ixhl2rp/plugins/items_clothing/items/medieval_helmet/med_helmet_bascinet.lua",
+    "archer": 4,
+    "knight": 6
+  },
+  {
+    "id": "med_helmet_greathelm",
+    "name": "Тотенхельм Последнего довода",
+    "model": "models/early_century_greathelm.mdl",
+    "kind": "helmet",
+    "path": "ixhl2rp/plugins/items_clothing/items/medieval_helmet/med_helmet_greathelm.lua",
+    "archer": 6,
+    "knight": 5
   }
 ]

@@ -2,7 +2,7 @@
 -- Запирает/отпирает ближайшую привязанную дверь действием предмета.
 ITEM.name = "Ключ"
 ITEM.description = "Физический ключ. Отпирает и запирает привязанные к нему двери."
-ITEM.model = Model("models/items/keys_003.mdl")
+ITEM.model = Model("models/items/special/lockpicks/lockpick_02.mdl")
 ITEM.width = 1
 ITEM.height = 1
 ITEM.category = "Ключи"

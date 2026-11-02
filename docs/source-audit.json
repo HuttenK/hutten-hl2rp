@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
-  "files": 1091,
-  "lines": 162998,
+  "files": 1096,
+  "lines": 163154,
   "syntaxFailures": [],
   "entries": [
     {
@@ -5477,8 +5477,16 @@
     },
     {
       "path": "ixhl2rp/plugins/items_clothing/items/base/medieval_armor.lua",
-      "lines": 72,
-      "sha256": "55adb622a11f4a8d79049dd9578bb4a820205f7eeefdda2bfba69522acba5c59",
+      "lines": 83,
+      "sha256": "5d154006af54105db25df5ba1003a5e011241010f689f9f7ec8ab2ef3d3bbcc7",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/items_clothing/items/base/medieval_helmet.lua",
+      "lines": 49,
+      "sha256": "e0aa4b98f18349ab8c0318d3c4d53a5b82e81509ae6e312d5bf2b8acae9dfc65",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -5509,16 +5517,16 @@
     },
     {
       "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_armor_black.lua",
-      "lines": 21,
-      "sha256": "ef3ec8d2b65fba84880fed330d08876a1f20374ac6700fb9b863638033d1c67d",
+      "lines": 22,
+      "sha256": "25c0d6607a12258b4bda6aefcad2a6a262270900b6f1e31962ae51ac1d4ea48d",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
     },
     {
       "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_armor_white.lua",
-      "lines": 21,
-      "sha256": "1ecbfcd4032b84bc3ee707ad431bbab0b2873e76276ae7e5c049c334d342acc9",
+      "lines": 22,
+      "sha256": "583bf1453c4073154471a1260b049bbca1af4a7d12c24684cba3f3b070ccc2d4",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -5543,6 +5551,38 @@
       "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_tunic_black.lua",
       "lines": 22,
       "sha256": "c7cdabe86a02bb8088affd8e2f39ee81fd3da92150224c336a7701d9f8c0752a",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/items_clothing/items/medieval_helmet/med_helmet_bascinet.lua",
+      "lines": 17,
+      "sha256": "b0b4e6bc967dbb2220267bcb4147cd36252f1601a08dea141e1e3f681bf23c4f",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/items_clothing/items/medieval_helmet/med_helmet_greathelm.lua",
+      "lines": 17,
+      "sha256": "48199dd71c6c87003eef415e214dceae0cd95ff894e8f96647cec8b5e4562c1b",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/items_clothing/items/medieval_helmet/med_helmet_kettle.lua",
+      "lines": 17,
+      "sha256": "01b697b580ed8f87f4bb395b9f8b046548b34be63776d7d64496e33c0d4aa6d5",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/items_clothing/items/medieval_helmet/med_helmet_spangen.lua",
+      "lines": 17,
+      "sha256": "2f02bfe9654e139ce3d9104403844403a077a93880cbdd279670068304b57548",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -6716,7 +6756,7 @@
     {
       "path": "ixhl2rp/plugins/keysystem/items/key.lua",
       "lines": 163,
-      "sha256": "a264cd72daeb60e7df84ffc6fa2f1320b7323cf68ae763beb831e806f738d478",
+      "sha256": "84942abe31f04b534e18cf079fe01aaf1fed4661774b50c369c299014a2f6bfd",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -9129,8 +9169,8 @@
     },
     {
       "path": "ixhl2rp/plugins/templar_appearance.lua",
-      "lines": 45,
-      "sha256": "294b00a809a40566f634bfbdb56eb346c864106c135b17c1da49435614d9098e",
+      "lines": 71,
+      "sha256": "875a68ebce7938c630d43ad9787e82b0092af6a8351a4f241ed9f1898bf62410",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []

@@ -29,14 +29,16 @@ function fresh(base,id)
  if i.Init then i:Init() end
  return i
 end
+local instanceSerial=0
 function instance(id)
- local stock=assert(ix.Item.stored[id]);local i=setmetatable({data={},id=id..'_instance'}, {__index=stock})
+ instanceSerial=instanceSerial+1
+ local stock=assert(ix.Item.stored[id]);local i=setmetatable({data={},id=id..'_instance_'..instanceSerial}, {__index=stock})
  ix.Item.instances[i.id]=i
  return i
 end
 function Vector(...) return {...} end;function Angle(...) return {...} end
 function Model(m) return m end
-HITGROUP_CHEST=2;HITGROUP_STOMACH=3;HITGROUP_LEFTARM=4;HITGROUP_RIGHTARM=5;HITGROUP_LEFTLEG=6;HITGROUP_RIGHTLEG=7
+HITGROUP_HEAD=1;HITGROUP_CHEST=2;HITGROUP_STOMACH=3;HITGROUP_LEFTARM=4;HITGROUP_RIGHTARM=5;HITGROUP_LEFTLEG=6;HITGROUP_RIGHTLEG=7
 `;
 function register(kind,base) {
  return catalog.filter(r=>r.kind===kind).map(r=>`do
@@ -54,6 +56,7 @@ const armorFiles = [
  'ixhl2rp/plugins/items_clothing/items/base/clothes.lua',
  'ixhl2rp/plugins/items_clothing/items/base/clothes_armor.lua',
  'ixhl2rp/plugins/items_clothing/items/base/medieval_armor.lua',
+ 'ixhl2rp/plugins/items_clothing/items/base/medieval_helmet.lua',
  'ixhl2rp/plugins/templar_appearance.lua',
  'helix/gamemode/game/character/appearance/sh_outfit.class.lua'
 ];
@@ -69,6 +72,12 @@ function owner(skin,eyes)
  function p:FindBodygroupByName(n) return n=='Yeux/Eyes' and 1 or -1 end
  function p:GetBodygroup(g) return self.bgs[g] or 0 end;function p:SetBodygroup(g,v) self.bgs[g]=v end
  function p:GetNumBodyGroups() return 8 end
+ function p:GetBodygroupCount(g)
+  if g==1 then return 3 end
+  if g==2 then return self.model:match('templar_archer_0[123]') and 7 or 30 end
+  if g==5 and self.model:find('templar_knight_',1,true) then return 2 end
+  return 4
+ end
  function p:SetNoDraw(v) self.hidden=v end;function p:SetNWFloat(k,v) self[k]=v end;function p:SetNWInt() end
  function p:SetPoseParameter() end;function p:GetInventories() return self.inventories end
  local o=setmetatable({owner=p,character=p.character,model=p.model,layers={p},displayIds={},armor={}}, {__index=ix.meta.Outfit})
@@ -109,6 +118,84 @@ module.exports = function(suite) {
  p.character=newChar;o:LoadCharacter(newChar);eq(p.skin,4);eq(p:GetBodygroup(1),1);eq(next(o.armor),nil);eq(p.speed_debuff,1)
  `,classes);
 
+ const equipment=register('armor','ItemMedievalArmor')+'\n'+register('helmet','ItemMedievalHelmet')+'\n'+owners;
+ const helmetIDs="{'med_helmet_kettle','med_helmet_spangen','med_helmet_bascinet','med_helmet_greathelm'}";
+ suite('Four helmets map all eight Templar models, survive full-body swaps in either equip order, and preserve faces',armorFiles,
+ equipment+`
+ local expected={med_helmet_kettle={archer=1,knight=1},med_helmet_spangen={archer=2,knight=8},med_helmet_bascinet={archer=4,knight=6},med_helmet_greathelm={archer=6,knight=5}}
+ local function check(p,h)
+  local family=ix.Templar.Family(p.model)
+  eq(p:GetBodygroup(2),expected[h.uniqueID][family]);eq(p.skin,9);eq(p:GetBodygroup(1),2)
+  eq(p.char_outfit.armor[h],true)
+ end
+ for _,id in ipairs(${helmetIDs}) do
+  for model in pairs(ix.Templar.models) do
+   local p,o=owner(9,2);p.model=model;o.model=model;p.character.GetModel=function() return model end
+   local h=instance(id);h.owner=p;h.player=p;h.inventory_type='head';h:OnInstanced(true)
+   eq(h.equip_inv,'head');eq(h.equip_slot,nil);eq(h.functions.cloakOn,nil);assert(h:CanEquip(p))
+   h:OnEquipped(p);eq(p.model,model);check(p,h)
+   h:OnUnequipped(p);eq(p:GetBodygroup(2),0);eq(o.armor[h],nil);eq(p.skin,9);eq(p:GetBodygroup(1),2)
+  end
+  for _,bodyID in ipairs({'med_armor_black','med_armor_white','med_mail_long','med_mail_short','med_tunic_black'}) do
+   for _,headFirst in ipairs({true,false}) do
+    local p,o=owner(9,2)
+    local h=instance(id);h.owner=p;h.player=p;h.inventory_type='head';h:OnInstanced(true)
+    local b=instance(bodyID);b.owner=p;b.player=p;b.inventory_type='torso';b:OnInstanced(true)
+    if headFirst then h:OnEquipped(p);b:OnEquipped(p) else b:OnEquipped(p);h:OnEquipped(p) end
+    check(p,h)
+    if b.cloakDisplayID then b:ToggleCloak(not b:GetCloakEnabled());check(p,h) end
+    b:OnUnequipped(p);check(p,h);eq(p.model,p.character:GetModel())
+    h:OnUnequipped(p);eq(p:GetBodygroup(2),0);eq(next(o.armor),nil)
+   end
+  end
+ end
+ `,classes);
+
+ suite('Plate capes default on and save per item, with no model/helmet/face/durability or speed change',armorFiles,
+ equipment+`
+ for _,id in ipairs({'med_armor_black','med_armor_white'}) do
+  local p,o=owner(6,1)
+  local h=instance('med_helmet_spangen');h:OnInstanced(true);h:OnEquipped(p)
+  local b=instance(id);b.owner=p;b.player=p;b.inventory_type='torso';b:OnInstanced(true);b:OnEquipped(p)
+  eq(b:GetCloakEnabled(),true);eq(p:GetBodygroup(5),0)
+  b:SetData('value',.41);h:SetData('value',.63)
+  eq(b.functions.cloakOff.OnCanRun(b),true);eq(b.functions.cloakOn.OnCanRun(b),false)
+  b.functions.cloakOff.OnRun(b)
+  eq(p.model,b.replacement);eq(p:GetBodygroup(5),1);eq(p:GetBodygroup(2),8);eq(p.skin,6);eq(p:GetBodygroup(1),1)
+  eq(b:GetData('value'),.41);eq(h:GetData('value'),.63);near(p.speed_debuff,.7)
+  eq(b.functions.cloakOn.OnCanRun(b),true);eq(b.functions.cloakOff.OnCanRun(b),false)
+  local saved=table.Copy(b.data);b:OnUnequipped(p)
+  b=instance(id);b.data=saved;b.owner=p;b.player=p;b.inventory_type='torso';b:OnInstanced(false);b:OnEquipped(p)
+  eq(b:GetCloakEnabled(),false);eq(p:GetBodygroup(5),1);eq(b:GetData('value'),.41);eq(p:GetBodygroup(2),8)
+  local q,qo=owner(0,0);local second=instance(id);second:OnInstanced(true);second:OnEquipped(q)
+  eq(q:GetBodygroup(5),0);eq(p:GetBodygroup(5),1)
+  b.owner=q;b:ToggleCloak(true);eq(b:GetCloakEnabled(),false);b.owner=p
+  b.inventory_type='main';b:ToggleCloak(true);eq(b:GetCloakEnabled(),false);b.inventory_type='torso'
+  b.functions.cloakOn.OnRun(b);eq(p:GetBodygroup(5),0);eq(p.model,b.replacement);eq(p:GetBodygroup(2),8)
+  -- Reconnect: existing equipment is replayed in the opposite order.
+  b:SetData('medCloak',false)
+  p.inventories={{GetItemsID=function() return {h.id,b.id} end}};h.inventory_type='head'
+  o:LoadCharacter(p.character);eq(p:GetBodygroup(5),1);eq(p:GetBodygroup(2),8);eq(o.armor[h],true);eq(o.armor[b],true)
+ end
+ `,classes);
+
+ suite('Helmets cannot equip on unrelated models or grant invisible armor after a uniform is removed',armorFiles,
+ equipment+`
+ local p,o=owner(4,1);local base='models/sd/citizens/citizen_male_01_hair1.mdl'
+ p.model=base;o.model=base;p.character.GetModel=function() return base end
+ local h=instance('med_helmet_greathelm');h:OnInstanced(true);eq(h:CanEquip(p),false)
+ -- A saved helmet can load before the outfit which enables it.
+ h:OnEquipped(p);eq(o.armor[h],false)
+ local b=instance('med_armor_white');b:OnInstanced(true);b:OnEquipped(p)
+ eq(o.armor[h],true);eq(p:GetBodygroup(2),5)
+ b:OnUnequipped(p);eq(p.model,base);eq(o.armor[h],false)
+ h:OnUnequipped(p);eq(o.armor[h],nil)
+ b:OnEquipped(p);eq(o.armor[h],nil);eq(p:GetBodygroup(2),0)
+ h:OnEquipped(p);eq(o.armor[h],true)
+ p.inventories={};p.character={GetModel=function() return base end}
+ o:LoadCharacter(p.character);eq(next(o.armor),nil);eq(p.model,base);eq(p:GetBodygroup(2),0)
+ `,classes);
+
  suite('Creation validates Templar face/eyes and ignores those settings for unrelated models',
  ['ixhl2rp/plugins/sd_creation.lua','ixhl2rp/plugins/templar_appearance.lua'],`
  local model='models/players/templar_archer_03.mdl'
@@ -123,6 +210,28 @@ module.exports = function(suite) {
 
  const combat=source('ixhl2rp/plugins/!healthsystem/sv_combat.lua');
  const damage= combat.slice(combat.indexOf('local parents ='),combat.indexOf('local function ApplyStaminaDamage'));
+ suite('Helmets reduce native head injuries only, wear independently, and lose protection when broken or unequipped',armorFiles,
+ equipment+damage+`
+ local p,o=owner(5,2)
+ local health={character={GetPlayer=function() return p end},body={hit_parts={[1]=1,[2]=2}},hits={}}
+ function health:GetPartHealth() return 100 end;function health:GetMaxHealth() return 100 end
+ function health:AddHediff(kind,group,data) self.hits[#self.hits+1]={kind=kind,group=group,severity=data.severity} end
+ local function hit(group,kind)
+  health.hits={};ApplyDamageToPart(health,group,{amount=40,attacker={},weapon={},class=kind or 'slash'})
+  local total=0;for _,r in ipairs(health.hits) do total=total+r.severity end;return total
+ end
+ math.random=function(a,b) if a then return a end return .4 end;math.Rand=function() return .4 end
+ eq(hit(1),40);eq(hit(2),40)
+ for _,id in ipairs(${helmetIDs}) do
+  local h=instance(id);h:OnInstanced(true);h:OnEquipped(p)
+  assert(hit(1)<40);assert(h:GetData('value')<1);eq(hit(2),40);eq(p.speed_debuff,nil)
+  for _,kind in ipairs({'slash','club','fists','bullet','buckshot','impulse','explosive','acid','shock','burn','physics'}) do
+   h:SetData('value',.5);hit(1,kind);assert(h:GetData('value')>=0 and h:GetData('value')<=.5)
+  end
+  h:SetData('value',0);eq(hit(1),40)
+  h:SetData('value',1);h:OnUnequipped(p);eq(hit(1),40)
+ end
+ `,classes);
  suite('Native medical damage uses equipped armor, wears it down, and stops protecting after removal/breakage',armorFiles,
  register('armor','ItemMedievalArmor')+owners+damage+`
  local p,o=owner(5,2)
