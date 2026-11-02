@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
-  "files": 1096,
-  "lines": 163178,
+  "files": 1099,
+  "lines": 163184,
   "syntaxFailures": [],
   "entries": [
     {
@@ -317,8 +317,8 @@
     },
     {
       "path": "helix/gamemode/core/hooks/cl_hooks.lua",
-      "lines": 707,
-      "sha256": "896ed8e6482f981f28f1c7a8ea8734fe6af8b091dbba3669000abc49c81cc81d",
+      "lines": 710,
+      "sha256": "10d5f4c5e9340b7dccdfefb5c900cca374675a2d53ae11101fc11cca3cb6dd95",
       "syntax": "pass",
       "networkHandlers": [
         "ixStringRequest"
@@ -327,8 +327,8 @@
     },
     {
       "path": "helix/gamemode/core/hooks/sh_hooks.lua",
-      "lines": 616,
-      "sha256": "eaf9d24d0e2870c33d74111a587ae91aa3a4e97f2053ee06af2af0f7278ee229",
+      "lines": 617,
+      "sha256": "41a2fb830a1be22767e85e7a1ea060357e778671f71c5e29a091f79471278b86",
       "syntax": "pass",
       "networkHandlers": [
         "ixAnimEvent",
@@ -2362,8 +2362,8 @@
     },
     {
       "path": "helix/plugins/wepselect.lua",
-      "lines": 215,
-      "sha256": "fe32af6b26088af3a4cc75aaa66d7885ad9d0c97d4464373de140261238c2617",
+      "lines": 193,
+      "sha256": "24abf6548dfd97a12c1a9e1a853f42e986c0704b9987709ec8826cf62afab9b8",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
@@ -3379,8 +3379,8 @@
     },
     {
       "path": "ixhl2rp/plugins/ammo_cringe/sh_weapon_slots.lua",
-      "lines": 449,
-      "sha256": "0d0351433a0b9db2379a6b4fe65825d5d4fd2f493e12f2925c95f7e5b5553c8e",
+      "lines": 456,
+      "sha256": "468126fbae920638a9d6988c8d69588a149cf3eca8f9bf0793a1de6fa3b148b7",
       "syntax": "pass",
       "networkHandlers": [
         "ixWeaponSlotReady",
@@ -3400,8 +3400,8 @@
     },
     {
       "path": "ixhl2rp/plugins/amputation/items/base/limb.lua",
-      "lines": 65,
-      "sha256": "b19011bcc4feaca6a8cb75eab9bf5c87b7b28dcc8bac4c9d0b50f0cd9f56eb3b",
+      "lines": 15,
+      "sha256": "ec9d9a9550c48085f935c52635078b609f7669c492448e52177cf0d212fdd1af",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -3409,7 +3409,7 @@
     {
       "path": "ixhl2rp/plugins/amputation/items/limb/limb_larm.lua",
       "lines": 5,
-      "sha256": "afb60b554cbe2ca6350ca4e2d059a508f8dc00416be69f33c8b78b6190ed2c61",
+      "sha256": "e308a0703a52e604938dbe7765eeb9cefeb9293327d963e93db9662932dc6e78",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -3417,7 +3417,7 @@
     {
       "path": "ixhl2rp/plugins/amputation/items/limb/limb_lleg.lua",
       "lines": 5,
-      "sha256": "7c7cd3b9c97de9b8985a774acd789182f18865b6828205c0f6d83fbc305d8b63",
+      "sha256": "e7da422736c0343bf79b5ab22a57ba79989a45f9dae812af51e0dc0c5b06990c",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -3425,7 +3425,7 @@
     {
       "path": "ixhl2rp/plugins/amputation/items/limb/limb_rarm.lua",
       "lines": 5,
-      "sha256": "1b2bc05e4fb5757ee58cb27956c472739208fbd3dfa7f2f18a1a5ecf90771bdc",
+      "sha256": "096102345b437b05429594941b44d9a8b4e9d6d4037ffa3826677c7bfe866ca4",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -3433,7 +3433,7 @@
     {
       "path": "ixhl2rp/plugins/amputation/items/limb/limb_rleg.lua",
       "lines": 5,
-      "sha256": "d1cce6dae36ddac1043689adc8a2a62b311980bf086e353e86e4a1c55420a0ce",
+      "sha256": "d64e7122bbe6385e2892eed59cf339d705699522e3d29b15cd29acf66ba48620",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -3448,8 +3448,8 @@
     },
     {
       "path": "ixhl2rp/plugins/amputation/sv_plugin.lua",
-      "lines": 442,
-      "sha256": "bb089f1f324f74d3cff4af108a8c316d82a7f1169de7953240cc1ee6502f3e9f",
+      "lines": 416,
+      "sha256": "cb2d9e99a10d65dbbc8bf6e7099810bd06c82393ebdd4d020188a716fa63ef09",
       "syntax": "pass",
       "networkHandlers": [
         "ixAmputationConsent"
@@ -3474,8 +3474,8 @@
     },
     {
       "path": "ixhl2rp/plugins/aoc_compat/sh_animations.lua",
-      "lines": 173,
-      "sha256": "207d5a5953e6c7524f7aede1d6a19bf2c5a3d7366ddce3ca9f18dbbe23fde26b",
+      "lines": 174,
+      "sha256": "e86cd2f42236e9c131db8a84f107213fa4f77c3451a5e1aa48a5ec855153c90e",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -5477,8 +5477,8 @@
     },
     {
       "path": "ixhl2rp/plugins/items_clothing/items/base/medieval_armor.lua",
-      "lines": 83,
-      "sha256": "5d154006af54105db25df5ba1003a5e011241010f689f9f7ec8ab2ef3d3bbcc7",
+      "lines": 87,
+      "sha256": "976833e2fd9840a2029e295703cb5723f91e434c0ee3e09072ccfb99b2328379",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -7148,7 +7148,23 @@
     {
       "path": "ixhl2rp/plugins/medical/items/medical/bandage.lua",
       "lines": 14,
-      "sha256": "72fbbff77a554e701393b98133a10f99d190443e1a239ede23a0928042ba9a57",
+      "sha256": "3cda0865f658dbcd0b777117060996d8af080ee8d8d3451cbf25c32586505f5d",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/medical/items/medical/decoction.lua",
+      "lines": 11,
+      "sha256": "e7b1f2d82de5f621284b3a071d87bb7ad2f801703a817f429e77660d155c1989",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/medical/items/medical/herbal_decoction.lua",
+      "lines": 12,
+      "sha256": "08e043f6dbf5400ec1b8387704a0a5ede0b96809a52bf5fa9f53ff75388a20bd",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -7157,6 +7173,14 @@
       "path": "ixhl2rp/plugins/medical/items/medical/splint.lua",
       "lines": 11,
       "sha256": "7632174763ccfefcd25d83b6349a025064bd350511658a151013d84e4fd63f6f",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/medical/items/unknown_flask.lua",
+      "lines": 25,
+      "sha256": "4a83a4af9f9d2808fb655333ca3b43d2729ad50f5970ac2fd0f67bbab8bf8dfa",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -7195,8 +7219,8 @@
     },
     {
       "path": "ixhl2rp/plugins/medical/libs/sh_catalog.lua",
-      "lines": 12,
-      "sha256": "d2d69100fcae2a9d157fe083a70e5e446a76ea6404cc4b5591bce2e1111368ed",
+      "lines": 14,
+      "sha256": "4cfd1df665f12646e6047fc1eda90c85e377dd605d933f1ec5913ea7b02482ba",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -7255,8 +7279,8 @@
     },
     {
       "path": "ixhl2rp/plugins/medical/sv_treatment.lua",
-      "lines": 227,
-      "sha256": "b16033925b1af914fc67b69415c8553c897a3cb7a8d455914be09c0a56eed63d",
+      "lines": 264,
+      "sha256": "b872fd25fe4281533573620922252ebdfdce2e23806526a1524073af09b4495c",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -8638,7 +8662,7 @@
     {
       "path": "ixhl2rp/plugins/recipes_crafting/recipes/bandage.lua",
       "lines": 5,
-      "sha256": "4006efabc1d66625e23075db8e11b5e883116f2c20eb08edcd7baf3f9cf5a779",
+      "sha256": "0421fa38573ddfefdd066f09804a129acb91b30ccb9d067c471ace313f6c2c08",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -9581,8 +9605,8 @@
     },
     {
       "path": "ixhl2rp/schema/sh_schema.lua",
-      "lines": 34,
-      "sha256": "471e5f20b5749b3a32d1860e0554e1b641afa0fb93d24575acc78e984e578d91",
+      "lines": 35,
+      "sha256": "f31f7d83d768aac593e2d616fa733821e0a10a1c71b9848a6058eaeb86cd90a2",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []

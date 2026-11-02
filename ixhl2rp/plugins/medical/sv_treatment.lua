@@ -57,11 +57,15 @@ end
 
 function M.Injuries(health, def, hitgroup)
  local result = {}
+ local missing = ix.Amputation and ix.Amputation.GetLimb(health.character)
  for _, diff in health:GetHediffs() do
   local part = health.body.parts[diff.part]
   local matches = not hitgroup or hitgroup == 0 or (part and part.hitgroup == hitgroup)
   if matches and diff.isInjury and diff:GetSeverity() > 0 then
-   if def.kind == "splint" or def.kind == "surgery" then
+   -- Stump wounds must remain treatable so pain/bleeding cannot trap an
+   -- amputee in critical state. Healing never clears the amputation flag.
+   if missing and part and missing.hitgroup == part.hitgroup and def.kind == "splint" then continue end
+   if def.kind == "splint" then
     if diff.isFracture then result[#result+1] = diff end
    elseif not diff.isFracture and (def.kind ~= "bandage" or ((diff.bleedRate or 0) > 0 and diff.tended_time == -1)) then
     result[#result+1] = diff
@@ -79,6 +83,12 @@ function M.Eligible(item, target, hitgroup)
  local health = target:GetCharacter():Health()
  local def = M.Catalog[item.uniqueID]
  if not def then return false, "Неизвестное лечебное средство." end
+ if def.kind == "blood" then
+  for _, diff in health:GetHediffs() do
+   if diff.uniqueID == "bleeding" and diff:GetSeverity() > 0 then return true end
+  end
+  return false, "Запас крови уже полон."
+ end
  if #M.Injuries(health, def, hitgroup) == 0 then return false, "Нет подходящей травмы для этого средства." end
  return true
 end
@@ -88,24 +98,51 @@ function M.Apply(item, target, medic, hitgroup)
  local def = M.Catalog[item.uniqueID]
  if not def then return {} end
  local healed = 0
- -- Treatment effectiveness is fixed; no character progression.
+ if def.kind == "blood" then
+  local losses = {}
+  for _, diff in health:GetHediffs() do
+   if diff.uniqueID == "bleeding" then losses[#losses + 1] = diff end
+  end
+  for _, diff in ipairs(losses) do
+   local before = math.Clamp(diff:GetSeverity(), 0, 1)
+   local remaining = math.max(0, before - def.blood)
+   healed = math.max(healed, before - remaining)
+   -- Keep a zero-severity tracker while wounds still bleed, otherwise further
+   -- blood loss would stop until another hit creates the tracker again.
+   if remaining <= 0 and health:GetBleedRate() < 0.1 then health:RemoveHediffByID(diff.id)
+   else diff:SetSeverity(remaining) end
+  end
+  health.bloodloss = nil
+  for _, diff in health:GetHediffs() do
+   if diff.uniqueID == "bleeding" then health.bloodloss = true break end
+  end
+  health:OnUpdateDiffs(); M.Sync(health)
+  return {blood=healed}
+ end
+ local budget = def.healing or 0
  local injuries = M.Injuries(health, def, hitgroup)
- if (def.kind == "surgery" or def.kind == "splint") and injuries[1] then
+ if def.kind == "splint" and injuries[1] then
   hitgroup = health.body.parts[injuries[1].part].hitgroup
   injuries = M.Injuries(health, def, hitgroup)
  end
- for index, diff in ipairs(injuries) do
-  if index > (def.wounds or 1) then break end
-  if diff.isFracture and (def.kind=="splint" or def.kind=="surgery") then
+ for _, diff in ipairs(injuries) do
+  if diff.isFracture and def.kind == "splint" then
    health:RemoveHediffByID(diff.id)
   elseif def.kind == "bandage" then
-   diff:SetSeverity(diff:GetSeverity()); diff.tended_time=0; diff.tended_start=os.time()
-  elseif def.wounds then
-   local amount = math.min(diff:GetSeverity(), 10)
+   diff:SetSeverity(diff:GetSeverity())
+   health:TendHediff(diff, 0) -- Also transmit the dressed state to the limb HUD.
+  elseif def.kind == "restore" and budget > 0 then
+   local amount = math.min(diff:GetSeverity(), budget)
    local remaining = diff:GetSeverity() - amount
-   healed = healed + amount
+   healed, budget = healed + amount, budget - amount
    if remaining <= 0 then health:RemoveHediffByID(diff.id)
-   else diff:SetSeverity(remaining) health:TendHediff(diff, 180) end
+   else
+    -- Convert an old timed dressing to its current severity before changing
+    -- it, so repeated doses cannot multiply away injuries or restart bleeding.
+    local dressed = diff.tended_time ~= -1
+    diff:SetSeverity(remaining)
+    if dressed then health:TendHediff(diff, 0) end
+   end
   end
  end
  health:OnUpdateDiffs()

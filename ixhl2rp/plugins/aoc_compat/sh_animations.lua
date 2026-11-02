@@ -64,9 +64,13 @@ function A.UpdateWalkLayer(client)
  local upper = client.ixAOCWalkUpper
  if client.ixAOCWalkLayer ~= upper or client.ixAOCWalkLayerModel ~= client:GetModel() or
   client.ixAOCWalkLayerRevision ~= A.revision then A.ClearWalkLayer(client) end
- if client:IsValidLayer(walkSlot) and client.ixAOCWalkLayer == nil then return end -- Do not steal another addon's slot.
- local cycle = client:GetCycle()
- if not client:IsValidLayer(walkSlot) then
+ local active = client:IsValidLayer(walkSlot) and client:GetLayerWeight(walkSlot) > 0
+ if active and client.ixAOCWalkLayer == nil then return end -- Do not steal another addon's active slot.
+ -- The authored "upper-body" running clip also has full pelvis weight.
+ -- Even phase-locked to walk_all it makes the whole body bounce. Use a
+ -- stationary grip pose; locomotion still comes from the walking leg bones.
+ local cycle = 0
+ if not active then
   client:AddVCDSequenceToGestureSlot(walkSlot, upper, cycle, false)
   client.ixAOCWalkLayer = upper
   client.ixAOCWalkLayerModel = client:GetModel()
@@ -75,10 +79,7 @@ function A.UpdateWalkLayer(client)
   client.ixAOCWalkLayer = nil
   return
  end
- -- The grip clips also animate the pelvis over a 0.6-second running cycle.
- -- Drive their phase from the walking sequence instead of letting a second,
- -- faster clock move the torso independently. Preserve phase when entering
- -- mid-stride or resuming after a gesture, on both server and client.
+ -- Neither time nor the walking phase should advance the running pelvis.
  client:SetLayerPlaybackRate(walkSlot, 0)
  client:SetLayerCycle(walkSlot, cycle)
  client:AnimSetGestureWeight(walkSlot, 1)

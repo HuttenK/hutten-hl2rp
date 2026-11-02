@@ -58,6 +58,13 @@ function W.Owns(client, item)
  return IsValid(client) and client:IsPlayer() and client:GetCharacter() and inventory and inventory.owner == client
 end
 
+function W.ShouldRaise(client, weapon)
+ if not IsValid(weapon) then return false end
+ local item = weapon.ixItem
+ return item ~= nil and W.Owns(client, item) and W.Slot(item) ~= nil and
+  W.Equipped(item) and W.Live(client, item) == weapon or false
+end
+
 function W.Pending(item)
  return ix.Inventory.pendingTransfers and ix.Inventory.pendingTransfers["item_" .. item.id] ~= nil
 end

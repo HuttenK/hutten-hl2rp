@@ -92,7 +92,7 @@ module.exports=(suite)=>{
  `,setup+'\nSERVER=false CLIENT=true\n');
 
  for(const client of [true,false]){
-  suite(`AoC grip follows walking phase without an independent running cycle (${client?'client':'server'})`,files,`
+  suite(`AoC walking uses a stationary grip without the running pelvis bounce (${client?'client':'server'})`,files,`
    local A=ix.AOC;local w=weapon('aoc_sword_shield');A.Prepare(w)
    local clips={walk_all=10,wos_aoc_run_swordshield=20,wos_aoc_run_swordshield_mod=21,
     wos_aoc_cwalk_swordshield=22,wos_aoc_sword_slash_01=23}
@@ -115,16 +115,17 @@ module.exports=(suite)=>{
    w.ActivityTranslate[ACT_MP_WALK]='wos_aoc_run_swordshield'
    w.ActivityTranslate[ACT_MP_RUN]='wos_aoc_run_swordshield'
    w.ActivityTranslate[ACT_MP_CROUCHWALK]='wos_aoc_cwalk_swordshield'
+   p.layers[GESTURE_SLOT_GRENADE]={seq=0,weight=0,cycle=0,rate=1} -- an allocated but idle overlay is available
    local _,walk=A.MainActivity(p,ACT_MP_WALK);eq(walk,10)
    for i=1,100 do A.MainActivity(p,ACT_MP_WALK);A.UpdateWalkLayer(p) end
    eq(p.starts,1);eq(p:GetLayerSequence(GESTURE_SLOT_GRENADE),21)
-   eq(p.startCycle,0.37) -- enter mid-stride without resetting the torso to frame zero
+   eq(p.startCycle,0) -- no running pelvis phase, even when entering mid-stride
    for _,phase in ipairs({0.38,0.39,0.65,0.98,0.02,0.12}) do
     p.cycle=phase;A.MainActivity(p,ACT_MP_WALK);A.UpdateWalkLayer(p)
     local layer=p.layers[GESTURE_SLOT_GRENADE]
-    eq(layer.cycle,phase);eq(layer.rate,0)
+    eq(layer.cycle,0);eq(layer.rate,0)
     layer.cycle=layer.cycle+layer.rate*0.05 -- time alone must not advance the grip
-    eq(layer.cycle,phase)
+    eq(layer.cycle,0)
    end
    eq(p.starts,1) -- changing cadence and wrapping the step do not restart the layer
    local _,run=A.MainActivity(p,ACT_MP_RUN);eq(run,20);A.UpdateWalkLayer(p)
@@ -135,7 +136,7 @@ module.exports=(suite)=>{
    eq(p:IsValidLayer(GESTURE_SLOT_GRENADE),false) -- swings and looping shield blocks win
    p.cycle=0.71;p.layers[GESTURE_SLOT_ATTACK_AND_RELOAD]=nil;A.UpdateWalkLayer(p)
    assert(p:IsValidLayer(GESTURE_SLOT_GRENADE))
-   eq(p.startCycle,0.71);eq(p.layers[GESTURE_SLOT_GRENADE].cycle,0.71)
+   eq(p.startCycle,0);eq(p.layers[GESTURE_SLOT_GRENADE].cycle,0)
    p.layers[GESTURE_SLOT_CUSTOM]={seq=23,weight=1};A.UpdateWalkLayer(p)
    eq(p:IsValidLayer(GESTURE_SLOT_GRENADE),false);p.layers[GESTURE_SLOT_CUSTOM]=nil
    p.ixAOCWalkActionWeapon=w;p.ixAOCWalkActionUntil=clock+1;A.UpdateWalkLayer(p)

@@ -164,7 +164,7 @@
   {
     "id": "bandage",
     "file": "ixhl2rp/plugins/recipes_crafting/recipes/bandage.lua",
-    "name": "Льняные повязки",
+    "name": "Бинты",
     "description": "",
     "requirements": {
       "mat_cloth": 1

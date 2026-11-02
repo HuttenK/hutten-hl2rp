@@ -298,7 +298,8 @@ function GM:PlayerWeaponChanged(client, weapon)
 	end
 
 	-- Let the config decide before actual results.
-	if (ix.config.Get("weaponAlwaysRaised")) then
+	if (ix.config.Get("weaponAlwaysRaised") or
+		(ix.WeaponSlots and ix.WeaponSlots.ShouldRaise(client, weapon))) then
 		client:SetWepRaised(true, weapon)
 		return
 	end

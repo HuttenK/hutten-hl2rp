@@ -1,0 +1,11 @@
+local def = ix.Medicine.Catalog.herbal_decoction
+ITEM.name = def.name
+ITEM.description = "Травяной отвар в потёртой фляге. Возвращает щекам цвет, а телу — четверть запаса крови. Прежде чем пить, стоит перевязать раны: дырявый бурдюк не наполнить."
+ITEM.model = Model(def.model)
+ITEM.skin = 0
+ITEM.width = 1
+ITEM.height = 2
+ITEM.cost = 90
+ITEM.stats.uses = def.uses
+ITEM.stats.time = def.time
+ITEM.medicalID = "herbal_decoction"

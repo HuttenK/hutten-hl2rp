@@ -38,7 +38,11 @@ end
 
 function Armor:GetCloakEnabled()
 	-- Existing plate items keep the model's original visible cape by default.
-	return self:GetData("medCloak", self.capeBodygroup ~= nil)
+	-- Item:GetData uses `value or default`, which loses a saved false value.
+	-- Read this boolean explicitly so a removed cape can be put back on.
+	local value = self.data and self.data.medCloak
+	if value == nil then return self.capeBodygroup ~= nil end
+	return value == true
 end
 
 function Armor:CanToggleCloak(current)

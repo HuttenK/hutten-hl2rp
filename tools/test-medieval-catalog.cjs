@@ -18,7 +18,7 @@ ix.transmit={all=2,owner=1,none=0};ix.outfits={};ix.Item={stored={},instances={}
 ix.char={vars={},RegisterVar=function(k,v) ix.char.vars[k]=v end};ix.type={number=1};ix.faction={indices={}}
 ix.meta.Item={
  AddData=function(self,key,def) self.vars[key]=def end,
- GetData=function(self,key,default) if self.data[key]==nil then return default end return self.data[key] end,
+ GetData=function(self,key,default) return self.data[key] or default end, -- Match the real Item accessor, including false/default behavior.
  SetData=function(self,key,value) self.data[key]=value end,
  GetID=function(self) return self.id end,GetEntity=function(self) return self.entity end,
  GetOwner=function(self) return self.owner end,

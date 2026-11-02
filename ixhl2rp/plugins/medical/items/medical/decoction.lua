@@ -1,0 +1,10 @@
+local def = ix.Medicine.Catalog.decoction
+ITEM.name = def.name
+ITEM.description = "Горькое варево по рецепту человека, пережившего три осады. Восстанавливает до 30 ХП повреждённых частей тела за применение. Переломы требуют шины, оторванные конечности не отрастают."
+ITEM.model = Model(def.model)
+ITEM.width = 2
+ITEM.height = 2
+ITEM.cost = 80
+ITEM.stats.uses = def.uses
+ITEM.stats.time = def.time
+ITEM.medicalID = "decoction"

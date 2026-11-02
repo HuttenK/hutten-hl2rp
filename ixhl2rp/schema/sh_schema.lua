@@ -7,6 +7,7 @@ ix.config.language = "russian"
 ix.currency.symbol = ""
 ix.currency.singular = "монета"
 ix.currency.plural = "монет"
+ix.currency.model = "models/props_clutter/coin.mdl"
 
 -- Include netstream
 ix.util.Include("libs/thirdparty/sh_netstream2.lua")

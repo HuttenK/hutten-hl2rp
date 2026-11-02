@@ -1,6 +1,6 @@
 const fs=require('fs'),path=require('path');
 const {lua,lauxlib,lualib,to_luastring,to_jsstring}=require('fengari');
-const {normalize}=require('./glua.cjs');
+const normalize=require('./glua-runtime.cjs');
 const root=path.resolve(__dirname,'..');let passed=0;
 function suite(name,files,assertions,setup=''){
  const L=lauxlib.luaL_newstate();lualib.luaL_openlibs(L);
@@ -13,6 +13,23 @@ function suite(name,files,assertions,setup=''){
 const src=fs.readFileSync(path.join(root,'ixhl2rp/plugins/ammo_cringe/items/base/weapon.lua'),'utf8');
 const methods='Item={}\n'+normalize(src.slice(src.indexOf('function Item:Equip('),src.indexOf('\nif CLIENT then')));
 const weapons=['tools/fixtures/medieval-weapons.lua','tools/fixtures/weapon-slots.lua','ixhl2rp/plugins/ammo_cringe/sh_ammo.lua','ixhl2rp/plugins/ammo_cringe/sh_weapon_slots.lua','ixhl2rp/plugins/ammo_cringe/sh_plugin.lua'];
+const sharedHooks=fs.readFileSync(path.join(root,'helix/gamemode/core/hooks/sh_hooks.lua'),'utf8');
+const raiseHook=normalize(sharedHooks.slice(sharedHooks.indexOf('function GM:PlayerWeaponChanged('),sharedHooks.indexOf('function GM:PlayerSwitchWeapon(')));
+suite('Drawing any equipped slot raises it, while empty slots, tools and restricted players retain their rules',weapons,`
+ local W=ix.WeaponSlots
+ function p:SetWepRaised(value,weapon) self.raised=value;self.raisedWeapon=weapon end
+ p:Give('ix_hands',true)
+ for slot=1,3 do
+  local i=newItem(slot);i.class='test_slot_'..slot;if slot==3 then i.weaponCategory='melee' end
+  assert(W.Equip(p,i,slot));local w=W.Live(p,i);assert(W.ShouldRaise(p,w))
+  GM:PlayerWeaponChanged(p,w);eq(p.raised,true)
+  w.NeverRaised=true;GM:PlayerWeaponChanged(p,w);eq(p.raised,false);w.NeverRaised=nil
+  p.restricted=true;GM:PlayerWeaponChanged(p,w);eq(p.raised,false);p.restricted=false
+  assert(W.Unequip(p,i));assert(W.Holster(p,slot));GM:PlayerWeaponChanged(p,p:GetActiveWeapon());eq(p.raised,false)
+ end
+ local tool=p:Give('gmod_tool',true);eq(W.ShouldRaise(p,tool),false);GM:PlayerWeaponChanged(p,tool);eq(p.raised,false)
+ tool.IsAlwaysRaised=true;GM:PlayerWeaponChanged(p,tool);eq(p.raised,true)
+`,methods+`\nGM={};ALWAYS_RAISED={};function UpdatePlayerHoldType() end;function UpdateAnimationTable() end\n`+raiseHook);
 suite('Empty slot draws hands and preserves the equipped item and loaded bolt',weapons,`
  local W=ix.WeaponSlots;local a=newItem(1);assert(W.Equip(p,a,1));local w=W.Live(p,a)
  local hands=p:Give('ix_hands',true);assert(W.Holster(p,2));eq(p:GetActiveWeapon(),hands)
@@ -56,6 +73,7 @@ suite('Bandages stop bleeding on the selected limb; splints target fractures onl
  function health:GetHediffs() return ipairs(diffs) end
  function health:RemoveHediffByID(id) self.removed=id end
  function health:OnUpdateDiffs() end;function health:GetBleedRate() return 0 end
+ function health:TendHediff(diff,time) diff.tended_time=time;diff.tended_start=os.time() end
  local char={Health=function() return health end};local target={GetCharacter=function() return char end}
  local function injury(id,part,fracture)
   local d={id=id,part=part,isInjury=true,isFracture=fracture,severity=5,bleedRate=1,tended_time=-1}
@@ -87,8 +105,10 @@ suite('Context poses depend only on valid treatment or owned cargo, without devi
 require('./test-sd-creation.cjs')(suite);
 require('./test-medieval-animation.cjs')(suite);
 require('./test-medieval-ui.cjs')(suite);
+require('./test-medieval-controls.cjs')(suite);
 require('./test-world-tooltip.cjs')(suite);
 require('./test-medical-examination.cjs')(suite);
+require('./test-medieval-medicine.cjs')(suite);
 require('./test-aoc.cjs')(suite);
 require('./test-item-pickup.cjs')(suite);
 require('./test-medieval-catalog.cjs')(suite);

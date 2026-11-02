@@ -1,7 +1,7 @@
 -- Legacy item IDs intentionally retained so stored inventories and recipes migrate.
 local def = ix.Medicine.Catalog["bandage"]
 ITEM.name = def.name
-ITEM.description = "Останавливает кровотечение. Не восстанавливает потерянную кровь и не лечит переломы."
+ITEM.description = "Чистая полоска ткани для тугой перевязки. Останавливает кровотечения выбранной части тела, заменяя и повязку, и жгут. Кровь и повреждённые ткани восстанавливают отвары."
 ITEM.model = Model(ix.Medicine.Model(def))
 ITEM.skin = def.skin or 0
 ITEM.width = 1

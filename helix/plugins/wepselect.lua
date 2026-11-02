@@ -129,9 +129,11 @@ if (CLIENT) then
 
 	function PLUGIN:PlayerBindPress(client, bind, pressed)
 		bind = bind:lower()
+		-- Leave scrolling to placement/tool hooks. The gamemode consumes any
+		-- unhandled wheel bind so Source cannot cycle weapons underneath us.
+		if bind:find("invnext", 1, true) or bind:find("invprev", 1, true) then return end
 
-		if (!pressed or !bind:find("invprev") and !bind:find("invnext")
-		and !bind:find("slot") and !bind:find("attack")) then
+		if (!pressed or !bind:find("slot") and !bind:find("attack")) then
 			return
 		end
 
@@ -141,38 +143,14 @@ if (CLIENT) then
 
 		local currentWeapon = client:GetActiveWeapon()
 		local bValid = IsValid(currentWeapon)
-		local bTool
 
 		if (client:InVehicle() or (bValid and currentWeapon:GetClass() == "weapon_physgun" and client:KeyDown(IN_ATTACK))) then
 			return
 		end
 
-		if (bValid and currentWeapon:GetClass() == "gmod_tool") then
-			local tool = client:GetTool()
-			bTool = tool and (tool.Scroll != nil)
-		end
-
 		local weapons = Choices(client)
 
-		if (bind:find("invprev") and !bTool) then
-			local oldIndex = self.index
-			self.index = math.min(self.index + 1, #weapons)
-
-			if (self.alpha == 0 or oldIndex != self.index) then
-				self:OnIndexChanged(weapons[self.index])
-			end
-
-			return true
-		elseif (bind:find("invnext") and !bTool) then
-			local oldIndex = self.index
-			self.index = math.max(self.index - 1, 1)
-
-			if (self.alpha == 0 or oldIndex != self.index) then
-				self:OnIndexChanged(weapons[self.index])
-			end
-
-			return true
-		elseif (bind:find("slot")) then
+		if (bind:find("slot")) then
 			self.index = math.Clamp(tonumber(bind:match("slot(%d)")) or 1, 1, #weapons)
 			self:OnIndexChanged(weapons[self.index])
 

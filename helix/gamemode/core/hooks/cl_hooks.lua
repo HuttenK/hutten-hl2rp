@@ -529,6 +529,9 @@ end
 
 function GM:PlayerBindPress(client, bind, pressed)
 	bind = bind:lower()
+	-- Plugins get the first chance to rotate furniture or operate tools.
+	-- Otherwise consume the wheel without opening or changing weapon selection.
+	if bind:find("invnext", 1, true) or bind:find("invprev", 1, true) then return true end
 
 	if (bind:find("use") and pressed) then
 		local pickupTime = ix.config.Get("itemPickupTime", 0.5)

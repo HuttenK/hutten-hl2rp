@@ -355,35 +355,9 @@ net.Receive("ixAmputationConsent", function(_, target)
 	Amputation.BeginCut(surgeon, target, request.key, request.item)
 end)
 
--- Пришивание: нужен навык, нужная конечность у предмета и её отсутствие у цели.
+-- Kept as a no-op for old item callbacks. Only explicit admin restoration remains.
 function Amputation.BeginReattach(surgeon, target, item)
-	if !CanOperate(surgeon, target, item) or surgeon.ixAmputationBusy or target.ixAmputationBusy then return end
-	local key = Amputation.Get(target:GetCharacter())
-	if !key or key != item.limb then return end
-
-	surgeon:SetAction("@amputation.reattaching", Amputation.reattachTime)
-	target:SetAction("@amputation.beingReattached", Amputation.reattachTime)
-
-	surgeon.ixAmputationBusy = true
-	target.ixAmputationBusy = true
-
-	RunOperation("fix", surgeon, target, Amputation.reattachTime, item, nil, function()
-		surgeon.ixAmputationBusy = nil
-		target.ixAmputationBusy = nil
-
-		surgeon:SetAction()
-
-		-- Предмет мог быть выброшен, а цель — вылечена за время операции.
-		if !OwnsItem(surgeon, item) then return end
-		if Amputation.Get(target:GetCharacter()) != key then return end
-
-		Amputation.Restore(target)
-
-		item:Remove()
-
-		surgeon:NotifyLocalized("amputation.reattachDone")
-		target:NotifyLocalized("amputation.restored")
-	end)
+	return false
 end
 
 function PLUGIN:PlayerLoadedCharacter(client)
