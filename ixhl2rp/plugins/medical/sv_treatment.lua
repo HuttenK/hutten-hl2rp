@@ -120,6 +120,8 @@ function M.Apply(item, target, medic, hitgroup)
   return {blood=healed}
  end
  local budget = def.healing or 0
+ -- Volume is spent on actual healing, including a partial final dose.
+ if def.capacity then budget = math.min(budget, item:GetUses()) end
  local injuries = M.Injuries(health, def, hitgroup)
  if def.kind == "splint" and injuries[1] then
   hitgroup = health.body.parts[injuries[1].part].hitgroup
@@ -148,7 +150,7 @@ function M.Apply(item, target, medic, hitgroup)
  health:OnUpdateDiffs()
  health:GetBleedRate()
  M.Sync(health)
- return {dmg=healed}
+ return {dmg=healed, resourceCost=def.capacity and healed or nil}
 end
 
 function M.ValidSession(client, session)

@@ -4,6 +4,7 @@ module.exports=suite=>{
  const files=['ixhl2rp/plugins/!healthsystem/sh_hediff.class.lua',
   'ixhl2rp/plugins/!healthsystem/sh_health.class.lua','ixhl2rp/plugins/!healthsystem/libs/sh_hediffs.lua',
   'ixhl2rp/plugins/!healthsystem/sh_effects.define.lua','ixhl2rp/plugins/medical/libs/sh_catalog.lua',
+  'ixhl2rp/plugins/medical/items/base/medical.lua',
   'ixhl2rp/plugins/medical/sv_treatment.lua','ixhl2rp/plugins/downed_state/sh_downed.lua'];
  const setup=`
  function class(name)
@@ -13,6 +14,11 @@ module.exports=suite=>{
   return c
  end
  abstract_class=class
+ ix.transmit={owner=1}
+ ix.meta.Item={AddData=function() end}
+ function ix.meta.Item:GetData(k,default) return self.data[k] or default end
+ function ix.meta.Item:SetData(k,v) self.data[k]=v end
+ function ix.meta.Item:Remove() self.removed=true end
  function Material() return {} end;function Color() return {} end
  function Model(m) return m end
  HITGROUP_HEAD=1;HITGROUP_CHEST=2;HITGROUP_STOMACH=3;HITGROUP_LEFTARM=4;HITGROUP_RIGHTARM=5;HITGROUP_LEFTLEG=6;HITGROUP_RIGHTLEG=7
@@ -39,8 +45,22 @@ module.exports=suite=>{
   return health
  end
  function injury(kind,group,amount) return health:AddHediff(kind,group,{severity=amount}) end
- function use(id,group) return ix.Medicine.Apply({uniqueID=id},p,p,group or 0) end
+ function remedy(id,data)
+  local item=setmetatable({uniqueID=id,data=data or {},functions={}},ix.meta.ItemMedical)
+  item:Init();item.stats.uses=ix.Medicine.Catalog[id].uses
+  return item
+ end
+ function use(id,group) return ix.Medicine.Apply(remedy(id),p,p,group or 0) end
  function eligible(id,group) return ix.Medicine.Eligible({uniqueID=id},p,group or 0) end
+ function p:GetWeapon() return nil end
+ function complete(item,success,group)
+  local M=ix.Medicine;M.Reachable=function() return true end
+  item.inUse=p;p.items={item};p.ixMedicalCleanup=nil
+  local s={item=item,target=p,patient=char,character=char,hitgroup=group or 0,deadline=clock+100}
+  p.ixMedicalSession=s;p.bUsingMedical=true;M.activeSessions[p]=s
+  M.Finish(p,success)
+  eq(p.ixMedicalSession,nil);eq(item.inUse,nil);eq(M.activeSessions[p],nil)
+ end
  `;
  suite('Four medieval remedies treat every native wound type without regenerating amputations',files,`
   fixture();local M=ix.Medicine;eq(table.Count(M.Catalog),4)
@@ -88,21 +108,61 @@ module.exports=suite=>{
   use('bandage');for i=1,5 do use('decoction') end;for i=1,4 do use('herbal_decoction') end
   eq(ix.Downed.CanRecover(health),true);eq(health:GetPartHealth(2),25);eq(health:GetPartHealth(3),80)
  `,setup);
- suite('Treatment consumes one dose only after successful completion and preserves cancelled or unnecessary remedies',files,`
+ suite('Decoction spends actual healed HP from 1000 volume and supports partial final doses',files,`
   fixture();injury('cut',4,35)
-  local item={uniqueID='decoction',uses=1,inUse=p,GetUses=function(s) return s.uses end,Remove=function(s) s.removed=true end}
-  p.items={item}
-  local M=ix.Medicine;M.Reachable=function() return true end
-  local session={item=item,target=p,patient=char,character=char,deadline=clock+100}
-  p.ixMedicalSession=session;p.bUsingMedical=true;M.activeSessions[p]=session
-  M.Finish(p,true);eq(item.removed,true);eq(health:GetPartHealth(5),40);eq(p.ixMedicalSession,nil);eq(item.inUse,nil)
-  fixture();item.removed=nil;item.inUse=p;p.ixMedicalCleanup=nil
-  session={item=item,target=p,patient=char,character=char,deadline=clock+100}
-  p.ixMedicalSession=session;M.Finish(p,true);eq(item.removed,nil)
-  injury('cut',4,20);item.inUse=p;p.ixMedicalCleanup=nil
-  session={item=item,target=p,patient=char,character=char,deadline=clock+100}
-  p.ixMedicalSession=session;M.Finish(p,false);eq(item.removed,nil);eq(health:GetPartHealth(5),25)
- `,setup+`\nfunction p:GetWeapon() return nil end`);
+  local item=remedy('decoction');item:OnInstanced(true)
+  eq(item:GetCapacity(),1000);eq(item.data.volume,1000)
+  complete(item,true,4);eq(item.removed,nil);eq(item:GetUses(),970);eq(health:GetPartHealth(5),40)
+  complete(item,true,4);eq(item:GetUses(),965);eq(health:GetPartHealth(5),45)
+  complete(item,true,4);eq(item:GetUses(),965);eq(item.removed,nil) -- no wound: no cost
+  local wound=injury('cut',4,20)
+  complete(item,false,4);eq(item:GetUses(),965);eq(wound:GetSeverity(),20)
+  item:SetResource(7.5);complete(item,true,4);eq(item.removed,true);near(wound:GetSeverity(),12.5)
+  item=remedy('decoction');item:SetResource(0)
+  complete(item,true,4);near(wound:GetSeverity(),12.5);eq(item.removed,nil)
+ `,setup);
+ suite('One decoction item can heal a thousand HP across many wounds and is removed only when empty',files,`
+  fixture();local item=remedy('decoction');item:OnInstanced(true)
+  for i=1,33 do
+   injury('bruise',4,30);complete(item,true,4)
+   eq(item:GetUses(),1000-i*30);eq(item.removed,nil);eq(health:GetPartHealth(5),45)
+  end
+  local wound=injury('bruise',4,20);complete(item,true,4)
+  eq(item.removed,true);eq(wound:GetSeverity(),10)
+ `,setup);
+ suite('Bandages and herbal decoctions each last five successful treatments and preserve cancelled doses',files,`
+  for _,id in ipairs({'bandage','herbal_decoction'}) do
+   fixture();local item=remedy(id);item:OnInstanced(true)
+   eq(item:GetCapacity(),5);eq(item:GetUses(),5);eq(item:GetResourceText(),'Применения: 5 / 5')
+   for i=1,5 do
+    if id=='bandage' then injury('cut',4,1) else injury('bleeding',0,.25) end
+    complete(item,false);eq(item:GetUses(),6-i);eq(item.removed,nil)
+    complete(item,true)
+    if i<5 then eq(item:GetUses(),5-i);eq(item.removed,nil) else eq(item.removed,true) end
+   end
+  end
+ `,setup);
+ suite('Medicine resources persist across reloads, preserve old inventory data and conserve combined supplies',files,`
+  local item=remedy('decoction',{uses=1});item:OnInstanced(false);eq(item:GetUses(),1000)
+  item:SetResource(412.5);local loaded=remedy('decoction',{volume=item.data.volume,uses=1})
+  loaded:OnInstanced(false);near(loaded:GetUses(),412.5)
+  eq(loaded:GetResourceText(),'Запас: 412.5 / 1000 ед.')
+  eq(remedy('decoction',{uses=0}):GetUses(),0)
+  eq(remedy('decoction',{volume=0,uses=1}):GetUses(),0)
+  for _,id in ipairs({'decoction','bandage','herbal_decoction'}) do
+   local from,to=remedy(id),remedy(id);local capacity=from:GetCapacity()
+   from:SetResource(capacity-1);to:SetResource(capacity-1)
+   assert(from.combine.comb.OnCanRun(from,to));from.combine.comb.OnRun(from,to)
+   eq(to:GetUses(),capacity);eq(from:GetUses(),capacity-2);eq(from.removed,nil)
+   eq(from.combine.comb.OnCanRun(from,to),false)
+   to:SetResource(capacity-1);from:SetResource(1);from.combine.comb.OnRun(from,to)
+   eq(to:GetUses(),capacity);eq(from.removed,true)
+   local saved=remedy(id,{volume=to.data.volume,uses=to.data.uses});saved:OnInstanced(false)
+   eq(saved:GetUses(),capacity)
+  end
+  eq(remedy('bandage',{uses=1}):GetUses(),1) -- changing capacity never refills an existing partial item
+  eq(remedy('herbal_decoction',{uses=1}):GetUses(),1)
+ `,setup);
  const itemFiles=['ixhl2rp/plugins/medical/libs/sh_catalog.lua','ixhl2rp/plugins/medical/items/unknown_flask.lua'];
  suite('Unknown flask is skin 2, consumes itself before direct death, and is never offered as treatment',itemFiles,`
   poison=ITEM;poison.player=p;poison.owner=p

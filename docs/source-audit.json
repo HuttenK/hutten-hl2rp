@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
   "files": 1099,
-  "lines": 163184,
+  "lines": 163186,
   "syntaxFailures": [],
   "entries": [
     {
@@ -7148,7 +7148,7 @@
     {
       "path": "ixhl2rp/plugins/medical/items/medical/bandage.lua",
       "lines": 14,
-      "sha256": "3cda0865f658dbcd0b777117060996d8af080ee8d8d3451cbf25c32586505f5d",
+      "sha256": "1e1780b3ca14cf3af48f0f0bd7ad02ca83b1f9e5e15483dabe685419b345a85f",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -7156,7 +7156,7 @@
     {
       "path": "ixhl2rp/plugins/medical/items/medical/decoction.lua",
       "lines": 11,
-      "sha256": "e7b1f2d82de5f621284b3a071d87bb7ad2f801703a817f429e77660d155c1989",
+      "sha256": "613913f5ca0072918be699f1e2ff2faf9c702b041336c93b33a573b639950709",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -7164,7 +7164,7 @@
     {
       "path": "ixhl2rp/plugins/medical/items/medical/herbal_decoction.lua",
       "lines": 12,
-      "sha256": "08e043f6dbf5400ec1b8387704a0a5ede0b96809a52bf5fa9f53ff75388a20bd",
+      "sha256": "b1f07ce54d7304891711b06d1805f635fcbe5fdaf6f69ce4fc0b8db18fd9ca52",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -7220,7 +7220,7 @@
     {
       "path": "ixhl2rp/plugins/medical/libs/sh_catalog.lua",
       "lines": 14,
-      "sha256": "4cfd1df665f12646e6047fc1eda90c85e377dd605d933f1ec5913ea7b02482ba",
+      "sha256": "718cfa0ebd74c8a0a203277e570a9012c89766109764bfbbc401db2bb402a283",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -7279,8 +7279,8 @@
     },
     {
       "path": "ixhl2rp/plugins/medical/sv_treatment.lua",
-      "lines": 264,
-      "sha256": "b872fd25fe4281533573620922252ebdfdce2e23806526a1524073af09b4495c",
+      "lines": 266,
+      "sha256": "98dd388fa1f8ddb59fd59a074ea54b7cee550f51ca462397cfa5917cc7079d53",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
