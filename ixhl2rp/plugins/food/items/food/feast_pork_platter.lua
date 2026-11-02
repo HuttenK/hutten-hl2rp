@@ -1,0 +1,13 @@
+ITEM.name = "Свиной жаркий «На всю дружину»"
+ITEM.description = "Внушительное блюдо запечённой свинины. Повар рассчитывал на дружину, но не учёл её аппетит."
+ITEM.model = "models/prop/re9_requiem_pork_plate.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 3
+ITEM.height = 2
+ITEM.cost = 92
+ITEM.rarity = 3
+ITEM.volume = 900
+ITEM.portion_amount = 100
+ITEM.stats.container = false
+ITEM.stats.hunger = 21
+ITEM.stats.thirst = 0

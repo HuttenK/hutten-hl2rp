@@ -1,0 +1,13 @@
+ITEM.name = "Курица «Праздник у старосты»"
+ITEM.description = "Румяная птица с хрустящей корочкой. Староста уверяет, что приготовлена для гостей, но лучшие кусочки уже посчитал."
+ITEM.model = "models/prop/re9_requiem_chicken_plate.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 2
+ITEM.height = 2
+ITEM.cost = 65
+ITEM.rarity = 3
+ITEM.volume = 600
+ITEM.portion_amount = 100
+ITEM.stats.container = false
+ITEM.stats.hunger = 20
+ITEM.stats.thirst = 0

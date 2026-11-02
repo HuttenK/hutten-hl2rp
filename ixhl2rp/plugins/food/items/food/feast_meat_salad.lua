@@ -1,0 +1,13 @@
+ITEM.name = "Салат охотничьего двора"
+ITEM.description = "Щедрая мясная нарезка с зеленью. Овощи здесь присутствуют главным образом для спокойствия лекаря."
+ITEM.model = "models/prop/re9_requiem_slices_of_meat_plate.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 2
+ITEM.height = 1
+ITEM.cost = 46
+ITEM.rarity = 3
+ITEM.volume = 400
+ITEM.portion_amount = 80
+ITEM.stats.container = false
+ITEM.stats.hunger = 17
+ITEM.stats.thirst = 2

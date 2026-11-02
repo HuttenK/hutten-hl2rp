@@ -1,0 +1,13 @@
+ITEM.name = "Рёбрышки молодого ягнёнка"
+ITEM.description = "Небольшая порция румяных рёбрышек. Косточек хватает, чтобы выглядеть сытым; мяса — чтобы таким стать."
+ITEM.model = "models/prop/re9_requiem_lamb_plate_ribs_plate.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 2
+ITEM.height = 1
+ITEM.cost = 44
+ITEM.rarity = 3
+ITEM.volume = 300
+ITEM.portion_amount = 60
+ITEM.stats.container = false
+ITEM.stats.hunger = 16
+ITEM.stats.thirst = 0

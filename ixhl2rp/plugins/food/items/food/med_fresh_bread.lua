@@ -1,0 +1,13 @@
+ITEM.name = "Хлеб из утренней печи"
+ITEM.description = "Свежий хлеб на доске, ещё хранящий тепло печи. Корочка хрустит так громко, что соседям трудно не услышать приглашение."
+ITEM.model = "models/lil_prin/monsterhunter/iceborne/food/bread_kneading_board.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 2
+ITEM.height = 2
+ITEM.cost = 20
+ITEM.rarity = 1
+ITEM.volume = 600
+ITEM.portion_amount = 100
+ITEM.stats.container = false
+ITEM.stats.hunger = 17
+ITEM.stats.thirst = -2

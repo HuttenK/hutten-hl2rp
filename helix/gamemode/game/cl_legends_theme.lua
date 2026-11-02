@@ -206,6 +206,7 @@ function U.ApplyCharacterAppearance(entity,character)
    if id and id>=0 and id<entity:GetNumBodyGroups() then entity:SetBodygroup(id,tonumber(value) or 0) end
   end
  end
+ hook.Run("ApplyCharacterModelIdentity", entity, character)
 end
 
 local PANEL = {}

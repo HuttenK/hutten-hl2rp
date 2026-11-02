@@ -1,0 +1,13 @@
+ITEM.name = "Похлёбка «Ещё полмиски»"
+ITEM.description = "Сытный суп, которым принято угощать опоздавших. Название возникло задолго до того, как кто-нибудь сумел отказаться."
+ITEM.model = "models/lil_prin/monsterhunter/iceborne/food/platters/individual/soup7.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 1
+ITEM.height = 1
+ITEM.cost = 32
+ITEM.rarity = 1
+ITEM.volume = 400
+ITEM.portion_amount = 80
+ITEM.stats.container = false
+ITEM.stats.hunger = 16
+ITEM.stats.thirst = 10

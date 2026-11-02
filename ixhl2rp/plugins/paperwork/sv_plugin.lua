@@ -45,6 +45,22 @@ do
 	end
 end
 
+local function DocumentSession(item, client, character, editing)
+	if not item or not item.isPaper or not item.user then return false end
+	local session = item.user[client]
+	if not session then return false end
+	if item.CanWrite then
+		if not istable(session) or session.character ~= character:GetID() then return false end
+		if editing and (not session.editing or not item:CanWrite(client)) then return false end
+		-- The item can be traded/dropped while an editor window is still open.
+		if item:GetOwner() ~= client then
+			local entity = item:GetEntity()
+			if not IsValid(entity) or client:GetShootPos():DistToSqr(entity:NearestPoint(client:GetShootPos())) > 128 * 128 then return false end
+		end
+	end
+	return true
+end
+
 netstream.Hook("ixWritePaper", function(client, itemID, title, text, pickup)
 	local character = client:GetCharacter()
 
@@ -52,13 +68,15 @@ netstream.Hook("ixWritePaper", function(client, itemID, title, text, pickup)
 
 	local item = ix.Item.instances[itemID]
 
-	if !item then return end
-	if !item.user[client] then return end
+	if not DocumentSession(item, client, character, true) then return end
+	if not isstring(title) or not isstring(text) or #text > PLUGIN.maxLength * 4 then return end
 
 	local owner = item:GetData("O", 0)
 	local time = item:GetData("canEdit", nil)
 
-	if owner == 0 then
+	if item.CanWrite then
+		-- Bound journals/scrolls stay editable by their author across sessions.
+	elseif owner == 0 then
 		item:SetData("canEdit", os.time() + 600)
 	elseif owner != 0 and (time and os.time() > time) then 
 		return 
@@ -79,9 +97,10 @@ netstream.Hook("ixEditPaper", function(client, itemID, fields)
 
 	local item = ix.Item.instances[itemID]
 
-	if !item then return end
-
-	if !item.user[client] then return end
+	if not DocumentSession(item, client, character, false) or not istable(fields) then return end
+	for _, value in pairs(fields) do
+		if not isstring(value) or #value > PLUGIN.maxLength * 4 then return end
+	end
 
 	local owner = item:GetData("O", 0)
 
@@ -100,7 +119,7 @@ netstream.Hook("ixWritePaperClosed", function(client, itemID)
 	local item = ix.Item.instances[itemID]
 
 	if !item then return end
-	if item.user[client] then
+	if item.user and item.user[client] then
 		item.user[client] = nil
 	end
 end)

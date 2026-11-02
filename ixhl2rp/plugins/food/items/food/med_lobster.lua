@@ -1,0 +1,13 @@
+ITEM.name = "Лобстер купеческого пира"
+ITEM.description = "Заморский деликатес в крепком панцире. Дорогое блюдо, после которого приходится работать руками — загадочные нравы у богачей."
+ITEM.model = "models/lil_prin/monsterhunter/iceborne/food/platters/individual/lobster.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 2
+ITEM.height = 2
+ITEM.cost = 80
+ITEM.rarity = 1
+ITEM.volume = 400
+ITEM.portion_amount = 80
+ITEM.stats.container = false
+ITEM.stats.hunger = 18
+ITEM.stats.thirst = 1

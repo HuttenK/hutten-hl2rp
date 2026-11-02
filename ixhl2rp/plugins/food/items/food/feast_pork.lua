@@ -1,0 +1,13 @@
+ITEM.name = "Свинина под хозяйским соусом"
+ITEM.description = "Сочное мясо в густом соусе, рецепт которого хозяйка хранит лучше семейных серебряных ложек."
+ITEM.model = "models/prop/re9_requiem_pork_dish.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 2
+ITEM.height = 1
+ITEM.cost = 50
+ITEM.rarity = 3
+ITEM.volume = 400
+ITEM.portion_amount = 80
+ITEM.stats.container = false
+ITEM.stats.hunger = 19
+ITEM.stats.thirst = 0

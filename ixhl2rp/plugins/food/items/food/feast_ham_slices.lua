@@ -1,0 +1,13 @@
+ITEM.name = "Ветчина «Всего один ломтик»"
+ITEM.description = "Тонкие ломтики ветчины, разложенные с безупречным вкусом. Название блюда обычно произносят несколько раз подряд."
+ITEM.model = "models/prop/re9_requiem_ham_slices_plate.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 2
+ITEM.height = 1
+ITEM.cost = 38
+ITEM.rarity = 3
+ITEM.volume = 300
+ITEM.portion_amount = 60
+ITEM.stats.container = false
+ITEM.stats.hunger = 15
+ITEM.stats.thirst = -1

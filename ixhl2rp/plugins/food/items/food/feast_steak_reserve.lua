@@ -1,0 +1,13 @@
+ITEM.name = "Стейк «Последнее слово повара»"
+ITEM.description = "Отборное мясо, поданное без лишней скромности. Просьбу прожарить иначе повар воспринимает как вызов на поединок."
+ITEM.model = "models/prop/re9_requiem_steak_plate.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 2
+ITEM.height = 1
+ITEM.cost = 88
+ITEM.rarity = 3
+ITEM.volume = 450
+ITEM.portion_amount = 90
+ITEM.stats.container = false
+ITEM.stats.hunger = 21
+ITEM.stats.thirst = 0

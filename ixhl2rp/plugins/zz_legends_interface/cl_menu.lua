@@ -236,7 +236,7 @@ function PANEL:SelectFaction(index)
 	if not faction or not ix.faction.CanCreate(index) or not LocalPlayer():HasWhitelist(index) then return end
 	self.draft.faction = index; self.draft.gender = (faction.genders or {1, 2})[1]
 	self.draft.genetic[3] = faction.ageSelector and 1 or 25
-	self.draft.model = 1; self.draft.sdSkin = 0; self.draft.face = {1, 1}
+	self.draft.model = 1; self.draft.sdSkin = 0; self.draft.templarEyes = 0; self.draft.face = {1, 1}
 	if faction.GenerateName then self.draft.name = faction:GenerateName(self.draft.gender) or "" end
 	self:PresentDraft()
 end
@@ -251,6 +251,7 @@ function PANEL:PresentDraft()
 	end
 	local skin = istable(entry) and entry[2] or 0
  if faction.sdSkinCounts and faction.sdSkinCounts[Path(entry)] then skin = self.draft.sdSkin or 0 end
+	if ix.Templar and ix.Templar.Supported(Path(entry)) then groups[1] = self.draft.templarEyes or 0 end
 	self.scene:Present(Path(entry), skin, groups)
  if ix.SDHair then ix.SDHair.Apply(self.scene:GetEntity(), self.draft.sdHairColor or "original") end
 end
@@ -326,6 +327,13 @@ function PANEL:Appearance()
 	end
  local path = Path(models[self.draft.model])
  local count = faction.sdSkinCounts and faction.sdSkinCounts[path]
+ if ix.Templar and ix.Templar.Supported(path) then
+  local eyes = {}
+  for value = 0, 2 do eyes[#eyes + 1] = {value = value, label = T("Variant ", "Вариант ") .. (value + 1)} end
+  U.Choice(self.content, T("EYES / MODEL", "ГЛАЗА / МОДЕЛЬ"), eyes, self.draft.templarEyes or 0, function(value)
+   self.draft.templarEyes = value; self:PresentDraft()
+  end)
+ end
  if count then
   local features = {}
   for value = 0, count-1 do features[#features+1]={value=value,label=T("Variant ","Вариант ")..value} end
@@ -386,7 +394,7 @@ function PANEL:Advance()
 		net.Start("ixCharacterChoose"); net.WriteUInt(self.selected:GetID(), 32); net.SendToServer()
 	elseif self.step == 4 then self:Submit()
 	else
-		local checks = {{"faction"}, {"name", "description", "languages"}, {"gender", "model", "genetic", "face", "sdSkin", "sdHairColor"}}
+		local checks = {{"faction"}, {"name", "description", "languages"}, {"gender", "model", "genetic", "face", "sdSkin", "sdHairColor", "templarEyes"}}
 		if not self:Validate(checks[self.step]) then return end
 		self.step = self.step + 1; self:ShowStep()
 	end

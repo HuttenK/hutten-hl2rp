@@ -1,0 +1,13 @@
+ITEM.name = "Яблоки из господского сада"
+ITEM.description = "Отборные яблоки, натёртые до блеска. Садовник говорит, что самые сладкие растут за забором; возможно, поэтому здесь именно они."
+ITEM.model = "models/prop/re9_requiem_fruits.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 2
+ITEM.height = 1
+ITEM.cost = 30
+ITEM.rarity = 3
+ITEM.volume = 500
+ITEM.portion_amount = 100
+ITEM.stats.container = false
+ITEM.stats.hunger = 9
+ITEM.stats.thirst = 8

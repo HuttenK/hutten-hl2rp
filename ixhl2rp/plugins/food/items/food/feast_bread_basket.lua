@@ -1,0 +1,13 @@
+ITEM.name = "Корзина золотых корочек"
+ITEM.description = "Белый хлеб, испечённый к господскому обеду. Пока несёшь корзину, самое трудное — донести её полной."
+ITEM.model = "models/prop/re9_requiem_french_bread.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 2
+ITEM.height = 2
+ITEM.cost = 32
+ITEM.rarity = 3
+ITEM.volume = 500
+ITEM.portion_amount = 100
+ITEM.stats.container = false
+ITEM.stats.hunger = 16
+ITEM.stats.thirst = -2

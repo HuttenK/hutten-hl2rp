@@ -1,0 +1,13 @@
+ITEM.name = "Зелень монастырского сада"
+ITEM.description = "Свежий салат с лёгкой заправкой. Настоятель считает его образцом воздержания, особенно рядом с жареным поросёнком."
+ITEM.model = "models/prop/re9_requiem_salads.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 2
+ITEM.height = 1
+ITEM.cost = 26
+ITEM.rarity = 3
+ITEM.volume = 300
+ITEM.portion_amount = 60
+ITEM.stats.container = false
+ITEM.stats.hunger = 8
+ITEM.stats.thirst = 6

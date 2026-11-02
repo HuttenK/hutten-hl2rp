@@ -1,0 +1,13 @@
+ITEM.name = "Суп из старой поваренной книги"
+ITEM.description = "Ароматный суп по рецепту с потёртой страницы. Клякса скрыла последнюю строчку, но повар уверяет, что она была необязательной."
+ITEM.model = "models/lil_prin/monsterhunter/iceborne/food/platters/individual/soup6.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 1
+ITEM.height = 1
+ITEM.cost = 30
+ITEM.rarity = 1
+ITEM.volume = 400
+ITEM.portion_amount = 80
+ITEM.stats.container = false
+ITEM.stats.hunger = 14
+ITEM.stats.thirst = 11

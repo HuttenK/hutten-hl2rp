@@ -1,0 +1,335 @@
+[
+  {
+    "id": "feast_caviar",
+    "name": "Жемчуг княжеского стола",
+    "model": "models/prop/re9_requiem_black_rice.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/feast_caviar.lua"
+  },
+  {
+    "id": "feast_chicken",
+    "name": "Курица «Праздник у старосты»",
+    "model": "models/prop/re9_requiem_chicken_plate.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/feast_chicken.lua"
+  },
+  {
+    "id": "feast_cakes",
+    "name": "Пирожные придворного сладкоежки",
+    "model": "models/prop/re9_requiem_dessert.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/feast_cakes.lua"
+  },
+  {
+    "id": "feast_bread_basket",
+    "name": "Корзина золотых корочек",
+    "model": "models/prop/re9_requiem_french_bread.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/feast_bread_basket.lua"
+  },
+  {
+    "id": "feast_apples",
+    "name": "Яблоки из господского сада",
+    "model": "models/prop/re9_requiem_fruits.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/feast_apples.lua"
+  },
+  {
+    "id": "feast_ham",
+    "name": "Окорок щедрого хозяина",
+    "model": "models/prop/re9_requiem_ham_plate.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/feast_ham.lua"
+  },
+  {
+    "id": "feast_ham_slices",
+    "name": "Ветчина «Всего один ломтик»",
+    "model": "models/prop/re9_requiem_ham_slices_plate.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/feast_ham_slices.lua"
+  },
+  {
+    "id": "feast_lamb",
+    "name": "Ягнёнок к большому пиру",
+    "model": "models/prop/re9_requiem_lamb_plate.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/feast_lamb.lua"
+  },
+  {
+    "id": "feast_lamb_ribs",
+    "name": "Рёбрышки молодого ягнёнка",
+    "model": "models/prop/re9_requiem_lamb_plate_ribs_plate.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/feast_lamb_ribs.lua"
+  },
+  {
+    "id": "feast_pork",
+    "name": "Свинина под хозяйским соусом",
+    "model": "models/prop/re9_requiem_pork_dish.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/feast_pork.lua"
+  },
+  {
+    "id": "feast_pork_platter",
+    "name": "Свиной жаркий «На всю дружину»",
+    "model": "models/prop/re9_requiem_pork_plate.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/feast_pork_platter.lua"
+  },
+  {
+    "id": "feast_salad",
+    "name": "Зелень монастырского сада",
+    "model": "models/prop/re9_requiem_salads.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/feast_salad.lua"
+  },
+  {
+    "id": "feast_meat_salad",
+    "name": "Салат охотничьего двора",
+    "model": "models/prop/re9_requiem_slices_of_meat_plate.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/feast_meat_salad.lua"
+  },
+  {
+    "id": "feast_meat_salad_fine",
+    "name": "Мясное ассорти «Листик для вида»",
+    "model": "models/prop/re9_requiem_slices_plate.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/feast_meat_salad_fine.lua"
+  },
+  {
+    "id": "feast_steak",
+    "name": "Стейк баронского стола",
+    "model": "models/prop/re9_requiem_steak_dish.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/feast_steak.lua"
+  },
+  {
+    "id": "feast_steak_reserve",
+    "name": "Стейк «Последнее слово повара»",
+    "model": "models/prop/re9_requiem_steak_plate.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/feast_steak_reserve.lua"
+  },
+  {
+    "id": "med_soup_1",
+    "name": "Густая похлёбка путника",
+    "model": "models/lil_prin/monsterhunter/iceborne/food/platters/individual/soup1.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/med_soup_1.lua"
+  },
+  {
+    "id": "med_soup_2",
+    "name": "Суп «Щедрый половник»",
+    "model": "models/lil_prin/monsterhunter/iceborne/food/platters/individual/soup2.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/med_soup_2.lua"
+  },
+  {
+    "id": "med_soup_3",
+    "name": "Похлёбка вечернего очага",
+    "model": "models/lil_prin/monsterhunter/iceborne/food/platters/individual/soup3.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/med_soup_3.lua"
+  },
+  {
+    "id": "med_soup_4",
+    "name": "Суп «Доброе утро, трактирщик»",
+    "model": "models/lil_prin/monsterhunter/iceborne/food/platters/individual/soup4.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/med_soup_4.lua"
+  },
+  {
+    "id": "med_soup_5",
+    "name": "Похлёбка ярмарочного дня",
+    "model": "models/lil_prin/monsterhunter/iceborne/food/platters/individual/soup5.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/med_soup_5.lua"
+  },
+  {
+    "id": "med_soup_6",
+    "name": "Суп из старой поваренной книги",
+    "model": "models/lil_prin/monsterhunter/iceborne/food/platters/individual/soup6.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/med_soup_6.lua"
+  },
+  {
+    "id": "med_soup_7",
+    "name": "Похлёбка «Ещё полмиски»",
+    "model": "models/lil_prin/monsterhunter/iceborne/food/platters/individual/soup7.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/med_soup_7.lua"
+  },
+  {
+    "id": "med_lobster",
+    "name": "Лобстер купеческого пира",
+    "model": "models/lil_prin/monsterhunter/iceborne/food/platters/individual/lobster.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/med_lobster.lua"
+  },
+  {
+    "id": "med_fresh_bread",
+    "name": "Хлеб из утренней печи",
+    "model": "models/lil_prin/monsterhunter/iceborne/food/bread_kneading_board.mdl",
+    "kind": "food",
+    "path": "ixhl2rp/plugins/food/items/food/med_fresh_bread.lua"
+  },
+  {
+    "id": "feast_whisky",
+    "name": "Виски «Старый бочар»",
+    "model": "models/prop/re9_requiem_whiskey.mdl",
+    "kind": "drinks",
+    "path": "ixhl2rp/plugins/food/items/drinks/feast_whisky.lua"
+  },
+  {
+    "id": "feast_wine_creek",
+    "name": "Вино «У ручья»",
+    "model": "models/prop/re9_requiem_wine_coopercreek.mdl",
+    "kind": "drinks",
+    "path": "ixhl2rp/plugins/food/items/drinks/feast_wine_creek.lua"
+  },
+  {
+    "id": "feast_wine_rose",
+    "name": "Вино «Роза на рассвете»",
+    "model": "models/prop/re9_requiem_wine_flamantrose.mdl",
+    "kind": "drinks",
+    "path": "ixhl2rp/plugins/food/items/drinks/feast_wine_rose.lua"
+  },
+  {
+    "id": "feast_wine_cellar",
+    "name": "Вино «Печать погреба»",
+    "model": "models/prop/re9_requiem_wine_hwc.mdl",
+    "kind": "drinks",
+    "path": "ixhl2rp/plugins/food/items/drinks/feast_wine_cellar.lua"
+  },
+  {
+    "id": "feast_wine_forest",
+    "name": "Вино «Тень старого леса»",
+    "model": "models/prop/re9_requiem_wine_sequola.mdl",
+    "kind": "drinks",
+    "path": "ixhl2rp/plugins/food/items/drinks/feast_wine_forest.lua"
+  },
+  {
+    "id": "med_beer_wood",
+    "name": "Пиво «Дубовая кружка»",
+    "model": "models/lil_prin/monsterhunter/iceborne/food/platters/individual/drink.mdl",
+    "kind": "drinks",
+    "path": "ixhl2rp/plugins/food/items/drinks/med_beer_wood.lua"
+  },
+  {
+    "id": "med_beer_metal",
+    "name": "Пиво «Оловянный звон»",
+    "model": "models/lil_prin/monsterhunter/iceborne/food/platters/individual/drink2.mdl",
+    "kind": "drinks",
+    "path": "ixhl2rp/plugins/food/items/drinks/med_beer_metal.lua"
+  },
+  {
+    "id": "med_water_flask",
+    "name": "Бутыль ключевой воды",
+    "model": "models/glassware.mdl",
+    "kind": "drinks",
+    "path": "ixhl2rp/plugins/food/items/drinks/med_water_flask.lua"
+  },
+  {
+    "id": "med_water_carafe",
+    "name": "Графин чистой воды",
+    "model": "models/glassware1.mdl",
+    "kind": "drinks",
+    "path": "ixhl2rp/plugins/food/items/drinks/med_water_carafe.lua"
+  },
+  {
+    "id": "furn_oaken_chest",
+    "name": "Сундук бережливого хозяина",
+    "model": "models/woodenchest.mdl",
+    "kind": "furniture",
+    "width": 8,
+    "height": 5,
+    "path": "ixhl2rp/plugins/construction/items/buildable/furn_oaken_chest.lua"
+  },
+  {
+    "id": "furn_oaken_wardrobe",
+    "name": "Шкаф доброго плотника",
+    "model": "models/wardrobe.mdl",
+    "kind": "furniture",
+    "width": 8,
+    "height": 8,
+    "path": "ixhl2rp/plugins/construction/items/buildable/furn_oaken_wardrobe.lua"
+  },
+  {
+    "id": "furn_cabinet_four",
+    "name": "Поставец хозяйского дома",
+    "model": "models/cabinets4.mdl",
+    "kind": "furniture",
+    "width": 6,
+    "height": 5,
+    "path": "ixhl2rp/plugins/construction/items/buildable/furn_cabinet_four.lua"
+  },
+  {
+    "id": "furn_cabinet_six",
+    "name": "Шкафец старого поместья",
+    "model": "models/cabinets6.mdl",
+    "kind": "furniture",
+    "width": 6,
+    "height": 6,
+    "path": "ixhl2rp/plugins/construction/items/buildable/furn_cabinet_six.lua"
+  },
+  {
+    "id": "med_armor_black",
+    "name": "Латы Чёрного караула",
+    "model": "models/players/templar_knight_02.mdl",
+    "kind": "armor",
+    "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_armor_black.lua",
+    "protection": "Тяжёлые латы: высокая защита торса, рук и ног; скорость передвижения снижена на 30%.",
+    "tier": 3
+  },
+  {
+    "id": "med_armor_white",
+    "name": "Латы Белого обета",
+    "model": "models/players/templar_knight_01.mdl",
+    "kind": "armor",
+    "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_armor_white.lua",
+    "protection": "Тяжёлые латы: высокая защита торса, рук и ног; скорость передвижения снижена на 30%.",
+    "tier": 3
+  },
+  {
+    "id": "med_mail_long",
+    "name": "Кольчуга Сумеречного дозора",
+    "model": "models/players/templar_archer_06.mdl",
+    "kind": "armor",
+    "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_mail_long.lua",
+    "protection": "Кольчуга: защита торса, частично рук и ног; скорость передвижения снижена на 15%.",
+    "tier": 2
+  },
+  {
+    "id": "med_mail_short",
+    "name": "Кольчуга Вольного копья",
+    "model": "models/players/templar_archer_04.mdl",
+    "kind": "armor",
+    "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_mail_short.lua",
+    "protection": "Кольчуга: защита торса и рук, небольшое прикрытие ног; скорость передвижения снижена на 15%.",
+    "tier": 2
+  },
+  {
+    "id": "med_tunic_black",
+    "name": "Туника Чёрного тракта",
+    "model": "models/players/templar_archer_02.mdl",
+    "kind": "armor",
+    "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_tunic_black.lua",
+    "protection": "Плотная ткань: небольшая защита прикрытых частей тела, без замедления.",
+    "tier": 1
+  },
+  {
+    "id": "med_diary",
+    "name": "Дорожный дневник",
+    "model": "models/irisitems1.mdl",
+    "kind": "writable",
+    "path": "ixhl2rp/plugins/paperwork/items/writable/med_diary.lua"
+  },
+  {
+    "id": "med_scroll",
+    "name": "Свиток добрых намерений",
+    "model": "models/irisitems3.mdl",
+    "kind": "writable",
+    "path": "ixhl2rp/plugins/paperwork/items/writable/med_scroll.lua"
+  }
+]

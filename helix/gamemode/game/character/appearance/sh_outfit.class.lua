@@ -286,6 +286,7 @@ if SERVER then
 			self.modelClass = Appearance:GetModelClass(fullBodyModel)
 			self.owner:SetSkin(0)
 			for group = 0, self.owner:GetNumBodyGroups() - 1 do self.owner:SetBodygroup(group, 0) end
+			hook.Run("ApplyCharacterModelIdentity", self.owner, self.character)
 			for parameter in pairs(self.lastPoseParams or {}) do self.owner:SetPoseParameter(parameter, 0) end
 			self.lastPoseParams = {}
 			for layer, part in pairs(self.layers) do
@@ -464,6 +465,7 @@ if SERVER then
 			end
 		end
 
+		hook.Run("ApplyCharacterModelIdentity", self.owner, self.character)
 		self:SendClientUpdate(visibleClientside)
 
 		/*

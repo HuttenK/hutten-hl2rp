@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
-  "files": 1043,
-  "lines": 162143,
+  "files": 1091,
+  "lines": 162998,
   "syntaxFailures": [],
   "entries": [
     {
@@ -839,8 +839,8 @@
     },
     {
       "path": "helix/gamemode/game/character/appearance/sh_outfit.class.lua",
-      "lines": 778,
-      "sha256": "d9e36af855a8f97121b33e58046121899a43f2f1f384d07668a053e318386fc7",
+      "lines": 780,
+      "sha256": "5a4203f920df26b325e8220203271bf4066c2917b48e51d2602c7102b7024cf5",
       "syntax": "pass",
       "networkHandlers": [
         "appearance.update"
@@ -873,8 +873,8 @@
     },
     {
       "path": "helix/gamemode/game/cl_legends_theme.lua",
-      "lines": 301,
-      "sha256": "3e5d1a5bd180311a33ce095b042a54959bf0f0ca0ddf91fbf9750dc4ad46fc4a",
+      "lines": 302,
+      "sha256": "723964392d47c283ca2e1e1b3425b9f5589f75eedc193d6695f3bd0ecd9c7ca1",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -3991,6 +3991,22 @@
       "hooks": []
     },
     {
+      "path": "ixhl2rp/plugins/construction/items/buildable/furn_cabinet_four.lua",
+      "lines": 9,
+      "sha256": "696097d91b9b2810e661f488c058b7ea0bd5695a528cdbb426d1b6c9f389f2ad",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/construction/items/buildable/furn_cabinet_six.lua",
+      "lines": 9,
+      "sha256": "ed68a1b229dfc094568a60c8a936211bb786991fdf28ec329f702cd795147b84",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
       "path": "ixhl2rp/plugins/construction/items/buildable/furn_chair_wood_modern.lua",
       "lines": 9,
       "sha256": "524700af647c921e4c3ab9c419fce338943fa5159241ac74ff911bdef9fd9c75",
@@ -4050,6 +4066,22 @@
       "path": "ixhl2rp/plugins/construction/items/buildable/furn_mug_sov.lua",
       "lines": 9,
       "sha256": "4dec8fe9014f5dde6b6e5b9cb224f0ff2f4181c6983aa47fe41ca1025667accd",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/construction/items/buildable/furn_oaken_chest.lua",
+      "lines": 9,
+      "sha256": "82e3704defd9a40c9c658c30dad3ac0c3d0c89221af47aa93ad9cc57b8e4eb88",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/construction/items/buildable/furn_oaken_wardrobe.lua",
+      "lines": 9,
+      "sha256": "74be8de1ef7e2e0b96a90327f8cdb834774c0bc3cb890d06c33f1510cf9c1a32",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -4648,6 +4680,78 @@
       "hooks": []
     },
     {
+      "path": "ixhl2rp/plugins/food/items/drinks/feast_whisky.lua",
+      "lines": 14,
+      "sha256": "91b9b3b8401bac2c6542d31649af7c6fd1f7f90b95da778800ad3ae2307cfe2c",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/drinks/feast_wine_cellar.lua",
+      "lines": 14,
+      "sha256": "e3fb35f775111b154c98b4b1bb3c795bd55f1b6f73119d86e711043f1025bdc6",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/drinks/feast_wine_creek.lua",
+      "lines": 14,
+      "sha256": "c3467f1974c6f745e83acdfc1e67a43ebdd80635c05459034833b497ae57f1e7",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/drinks/feast_wine_forest.lua",
+      "lines": 14,
+      "sha256": "18374c022afca141992236aa44cb132424bdf33393d5a0a92870b2bac03aa2b2",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/drinks/feast_wine_rose.lua",
+      "lines": 14,
+      "sha256": "c573115c5772eb561872bdfa125cb3a309ef34638d2dbc1d5636b8adfa0d5ef4",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/drinks/med_beer_metal.lua",
+      "lines": 14,
+      "sha256": "d4263616f40cb1208f07f919b310ab7654e67ba2299fd5cdc73cd507a01b62ea",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/drinks/med_beer_wood.lua",
+      "lines": 14,
+      "sha256": "70a7e5ae731146c7bb738f95ed241f2dda6f7a3d2ff20a994b5bc04c3e333623",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/drinks/med_water_carafe.lua",
+      "lines": 14,
+      "sha256": "aff83a22e0f3ade065dc10b397aa89fac1bda280c32bfd7c528228b7a7619bcc",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/drinks/med_water_flask.lua",
+      "lines": 14,
+      "sha256": "dd5f02972d472d7583f235ffebfc646e57282213df9ef0e52c49d7c0def3dee4",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
       "path": "ixhl2rp/plugins/food/items/drinks/milk_tea.lua",
       "lines": 19,
       "sha256": "c80885aa3c87c3e2683a77868bbe894a8421cea6f924c1eff5a1d80cd2fd494c",
@@ -4776,6 +4880,134 @@
       "hooks": []
     },
     {
+      "path": "ixhl2rp/plugins/food/items/food/feast_apples.lua",
+      "lines": 14,
+      "sha256": "9f53dd8b75f5052dbbaf74ba3984afe18702c63551ece44d66631ef1d8575ef4",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/feast_bread_basket.lua",
+      "lines": 14,
+      "sha256": "fc64a3a2824030485959e108351eab8cba9058d2eefe95805124be6c3a55bb57",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/feast_cakes.lua",
+      "lines": 14,
+      "sha256": "ae4b8d35ff64b69c8ff7b4da52682aa7ca3fe38f685792b82a45859f66d76d82",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/feast_caviar.lua",
+      "lines": 14,
+      "sha256": "9d68b198bb54e10d7811a4a4557b0b64a317163106649d13c2e9ec37967057e0",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/feast_chicken.lua",
+      "lines": 14,
+      "sha256": "e82dcbb44446a4db8a843fc1da2d5be95b2d2c592b815bf184919ac901fd4395",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/feast_ham.lua",
+      "lines": 14,
+      "sha256": "e6e8d0fac9ae7597430951abbb025937d899483e7c65b456b83a68b40450e437",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/feast_ham_slices.lua",
+      "lines": 14,
+      "sha256": "bfe0303a037edfce5aa9896bfca06c90bf61fe7efc4be93024b5b0ef1242349f",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/feast_lamb.lua",
+      "lines": 14,
+      "sha256": "6a856d621cf768929d1b7ae84a0152c3cde2efa5e39d4c9e5e986c30af98b7c1",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/feast_lamb_ribs.lua",
+      "lines": 14,
+      "sha256": "061039ec387ad3b5cd48634a6feec16bc67f6e90e2641bf61087ee5bd566510d",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/feast_meat_salad.lua",
+      "lines": 14,
+      "sha256": "d9d61c5c1003bd8a0c46c695ea7b3ce7bb2970053ee7192617ddae3680f9d006",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/feast_meat_salad_fine.lua",
+      "lines": 14,
+      "sha256": "99b16b165518cc8ea6a5e2abf0ddd255344e3bc72555b219d7f9773bf1865cb6",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/feast_pork.lua",
+      "lines": 14,
+      "sha256": "1aede115129181b2f4876929c22f756029f735276b6d31ccea287e16aa7c607d",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/feast_pork_platter.lua",
+      "lines": 14,
+      "sha256": "31347a1f3caa2707934fa964d42fabb50b724dfbeb7b87dbaf8d3039f3a19bc7",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/feast_salad.lua",
+      "lines": 14,
+      "sha256": "1c9a20e77cc7314cb9069d252a90eabb18ebef504fb63e0d9fd6b4b11223be44",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/feast_steak.lua",
+      "lines": 14,
+      "sha256": "09dbdd5e5afae699f6b499cc3af90297e8146d573ae1500204983d8ff4fcb280",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/feast_steak_reserve.lua",
+      "lines": 14,
+      "sha256": "8d5167c78380c5928750b20853c8b76de31d473d4071f3ada2696eea3afef0ad",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
       "path": "ixhl2rp/plugins/food/items/food/fish_soup.lua",
       "lines": 22,
       "sha256": "115ec2c95aa790507aa259276408195a65102603afb2f5c94e6e84f2d5e5fe20",
@@ -4843,6 +5075,78 @@
       "path": "ixhl2rp/plugins/food/items/food/manchesse.lua",
       "lines": 11,
       "sha256": "24eb44d8cefc0e52d4ccc61cba6d6ab187e6235acb2cfea45db13ebb4c81bd5b",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/med_fresh_bread.lua",
+      "lines": 14,
+      "sha256": "1beafc2394ddbead2055ace3fbfe38b8c633818b790967aec1efd7128c36935e",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/med_lobster.lua",
+      "lines": 14,
+      "sha256": "2c379556f7535914bd2152957187dc061c3c2c91b5ef41782240c7c013f7b591",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/med_soup_1.lua",
+      "lines": 14,
+      "sha256": "999c6ba5899eec45c05b4ee0e6478889347b5fb1d15ff612289f0039d1afe7fb",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/med_soup_2.lua",
+      "lines": 14,
+      "sha256": "721ebffe5708a8d0de625a1f87fceb9a6f4bffa15495454bacb8711985a89cb6",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/med_soup_3.lua",
+      "lines": 14,
+      "sha256": "305684a4e589d3b85ca47ef128600f21f01cc92779ee4c53a69317a325fc7e24",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/med_soup_4.lua",
+      "lines": 14,
+      "sha256": "e32853b02995c228d71dddaabf39128db003457a7be0a39dbf63813837aae3e8",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/med_soup_5.lua",
+      "lines": 14,
+      "sha256": "048a2f2d0571078de288d744d2ce90646e13ed2b814109fc529d4ff1ab15a2b5",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/med_soup_6.lua",
+      "lines": 14,
+      "sha256": "b8165c5d491cca17397eca37018c55fa3e0151d4fc5a241774fcda63bab29d75",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/food/items/food/med_soup_7.lua",
+      "lines": 14,
+      "sha256": "3bf74db55a91eac7b8e7c20c31bab1da611726346b65eaeffd7ee8709bd1a72d",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -5172,6 +5476,14 @@
       "hooks": []
     },
     {
+      "path": "ixhl2rp/plugins/items_clothing/items/base/medieval_armor.lua",
+      "lines": 72,
+      "sha256": "55adb622a11f4a8d79049dd9578bb4a820205f7eeefdda2bfba69522acba5c59",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
       "path": "ixhl2rp/plugins/items_clothing/items/clothes/sd_satchel.lua",
       "lines": 7,
       "sha256": "49f8da513bc2a15b78ee2ca83925813b94f02a0d5a6f6fc8a29eaa3fce9ef155",
@@ -5191,6 +5503,46 @@
       "path": "ixhl2rp/plugins/items_clothing/items/clothes_legacy/underwear_top.lua",
       "lines": 16,
       "sha256": "11c8eadd9b41b658b13d6ceadbceb37fe809bf420a58801d8df026fb6cef15d2",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_armor_black.lua",
+      "lines": 21,
+      "sha256": "ef3ec8d2b65fba84880fed330d08876a1f20374ac6700fb9b863638033d1c67d",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_armor_white.lua",
+      "lines": 21,
+      "sha256": "1ecbfcd4032b84bc3ee707ad431bbab0b2873e76276ae7e5c049c334d342acc9",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_mail_long.lua",
+      "lines": 21,
+      "sha256": "e531cecc9a039475a835feeee199d532886d60dbb372c50d24b42c8975a97b4e",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_mail_short.lua",
+      "lines": 21,
+      "sha256": "070ab70ae4495fa5fe14ecfc0d246a1cfad18f2820ca57b7a95c72bd16840688",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_tunic_black.lua",
+      "lines": 22,
+      "sha256": "c7cdabe86a02bb8088affd8e2f39ee81fd3da92150224c336a7701d9f8c0752a",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -6964,8 +7316,8 @@
     },
     {
       "path": "ixhl2rp/plugins/new_containers.lua",
-      "lines": 8,
-      "sha256": "6221579ebf6cfe231f522510a9c4f58582ae6e961bc854a224934e78a4630a93",
+      "lines": 12,
+      "sha256": "1ba640dcf01fc559de1b18d233aab251a5679b48d1eaad800224e69401468feb",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -7170,6 +7522,14 @@
       "hooks": []
     },
     {
+      "path": "ixhl2rp/plugins/paperwork/items/base/writable.lua",
+      "lines": 67,
+      "sha256": "753c7af640dcfa1face6b75a5d0440fe04914dd1999ffaae62e05394b38a9146",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
       "path": "ixhl2rp/plugins/paperwork/items/book.lua",
       "lines": 160,
       "sha256": "c917c32815c0b34026fbe02ce3bfed300d8e796aaaaa4bcd5fc8dd27598ae81e",
@@ -7270,6 +7630,22 @@
       "hooks": []
     },
     {
+      "path": "ixhl2rp/plugins/paperwork/items/writable/med_diary.lua",
+      "lines": 8,
+      "sha256": "c0be5825be06ddeb91a502508768f18209dbd033481b92d421fd958cb12fdb1e",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/paperwork/items/writable/med_scroll.lua",
+      "lines": 8,
+      "sha256": "be32bf0354f5a594ca54599f4c61ecb0f4d1f2ef563d02ce5508ba139a90c9df",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
       "path": "ixhl2rp/plugins/paperwork/languages/english.lua",
       "lines": 68,
       "sha256": "7f4556a3ed1f9cca6d24b3e50dd3d9a686a5304207cf9a10561e9f72b8492871",
@@ -7321,8 +7697,8 @@
     },
     {
       "path": "ixhl2rp/plugins/paperwork/sv_plugin.lua",
-      "lines": 106,
-      "sha256": "334f35de21ec843083a8f2b7807ab96f616f53d5081d59b2d3790cf40bc60598",
+      "lines": 126,
+      "sha256": "e0db367b499b77323946398a6c1b374541fdd527cce17d4a0fcec115629157ae",
       "syntax": "pass",
       "networkHandlers": [
         "ixWritePaper",
@@ -8752,6 +9128,14 @@
       ]
     },
     {
+      "path": "ixhl2rp/plugins/templar_appearance.lua",
+      "lines": 45,
+      "sha256": "294b00a809a40566f634bfbdb56eb346c864106c135b17c1da49435614d9098e",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
       "path": "ixhl2rp/plugins/testdummy/sh_plugin.lua",
       "lines": 265,
       "sha256": "415a049b7609a4be27bb8ab65c162c057b8e8beefdd8be0db313099909a18a8a",
@@ -8921,8 +9305,8 @@
     },
     {
       "path": "ixhl2rp/plugins/zz_legends_interface/cl_menu.lua",
-      "lines": 442,
-      "sha256": "df0b601a74054b4ba194c18249b512f038ab4fe5fe3dcf4ddeecf478c63103ee",
+      "lines": 450,
+      "sha256": "69bbde53c5396e8c4d9fdd5ff6cc1d45a8a17a118d1bdd17a99fb207808ae968",
       "syntax": "pass",
       "networkHandlers": [
         "ixCharacterAuthed",
@@ -9026,8 +9410,8 @@
     },
     {
       "path": "ixhl2rp/schema/factions/sh_citizen.lua",
-      "lines": 144,
-      "sha256": "0bd5d3853e7c3caaa38940cb5f764599d0ca1ee3ab1f3c4abdd85fa38f6f8738",
+      "lines": 146,
+      "sha256": "15729c10fd6fb5d7ba53c545a03a1241e63ec9a91b330f2698b5702ac9c65a2f",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []

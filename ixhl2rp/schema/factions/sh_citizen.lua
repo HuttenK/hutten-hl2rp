@@ -10,6 +10,7 @@ FACTION.bHumanVoices = true
 -- Stable server/client indices generated from the installed Sectorial District models.
 FACTION.models = {
  [1] = {
+  "models/players/templar_archer_03.mdl",
   "models/sd/citizens/citizen_male_01_hair1.mdl",
   "models/sd/citizens/citizen_male_01_hair2.mdl",
   "models/sd/citizens/citizen_male_01_hair3.mdl",
@@ -62,6 +63,7 @@ FACTION.models = {
  },
 }
 FACTION.sdSkinCounts = {
+ ["models/players/templar_archer_03.mdl"] = 12,
  ["models/sd/citizens/citizen_female_01_hair1.mdl"] = 12,
  ["models/sd/citizens/citizen_female_01_hair2.mdl"] = 12,
  ["models/sd/citizens/citizen_female_01_hair3.mdl"] = 12,

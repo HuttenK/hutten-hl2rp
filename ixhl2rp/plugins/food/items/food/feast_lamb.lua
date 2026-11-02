@@ -1,0 +1,13 @@
+ITEM.name = "Ягнёнок к большому пиру"
+ITEM.description = "Нежное мясо с душистыми травами. Блюдо примиряет соседей по столу ровно до последнего кусочка."
+ITEM.model = "models/prop/re9_requiem_lamb_plate.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 2
+ITEM.height = 2
+ITEM.cost = 85
+ITEM.rarity = 3
+ITEM.volume = 700
+ITEM.portion_amount = 100
+ITEM.stats.container = false
+ITEM.stats.hunger = 21
+ITEM.stats.thirst = 0

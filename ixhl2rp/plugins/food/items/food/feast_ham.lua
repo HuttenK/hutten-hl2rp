@@ -1,0 +1,13 @@
+ITEM.name = "Окорок щедрого хозяина"
+ITEM.description = "Целый окорок для большого стола и долгого разговора. Когда разговор заходит о разделе наследства, нож лучше отложить."
+ITEM.model = "models/prop/re9_requiem_ham_plate.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 3
+ITEM.height = 2
+ITEM.cost = 100
+ITEM.rarity = 3
+ITEM.volume = 1000
+ITEM.portion_amount = 100
+ITEM.stats.container = false
+ITEM.stats.hunger = 22
+ITEM.stats.thirst = -1

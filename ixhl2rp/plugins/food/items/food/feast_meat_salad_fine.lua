@@ -1,0 +1,13 @@
+ITEM.name = "Мясное ассорти «Листик для вида»"
+ITEM.description = "Аккуратные ломтики мяса на нарядном блюде. Зелёный листик убедительно доказывает, что это всё-таки салат."
+ITEM.model = "models/prop/re9_requiem_slices_plate.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 2
+ITEM.height = 1
+ITEM.cost = 44
+ITEM.rarity = 3
+ITEM.volume = 350
+ITEM.portion_amount = 70
+ITEM.stats.container = false
+ITEM.stats.hunger = 16
+ITEM.stats.thirst = 2

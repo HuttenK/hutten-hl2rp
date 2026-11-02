@@ -1,0 +1,13 @@
+ITEM.name = "Пирожные придворного сладкоежки"
+ITEM.description = "Нежные пирожные на парадном блюде. Их положено есть маленькими кусочками, но свидетелей можно попросить отвернуться."
+ITEM.model = "models/prop/re9_requiem_dessert.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 2
+ITEM.height = 1
+ITEM.cost = 48
+ITEM.rarity = 3
+ITEM.volume = 300
+ITEM.portion_amount = 60
+ITEM.stats.container = false
+ITEM.stats.hunger = 12
+ITEM.stats.thirst = -1

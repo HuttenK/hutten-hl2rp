@@ -1,0 +1,13 @@
+ITEM.name = "Похлёбка ярмарочного дня"
+ITEM.description = "Густая похлёбка для утомлённых торговцев. Стоит дешевле хорошей сделки и радует куда надёжнее."
+ITEM.model = "models/lil_prin/monsterhunter/iceborne/food/platters/individual/soup5.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 1
+ITEM.height = 1
+ITEM.cost = 28
+ITEM.rarity = 1
+ITEM.volume = 400
+ITEM.portion_amount = 80
+ITEM.stats.container = false
+ITEM.stats.hunger = 15
+ITEM.stats.thirst = 9

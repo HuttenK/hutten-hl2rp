@@ -1,0 +1,13 @@
+ITEM.name = "Жемчуг княжеского стола"
+ITEM.description = "Чёрная икра, поданная так чинно, будто каждая икринка имеет собственную родословную. На вкус солоновата, на цену лучше не смотреть."
+ITEM.model = "models/prop/re9_requiem_black_rice.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 1
+ITEM.height = 1
+ITEM.cost = 90
+ITEM.rarity = 3
+ITEM.volume = 150
+ITEM.portion_amount = 30
+ITEM.stats.container = false
+ITEM.stats.hunger = 10
+ITEM.stats.thirst = 1

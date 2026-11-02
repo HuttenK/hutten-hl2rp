@@ -1,0 +1,13 @@
+ITEM.name = "Суп «Щедрый половник»"
+ITEM.description = "Полная миска домашнего супа. Хозяин таверны клянётся, что добавка бесплатна; миска почему-то всё время исчезает."
+ITEM.model = "models/lil_prin/monsterhunter/iceborne/food/platters/individual/soup2.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 1
+ITEM.height = 1
+ITEM.cost = 22
+ITEM.rarity = 1
+ITEM.volume = 400
+ITEM.portion_amount = 80
+ITEM.stats.container = false
+ITEM.stats.hunger = 14
+ITEM.stats.thirst = 10

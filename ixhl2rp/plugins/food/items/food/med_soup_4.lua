@@ -1,0 +1,13 @@
+ITEM.name = "Суп «Доброе утро, трактирщик»"
+ITEM.description = "Наваристый суп для тех, чьё утро началось ближе к полудню. Трактирщик задаёт удивительно мало вопросов."
+ITEM.model = "models/lil_prin/monsterhunter/iceborne/food/platters/individual/soup4.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 1
+ITEM.height = 1
+ITEM.cost = 26
+ITEM.rarity = 1
+ITEM.volume = 400
+ITEM.portion_amount = 80
+ITEM.stats.container = false
+ITEM.stats.hunger = 12
+ITEM.stats.thirst = 13

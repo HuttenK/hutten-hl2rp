@@ -1,0 +1,13 @@
+ITEM.name = "Похлёбка вечернего очага"
+ITEM.description = "Сытный суп, пахнущий тёплым домом. Особенно убедителен, когда собственный дом остался в трёх днях пути."
+ITEM.model = "models/lil_prin/monsterhunter/iceborne/food/platters/individual/soup3.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 1
+ITEM.height = 1
+ITEM.cost = 24
+ITEM.rarity = 1
+ITEM.volume = 400
+ITEM.portion_amount = 80
+ITEM.stats.container = false
+ITEM.stats.hunger = 13
+ITEM.stats.thirst = 12

@@ -1,0 +1,13 @@
+ITEM.name = "Стейк баронского стола"
+ITEM.description = "Толстый кусок мяса с поджаристой корочкой. Барон велел готовить до совершенства и совсем немного дольше для своего казначея."
+ITEM.model = "models/prop/re9_requiem_steak_dish.mdl"
+ITEM.category = "Яства и трапезы"
+ITEM.width = 2
+ITEM.height = 1
+ITEM.cost = 72
+ITEM.rarity = 3
+ITEM.volume = 350
+ITEM.portion_amount = 70
+ITEM.stats.container = false
+ITEM.stats.hunger = 20
+ITEM.stats.thirst = 0
