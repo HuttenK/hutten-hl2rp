@@ -17,10 +17,10 @@ local RARITY_CLR = {
 
 local RARITY_CLR2 = {
 	[0] = Color(200, 200, 200, 64),
-	[1] = Color(64, 200, 64, 225),
-	[2] = Color(200, 64, 64, 225),
-	[3] = Color(150, 64, 255, 225),
-	[4] = Color(230, 188, 22, 255),
+	[1] = Color(123, 153, 98, 225),
+	[2] = Color(168, 83, 65, 225),
+	[3] = Color(146, 113, 158, 225),
+	[4] = Color(192, 160, 90, 255),
 }
 -- Native shading: no external slot-shadow material.
 
@@ -51,7 +51,7 @@ function PANEL:Paint(w, h)
 							draw_color = Color(200, 200, 60)
 							ix.gui.can_drop = true
 						else
-							draw_color = Color(200, 60, 60, 160)
+							draw_color = Color(164, 67, 45, 160)
 							ix.gui.can_drop = false
 						end
 					else
@@ -60,10 +60,10 @@ function PANEL:Paint(w, h)
 					end
 				else
 					if drop_slot.out_of_bounds or drop_slot.disabled then
-						draw_color = Color(200, 60, 60, 160)
+						draw_color = Color(164, 67, 45, 160)
 						ix.gui.can_drop = false
 					else
-						draw_color = Color(60, 200, 60, 160)
+						draw_color = Color(115, 147, 81, 160)
 						ix.gui.can_drop = true
 					end
 				end
@@ -72,22 +72,27 @@ function PANEL:Paint(w, h)
 	end
 
 
-	surface.SetDrawColor(34, 10, 17, 210)
-	surface.DrawRect(0, 0, w, h)
-
-	surface.SetDrawColor(150, 43, 57, 200)
-		surface.DrawOutlinedRect(0, 0, w, h)
+	local menu=ix.gui.menu
+	local selected=IsValid(menu) and menu.inspectedID and self.instance_ids and table.HasValue(self.instance_ids,menu.inspectedID)
+	local highlighted=selected or self:IsHovered()
+	ix.Legends.SlotFace(0,0,w,h,highlighted)
 	
-	if self.item_data then
-		surface.SetDrawColor(RARITY_CLR[self.item_data:GetRarity() or 0])
-		surface.DrawRect(1, 1, w, h)
+	if not self.item_data and self.icon then
+		local size=math.min(w,h)*.48
+		ix.Legends.Icon(self.icon,(w-size)/2,(h-size)/2,size,Color(133,115,78,90))
+	end
 
+	if self.item_data then
 		if IsValid(self.mdl) then
 			self.mdl:PaintManual()
 		end
-		
-		surface.SetDrawColor(RARITY_CLR2[self.item_data:GetRarity() or 0])
-		surface.DrawOutlinedRect(1, 1, w - 2, h - 2)
+		-- Keep the carved rim above the live model, not hidden behind its bounds.
+		ix.Legends.SlotFace(0,0,w,h,highlighted,true)
+		local rarity=self.item_data:GetRarity() or 0
+		if rarity>0 then
+		 surface.SetDrawColor(RARITY_CLR2[rarity] or RARITY_CLR2[0])
+		 surface.DrawRect(w*.25,h-4,w*.5,2)
+		end
 
 		if self.item_data.contraband then
 			surface.SetDrawColor(255, 32, 64, 200)
@@ -109,9 +114,9 @@ function PANEL:Paint(w, h)
 	end
 
 	if self.reservedTransferTarget then
-		surface.SetDrawColor(60, 200, 120, 100)
+		surface.SetDrawColor(115, 147, 81, 100)
 		surface.DrawOutlinedRect(0, 0, w, h)
-		surface.SetDrawColor(60, 200, 120, 45)
+		surface.SetDrawColor(115, 147, 81, 45)
 		surface.DrawRect(1, 1, w - 2, h - 2)
 	end
 
@@ -122,7 +127,7 @@ function PANEL:Paint(w, h)
 end
 
 surface.CreateFont("item.count", {
-	font = "Tahoma",
+	font = "Georgia",
 	extended = true,
 	size = 16,
 	weight = 500,
@@ -141,7 +146,7 @@ function PANEL:PaintOver(w, h)
 
 	if !self:IsDragging() and isnumber(self.slot_number) then
 		DisableClipping(true)
-			draw.SimpleText(self.slot_number, 'DermaDefault', math.scale(4), h - math.scale(14), Color(175, 175, 175))
+			draw.SimpleText(self.slot_number, 'legends.Small', math.scale(4), h - math.scale(14), Color(175, 175, 175))
 		DisableClipping(false)
 	end
 
@@ -198,6 +203,8 @@ function PANEL:OnMousePressed(...)
 	if self.pendingTransfer then return end
 
 	self.mouse_pressed = CurTime()
+ local menu=ix.gui.menu
+ if IsValid(menu) and menu.InspectItem and self.instance_ids then menu:InspectItem(self.instance_ids[1]) end
 	ix.inventory_drag_slot = self
 
 	self.BaseClass.OnMousePressed(self, ...)
@@ -352,7 +359,6 @@ local function SetModel(self, strModelName, skin, mat)
 end
 
 -- Reuse only the ordinary, definition-driven preview. Custom getters, LayoutIcon,
--- late custom-item content and ARC9 keep their existing model creation paths.
 -- This is one live child per slot, not an image/render-target cache: animated
 -- materials and slot overlays still draw normally and no GPU targets accumulate.
 local previewGetters = {"GetIconModel", "GetModel", "GetSkin", "GetMaterial", "GetIconData"}
@@ -413,15 +419,6 @@ function PANEL:Rebuild()
 	end
 	
 	local icon
-	if ix.WeaponAssembly and ix.WeaponAssembly.Supports(self.item_data) then
-		if IsValid(self.mdl) then self.mdl:Remove() end
-		self.mdl = vgui.Create("ixARC9ItemIcon", self)
-		self.mdl.item = self.item_data
-		self.mdl.rotated = self:IsRotated()
-		self.mdl:Dock(FILL)
-		self.mdl:SetPaintedManually(true)
-		return
-	end
 
 	if icon then
 

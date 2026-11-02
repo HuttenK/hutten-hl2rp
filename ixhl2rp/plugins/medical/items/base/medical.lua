@@ -42,9 +42,6 @@ function ItemMedical:Init()
 end
 function ItemMedical:GetCapacity() return ix.Medicine.ResourceCapacity(self) or self.stats.uses or 1 end
 function ItemMedical:GetUses()
- if self.uniqueID=="eft_surgery" and self:GetData("volume")~=nil then
-  return math.Clamp(math.floor((tonumber(self:GetData("volume")) or 0)/100),0,5)
- end
  local capacity=ix.Medicine.ResourceCapacity(self)
  if capacity then
   local value=self:GetData("volume")
@@ -56,11 +53,10 @@ function ItemMedical:GetUses()
  return math.Clamp(tonumber(self:GetData("uses", self.stats.uses or 1)) or 0,0,self:GetCapacity())
 end
 function ItemMedical:SetResource(value)
- if self.uniqueID=="eft_surgery" then self:SetData("volume",nil) end
  self:SetData(ix.Medicine.ResourceCapacity(self) and "volume" or "uses",value)
 end
 function ItemMedical:GetResourceText()
- return string.format(ix.Medicine.ResourceCapacity(self) and "Запас: %.1f / %d ед." or "Дозы: %.0f / %d",self:GetUses(),self:GetCapacity())
+ return string.format(ix.Medicine.ResourceCapacity(self) and "Запас: %.1f / %d ед." or "Применения: %.0f / %d",self:GetUses(),self:GetCapacity())
 end
 function ItemMedical:OnInstanced(isCreated)
  if isCreated then self:SetResource(self:GetCapacity()) end

@@ -65,9 +65,9 @@ end
 
 function Q:CleanCheck(raw)
     raw = istable(raw) and raw or {}
-    return {mode = raw.mode == "roll" and "roll" or "threshold", skill = self.Key(raw.skill), stat = self.Key(raw.stat),
-        skillWeight = num(raw.skillWeight, 1, 0, 100), statWeight = num(raw.statWeight, 1, 0, 100),
-        difficulty = num(raw.difficulty, 0, 0, 10000), retry = num(raw.retry, 30, 1, 86400)}
+    return {mode = raw.mode == "roll" and "roll" or "threshold",
+        difficulty = raw.mode == "roll" and num(raw.difficulty, 10, 0, 20) or 0,
+        retry = num(raw.retry, 30, 1, 86400)}
 end
 
 function Q:CleanReputationGate(raw)
@@ -175,18 +175,14 @@ function Q:Clean(kind, raw)
                 check = self:CleanCheck(row.check)}
         end
         local reward = istable(raw.reward) and raw.reward or {}
-        out.reward = {money = math.floor(num(reward.money, 0, 0, 1000000)), xp = math.floor(num(reward.xp, 0, 0, 1000000)),
-            mode = reward.mode == "leader" and "leader" or "each", items = {}, skills = {}}
-        local items, skills = list(reward.items, 16), list(reward.skills, 16)
-        if not items or not skills then return nil, "Не больше 16 строк предметов и навыков в награде." end
+        out.reward = {money = math.floor(num(reward.money, 0, 0, 1000000)),
+            mode = reward.mode == "leader" and "leader" or "each", items = {}}
+        local items = list(reward.items, 16)
+        if not items then return nil, "Не больше 16 строк предметов в награде." end
         for i, row in ipairs(items) do
             if not istable(row) then return nil, "Некорректная награда." end
             out.reward.items[i] = {item = self.Key(row.item), count = math.floor(num(row.count, 1, 1, 100)),
                 chance = math.floor(num(row.chance, 100, 0, 100) * 100 + 0.5) / 100}
-        end
-        for i, row in ipairs(skills) do
-            if not istable(row) then return nil, "Некорректная награда." end
-            out.reward.skills[i] = {skill = self.Key(row.skill), xp = math.floor(num(row.xp, 1, 1, 100000))}
         end
     elseif kind == "npc" then
         local reputation, err = self:CleanReputation(raw.reputation)
@@ -320,9 +316,7 @@ function Q:Complete(run)
 end
 
 function Q:Roll(character, check, random)
-    local skill = check.skill ~= "" and character.GetSkillModified and character:GetSkillModified(check.skill) or 0
-    local stat = check.stat ~= "" and character.GetSpecial and character:GetSpecial(check.stat, 0) or 0
     local dice = check.mode == "roll" and (random or math.random)(1, 20) or 0
-    local score = dice + skill * check.skillWeight + stat * check.statWeight
+    local score = dice
     return score >= check.difficulty, score, dice
 end

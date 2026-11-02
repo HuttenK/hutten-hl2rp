@@ -1,10 +1,6 @@
 local A,K=ix.ActionAnimations,ix.LimbIK
 A.actors=A.actors or {}
 if A.Clear then for entity in pairs(A.actors) do A.Clear(entity) end end
-local function waterKind(kind,source)
- return kind=="waterdrink" or kind=="waterfill" or (kind=="wash" and source~="" and source~=nil)
-end
-local function ease(t) t=math.Clamp(t,0,1);return t*t*(3-2*t) end
 local function rig(entity)
  local result={parents={},arms={}}
  for i=0,math.min(entity:GetBoneCount(),256)-1 do result.parents[i]=entity:GetBoneParent(i) end
@@ -30,33 +26,7 @@ function A.Goals(entity,state,matrices)
  local target=state.target;local mode=state.kind
  local phase=(CurTime()-entity:GetNW2Float("ixContextActionStarted",CurTime()))*4
  local wave=math.sin(phase)*size
- if mode=="radio" then return {L=top-right*5*size-forward*size-up*2*size},right,up end
- if mode=="bodycam" then
-  -- The camera accessory sits at the right side of the wearer's head.
-  -- Existing arm-only IK blends the reach in/out without replacing walking.
-  return {R=top+right*5*size+up*3*size+forward*size},right,up
- end
  if mode=="drink" then return {R=top+forward*5*size-up*(4+math.sin(phase)*.6)*size},right,up end
- if waterKind(mode,state.source) and IsValid(target) and state.anchor then
-  local point=target:LocalToWorld(state.anchor)
-  local offset=point-chest
-  -- IK handles differences in arm length; cap pathological distant props.
-  point=chest+offset:GetNormalized()*math.min(offset:Length(),70*size)
-  if mode=="waterdrink" then
-   local started=entity:GetNW2Float("ixContextActionStarted",CurTime())
-   local finish=entity:GetNW2Float("ixContextActionFinish",started+2)
-   local t=math.Clamp((CurTime()-started)/math.max(.1,finish-started),0,1)
-   local mouth=top+forward*5*size-up*4*size
-   local lift=ease((t-.18)/.38)
-   if t>.82 then lift=1-ease((t-.82)/.18)*.4 end
-   return {R=point+(mouth-point)*lift,L=point-right*4*size},right,up
-  elseif mode=="waterfill" then
-   local center=point-up*3*size
-   return {L=center-right*4*size,R=center+right*3*size+forward*size},right,up
-  else
-   return {L=point-right*2*size+up*wave*.35,R=point+right*2*size+forward*wave*.6},right,up
-  end
- end
  if mode=="carry" and IsValid(target) then
   local center=target:WorldSpaceCenter();local width=math.Clamp((target:OBBMaxs()-target:OBBMins()):Length()*.27,5,18)*size
   return {L=target:NearestPoint(center-right*width-forward*7*size),R=target:NearestPoint(center+right*width-forward*7*size)},right,up
@@ -66,9 +36,7 @@ function A.Goals(entity,state,matrices)
   local offset=target:WorldSpaceCenter()-center
   if offset:Length()>20*size then offset=offset:GetNormalized()*20*size end
   center=center+offset
- elseif mode=="operate" and IsValid(target) then
-  local point=target:NearestPoint(chest+forward*18*size);local offset=point-chest
-  center=chest+offset:GetNormalized()*math.min(offset:Length(),21*size)
+
  end
  return {L=center-right*4*size+up*wave*.35,R=center+right*4*size+forward*wave+up*math.cos(phase)*size},right,up
 end
@@ -112,13 +80,9 @@ hook.Add("Think","ixContextActionActors",function()
  for entity in pairs(candidates) do
   if not IsValid(entity) then A.Clear(entity) continue end
   local kind=entity:GetNW2String("ixContextAction","")
-  local source=entity:GetNW2String("ixContextActionSource","")
-  local water=waterKind(kind,source)
   local target=entity:GetNW2Entity("ixContextActionTarget")
-  local waterValid=not water or (entity:GetNW2Float("ixContextActionFinish",0)>CurTime() and IsValid(target)
-   and not (target.IsDormant and target:IsDormant()))
   local visible=not entity:IsDormant() and entity:GetPos():DistToSqr(viewer:GetPos())<1500^2
-  local active=kind~="" and waterValid and visible and not A.Conflict(entity) and A.WeaponAllows(entity,kind)
+  local active=(kind=="medical" or kind=="carry" or kind=="drink") and visible and not A.Conflict(entity) and A.WeaponAllows(entity,kind)
   local state=A.actors[entity]
   local fading=state and kind=="" and visible and not A.Conflict(entity) and A.WeaponAllows(entity,state.kind)
   if state and ((not active and not fading) or (kind~="" and state.kind~=kind) or state.model~=entity:GetModel()) then A.Clear(entity);state=nil end
@@ -133,8 +97,7 @@ hook.Add("Think","ixContextActionActors",function()
      if not ok and not state.reported then state.reported=true;ErrorNoHalt("[Contextual animations] "..err.."\n") end
     end)
    end
-   state.target=target;state.source=source
-   state.anchor=water and entity:GetNW2Vector("ixContextActionAnchor",Vector()) or nil
+   state.target=target
    state.weight=math.Approach(state.weight,1,FrameTime()*5);entity:InvalidateBoneCache()
   elseif fading then
    state.weight=math.Approach(state.weight,0,FrameTime()*6);entity:InvalidateBoneCache()
@@ -142,48 +105,10 @@ hook.Add("Think","ixContextActionActors",function()
   end
  end
 end)
-hook.Add("PostPlayerDraw","ixContextActionRadioProp",function(entity)
- local state=A.actors[entity]
- if not state then return end
- local fill=state.kind=="waterfill"
- if (state.kind~="radio" and not fill) or A.Conflict(entity) or not A.WeaponAllows(entity,state.kind) then return end
- if fill and (entity:GetNW2String("ixContextAction","")~="waterfill" or entity:GetNW2Float("ixContextActionFinish",0)<=CurTime() or not IsValid(state.target)) then
-  if IsValid(state.prop) then state.prop:Remove();state.prop=nil end
-  return
- end
- local model=entity:GetNW2String("ixContextActionProp","")
- if IsValid(state.prop) and state.prop:GetModel()~=model then state.prop:Remove();state.prop=nil end
- if model=="" then return end
- if not IsValid(state.prop) then
-  if state.propFailed==model then return end
-  if not util.IsValidModel(model) then state.propFailed=model;return end
-  state.prop=ClientsideModel(model,RENDERGROUP_OPAQUE)
-  if not IsValid(state.prop) then state.propFailed=model;return end
-  state.prop:SetNoDraw(true)
-  if fill then
-   local mins,maxs=state.prop:OBBMins(),state.prop:OBBMaxs()
-   local extent=(maxs-mins):Length()
-   -- Huge/non-finite models are not hand-held props. Keep a bare-hand fill
-   -- gesture instead of scaling a barrel or spawning extra inventory items.
-   if extent~=extent or extent<1 or extent>48 then state.prop:Remove();state.prop=nil;state.propFailed=model;return end
-   state.propCenter=(mins+maxs)*.5
-  end
- end
- local index=entity:LookupBone("ValveBiped.Bip01_"..(fill and "R_Hand" or "L_Hand"));local bone=index and entity:GetBoneMatrix(index)
- if not bone then return end
- local pos,ang
- if fill then
-  ang=Angle(0,entity:GetRenderAngles().y,0)
-  local center=state.propCenter or Vector()
-  local offset=LocalToWorld(center,Angle(),Vector(),ang)
-  pos=bone:GetTranslation()-offset
- else pos,ang=LocalToWorld(Vector(2,-1,0),Angle(0,0,180),bone:GetTranslation(),bone:GetAngles()) end
- state.prop:SetPos(pos);state.prop:SetAngles(ang);state.prop:SetupBones();state.prop:DrawModel()
-end)
 hook.Add("EntityRemoved","ixContextActionCleanup",A.Clear)
 hook.Add("ShutDown","ixContextActionCleanup",function() for entity in pairs(A.actors) do A.Clear(entity) end end)
 function A.Unload()
  for entity in pairs(A.actors) do A.Clear(entity) end
- hook.Remove("Think","ixContextActionActors");hook.Remove("PostPlayerDraw","ixContextActionRadioProp")
+ hook.Remove("Think","ixContextActionActors")
  hook.Remove("EntityRemoved","ixContextActionCleanup");hook.Remove("ShutDown","ixContextActionCleanup")
 end

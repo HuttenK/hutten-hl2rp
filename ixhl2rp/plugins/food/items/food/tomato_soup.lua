@@ -1,6 +1,6 @@
-ITEM.name = "item.tomato_soup"
-ITEM.description = "item.tomato_soup.desc"
-ITEM.model = "models/mosi/fallout4/props/food/squirrelsoup.mdl"
+ITEM.name = "Томатная похлёбка"
+ITEM.description = "Горячая похлёбка из томатов."
+ITEM.model = "models/mosi/fallout4/props/food/meats.mdl"
 ITEM.cost = 12
 ITEM.width = 1
 ITEM.height = 1

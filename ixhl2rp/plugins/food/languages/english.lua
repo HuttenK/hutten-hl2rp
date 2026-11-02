@@ -23,7 +23,6 @@ cmdCharSetHunger 				= "Set the hunger level of a character."
 cmdCharSetThirst 				= "Set the thirst level of a character."
 cmdCharSetNeeds 					= "Set both hunger and thirst levels of a character."
 
-farming.needSkill 				= "Farming skill 1 or higher required!"
 farming.seedFailed 				= "You failed to prepare the seeds!"
 
 -- Drink items

@@ -68,49 +68,9 @@ local function installSD()
  sdTimer=timer.Exists("SDDClass.Entities")
  if sdTimer then timer.Remove("SDDClass.Entities") end
 end
-local thermalOriginal,thermalWrapper
-local hot,nextHot={},0
-local function installThermal()
- if thermalWrapper or not ArcticNVGs_GetWHOT then return end
- local hooks=hook.GetTable().PreDrawEffects or {}
- thermalOriginal=hooks.ArcticNVGs_PreDrawEffects
- if not thermalOriginal then return end
- thermalWrapper=function()
-  if not ArcticNVGs_Enabled or ArcticNVGs_Inactive then return end
-  local p=LocalPlayer();if not IsValid(p) then return end
-  local goggles=ArcticNVGs and ArcticNVGs[p:GetNWInt("nvg",0)]
-  if not goggles or not goggles.ThermalVision then return end
-  seed()
-  if RealTime()>=nextHot then
-   nextHot=RealTime()+.1;hot={}
-   for e in pairs(entities) do
-    if not IsValid(e) then entities[e]=nil
-    elseif ArcticNVGs_GetWHOT(e) then hot[#hot+1]=e end
-   end
-  end
-  local blend=render.GetBlend()
-  local r,g,b=render.GetColorModulation()
-  local ok,err=xpcall(function()
-   for _,e in ipairs(hot) do if ArcticNVGs_GetWHOT(e) then
-    local brightness=.9
-    -- Match the addon's existing cooling and vehicle rules.
-    if e.ArcCW_ColdTime then brightness=(.75*e.ArcCW_ColdTime-CurTime())/30 end
-    if e:IsVehicle() then brightness=math.Clamp(e:GetVelocity():Length()/400,0,1) end
-    if brightness>0 then
-     render.SetBlend(.5);render.SuppressEngineLighting(true)
-     brightness=brightness*250;render.SetColorModulation(brightness,brightness,brightness)
-     e:DrawModel()
-    end
-   end end
-  end,debug.traceback)
-  render.SetBlend(blend);render.SuppressEngineLighting(false);render.SetColorModulation(r,g,b)
-  if not ok and not P.thermalError then P.thermalError=true;ErrorNoHalt("[Thermal render] "..err.."\n") end
- end
- hook.Add("PreDrawEffects","ArcticNVGs_PreDrawEffects",thermalWrapper)
-end
 local function install()
  if stopped then return end
- installSD();installThermal()
+ installSD()
  if sdWrapper then
   seed()
   for e in pairs(entities) do
@@ -136,10 +96,6 @@ function P:OnUnload()
   timer.Create("SDDClass.Entities",.25,0,function()
    for _,e in ipairs(ents.GetAll()) do SDDClass.Apply(e) end
   end)
- end
- local hooks=hook.GetTable().PreDrawEffects or {}
- if thermalWrapper and hooks.ArcticNVGs_PreDrawEffects==thermalWrapper then
-  hook.Add("PreDrawEffects","ArcticNVGs_PreDrawEffects",thermalOriginal)
  end
  for _,name in ipairs({"ixEfficientRenderAdapters","ixEfficientSDMaterials"}) do timer.Remove(name) end
  for _,event in ipairs({"OnEntityCreated","EntityRemoved","PostCleanupMap"}) do hook.Remove(event,"ixEfficientRenderEntities") end

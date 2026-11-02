@@ -1,9 +1,13 @@
 local PLUGIN = PLUGIN
-PLUGIN.name = "Legends Interface"
+PLUGIN.name = "Medieval Interface"
 PLUGIN.author = "Hutten"
-PLUGIN.description = "Cinematic character selection and creation."
+PLUGIN.description = "Medieval character menus, inventory and HUD."
 ix.util.Include("cl_menu.lua")
 ix.util.Include("cl_anatomy.lua")
 ix.util.Include("cl_gameplay.lua")
 
-if SERVER then resource.AddFile("materials/legends/scp/terminal.jpg") end
+if SERVER then
+ for _,name in ipairs({"cloister_v2","panel_v2","button_v2","slot_v2","slot_selected_v2","divider_v2"}) do
+  resource.AddFile("materials/"..name..".png")
+ end
+end

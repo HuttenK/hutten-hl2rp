@@ -321,15 +321,6 @@ surface.CreateFont("ui.tab.smalltitle2", {
 	antialias = true,
 })
 
-surface.CreateFont("ui.skillpoints.title", {
-	font = "Tahoma",
-	extended = true,
-	size = ix.UI.Scale(14),
-	weight = 500,
-	blursize = 0,
-	scanlines = 0,
-	antialias = true,
-})
 surface.CreateFont("ui.profile.value", {
 	font = "Tahoma",
 	extended = true,
@@ -339,17 +330,7 @@ surface.CreateFont("ui.profile.value", {
 	scanlines = 0,
 	antialias = true,
 })
-surface.CreateFont("ui.skillpoints.value", {
-	font = "Tahoma",
-	extended = true,
-	size = ix.UI.Scale(22),
-	weight = 500,
-	blursize = 0,
-	scanlines = 0,
-	antialias = true,
-})
-
-surface.CreateFont("ui.specialpoints.title", {
+surface.CreateFont("ui.identity.value", {
 	font = "Tahoma",
 	extended = true,
 	size = ix.UI.Scale(16),
@@ -498,7 +479,7 @@ function PANEL:Init()
 
 	local health = self:AddButton("hp", L("tab_health"))
 	local info = self:AddButton("info", L("tab_info"))
-	local skills = self:AddButton("skills", L("tab_characteristics"))
+
 	local perks = self:AddButton("perks", L("tab_perks"))
 
 	--health:SetDisabled(true)
@@ -669,7 +650,7 @@ function PANEL:Init()
 			local value = left_container:Add("DLabel")
 			value:SetTextColor(color_white)
 			value:SetText(text2)
-			value:SetFont("ui.specialpoints.title")
+			value:SetFont("ui.identity.value")
 			value:DockMargin(32, 5, 0, 0)
 			value:SizeToContents()
 			value:SetContentAlignment(4)
@@ -684,15 +665,13 @@ function PANEL:Init()
 		local faction = ix.faction.indices[character:GetFaction()]
 		AddLabel(L("faction"), L(faction.name))
 
-		local card = LocalPlayer():GetIDCard()
-		AddLabel(L("label_cid"), string.format("%s", card and card:GetData("cid") or L("n_a")))
 		
 		
 
 		local label = right_container:Add("DLabel")
 		label:SetTextColor(Color(255, 72, 72))
 		label:SetText(L("panel_developing"))
-		label:SetFont("ui.specialpoints.title")
+		label:SetFont("ui.identity.value")
 		label:DockMargin(16, 16, 16, 16)
 		label:SizeToContents()
 		label:SetContentAlignment(5)
@@ -791,126 +770,6 @@ function PANEL:Init()
 		right_container:InvalidateParent(true)
 	end)
 
-	self:AddTab(skills, function(self, container)
-		local right_container = container:Add("Panel")
-		right_container:Dock(RIGHT)
-		right_container:SetWide(container:GetWide() * 0.6)
-		right_container:InvalidateParent(true)
-		right_container.Paint = function(_, w, h)
-			DrawCorners(0, 0, w, h)
-		end
-
-		local label = right_container:Add("DLabel")
-		label:SetTextColor(Color(248, 64, 64))
-		label:SetText(L("tab_skills"))
-		label:SetFont("ui.tab.smalltitle")
-		label:DockMargin(8, 8, 0, 5)
-		label:SizeToContents()
-		label:SetContentAlignment(4)
-		label:Dock(TOP)
-
-		local left_container = container:Add("Panel")
-		left_container:Dock(FILL)
-		left_container:DockMargin(0, 0, 2, 0)
-		left_container:InvalidateParent(true)
-		left_container.Paint = function(_, w, h)
-			DrawCorners(0, 0, w, h)
-		end
-
-		local label = left_container:Add("DLabel")
-		label:SetTextColor(Color(248, 64, 64))
-		label:SetText(L("tab_characteristics"))
-		label:SetFont("ui.tab.smalltitle")
-		label:DockMargin(8, 8, 0, 5)
-		label:SizeToContents()
-		label:SetContentAlignment(4)
-		label:Dock(TOP)
-
-		local points_panel = left_container:Add("ui.tab.statlabel")
-		points_panel:DockMargin(16, 10, 16, 16)
-		points_panel:Dock(TOP)
-		points_panel:SetTextColor(Color(64, 255, 225, 255), color_white)
-		points_panel:SetFont("ui.skillpoints.title", "ui.skillpoints.value")
-		points_panel:SetText("", "")
-		points_panel:SizeToContents()
-		points_panel:SizeToChildren(true, true)
-
-		local character = LocalPlayer():GetCharacter()
-
-		for k, v in pairs(ix.specials.list) do
-			local name = L(v.name)
-			local desc = L(v.description)
-			local attribute = left_container:Add("ui.tab.statlabel")
-			attribute:DockMargin(32, 0, 32, 5)
-			attribute:Dock(TOP)
-			attribute:SetTextColor(color_white, Color(248, 64, 64))
-			attribute:SetFont("ui.specialpoints.title", "ui.specialpoints.title")
-			attribute:SetText(name:utf8upper(), character:GetSpecial(k))
-			attribute:SizeToContents()
-			attribute:SizeToChildren(true, true)
-			attribute:SetAutonomousTooltip(function(tooltip)
-				tooltip:SetTitle(name:utf8upper())
-				tooltip:AddSmallText(L("tab_special_tooltip"))
-				tooltip:AddDivider()
-
-				if v.Tooltip then
-					v.Tooltip(v, tooltip)
-				end
-			end)
-		end
-
-		local label = right_container:Add("DLabel")
-		label:SetTextColor(Color(255, 72, 72))
-		label:SetText(L("panel_developing"))
-		label:SetFont("ui.specialpoints.title")
-		label:DockMargin(16, 16, 16, 16)
-		label:SizeToContents()
-		label:SetContentAlignment(5)
-		label:Dock(TOP)
-
-		local categories = {}
-		for k, v in pairs(ix.skills.list) do
-			categories[k] = L(v.name)
-		end
-
-		for k, v in SortedPairs(categories) do
-			local skill = ix.skills.list[k]
-			local name = v
-			local desc = L(skill.description)
-			local value = character:GetSkill(k)
-
-			local attribute = right_container:Add("ui.tab.statlabel")
-			attribute:DockMargin(32, 0, 32, 5)
-			attribute:Dock(TOP)
-			attribute:SetTextColor(color_white, value > 0 and Color(248, 64, 64) or Color(128, 128, 128))
-			attribute:SetFont("ui.specialpoints.title", "ui.specialpoints.title")
-			attribute:SetText(name:utf8upper(), value)
-			attribute:SizeToContents()
-			attribute:SizeToChildren(true, true)
-			attribute:SetHelixTooltip(function(tooltip)
-				local title = tooltip:AddRow("name")
-				title:SetImportant()
-				title:SetText(name)
-				title:SizeToContents()
-				title:SetMaxWidth(math.max(title:GetMaxWidth(), ScrW() * 0.5))
-
-				local skills = character:GetSkills()
-				local skillData = skills[k]
-
-				if skillData then
-					local xp = tooltip:AddRow("description")
-					xp:SetText(L("tooltip.levelXP", math.Round(skillData[2]), math.Round(skill:GetRequiredXP(skills, skillData[1]))))
-					xp:SizeToContents()
-				end
-
-				local description = tooltip:AddRow("description")
-				description:SetText(desc)
-				description:SizeToContents()
-			end)
-		end
-
-		right_container:InvalidateParent(true)
-	end)
 
 	timer.Simple(0, function()
 		-- Отложенный на кадр таймер: панель меню или кнопка HP могли быть удалены
@@ -1255,23 +1114,6 @@ local buttons = {
   satchel:SetTitle(L("equip.satchel"))
  end
 
- local cid = client:GetInventory("cid"):CreatePanel(parent)
-					cid:SetSlotSize(slot_size_small)
-					cid:Rebuild()
-					cid:SizeToContents()
-					cid:MoveBelow(torso, 16)
-					cid:MoveRightOf(legs, 5)
-					cid:SetTitle(L("label_cid"))
-
-					local radio = client:GetInventory("radio"):CreatePanel(parent)
-					radio:SetSlotSize(slot_size_small)
-					radio:Rebuild()
-					radio:SizeToContents()
-					radio:MoveBelow(torso, 16)
-					radio:MoveLeftOf(legs, 5)
-					radio:SetTitle(L("tab_radio"))
-
-					-- «Защита ног» — под «Руками», в один ряд с «Рацией».
 					local legProtectionInventory = client:GetInventory("legprotection")
 
 					if legProtectionInventory then
@@ -1279,8 +1121,8 @@ local buttons = {
 						legprotection:SetSlotSize(slot_size_small)
 						legprotection:Rebuild()
 						legprotection:SizeToContents()
-						legprotection:SetY(radio:GetY())
-						legprotection:MoveLeftOf(radio, 5)
+						legprotection:SetY(legs:GetY() + legs:GetTall() + 16)
+						legprotection:MoveLeftOf(legs, 5)
 						legprotection:SetTitle(L("equip.legprotection"))
 					end
 
@@ -1497,32 +1339,6 @@ surface.CreateFont("ui.tabmenu.moneytext", {
 	antialias = true,
 })
 
-local function DrawLevelXP(x, y, w, h, delta, clr)
-	surface.SetDrawColor(ColorAlpha(clr, 200))
-	surface.DrawRect(x + 2, y + 2, (w - 4) * delta, h -4 )
-
-	surface.SetDrawColor(ColorAlpha(clr, 128))
-	surface.DrawOutlinedRect(x, y, w, h)
-
-	local offset = 2
-	surface.SetDrawColor(ColorAlpha(clr, 48))
-	surface.DrawOutlinedRect(x + offset, y + offset, w - offset * 2, h - offset * 2)
-end
-
-local yel = Color(255, 210, 0)
-local lvl_colors = {
-	[1] = color_white,
-	[2] = color_white,
-	[3] = yel,
-	[4] = yel,
-	[5] = yel,
-	[6] = Color(255, 92, 80),
-	[7] = Color(255, 92, 80),
-	[8] = Color(255, 92, 80),
-	[9] = Color(42, 237, 255),
-	[10] = Color(42, 237, 255),
-}
-
 local function FormatMoney(number)
 	local _, _, minus, int, fraction = tostring(number):find("([-]?)(%d+)([.]?%d*)")
 	int = int:reverse():gsub("(%d%d%d)", "%1,")
@@ -1636,50 +1452,14 @@ function PANEL:Init()
 	self.tab:Dock(TOP)
 	self.tab:SetTall(Scale(48))
 
-	local level_padding, level_bar_h, level_bar_w = Scale(32), math.max(8, Scale(14)), Scale(300)
-	local LEVEL_PLUGIN = ix.plugin.list["!!levelsystem"]
-
-	self.tab.Paint = function(this, w, h)
-		-- Guard: plugin or character may be unavailable
-		if not LEVEL_PLUGIN then return end
-		local character = LocalPlayer():GetCharacter()
-		if not character then return end
-
-		local x, y = level_padding, 0
-
-		local level = character:GetLevel()
-		local xp = character:GetLevelXP()
-		local xp_max = LEVEL_PLUGIN:GetRequiredLevelXP(level)
-		-- Guard: level 100 has no XP table entry (returns 0) — clamp to avoid div/0
-		local xp_delta = xp_max > 0 and math.Clamp(xp / xp_max, 0, 1) or 1
-
-		surface.SetFont("ui.tabmenu.level")
-		local level_w, level_h = surface.GetTextSize(tostring(level))
-		local level_clr = lvl_colors[level] or lvl_colors[1]
-
-		draw.SimpleText(L("tab_level"), "ui.tabmenu.leveltext", x + level_w + 8, 0, level_clr, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-		draw.SimpleText(tostring(level), "ui.tabmenu.level", x, 0, level_clr, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-
-		x = x + level_w + 8
-		y = h * 0.5 - (level_bar_h * 0.5) + 1
-
-		DrawLevelXP(x, y, level_bar_w, level_bar_h, xp_delta, level_clr)
-
-		y = y + level_bar_h
-
-		DisableClipping(true)
-			local xp_remaining = xp_max > 0 and math.Round(xp_max - xp) or 0
-			draw.SimpleText(L("tab_xp_until", xp_remaining), "ui.tabmenu.levelmini", x + level_bar_w, y, level_clr, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
-		DisableClipping(false)
-	end
-
+	local level_padding = Scale(32)
 	local credits_clr = Color(248, 64, 64, 8)
 	local credits1 = self.bottom_tab:Add("DLabel")
 	credits1:SetFont("ui.tabmenu.time")
 	credits1:Dock(RIGHT)
 	credits1:SetTextColor(credits_clr)
 	credits1:DockMargin(0, 0, level_padding * 0.5, 0)
-	credits1:SetText("AUTONOMOUS HL2 RPG — VERSION #28.6")
+	credits1:SetText("MEDIEVAL")
 	credits1:SizeToContents()
 
 	local credits1 = self.bottom_tab:Add("DLabel")

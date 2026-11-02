@@ -7,6 +7,7 @@ clmp = math.Clamp
 local aprg, aprg2 = 0, 0
 
 function ix.hud.DrawDeath()
+	if ix.Downed then aprg,aprg2=0,0;return end
 	owner = LocalPlayer()
 	ft = FrameTime()
 	w, h = ScrW(), ScrH()

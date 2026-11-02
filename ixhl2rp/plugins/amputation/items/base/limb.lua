@@ -17,8 +17,8 @@ function ItemLimb:Init()
 			local client = item.player
 			local character = client:GetCharacter()
 
-			if !ix.Amputation.HasSkill(character) then
-				client:NotifyLocalized("amputation.noSkill")
+			if !ix.Amputation.CanOperate(character) then
+				client:NotifyLocalized("amputation.noTarget")
 				return false
 			end
 
@@ -56,7 +56,7 @@ function ItemLimb:Init()
 
 			local client = item.player
 
-			return IsValid(client) and ix.Amputation.HasSkill(client:GetCharacter())
+			return IsValid(client) and ix.Amputation.CanOperate(client:GetCharacter())
 		end
 	}
 end

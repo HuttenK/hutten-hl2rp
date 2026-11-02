@@ -2261,8 +2261,6 @@ if CLIENT then
         local weapon = IsValid(forcedWeapon) and forcedWeapon or ply:GetActiveWeapon()
         local strategy = GCAL:GetWeaponBaseStrategy(ply, weapon)
         local method = methodOverride or GCAL:GetThirdPersonRenderMethod(ply, weapon, strategy)
-        local hostedByWeaponTPIK = method == "arc9_tpik"
-        if hostedByWeaponTPIK and not methodOverride then return end
 
         UpdateTracksForFrame()
         if next(GCAL.ActiveTracks) == nil then return end
@@ -2280,7 +2278,7 @@ if CLIENT then
 
         local renderContext
         if needsSolve then
-            if not hostedByWeaponTPIK then
+            do
                 ply.ixGCALReadingBase = true
                 ply:InvalidateBoneCache()
                 ply:SetupBones()
@@ -2328,14 +2326,6 @@ if CLIENT then
 
     hook.Add("PrePlayerDraw", "GCAL_RenderThirdPerson", function(ply)
         RenderThirdPersonTracks(ply)
-    end)
-
-    hook.Add("ARC9_TPIK_PostSolve", "GCAL_RenderARC9ThirdPerson", function(weapon, ply)
-        local strategy = GCAL:GetWeaponBaseStrategy(ply, weapon)
-        if not strategy then return end
-        if GCAL:GetThirdPersonRenderMethod(ply, weapon, strategy) ~= "arc9_tpik" then return end
-
-        RenderThirdPersonTracks(ply, "arc9_tpik", weapon)
     end)
 
     hook.Add("PostPlayerDraw", "GCAL_RenderThirdPersonModels", function(ply)

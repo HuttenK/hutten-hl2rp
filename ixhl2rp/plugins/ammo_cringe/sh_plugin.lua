@@ -1,12 +1,11 @@
-ix.util.Include("sh_legacy_items.lua")
 local PLUGIN = PLUGIN
-PLUGIN.name = "ARC9 Inventory Weapons"
+PLUGIN.name = "Inventory Weapons"
 PLUGIN.author = "Legends"
-PLUGIN.description = "ARC9 magazines, reserve ammunition and per-item attachment persistence."
-ix.util.Include("sh_arc9.lua")
+PLUGIN.description = "Inventory-owned weapons, slots and ammunition."
+ix.util.Include("sh_ammo.lua")
 ix.util.Include("sh_weapon_slots.lua")
 ix.util.Include("cl_weapon_holsters.lua")
-local A = ix.arc9Inventory
+local A = ix.weaponInventory
 local playerMeta = FindMetaTable("Player")
 
 local function Stack(item)
@@ -16,15 +15,7 @@ end
 local function Carried(client)
  local result = {}
  for _, weapon in ipairs(client:GetWeapons()) do
-  if IsValid(weapon) and weapon.ARC9 and weapon.ixItem and weapon.ixInventoryReady then
-   for _, key in ipairs({"Ammo", "UBGLAmmo"}) do
-    local name = weapon:GetValue(key)
-    if isstring(name) and name ~= "" then
-     local id = game.GetAmmoID(name)
-     if id and id >= 0 then result[name:lower()] = id end
-    end
-   end
-  elseif IsValid(weapon) and weapon.ixItem and weapon.ixInventoryReady then
+  if IsValid(weapon) and weapon.ixItem and weapon.ixInventoryReady then
    for _, id in ipairs({weapon:GetPrimaryAmmoType(), weapon:GetSecondaryAmmoType()}) do
     local name = id >= 0 and game.GetAmmoName(id)
     if name then result[name:lower()] = id end
@@ -137,40 +128,4 @@ if SERVER then
  function PLUGIN:InventoryItemRemoved(inventory, item, newInv)
   if item.ammo then Refresh(inventory) end
  end
- function PLUGIN:ARC9_Hook_Think(weapon)
-  if weapon.ixItem and weapon.ixInventoryReady and (weapon.ixNextItemSave or 0) < CurTime() then
-   weapon.ixNextItemSave = CurTime() + 1
-   A.Save(weapon.ixItem, weapon)
-  end
- end
- function PLUGIN:ARC9_Hook_GrenadeThrown(weapon, data)
-  local item = weapon.ixItem
-  if not item or not (item.isGrenade or item.isGrenadeARC9) or item:GetData("arc9Spent") then return end
-  item:SetData("arc9Spent", true)
-  item:SetData("ammo", 0)
-  -- Only the creation hook confirms that ARC9's weapon timer actually fired.
-  -- The timeout also consumes interrupted/failed throws without refunding them.
-  timer.Simple(math.max(0, tonumber(data.delay) or 0) + 10, function()
-   if ix.Item.instances[item.id] == item then item:Remove(true) end
-  end)
- end
- function PLUGIN:ARC9_Hook_GrenadeCreated(weapon)
-  local item = weapon.ixItem
-  if not item or not item:GetData("arc9Spent") then return end
-  timer.Simple(0, function()
-   if ix.Item.instances[item.id] == item then item:Remove(true) end
-  end)
- end
 end
-
-ix.command.Add("AmmoDebug", {
- description = "Show ARC9 inventory, magazine and reserve ammunition.",
- OnRun = function(self, client)
-  local weapon = client:GetActiveWeapon()
-  if not IsValid(weapon) or not weapon.ARC9 then return "Select an ARC9 weapon first." end
-  local name = weapon:GetValue("Ammo") or ""
-  client:ChatPrint(string.format("%s | ammo %s | clip %d | UBGL %d | reserve %d | tracked %d | item %s",
-   weapon:GetClass(), name, weapon:Clip1(), weapon:Clip2(), client:GetAmmoCount(name),
-   (client.ixAmmoTracker or {})[name:lower()] or 0, tostring(weapon.ixItem and weapon.ixItem.id)))
- end
-})

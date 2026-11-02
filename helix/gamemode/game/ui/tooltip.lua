@@ -1,25 +1,25 @@
 local Scale = ix.UI.Scale
 
 surface.CreateFont("autonomous.hint.title", {
-	font = "Tahoma",
+	font = "Georgia",
 	size = Scale(25),
 	extended = true,
 	weight = 500
 })
 surface.CreateFont("autonomous.hint.small", {
-	font = "Tahoma",
+	font = "Georgia",
 	size = Scale(16),
 	extended = true,
 	weight = 500
 })
 surface.CreateFont("autonomous.hint.info", {
-	font = "Tahoma",
+	font = "Georgia",
 	size = Scale(18),
 	extended = true,
 	weight = 500
 })
 surface.CreateFont("autonomous.hint.infobig", {
-	font = "Tahoma",
+	font = "Georgia",
 	size = Scale(18),
 	extended = true,
 	weight = 500
@@ -108,7 +108,7 @@ local pos, ang = vector_origin, Angle()
 local y = -239.188995/2
 local x = -239.188995/2
 
-local dividerColor = Color(248, 64, 64, 8)
+local dividerColor = Color(182, 151, 91, 8)
 function PANEL:AddDivider(padding)
 	padding = padding or Scale(8)
 	local divider = self.container:Add("Panel")
@@ -184,7 +184,7 @@ function PANEL:Init()
 	self.title:Dock(TOP)
 	self.title:DockMargin(0, paddingTop, 0, 0)
 	self.title:SetFont("autonomous.hint.title")
-	self.title:SetTextColor(Color(248, 64, 64))
+	self.title:SetTextColor(Color(182, 151, 91))
 	self.title:SizeToContents()
 
 	self:AddDivider()
@@ -245,9 +245,9 @@ end
 
 function PANEL:RecacheHintSize(w,h) end
 function PANEL:Paint(w,h)
- surface.SetDrawColor(12,8,13,248); surface.DrawRect(0,0,w,h)
- surface.SetDrawColor(105,38,49,230); surface.DrawOutlinedRect(0,0,w,h)
- surface.SetDrawColor(235,65,82,230); surface.DrawRect(0,0,2,h)
+ surface.SetDrawColor(15,16,14,248); surface.DrawRect(0,0,w,h)
+ surface.SetDrawColor(103,88,57,230); surface.DrawOutlinedRect(0,0,w,h)
+ surface.SetDrawColor(182,151,91,230); surface.DrawRect(0,0,2,h)
 end
 
 vgui.Register("autonomous.tooltip", PANEL, "EditablePanel")

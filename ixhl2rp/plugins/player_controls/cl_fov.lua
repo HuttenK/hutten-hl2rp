@@ -33,9 +33,7 @@ function K.FOVOffset(p,weapon,current)
  current=tonumber(current) or base
  local amount=1
  if IsValid(weapon) and weapon:GetOwner()==p then
-  if weapon.ARC9 and weapon.GetSightAmount then amount=1-math.Clamp(weapon:GetSightAmount(),0,1)
-  elseif weapon.ArcCW and weapon.GetSightDelta then amount=math.Clamp(weapon:GetSightDelta(),0,1)
-  elseif p:KeyDown(IN_ATTACK2) or current<base-1 then amount=0 end
+  if p:KeyDown(IN_ATTACK2) or current<base-1 then amount=0 end
  elseif p:KeyDown(IN_ATTACK2) or current<base-1 then amount=0 end
  return K.FOVPreferenceOffset()*amount
 end

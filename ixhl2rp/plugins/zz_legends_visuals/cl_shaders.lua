@@ -13,7 +13,7 @@ local function LoadShaders()
     if file.Read(filename, "DATA") ~= bytes then file.Write(filename, bytes) end
     local ok = game.MountGMA("data/" .. filename)
     if not ok then V.shaderStatus = "mount failed; using fallback" return end
-    for _, name in ipairs({"world", "nvg", "lens", "bright", "glow"}) do
+    for _, name in ipairs({"world", "lens", "bright", "glow"}) do
         -- Version the material as well: CreateMaterial reuses an existing name
         -- after Lua refresh, even when its vertex flags have changed.
         local mat = CreateMaterial(bundle.stem .. "_surface_v3_" .. name, "screenspace_general", {
@@ -53,7 +53,7 @@ function V.DrawShader(name, a, b, c, d)
     -- pass consumes the preceding pass rather than an earlier screen snapshot.
     render.CopyRenderTargetToTexture(input)
     mat:SetTexture("$basetexture", input)
-    -- Own the orthographic context; neither the world nor NVG caller should
+    -- Own the orthographic context; the caller should
     -- leave this quad dependent on a previous addon's camera matrices.
     cam.Start2D()
         -- Explicit pixel geometry matches VERTEXTRANSFORM's 2D projection,

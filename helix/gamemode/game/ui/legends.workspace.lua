@@ -6,9 +6,9 @@ local previous = vgui.GetControlTable("ui.tabmenu")
 PANEL.PlayerBindPress = previous.PlayerBindPress
 PANEL.OnMouseWheeled = previous.OnMouseWheeled
 PANEL.OnMousePressed = previous.OnMousePressed
-local pages = {{"launcher", "Home", "Главная"}, {"identity", "Identity", "Личность"}, {"equipment", "Equipment", "Снаряжение"},
-	{"craft", "Fabrication", "Изготовление"}, {"assignments", "Assignments", "Поручения"},
-	{"journal", "Journal", "Дневник"}, {"system", "System", "Система"}}
+local pages = {{"equipment", "Inventory", "Инвентарь"}, {"identity", "Character", "Персонаж"},
+ {"craft", "Crafting", "Ремесло"}, {"assignments", "Tasks", "Поручения"},
+ {"journal", "Journal", "Дневник"}, {"system", "Settings", "Настройки"}}
 
 -- Remember the last app for each character during this client session.
 U.lastTabByCharacter = U.lastTabByCharacter or {}
@@ -16,7 +16,7 @@ function PANEL:RememberedPage()
  local id=self.character and self.character:GetID()
  local saved=id and U.lastTabByCharacter[id]
  for _,page in ipairs(pages) do if page[1]==saved then return saved end end
- return "launcher"
+ return "equipment"
 end
 
 function PANEL:Init()
@@ -33,8 +33,7 @@ function PANEL:Init()
         button.Paint=function(this,w,h)
             local active=self.page==page[1]
             U.ButtonFace(this,w,h,false,active)
-            U.Icon(page[1],S(10),S(15),S(26),active and U.cyan or U.muted)
-            draw.SimpleText(T(page[2],page[3]),"facility.Small",w/2+S(17),h/2,active and U.ink or U.muted,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
+            draw.SimpleText(U.Fit(T(page[2],page[3]),"Heading",w-S(18)),"legends.Heading",w/2,h/2,active and U.ink or U.muted,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
         end
 		self.tabs[#self.tabs + 1] = button
 	end
@@ -55,66 +54,29 @@ function PANEL:Init()
 	self:ShowPage(self:RememberedPage()); hook.Run("OnTabMenuCreated", self)
 end
 function PANEL:PerformLayout(w,h)
- local pad=S(40)
- self.navigation:SetPos(pad,S(98)); self.navigation:SetSize(w-pad*2,S(63))
+ local pad=S(24)
+ self.navigation:SetPos(pad,S(12));self.navigation:SetSize(w-pad*2,S(47))
  local width=self.navigation:GetWide()/#self.tabs
- for i,button in ipairs(self.tabs) do button:SetPos((i-1)*width,0); button:SetSize(width-S(7),S(60)) end
- self.body:SetPos(pad,S(186)); self.body:SetSize(w-pad*2,h-S(268))
- self.returnButton:SetPos(w-pad-S(185),h-S(63)); self.returnButton:SetSize(S(185),S(40))
+ for i,button in ipairs(self.tabs) do button:SetPos((i-1)*width,0);button:SetSize(width-S(5),S(46)) end
+ self.body:SetPos(pad,S(80));self.body:SetSize(w-pad*2,h-S(155))
+ self.returnButton:SetPos(w-pad-S(170),h-S(53));self.returnButton:SetSize(S(170),S(35))
 end
 function PANEL:Paint(w,h)
- U.Rect(0,0,w,h,Color(12,3,9,145))
- U.Signal(w,h,true)
- local pad=S(40)
- U.Rect(pad,S(30),S(3),S(45),U.accent)
- U.Text("FIELDLINK / SCiPNET", "Heading",pad+S(18),S(26),U.ink)
- local title=T("Home","Главная")
- for _,page in ipairs(pages) do if page[1]==self.page then title=T(page[2],page[3]) end end
- U.Text("// "..title,"Mono",pad+S(18),S(59),U.accent)
- U.Text(os.date("%H:%M"),"Title",w-pad,S(23),U.ink,TEXT_ALIGN_RIGHT)
- U.Text("PERSONAL TERMINAL / "..os.date("%d.%m.%Y"),"Mono",w-pad,S(65),U.muted,TEXT_ALIGN_RIGHT)
- U.Rect(pad,S(174),w-pad*2,1,U.line)
- U.Rect(pad,h-S(75),w-pad*2,1,U.line)
- U.Text(T("LOCAL RECORD / PERSONAL ACCESS","ЛИЧНОЕ ДЕЛО / ПЕРСОНАЛЬНЫЙ ДОСТУП"),"Mono",pad,h-S(46),U.muted)
+ U.Backdrop(w,h)
+ local pad=S(24)
+ U.Rule(pad,S(69),w-pad*2)
+ U.Plate(pad,h-S(63),w-pad*2,S(53))
+ U.Text(T("LMB · select     Drag · move     Click · actions","ЛКМ · выбор     Перетащить · переместить     Нажатие · действия"),"Small",pad+S(20),h-S(43),U.muted)
 end
 
-function PANEL:Launcher()
- local header=self.body:Add("Panel"); header:Dock(TOP); header:SetTall(S(105)); header:DockMargin(0,0,0,S(20)); header:DockPadding(S(22),S(14),S(22),0)
- header.Paint=function(_,w,h) U.Plate(0,0,w,h,Color(48,8,23,150)) end
- U.Label(header,self.character:GetName(),"Title")
- U.Label(header,T("Your equipment, health and field records. Choose an application.","Снаряжение, здоровье и полевые записи. Выберите приложение."),"Body",U.muted)
- local scroll=U.Scroll(self.body); scroll:Dock(FILL)
- local grid=scroll:Add("DIconLayout"); grid:Dock(TOP); grid:SetSpaceX(S(16)); grid:SetSpaceY(S(16))
- local descriptions={identity={"Vitals & profile","Здоровье и профиль"},equipment={"Inventory & loadout","Инвентарь и экипировка"},craft={"Tools & fabrication","Инструменты и рецепты"},assignments={"Available work","Доступные поручения"},journal={"Your field history","Полевые записи"},system={"Session & preferences","Сеанс и настройки"}}
- local cards={}
- for _,page in ipairs(pages) do if page[1]~="launcher" then
-  local b=U.Button(grid,T(page[2],page[3]),function() self:ShowPage(page[1]) end)
-  b.Paint=function(this,w,h)
-   U.ButtonFace(this,w,h,false,false)
-   U.Plate(S(18),S(18),S(52),S(52),Color(86,13,35,180))
-   U.Icon(page[1],S(29),S(29),S(30),U.cyan)
-   U.Text(T(page[2],page[3]),"Heading",S(18),S(86))
-   local d=descriptions[page[1]]; U.Text(T(d[1],d[2]),"Small",S(18),S(115),U.muted)
-   U.Text("[ OPEN ]","Mono",w-S(18),S(24),U.accent,TEXT_ALIGN_RIGHT)
-  end
-  cards[#cards+1]=b
- end end
- grid.Think=function(this)
-  local width=this:GetWide(); if this.lastWidth==width then return end; this.lastWidth=width
-  local cols=2
-  for _,b in ipairs(cards) do b:SetSize(math.max(S(180),(width-S(16)*(cols-1))/cols),S(140)) end
-  this:InvalidateLayout(true)
- end
-end
 function PANEL:ShowPage(page)
 	if not self.character then self:Close(); return end
 	ix.Item:DropPreview(false); self:SetKeyboardInputEnabled(false)
-	self.body:Clear(); self.frames = {}; self.page = page; self.taskList = nil; self.skillRows = nil
+	self.body:Clear(); self.body.PerformLayout=nil; self.frames = {}; self.page = page; self.taskList = nil; self.inspectedID=nil
  U.lastTabByCharacter[self.character:GetID()] = page
  if not ix.option.Get("disableAnimations",false) then self.body:SetAlpha(0); self.body:AlphaTo(255,0.14,0)
  else self.body:SetAlpha(255) end
-	if page == "launcher" then self:Launcher()
- elseif page == "identity" then self:Identity()
+	if page == "identity" then self:Identity()
 	elseif page == "health" then self:Health()
 	elseif page == "equipment" then self:Equipment()
 	elseif page == "assignments" then self:Assignments()
@@ -128,76 +90,10 @@ function PANEL:Identity()
  local info=U.Scroll(header); info:Dock(FILL); info:DockMargin(0,0,S(24),0)
  U.Label(info,snapshot.faction,"Mono",U.accent)
  U.Label(info,snapshot.name,"Heading")
- U.Label(info,T("LEVEL ","УРОВЕНЬ ")..snapshot.level.."   /   "..snapshot.money,"Body",U.muted)
- local progress=U.Button(header,T("Develop attributes","Развитие атрибутов"),function()
-  self:Close(); vgui.Create("autonomous.levelup")
- end)
- progress:SetSize(S(250),S(46))
- header.PerformLayout=function(_,w) progress:SetPos(w-S(250),S(18)) end
- info:DockMargin(0,0,S(274),0)
+ U.Label(info,snapshot.money,"Body",U.muted)
  local content=self.body:Add("Panel"); content:Dock(FILL)
- local skills=content:Add("Panel"); skills:Dock(RIGHT); skills:SetWide(S(380)); skills:DockMargin(S(28),0,0,0)
- self:Skills(skills)
  local medical=content:Add("Panel"); medical:Dock(FILL)
  self:Health(medical)
-end
-
-function PANEL:Skills(parent)
- U.Label(parent,T("SKILLS","НАВЫКИ"),"Heading")
- local hint=U.Label(parent,T("Improve through practice. Hover for details.","Развиваются на практике. Наведите для описания."),"Small",U.muted)
- hint:DockMargin(0,0,0,S(18))
- local scroll=U.Scroll(parent); scroll:Dock(FILL)
- local entries={}
- for id,definition in pairs(ix.skills and ix.skills.list or {}) do
-  entries[#entries+1]={id=id,definition=definition,name=L(definition.name)}
- end
- table.sort(entries,function(a,b)
-  local ac,bc=a.definition.category or 0,b.definition.category or 0
-  if ac~=bc then return ac<bc end
-  if a.name~=b.name then return a.name<b.name end
-  return a.id<b.id
- end)
- self.skillRows={}
- if #entries==0 then U.Label(scroll,T("Skill data unavailable","Данные навыков недоступны"),"Body",U.muted) end
- for _,entry in ipairs(entries) do
-  local row=scroll:Add("DPanel"); row:Dock(TOP); row:SetTall(S(88)); row:DockMargin(0,0,S(12),S(8))
-  row:DockPadding(S(14),S(10),S(82),0)
-  local name=U.Label(row,entry.name,"Body"); name:SetMouseInputEnabled(false)
-  row.definition=entry.definition; row.skillID=entry.id
-  row.Paint=function(this,w,h)
-   U.Plate(0,0,w,h,U.panel)
-   local state=this.skillState; if not state then return end
-   U.Text(state.level.." / "..state.maximum,"Body",w-S(14),S(10),U.ink,TEXT_ALIGN_RIGHT)
-   U.Text(state.caption,"Small",S(14),h-S(36),state.modified~=state.level and U.cyan or U.muted)
-   U.Rect(S(14),h-S(14),w-S(28),S(3),U.line)
-   U.Rect(S(14),h-S(14),(w-S(28))*state.fraction,S(3),U.accent)
-  end
-  self.skillRows[#self.skillRows+1]=row
- end
- self:UpdateSkills()
-end
-
-function PANEL:UpdateSkills()
- if not self.skillRows or not self.character.GetSkills then return end
- local skills=self.character:GetSkills() or {}
- for _,row in ipairs(self.skillRows) do
-  local definition,id=row.definition,row.skillID
-  local stored=skills[id] or {0,0}
-  local level=tonumber(stored[1]) or 0
-  local xp=math.max(0,tonumber(stored[2]) or 0)
-  local maximum=definition:GetMaximum(self.character,skills)
-  local required=math.max(1,definition:GetRequiredXP(skills,level))
-  local modified=self.character:GetSkillModified(id)
-  local capped=level>=maximum
-  local caption=capped and T("Maximum level","Максимальный уровень") or (math.floor(xp).." / "..required.." XP")
-  local description=L(definition.description)
-  if modified~=level then
-   caption=caption.."  ·  "..T("Effective ","С учётом бонусов ")..modified
-   description=description.."\n"..T("Base level: ","Базовый уровень: ")..level..T(". Effective: ",". С учётом бонусов: ")..modified
-  end
-  row.skillState={level=level,xp=xp,maximum=maximum,modified=modified,caption=caption,fraction=capped and 1 or math.Clamp(xp/required,0,1)}
-  if row.skillTooltip~=description then row:SetTooltip(description); row.skillTooltip=description end
- end
 end
 
 function PANEL:Health(parent)
@@ -249,7 +145,7 @@ function PANEL:Health(parent)
   table.sort(names)
   if selected and selected.fractured then
    names[#names+1]=(state.painRemaining or 0)>0 and T("Pain relief temporarily suppresses fracture restrictions.","Обезболивающее временно подавляет ограничения перелома.") or
-    (selected.hitgroup>=6 and T("Running is blocked; walking is slower. Treat with a splint or CMS.","Бег недоступен, ходьба замедлена. Нужны шина или CMS.") or T("Two-handed weapons are unavailable. Treat with a splint or CMS.","Двуручное оружие недоступно. Нужны шина или CMS."))
+    (selected.hitgroup>=6 and T("Running is blocked; walking is slower. Treat with a splint .","Бег недоступен, ходьба замедлена. Нужны шина .") or T("Two-handed weapons are unavailable. Treat with a splint .","Двуручное оружие недоступно. Нужны шина ."))
   end
   local text=selected and (#names>0 and table.concat(names,"\n\n") or T("No visible injuries","Видимых травм нет")) or ""
   if this.lastHeading~=heading then title:SetText(heading); this.lastHeading=heading end
@@ -258,56 +154,152 @@ function PANEL:Health(parent)
  end
 end
 
-function PANEL:AddInventory(parent, inventory, title, size)
-	if not inventory then return end
-	U.Label(parent, title, "Mono", U.muted)
-	local holder = parent:Add("Panel"); holder.container = true
-	holder:Dock(TOP); holder:DockMargin(0, 0, 0, S(22))
-	local panel = inventory:CreatePanel(holder)
-	panel:SetSlotSize(size); panel:SetTitle(""); panel:Rebuild(); panel:SizeToContents()
-	panel.bNoBackgroundBlur = true; panel:Dock(FILL)
-	holder:SetTall(math.min(panel:GetTall(), S(430)))
-	return panel
+function PANEL:AddInventory(parent, inventory, title, size, icon)
+ if not inventory then return end
+ if title and title~="" then U.Label(parent,title,"Small",U.muted) end
+ local holder=parent:Add("Panel");holder.container=true
+ holder:Dock(TOP);holder:DockMargin(0,0,0,S(18))
+ local panel=inventory:CreatePanel(holder)
+ if icon then panel:SetIcon(icon) end
+ panel:SetSlotSize(size);panel:SetTitle("");panel:Rebuild();panel:SizeToContents()
+ panel.bNoBackgroundBlur=true
+ -- Do not clip a large bag to a fixed height; its parent provides scrolling.
+ local height=panel:GetTall()
+ holder:SetTall(height);panel:Dock(FILL)
+ holder.PerformLayout=function(this,w)
+  if w<=0 then return end
+  local current=panel:GetSlotSize()
+  local cw=panel:GetContentSize()
+  -- Fit presentation to this column; never alter inventory rows or regions.
+  local wanted=math.max(S(24),math.min(size,math.floor(current*(w-S(4))/math.max(1,cw))))
+  if math.abs(current-wanted)>=2 then panel:SetSlotSize(wanted);panel:Rebuild() end
+  local _,ch=panel:GetContentSize()
+  if this:GetTall()~=ch then this:SetTall(ch) end
+ end
+ return panel
+end
+function PANEL:EquipmentGeometry(w,h)
+ local gap=S(10)
+ local lw,dw=math.floor(w*.40),math.floor(w*.235)
+ return lw,dw,gap,math.max(1,w-lw-dw-gap*2)
 end
 function PANEL:Equipment()
-	local client = LocalPlayer()
-	local equipment = U.Scroll(self.body); equipment:Dock(LEFT); equipment:SetWide((ScrW() - S(96)) * 0.27)
-	equipment:DockMargin(0, 0, S(28), 0)
-	U.Label(equipment, T("LOADOUT", "ЭКИПИРОВКА"), "Heading")
-	-- The workspace has its own layout; the legacy ixEquipment panel is used
-	-- by containers/looting, not by FIELDLINK's equipment tab.
-	if ix.WeaponSlots then
-		local weapons = equipment:Add("DIconLayout"); weapons:Dock(TOP)
-		weapons:SetSpaceX(S(14)); weapons:SetSpaceY(S(14))
-		for slot = 1, ix.WeaponSlots.count do
-			local inventory = client:GetInventory("weapon" .. slot)
-			if inventory then
-				local card = weapons:Add("Panel"); card:SetSize(S(112), S(110))
-				card:SetTooltip(ix.WeaponSlots.Description(slot))
-				self:AddInventory(card, inventory, ix.WeaponSlots.Label(slot), S(56))
-			end
-		end
-		U.Label(equipment, T("Drag to equip; drag back or right-click to remove.", "Перетащите в слот. Обратно — в инвентарь или ПКМ: убрать."), "Small", U.muted)
-	end
-	local grid = equipment:Add("DIconLayout"); grid:Dock(TOP)
-	grid:SetSpaceX(S(14)); grid:SetSpaceY(S(14))
-	for _, slot in ipairs({{"head", "tab_slot_head"}, {"mask", "tab_slot_face"}, {"glasses", "equip.glasses"},
-		{"ears", "tab_slot_ears"}, {"torso", "tab_slot_torso"}, {"vest", "equip.vest"}, {"hands", "tab_slot_hands"}, {"armprotection", "equip.armprotection"},
-		{"legs", "tab_slot_legs"}, {"legprotection", "equip.legprotection"}, {"radio", "tab_radio"}, {"cid", "label_cid"}, {"backpack", "tab_backpack"}, {"satchel", "equip.satchel"}}) do
-		local inventory = client:GetInventory(slot[1])
-		if inventory then
-			local card = grid:Add("Panel"); card:SetSize(S(112), S(110))
-			self:AddInventory(card, inventory, L(slot[2]), S(56))
-		end
-	end
-	local portrait = self.body:Add("legends.portrait"); portrait:Dock(RIGHT); portrait:SetWide((ScrW() - S(96)) * 0.29)
-	portrait:PresentCharacter(self.character)
-	local bags = U.Scroll(self.body); bags:Dock(FILL)
-	U.Label(bags, T("CARRIED ITEMS", "ПРИ СЕБЕ"), "Heading")
-	self:AddInventory(bags, client:GetInventory("main"), L("inv"), S(54))
-	self.bagHost = bags; self.bagSection = bags:Add("Panel"); self.bagSection:Dock(TOP)
-	self.backpackID = nil; self:UpdateBackpack()
+ local client=LocalPlayer()
+ local leftFrame=self.body:Add("Panel")
+ leftFrame:DockPadding(S(18),S(18),S(14),S(18))
+ leftFrame.Paint=function(_,w,h) U.Plate(0,0,w,h) end
+ local left=U.Scroll(leftFrame);left:Dock(FILL)
+ local detail=self.body:Add("Panel")
+ local portrait=self.body:Add("legends.portrait")
+ portrait:PresentCharacter(self.character)
+ local vitals=self.body:Add("Panel");vitals:SetMouseInputEnabled(false)
+ vitals.Paint=function(_,w,h)
+  local char=self.character
+  U.Plate(0,0,w,h,Color(255,255,255,222))
+  U.Text(U.Fit(char:GetName(),"Heading",w-S(34)),"Heading",S(17),S(13))
+  local health=char.Health and char:Health()
+  local hp=health and health.GetPercent and health:GetPercent() or client:Health()/math.max(1,client:GetMaxHealth())
+  local stamina=client:GetLocalVar("stm",0)/math.max(1,char.GetMaxStamina and char:GetMaxStamina() or 100)
+  for i,bar in ipairs({{hp,U.rose,T("Health","Здоровье")},{stamina,Color(131,140,91),T("Stamina","Выносливость")}}) do
+   local y=S(49+(i-1)*30)
+   U.Text(bar[3],"Small",S(17),y-S(2),U.muted)
+   local x,bw=w*.44,w*.56-S(18)
+   U.Rect(x,y+S(3),bw,S(8),U.dark)
+   U.Rect(x+1,y+S(4),(bw-2)*math.Clamp(bar[1],0,1),S(6),bar[2])
+   surface.SetDrawColor(U.line);surface.DrawOutlinedRect(x,y+S(3),bw,S(8))
+  end
+  U.Icon("coins",S(16),h-S(33),S(23))
+  U.Text(ix.currency.Get(char:GetMoney()),"Body",S(48),h-S(31),U.ink)
+ end
+ detail:DockPadding(S(22),S(18),S(22),S(18))
+ detail.Paint=function(_,w,h) U.Plate(0,0,w,h) end
+ self.equipmentColumns={leftFrame,detail,portrait}
+ self.body.PerformLayout=function(_,w,h)
+  local lw,dw,gap,rw=self:EquipmentGeometry(w,h)
+  leftFrame:SetPos(0,0);leftFrame:SetSize(lw,h)
+  detail:SetPos(lw+gap,0);detail:SetSize(dw,h)
+  local rx=lw+dw+gap*2
+  portrait:SetPos(rx,0);portrait:SetSize(rw,h-S(144))
+  vitals:SetPos(rx+S(16),h-S(144));vitals:SetSize(rw-S(32),S(144))
+ end
+ U.Label(left,T("Equipment","Экипировка"),"Heading")
+ local slots=left:Add("DIconLayout");slots:Dock(TOP)
+ slots:SetSpaceX(S(5));slots:SetSpaceY(S(5));slots:DockMargin(0,0,S(8),S(21))
+ local entries={}
+ for i=1,ix.WeaponSlots.count do entries[#entries+1]={"weapon"..i,ix.WeaponSlots.Label(i)} end
+ for _,slot in ipairs({{"head","Голова"},{"mask","Лицо"},{"torso","Одежда"},{"vest","Доспех"},
+  {"hands","Кисти"},{"armprotection","Наручи"},{"legs","Ноги"},{"legprotection","Поножи"},
+  {"backpack","Сумка"},{"satchel","Подсумок"}}) do entries[#entries+1]=slot end
+ for _,entry in ipairs(entries) do
+  local inventory=client:GetInventory(entry[1])
+  if inventory then
+   local card=slots:Add("Panel");card:SetSize(S(76),S(76))
+   local grid=self:AddInventory(card,inventory,nil,S(76),entry[1])
+   if IsValid(grid) then grid:SetTooltip(entry[2]) end
+  end
+ end
+ U.Label(left,T("Belongings","При себе"),"Heading")
+ local main=client:GetInventory("main")
+ -- Same inventory APIs as containers/looting: drag, split, transfer and use
+ -- continue through the existing server validations.
+ self:AddInventory(left,main,nil,S(82))
+ self.bagHost=left;self.bagSection=left:Add("Panel");self.bagSection:Dock(TOP)
+ self.backpackID=nil;self:UpdateBackpack()
+ U.Label(detail,T("Item description","Описание предмета"),"Heading")
+ self.itemPreview=detail:Add("DModelPanel");self.itemPreview:Dock(TOP)
+ self.itemPreview:SetTall(S(225));self.itemPreview:SetFOV(40)
+ self.itemPreview:SetAmbientLight(Color(115,110,98))
+ self.itemPreview:SetDirectionalLight(BOX_FRONT,Color(235,224,193))
+ self.itemPreview.LayoutEntity=function() end
+ self.itemPreview:SetMouseInputEnabled(false);self.itemPreview:SetVisible(false)
+ local divider=detail:Add("Panel");divider:Dock(TOP);divider:SetTall(S(18))
+ divider.Paint=function(_,w,h) U.Rule(0,h/2,w) end
+ self.itemTitle=U.Label(detail,T("Select an item","Выберите предмет"),"Heading")
+ self.itemCategory=U.Label(detail,T("Click an inventory slot","Нажмите на предмет в инвентаре"),"Small",U.muted)
+ local info=U.Scroll(detail);info:Dock(FILL)
+ self.itemDescription=U.Label(info,T("Drag an item to equip it. Right-click opens its actions.","Перетащите предмет в слот, чтобы надеть его. Меню действий открывается нажатием на предмет."),"Body",U.muted)
+ self.itemFacts=U.Label(info,"","Small",U.accent)
+ self.itemAction=U.Button(detail,T("Actions","Действия"),function()
+  local item=self.inspectedID and ix.Item.instances[self.inspectedID]
+  if item then ix.Item:OpenItemMenu({item.id},item.inventory_id) end
+ end)
+ self.itemAction:Dock(BOTTOM);self.itemAction:SetVisible(false)
+ self.inspectedID=nil
+ self.body:InvalidateLayout(true)
 end
+function PANEL:InspectItem(id)
+ if self.page~="equipment" or not IsValid(self.itemTitle) then return end
+ local item=id and ix.Item.instances[id]
+ if not item then
+  self.inspectedID=nil;self.itemTitle:SetText(T("Select an item","Выберите предмет"))
+  self.itemCategory:SetText("");self.itemDescription:SetText("");self.itemFacts:SetText("")
+  self.itemPreview:SetVisible(false);self.itemAction:SetVisible(false)
+  return
+ end
+ self.inspectedID=id
+ self.itemTitle:SetText(item:GetPrintName())
+ self.itemCategory:SetText(L(item.category or "item"))
+ self.itemDescription:SetText(item:GetDescription())
+ local facts={}
+ local weight=tonumber(item:GetWeight())
+ if weight and weight>0 then facts[#facts+1]=T("Weight: ","Вес: ")..tostring(weight) end
+ local count=item.GetValue and item:GetValue()
+ if isnumber(count) and count>1 then facts[#facts+1]=T("Quantity: ","Количество: ")..count end
+ self.itemFacts:SetText(table.concat(facts,"\n"))
+ self.itemAction:SetVisible(true)
+ local model=item:GetModel()
+ if not isstring(model) or model=="" then self.itemPreview:SetVisible(false) return end
+ local preview=self.itemPreview
+ preview:SetVisible(true);preview:SetModel(model)
+ local entity=preview:GetEntity()
+ if not IsValid(entity) then preview:SetVisible(false) return end
+ entity:SetSkin(item:GetSkin())
+ local lo,hi=entity:GetRenderBounds();local center=(lo+hi)*.5
+ local radius=math.max((hi-lo):Length()*.5,4)
+ preview:SetLookAt(center)
+ preview:SetCamPos(center+Vector(1,.7,.5):GetNormalized()*radius*3.2)
+end
+
 function PANEL:UpdateBackpack()
 	if not IsValid(self.bagSection) then return end
 	local bagSlot = LocalPlayer():GetInventory("backpack")
@@ -318,7 +310,7 @@ function PANEL:UpdateBackpack()
 	local id = inventory and inventory.id or false
 	if self.backpackID == id then return end
 	self.backpackID = id; self.bagSection:Clear()
-	if inventory then self:AddInventory(self.bagSection, inventory, L("tab_backpack"), S(54)) end
+ if inventory then self:AddInventory(self.bagSection, inventory, L("tab_backpack"), S(82)) end
 	self.bagSection.PerformLayout = function(p)
 		local height = 0; for _, child in ipairs(p:GetChildren()) do local _, top, _, bottom = child:GetDockMargin(); height = height + child:GetTall() + top + bottom end
 		if p:GetTall() ~= height then p:SetTall(height) end
@@ -404,7 +396,7 @@ function PANEL:OpenModule(id)
 				-- Legacy builders measure their parent synchronously during Setup.
 				self:InvalidateLayout(true); self.body:InvalidateLayout(true)
 				host:SetSize(self.body:GetWide(), self.body:GetTall())
-				host.Paint = function(_, w, h) U.Rect(0, 0, w, h, Color(20, 9, 15, 110)) end
+				host.Paint = function(_, w, h) U.Rect(0, 0, w, h, Color(16,17,15,210)) end
 				-- A nested popup escapes the TAB body's clipping and screen position.
 				host.MakePopup = function() self:SetKeyboardInputEnabled(true) end
 				entry.OnShow(self, host); host:DockPadding(0, 0, 0, 0); self.frames[id] = host
@@ -427,7 +419,10 @@ function PANEL:Think()
 	if self:GetWide() ~= ScrW() or self:GetTall() ~= ScrH() then self:Close(); return end
 	if RealTime() < (self.nextRefresh or 0) then return end
 	self.nextRefresh = RealTime() + 0.5; self.snapshot = ix.Civic.Snapshot()
-	if self.page == "equipment" then self:UpdateBackpack() end
-	if self.page == "identity" then self:UpdateSkills() end
+	if self.page == "equipment" then
+  self:UpdateBackpack()
+  if self.inspectedID and not ix.Item.instances[self.inspectedID] then self:InspectItem(nil) end
+ end
+	if self.page == "identity" then end
 end
 vgui.Register("ui.tabmenu", PANEL, "EditablePanel")

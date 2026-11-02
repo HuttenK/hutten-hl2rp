@@ -1,6 +1,6 @@
 ITEM.name = "item.mat_resine"
 ITEM.description = "item.mat_resine.desc"
-ITEM.model = "models/illusion/eftcontainers/helix.mdl"
+ITEM.model = "models/props_junk/glassjug01.mdl"
 ITEM.category = "item.category.raw"
 ITEM.width = 2
 ITEM.height = 1

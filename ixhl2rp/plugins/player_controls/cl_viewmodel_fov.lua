@@ -7,7 +7,7 @@ function K.AdjustWeaponFOV(weapon,value)
  if not isnumber(value) or value~=value or math.abs(value)==math.huge then return value end
  local p=LocalPlayer()
  if thirdPerson or not K.CanAdjustFOV(p) or not IsValid(weapon) or weapon:GetOwner()~=p
-  or p:GetActiveWeapon()~=weapon or weapon.GetPDAEquipped then return value end
+  or p:GetActiveWeapon()~=weapon then return value end
  if weapon.GetCustomize and weapon:GetCustomize() then return value end
  if weapon.ArcCW and ArcCW and weapon.GetState and weapon:GetState()==ArcCW.STATE_CUSTOMIZE then return value end
  -- Keep the user's weapon perspective adjustment during ADS as well. The
@@ -28,7 +28,7 @@ end
 function K.UpdateWeaponFOV(p,drawViewer)
  if drawViewer~=nil then thirdPerson=drawViewer end
  local weapon=IsValid(p) and p:GetActiveWeapon()
- if not K.CanAdjustFOV(p) or thirdPerson or not IsValid(weapon) or weapon:GetOwner()~=p or weapon.GetPDAEquipped then
+ if not K.CanAdjustFOV(p) or thirdPerson or not IsValid(weapon) or weapon:GetOwner()~=p then
   K.RestoreWeaponFOV(); return
  end
  if active and active.weapon~=weapon then K.RestoreWeaponFOV() end
@@ -36,12 +36,9 @@ function K.UpdateWeaponFOV(p,drawViewer)
   local state={weapon=weapon}; active=state
   local own=weapon:GetTable()
   if isfunction(weapon.GetViewModelFOV) then
-   -- ARC9 renders the weapon, hands and attachments through this getter. A
-   -- ViewModelFOV field alone is overwritten by its own drawing code.
    local original=weapon.GetViewModelFOV
    state.originalOwn=rawget(own,"GetViewModelFOV")
    state.wrapper=function(self,...)
-    -- Protect ARC9's original getter during a transient invalid-owner frame.
     local owner=self:GetOwner()
     if not IsValid(owner) or owner~=LocalPlayer() then return isnumber(self.ViewModelFOV) and self.ViewModelFOV or 70 end
     return K.AdjustWeaponFOV(self,original(self,...))

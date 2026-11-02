@@ -1,5 +1,5 @@
-ITEM.name = "item.union_branded_apple"
-ITEM.description = "item.union_branded_apple.desc"
+ITEM.name = "Яблоко"
+ITEM.description = "Спелое яблоко."
 ITEM.model = "models/bioshockinfinite/hext_apple.mdl"
 ITEM.cost = 2
 ITEM.width = 1

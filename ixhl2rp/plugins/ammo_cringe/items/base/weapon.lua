@@ -60,10 +60,9 @@ end
 function Item:Init()
 	self.category = "item.category.weapon"
 
-	self.class = self.class or "weapon_pistol"
+	self.class = self.class or ""
 	self.weaponCategory = self.weaponCategory or 'primary'
 	self.durability = self.durability or 100
-	self.hasLock = self.hasLock or false
 
 	self.functions.equip = {
         isMulti = true,
@@ -91,21 +90,6 @@ function Item:Init()
 				end
 			end
 
-			if item.hasLock then
-				local client = item.player
-				if item:CheckBiolock(client) == false then
-					local char = client:GetCharacter()
-					local info = {severity = 5}
-					char:Health():AddHediff("sparkburn", HITGROUP_LEFTARM, info)
-					char:Health():AddHediff("sparkburn", HITGROUP_RIGHTARM, info)
-
-					client:EmitSound("weapons/stunstick/alyx_stunner1.wav")
-
-					ix.Item:DropItem(client, item.id)
-
-					return false
-				end
-			end
 			item:Equip(item.player, false, false, data and data.slot)
 		end,
 		OnCanRun = function(item)
@@ -139,7 +123,7 @@ function Item:Init()
     }
 
 	-- Ампутация: подменю на 4 конечности. Показывается только у подходящих
-	-- клинков и только хирургу с медициной 5. Жертва подтверждает согласие.
+	-- клинков. Жертва подтверждает согласие.
 	self.functions.amputate = {
 		name = "amputation.cut",
 		icon = "icon16/cut.png",
@@ -162,8 +146,8 @@ function Item:Init()
 
 			if !key or !ix.Amputation.limbs[key] then return false end
 
-			if !ix.Amputation.HasSkill(client:GetCharacter()) then
-				client:NotifyLocalized("amputation.noSkill")
+			if !ix.Amputation.CanOperate(client:GetCharacter()) then
+				client:NotifyLocalized("amputation.noTarget")
 				return false
 			end
 
@@ -189,7 +173,7 @@ function Item:Init()
 
 			local client = item.player
 
-			return IsValid(client) and ix.Amputation.HasSkill(client:GetCharacter())
+			return IsValid(client) and ix.Amputation.CanOperate(client:GetCharacter())
 		end
 	}
 
@@ -211,7 +195,6 @@ function Item:Init()
 		name = "weapon.unloadMagazine",
 		icon = "icon16/page_go.png",
 		OnRun = function(item)
-			if item.isFlamethrower then return false end
 			for _, pair in ipairs({{"ammo", "ammoType"}, {"ammo2", "ammoType2"}}) do
 				local count = item:GetData(pair[1], 0)
 				local ammo = item:GetData(pair[2])
@@ -219,22 +202,12 @@ function Item:Init()
 					local definition = weapons.Get(item.class) or {}
 					ammo = definition.Ammo or (definition.Primary or {}).Ammo
 				end
-				if count > 0 and ix.arc9Inventory.ReturnAmmo(item.player, ammo, count) then item:SetData(pair[1], 0) end
+				if count > 0 and ix.weaponInventory.ReturnAmmo(item.player, ammo, count) then item:SetData(pair[1], 0) end
 			end
 			return false
 		end,
 		OnCanRun = function(item)
-			return not item.isFlamethrower and not item:IsEquipped() and (item:GetData("ammo", 0) > 0 or item:GetData("ammo2", 0) > 0)
-		end
-	}
-
-	self.functions.examine = {
-		tip = "examineTip",
-		OnRun = function(item)
-			item.player:ChatNotifyLocalized("weaponSerialNumber", item:GetData("regid"))
-		end,
-		OnCanRun = function(item)
-			return true
+			return not item:IsEquipped() and (item:GetData("ammo", 0) > 0 or item:GetData("ammo2", 0) > 0)
 		end
 	}
 
@@ -300,26 +273,10 @@ function Item:Init()
 	})
 
 	-- Registered in both realms to keep item-data indexes identical.
-	self:AddData("arc9_atts", {Transmit = ix.transmit.all})
 	self:AddData("ammoType", {Transmit = ix.transmit.none})
 	self:AddData("ammoType2", {Transmit = ix.transmit.none})
 	self:AddData("ammo2", {Transmit = ix.transmit.owner, Write = Write_Ammo, Read = Read_Ammo})
-	self:AddData("arc9Spent", {Transmit = ix.transmit.none})
 
-end
-
-function Item:CheckBiolock(client)
-	local lockedBy = self:GetData("locked")
-
-	if client:IsOTA() then
-		return true
-	end
-
-	if !lockedBy or (lockedBy and lockedBy == client:GetCharacter():GetID()) then
-		return true
-	end
-
-	return false
 end
 
 function Item:AddDurability(x)
@@ -328,10 +285,6 @@ function Item:AddDurability(x)
 end
 
 function Item:OnInstanced(isCreated)
-    if isCreated and self.isFlamethrower then
-        self:SetData("ammo", 1000)
-        self:SetData("ammoType", "arc9_napalm")
-    end
     -- Restore surviving items saved with legacy broken condition.
     self:SetData("value", self.durability)
     self:SetData("durability", 4)
@@ -430,19 +383,9 @@ if CLIENT then
 	local penetration = L("weaponArmorPenetrationHeader")
 	local redClr = Color(200, 50, 50)
 	function Item:PopulateTooltip(tooltip)
-		if self.isGrenadeARC9 or self.isGrenade then
+		if self.weaponCategory == "utility" then
 			return
 		end
-
-		local hasLock = self.hasLock
-		
-		if hasLock then
-			local lock = tooltip:AddRowAfter("name", "lock")
-			lock:SetText(L("weaponHasBiolock"))
-			lock:SetBackgroundColor(redClr)
-			lock:SizeToContents()
-		end
-
 
 		local weapon = weapons.GetStored(self.class)
 		if weapon then
@@ -501,7 +444,7 @@ if CLIENT then
 			surface.DrawRect(w - 14, h - 14, 8, 8)
 		end
 
-		if self.isGrenadeARC9 or self.isGrenade then
+		if self.weaponCategory == "utility" then
 			return
 		end
 		

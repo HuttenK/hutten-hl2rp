@@ -28,7 +28,6 @@ function PLUGIN:SetupMove(ply, mv, cmd)
 					local ct = CurTime()
 
 					if value > 0 and (!ply.nextJumpTick or ct > ply.nextJumpTick) then
-						ply:GetCharacter():DoAction("jump")
 
 						ply.nextJumpTick = ct + 0.24
 						ply.lastVelocity = ply:GetVelocity()

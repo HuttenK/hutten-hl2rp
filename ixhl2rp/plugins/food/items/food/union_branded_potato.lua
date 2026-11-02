@@ -1,5 +1,5 @@
-ITEM.name = "item.union_branded_potato"
-ITEM.description = "item.union_branded_potato.desc"
+ITEM.name = "Картофель"
+ITEM.description = "Сырой клубень картофеля."
 ITEM.model = "models/foodnhouseholditems/potato.mdl"
 ITEM.iconCam = {
 	pos = Vector(75.648536682129, 194.7908782959, 126.34627532959),
@@ -24,10 +24,10 @@ ITEM.functions.zfarm = {
 	OnRun = function(item)
 		local client, character = item.player, item.player:GetCharacter()
 		
-		local skill = character:GetSkillModified("farming")
-		local chanceSkill = math.Remap(skill, 0, 10, 0, 75)
+		local harvestBonus = 0
+		local chanceSkill = math.Remap(harvestBonus, 0, 10, 0, 75)
 
-		if skill <= 0 then
+		if harvestBonus <= 0 then
 			client:NotifyLocalized("farming.needSkill")
 			return
 		end

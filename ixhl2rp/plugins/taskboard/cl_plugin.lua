@@ -4,23 +4,23 @@ PLUGIN.tasks   = PLUGIN.tasks or {}
 PLUGIN.details = PLUGIN.details or {} -- [taskID] = текст деталей (для принятых лично нами)
 
 -- ==== Шрифты ====
-surface.CreateFont("ixTaskTitle", { font = "Tahoma",   size = 24, weight = 800, antialias = true })
-surface.CreateFont("ixTaskHead",  { font = "Tahoma",   size = 20, weight = 700, antialias = true })
-surface.CreateFont("ixTaskItem",  { font = "Tahoma",   size = 18, weight = 700, antialias = true })
-surface.CreateFont("ixTaskBody",  { font = "Consolas", size = 16, weight = 500, antialias = true })
-surface.CreateFont("ixTaskSmall", { font = "Consolas", size = 13, weight = 500, antialias = true })
+surface.CreateFont("ixTaskTitle", { font = "Georgia",   size = 24, weight = 800, extended = true, antialias = true })
+surface.CreateFont("ixTaskHead",  { font = "Georgia",   size = 20, weight = 700, extended = true, antialias = true })
+surface.CreateFont("ixTaskItem",  { font = "Georgia",   size = 18, weight = 700, extended = true, antialias = true })
+surface.CreateFont("ixTaskBody",  { font = "Georgia", size = 16, weight = 500, extended = true, antialias = true })
+surface.CreateFont("ixTaskSmall", { font = "Georgia", size = 13, weight = 500, extended = true, antialias = true })
 
--- ==== Палитра (тёплая «бумажная», в отличие от синего ГО-терминала) ====
+-- ==== Палитра (кожа и потёртая латунь) ====
 PLUGIN.Colors = {
 	bg    = Color(20, 18, 14, 255),
 	panel = Color(30, 27, 21, 255),
 	row   = Color(38, 34, 26, 220),
 	rowH  = Color(58, 50, 34, 235),
-	line  = Color(210, 170, 90),
+	line  = Color(182,151,91),
 	lineD = Color(120, 95, 50),
 	text  = Color(228, 220, 200),
 	dim   = Color(150, 138, 112),
-	green = Color(120, 200, 120),
+	green = Color(139,157,107),
 	red   = Color(210, 80, 60),
 }
 
@@ -36,7 +36,7 @@ netstream.Hook("taskboard.sync", function(tasks)
 	end
 	hook.Run("CivicTasksUpdated")
 
-	-- обновить открытые экраны терминалов «вживую»
+	-- обновить окна доски «вживую»
 	for _, ent in ipairs(ents.FindByClass("ix_taskboard")) do
 		if (IsValid(ent.panel) and ent.panel.Refresh) then
 			ent.panel:Refresh()
@@ -109,3 +109,19 @@ function PLUGIN:WrapText(text, font, maxWidth)
 
 	return lines
 end
+
+netstream.Hook("taskboard.open",function(entity)
+ if not IsValid(entity) or entity:GetClass()~="ix_taskboard" then return end
+ if IsValid(ix.gui.noticeBoard) then ix.gui.noticeBoard:Remove() end
+ local frame=vgui.Create("DFrame")
+ ix.gui.noticeBoard=frame
+ frame:SetTitle("Доска объявлений")
+ frame:SetSize(math.min(632,ScrW()-24),math.min(404,ScrH()-24))
+ frame:Center();frame:MakePopup()
+ local board=frame:Add("ixTaskBoardScreen")
+ board:Dock(FILL);board.entity=entity;entity.panel=board
+ frame.Think=function(self)
+  local p=LocalPlayer()
+  if not IsValid(entity) or not IsValid(p) or not p:GetCharacter() or p:GetPos():DistToSqr(entity:GetPos())>180^2 then self:Remove() end
+ end
+end)

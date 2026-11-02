@@ -1,3 +1,0 @@
--- Visor rendering is implemented in the CLIENT block of sh_plugin.lua.
--- This file intentionally left empty to avoid duplicate hook registrations.
-if not CLIENT then return end

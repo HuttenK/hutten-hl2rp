@@ -1,5 +1,5 @@
-ITEM.name = "item.ziptie"
-ITEM.description = "item.ziptie.desc"
+ITEM.name = "Кандалы"
+ITEM.description = "Железные кандалы для пленников."
 ITEM.model = "models/katharsmodels/handcuffs/handcuffs-1.mdl"
 ITEM.rarity = 1
 ITEM.max_stack = 8

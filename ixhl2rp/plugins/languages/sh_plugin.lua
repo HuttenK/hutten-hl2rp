@@ -55,16 +55,6 @@ ix.char.RegisterVar("languages", {
 	end,
 })
 
-ix.char.RegisterVar("learningLanguages", {
-	field = "learningLanguages",
-	fieldType = ix.type.text,
-	default = {},
-	Net = {
-		Transmit = ix.transmit.owner
-	},
-	isLocal = true,
-	bNoDisplay = true
-})
 
 do
 	local meta = FindMetaTable("Player")
@@ -76,28 +66,6 @@ do
 	end
 end
 
-do
-	-- Vortigese
-	local language = ix.languages:New()
-	language.uniqueID = "vort"
-	language.name = "language.name.vort"
-	language.chat = "language.chat.vort"
-	language.color = Color(51, 153, 51)
-	language.notSelectable = true
-	function language:PlayerCanSpeakLanguage(client)
-		if (client:Team() == FACTION_VORTIGAUNT) then
-			return true
-		end
-
-		return ix.languages:PlayerCanSpeakLanguage(self.uniqueID, client)
-	end
-	language.gibberish = {"ahglah", "ahhhr", "alla", "allu", "baah", "beh", "bim", "buu", "chaa", "chackt", "churr", "dan", "darr", "dee", "eeya", "ge", "ga", "gaharra",
-	"gaka", "galih", "gallalam", "gerr", "gog", "gram", "gu", "gunn", "gurrah", "ha", "hallam", "harra", "hen", "hi", "jah", "jurr", "kallah", "keh", "kih",
-	"kurr", "lalli", "llam", "lih", "ley", "lillmah", "lurh", "mah", "min", "nach", "nahh", "neh", "nohaa", "nuy", "raa", "ruhh", "rum", "saa", "seh", "sennah",
-	"shaa", "shuu", "surr", "taa", "tan", "tsah", "turr", "uhn", "ula", "vahh", "vech", "veh", "vin", "voo", "vouch", "vurr", "xkah", "xih", "zurr"}
-
-	language:Register()
-end
 
 do
 	-- Danish
@@ -416,7 +384,7 @@ do
 	"chathair", "rudaí i gcuimhne", "Uaireanta", "smaoiním", "páirceanna", "dúchais", "cúis imní dúinn", "gcéad", "ghlúin", "súil", "atá", "caite", "chách", "thubaiste",
 	"fhios", "phláinéid", "éiceachóras", "ndáiríre", "ndeachaigh", "dhílseoir", "bheith", "bealach", "An é", "agam", "ráflaí", "chuala", "Tá mé tinn", "níos fearr", "Tíogair",
 	"Longthógáil", "Gáire", "Pólus", "Impireacht", "Úll", "prátaí", "go raibh maith agat", "Is amadán thú", "tharrang", "thar maoil", "fuar"}
-	
+
 	language:Register()
 end
 
@@ -596,76 +564,4 @@ do
 	"⏃⟟", "⎐⟟", "☊⍜⍀⟒", "⌿⍜⍙⟒⍀", "⎅⟒⌇⏁⍀⎍☊⏁⟟⍜⋏", "⍀⎍⟟⋏", "⌰⏃⌇⏁⌰⊬", "⍙⟒"}
 
 	language:Register()
-end
-
-do
-	-- Combine
-	local language = ix.languages:New()
-	language.uniqueID = "imp"
-	language.name = "language.name.imp"
-	language.chat = "language.chat.imp"
-	language.icon = "icon16/briefcase.png"
-	language.notSelectable = true
-	language.color = Color(145, 45, 6)
-	language.gibberish = {"⊑⟒⌰⌰⍜", "⍙⊑⊬", "⏃", "⋏⍜", "⍙⊑⏃⏁", "⟟⋔⌿⍜⌇⌇⟟⏚⌰⟒", "⌿⍜⌇⌇⟟⏚⌰⟒", "☊⏃⋏'⏁", "⌿⍀⍜☌⍀⏃⋔⋔⟟⋏☌", "☊⍜⎅⟟⋏☌", "⋉⟒⏁⏃", "⌇⌿⊑⟒⍀⟟☊⏃⌰", "⌇⟒☊⏁⍜⍀",
-	"⎎⎍⋏⋏⊬", "⍾⍙⟒⍀⏁⊬", "⎅⏃", "⋏⍜⎍", "⊑⍜⍙", "⍙⊑⟒⋏", "⋏⟒⎐⟒⍀", "⊬⟒⏃⍀⌇", "⎅⏃⊬⌇", "⋔⍜⋏⏁⊑⌇", "⎅⟒☊⏃⎅⟒⌇", "☊⟒⋏⏁⎍⍀⊬", "⊬⍜⍀☍", "⋏⟒⍙", "⌇⍜⋔⟒⍙⊑⏃⏁", "⌇⏃⎎⟒", "⎎⍜⌰⌰⍜⍙",
-	"☊⍜⋔⟒", "⍙⟟⏁⊑", "⋔⟒", "⋏⍜⍙", "⍙⏃⏁⟒⍀", "⎎⍜⍜⎅", "⟊⏃☊⍜⏚", "⟊⍜⏚", "⏁⟟⌇", "⎍⋏⍙⟟⌇⟒", "⍙⟟⌇⟒", "⏁⍜", "☌⍜", "⏁⊑⟒⍀⟒","⌿⍜⌿", "⌿⍜☌☌⟒⍀⌇", "⏁⟟⏁", "☊⏃", "☊⌿", "⍜⏁⏃", "⌇⊬⋏⏁⊑", "⌇⏁⍀⟟⎅⟒⍀",
-	"⏃⟟⍀⍙⏃⏁☊⊑", "☌⍀⍜⎍⋏⎅⍙⏃⏁☊⊑", "☊⟟⏁⊬", "⋔⏃⌿", "⋔⍜", "⏚⍜⏃⊑", "☊⟟⏁⟟⋉⟒⋏", "⎅⟒⎎⟒⋏⌇⟒", "⌇⟒☊⏁⍜⍀ ⌇⟒☊⎍⍀⟒", "⏚⏃⋏", "⎅⟒⏃⏁⊑", "☌⍜⏁", "⌰⍜", "☌⍀⟒⋏⏃⎅⟒", "☊⎎", "☍⍜⌿", "☊⍜⌿",
-	"⌇⟒", "⍙⊑⟟⋏⟒", "⏚⍜⋔⏚", "⋏⟒☌⏃⏁⟟⎐⟒", "⏃⎎⎎⟟⍀⋔⏃⏁⟟⎐⟒", "⍜⎐⟒⍀⍙⏃⏁☊⊑", "⌇⏁⏃⋏⎅⏚⊬", "⊬⏃⋔⏃⏁⍜", "⊬⏃", "⊬⍜", "⌇⏁⍜⌿", "☌⟒⏁ ⎅⍜⍙⋏", "⏚⏃☊☍", "⍾⍙", "⎎⏃⟟⌰⎍⍀⟒", "⟒⋏⍜⎍☌⊑", "☌⏃⊬",
-	"⏃⏁⌰⟒", "⎅⟒⎐", "⎐⟒☊⏁⍜⍀", "⊑⍜⌿⌿⟒⍀", "⋔⟟⋏⟒", "⋔⟟⋏⟒⎎⟟⟒⌰⎅", "⋔⟟⌰⟟⏁⏃⍀⊬", "☊⍜⋏⌇☊⍀⟟⌿⏁", "⏁⍀⟒⌇⌿⏃⌇⌇⟒⍀", "⎍⋏⟟⏁⟒", "⎍⋏⟟⎎⊬", "⋉⏃⏁", "⟊⏃☊☍", "⍙⊑⊬ ⍙⍜⎍⌰⎅ ⊬⍜⎍ ⎅⍜ ⏁⊑⟟⌇ ⏁⍜ ⋔⟒",
-	"⏃⟟", "⎐⟟", "☊⍜⍀⟒", "⌿⍜⍙⟒⍀", "⎅⟒⌇⏁⍀⎍☊⏁⟟⍜⋏", "⍀⎍⟟⋏", "⌰⏃⌇⏁⌰⊬", "⍙⟒"}
-
-	language:Register()
-end
-
-
-function PLUGIN:InitializedPlugins()
-	-- l() is server-only; L() is the client equivalent (no client param on clientside).
-	local phrase = SERVER and l or L
-
-	for _, v in pairs(ix.languages.stored) do
-		if v.uniqueID != "xen" and v.uniqueID != "imp" and v.uniqueID != "vort" then
-			for i = 1, 5 do
-				local ITEM = ix.meta.Item:New("langbook_"..i..v.uniqueID)
-				ITEM:Base("skillbook")
-
-				ITEM.langID = v.uniqueID
-				ITEM.part = i
-				ITEM.name = phrase("langbook.nameFormat", phrase("language.name."..v.uniqueID), i)
-				ITEM.description = "langbook.desc"
-				ITEM.category = phrase("langbook.categoryFormat", i)
-				function ITEM:GetName()
-					local ph = SERVER and l or L
-					return ph("langbook.nameFormat", ph("language.name."..self.langID), self.part)
-				end
-				function ITEM:GetCategory()
-					local ph = SERVER and l or L
-					return ph("langbook.categoryFormat", self.part)
-				end
-				ITEM.model = "models/props_easteregg/book_aw.mdl"
-				ITEM.bookTime = 30 * 60
-				ITEM.width = 2
-				ITEM.height = 1
-				if i > 1 then
-					ITEM.bookRequire = "langbook_"..(i - 1)..v.uniqueID
-				end
-
-				if SERVER and i == 5 then
-					ITEM.OnRead = function(item, client)
-						local character = client:GetCharacter()
-						local knownLanguages = character:GetLanguages()
-						if table.HasValue(knownLanguages, v.uniqueID) then
-							return
-						else
-							table.insert(knownLanguages, v.uniqueID)
-							character:SetLanguages(knownLanguages)
-							client:NotifyLocalized("lang.learned", L(v.name))
-						end
-					end
-				end
-				
-				ITEM:Register()
-			end
-		end
-	end
 end

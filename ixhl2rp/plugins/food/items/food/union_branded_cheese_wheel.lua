@@ -1,5 +1,5 @@
-ITEM.name = "item.union_branded_cheese_wheel"
-ITEM.description = "item.union_branded_cheese_wheel.desc"
+ITEM.name = "Головка сыра"
+ITEM.description = "Цельная головка сыра."
 ITEM.model = "models/bioshockinfinite/pound_cheese.mdl"
 ITEM.cost = 12
 ITEM.width = 2

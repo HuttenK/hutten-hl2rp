@@ -3,10 +3,10 @@
 ix.Civic = ix.Civic or {}
 local C = ix.Civic
 C.colors = {
-	background = Color(12, 17, 20, 246), panel = Color(19, 26, 30, 248),
-	raised = Color(27, 36, 40), line = Color(51, 65, 69),
-	text = Color(232, 233, 222), muted = Color(153, 169, 169),
-	accent = Color(221, 184, 115), cool = Color(119, 182, 186),
+	background = Color(12, 13, 11, 246), panel = Color(22, 22, 18, 248),
+	raised = Color(37, 34, 26), line = Color(94, 80, 54),
+	text = Color(232, 233, 222), muted = Color(161, 151, 128),
+	accent = Color(221, 184, 115), cool = Color(182, 151, 91),
 	good = Color(140, 187, 145), danger = Color(232, 122, 109)
 }
 
@@ -15,9 +15,9 @@ function C.Scale(value)
 end
 
 function C.Fonts()
-	for name, info in pairs({Title = {"Bahnschrift", 40, 600}, Heading = {"Bahnschrift", 23, 500},
-		Body = {"Segoe UI", 17, 400}, Small = {"Segoe UI", 14, 400},
-		Mono = {"Consolas", 14, 400}, Number = {"Bahnschrift", 32, 500}}) do
+	for name, info in pairs({Title = {"Georgia", 40, 600}, Heading = {"Georgia", 23, 500},
+		Body = {"Georgia", 17, 400}, Small = {"Georgia", 14, 400},
+		Mono = {"Georgia", 14, 400}, Number = {"Georgia", 32, 500}}) do
 		surface.CreateFont("civic." .. name, {font = info[1], size = C.Scale(info[2]), weight = info[3], extended = true, antialias = true})
 	end
 end
@@ -74,60 +74,36 @@ function C.Button(parent, text, click)
 end
 
 ix.Locale:AddTable("en", {
-	["civic.arrival"] = "A CITY UNDER CONTROL. A LIFE OF YOUR OWN.",
-	["civic.manifesto"] = "Arrive with a name. Build a life between the checkpoints. Trade, learn, endure — and decide what you are willing to become.",
-	["civic.access"] = "RESIDENT ACCESS",
 	["civic.overview"] = "Overview", ["civic.journal"] = "Field journal", ["civic.assignments"] = "Assignments",
-	["civic.link"] = "CIVIC LINK", ["civic.subtitle"] = "PERSONAL OPERATIONS TERMINAL",
-	["civic.welcome"] = "Your place in the city.", ["civic.condition"] = "CONDITION REPORT",
+	["civic.condition"] = "CONDITION REPORT",
 	["civic.health"] = "Vital signs", ["civic.stamina"] = "Stamina", ["civic.hunger"] = "Nutrition",
-	["civic.thirst"] = "Hydration", ["civic.memory"] = "Learning capacity", ["civic.progress"] = "DEVELOPMENT",
-	["civic.level"] = "LEVEL %s", ["civic.points"] = "%s points available", ["civic.allocate"] = "Develop attributes",
-	["civic.city"] = "LOCAL INFRASTRUCTURE", ["civic.power"] = "Power available", ["civic.outage"] = "Local power interruption",
-	["civic.powerUnknown"] = "Power telemetry unavailable", ["civic.powerHint"] = "Use a fusebox to restore local services. Electronics skill is required.",
-	["civic.safeHint"] = "Terminal access and equipment remain subject to local conditions.",
-	["civic.attention"] = "ATTENTION REQUIRED", ["civic.stable"] = "No immediate condition alerts",
+	["civic.thirst"] = "Hydration", ["civic.attention"] = "ATTENTION REQUIRED", ["civic.stable"] = "No immediate condition alerts",
 	["civic.bleeding"] = "Bleeding detected. Seek medical assistance.", ["civic.lowFood"] = "Low nutrition is slowing your recovery.",
-	["civic.lowWater"] = "Low hydration is slowing your recovery.", ["civic.lowMemory"] = "Learning capacity depleted. Rest to recover.",
-	["civic.noTasks"] = "No active assignments. Visit a noticeboard to find work.",
-	["civic.taskHint"] = "Accept and publish at a powered noticeboard or with a raised PDA. Payment is agreed in person.",
+	["civic.lowWater"] = "Low hydration is slowing your recovery.", ["civic.noTasks"] = "No active assignments. Visit a noticeboard to find work.",
+	["civic.taskHint"] = "Accept and publish at the notice board. Payment is agreed in person.",
 	["civic.open"] = "OPEN", ["civic.taken"] = "ASSIGNED", ["civic.completed"] = "COMPLETED",
 	["civic.accept"] = "Accept assignment", ["civic.abandon"] = "Return assignment", ["civic.complete"] = "Confirm completion",
 	["civic.closeTask"] = "Close listing", ["civic.confirm"] = "Confirm this assignment action?", ["civic.yes"] = "Confirm", ["civic.cancel"] = "Cancel",
 	["civic.emptyJournal"] = "Your field record begins here. Progress and assignments will appear as you play.",
-	["civic.event.level"] = "Development: level %s", ["civic.event.task"] = "Assignment: %s",
-	["civic.event.complete"] = "Assignment completed: %s", ["civic.event.skills"] = "Attributes updated",
-	["civic.event.craft"] = "Manufactured: %s",
-	["civic.footer"] = "HUTTEN / HELIX + AUTONOMOUS", ["civic.return"] = "Return to city", ["civic.unknown"] = "Unavailable",
+	["civic.event.task"] = "Assignment: %s",
+	["civic.event.complete"] = "Assignment completed: %s", ["civic.event.craft"] = "Manufactured: %s",
+	["civic.footer"] = "MEDIEVAL", ["civic.return"] = "Return to the world", ["civic.unknown"] = "Unavailable",
 	["civic.search"] = "Search assignments…", ["civic.noResults"] = "No assignments match your search.",
-	["civic.xp"] = "%s / %s XP", ["civic.maxLevel"] = "Maximum level reached"
-})
+	})
 ix.Locale:AddTable("ru", {
-	["civic.arrival"] = "ГОРОД ПОД КОНТРОЛЕМ. ЖИЗНЬ В ВАШИХ РУКАХ.",
-	["civic.manifesto"] = "Прибудьте с именем. Постройте жизнь между блокпостами. Торгуйте, учитесь, выживайте — и решайте, кем готовы стать.",
-	["civic.access"] = "ДОСТУП ЖИТЕЛЯ",
 	["civic.overview"] = "Обзор", ["civic.journal"] = "Журнал", ["civic.assignments"] = "Поручения",
-	["civic.link"] = "CIVIC LINK", ["civic.subtitle"] = "ПЕРСОНАЛЬНЫЙ ТЕРМИНАЛ",
-	["civic.welcome"] = "Ваше место в городе.", ["civic.condition"] = "СОСТОЯНИЕ",
+	["civic.condition"] = "СОСТОЯНИЕ",
 	["civic.health"] = "Здоровье", ["civic.stamina"] = "Выносливость", ["civic.hunger"] = "Питание",
-	["civic.thirst"] = "Вода", ["civic.memory"] = "Способность к обучению", ["civic.progress"] = "РАЗВИТИЕ",
-	["civic.level"] = "УРОВЕНЬ %s", ["civic.points"] = "Доступно очков: %s", ["civic.allocate"] = "Развить атрибуты",
-	["civic.city"] = "ИНФРАСТРУКТУРА", ["civic.power"] = "Питание доступно", ["civic.outage"] = "Локальное отключение питания",
-	["civic.powerUnknown"] = "Нет данных о питании", ["civic.powerHint"] = "Восстановите питание через электрощиток. Требуется навык электроники.",
-	["civic.safeHint"] = "Доступ к терминалам и оборудованию зависит от местных условий.",
-	["civic.attention"] = "ТРЕБУЕТСЯ ВНИМАНИЕ", ["civic.stable"] = "Критических сигналов нет",
+	["civic.thirst"] = "Вода", ["civic.attention"] = "ТРЕБУЕТСЯ ВНИМАНИЕ", ["civic.stable"] = "Критических сигналов нет",
 	["civic.bleeding"] = "Кровотечение. Обратитесь за медицинской помощью.", ["civic.lowFood"] = "Нехватка питания замедляет восстановление.",
-	["civic.lowWater"] = "Нехватка воды замедляет восстановление.", ["civic.lowMemory"] = "Способность к обучению истощена. Отдохните.",
-	["civic.noTasks"] = "Активных поручений нет. Посетите доску объявлений, чтобы найти работу.",
-	["civic.taskHint"] = "Публикация и приём — у работающей доски или с поднятым КПК. Оплата по личной договорённости.",
+	["civic.lowWater"] = "Нехватка воды замедляет восстановление.", ["civic.noTasks"] = "Активных поручений нет. Посетите доску объявлений, чтобы найти работу.",
+	["civic.taskHint"] = "Публикация и приём — у доски объявлений. Оплата по личной договорённости.",
 	["civic.open"] = "ОТКРЫТО", ["civic.taken"] = "ПРИНЯТО", ["civic.completed"] = "ЗАВЕРШЕНО",
 	["civic.accept"] = "Принять поручение", ["civic.abandon"] = "Вернуть поручение", ["civic.complete"] = "Подтвердить выполнение",
 	["civic.closeTask"] = "Закрыть объявление", ["civic.confirm"] = "Подтвердить действие с поручением?", ["civic.yes"] = "Подтвердить", ["civic.cancel"] = "Отмена",
-	["civic.emptyJournal"] = "Здесь начинается ваша история. Развитие и поручения появятся по мере игры.",
-	["civic.event.level"] = "Развитие: уровень %s", ["civic.event.task"] = "Поручение: %s",
-	["civic.event.complete"] = "Поручение выполнено: %s", ["civic.event.skills"] = "Атрибуты обновлены",
-	["civic.event.craft"] = "Изготовлено: %s",
-	["civic.footer"] = "HUTTEN / HELIX + AUTONOMOUS", ["civic.return"] = "Вернуться в город", ["civic.unknown"] = "Недоступно",
+	["civic.emptyJournal"] = "Здесь начинается ваша история. Записи о поручениях и ремесле появятся по мере игры.",
+	["civic.event.task"] = "Поручение: %s",
+	["civic.event.complete"] = "Поручение выполнено: %s", ["civic.event.craft"] = "Изготовлено: %s",
+	["civic.footer"] = "MEDIEVAL", ["civic.return"] = "Вернуться в мир", ["civic.unknown"] = "Недоступно",
 	["civic.search"] = "Поиск поручений…", ["civic.noResults"] = "Подходящих поручений нет.",
-	["civic.xp"] = "%s / %s ОП", ["civic.maxLevel"] = "Достигнут максимальный уровень"
-})
+	})

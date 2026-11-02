@@ -35,7 +35,7 @@ function Item:MigrateLegacyRow(row, data)
  data.equip = false
  if resolvedID=="card" then data.access={} end
  data.ammo, data.ammo2 = 0, 0
- data.arc9_atts, data.attachments, data.arc9Spent = nil, nil, nil
+ data.attachments = nil
  local migration = mysql:Update("ix_items")
  migration:Update("unique_id", resolvedID)
  migration:Update("data", util.TableToJSON(data))
@@ -969,7 +969,7 @@ else
 						end
 					item.player = nil
 				end)
-				subMenuOption:SetImage(v.icon or "icon16/brick.png")
+				subMenuOption:SetImage(k)
 
 				if v.multiOptions then
 					local options = isfunction(v.multiOptions) and v.multiOptions(item, new_items, LocalPlayer()) or v.multiOptions
@@ -1011,7 +1011,7 @@ else
 							InventoryAction(item, inventory_id, v.index, new_items)
 						end
 					item.player = nil
-				end):SetImage(v.icon or "icon16/brick.png")
+				end):SetImage(k)
 			end
 		end
 
@@ -1035,7 +1035,7 @@ else
 						InventoryAction(item, inventory_id, info.index, new_items)
 					end
 				item.player = nil
-			end):SetImage(info.icon or "icon16/brick.png")
+			end):SetImage("drop")
 		end
 
 		item.player = nil
@@ -1115,7 +1115,7 @@ else
 					targetItem.player = nil
 					item.player = nil
 				end)
-				subMenuOption:SetImage(v.icon or "icon16/brick.png")
+				subMenuOption:SetImage(k)
 
 				if v.multiOptions then
 					local options = isfunction(v.multiOptions) and v.multiOptions(item, targetItem, items, LocalPlayer()) or v.multiOptions
@@ -1161,7 +1161,7 @@ else
 						end
 					targetItem.player = nil
 					item.player = nil
-				end):SetImage(v.icon or "icon16/brick.png")
+				end):SetImage(k)
 			end
 		end
 

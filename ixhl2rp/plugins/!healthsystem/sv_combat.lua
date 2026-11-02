@@ -162,7 +162,6 @@ local function SelectArmorToHit(client, hit_group)
 	local elements = {}
 	for item, value in pairs(client.char_outfit.armor) do
 		if !value then continue end
-		if ix.field and ix.field.Capacity(item)~=nil then continue end
 		if !item.armor or !item.armor.coverage[hit_group] then continue end
 
 		local coverage = item.armor.coverage[hit_group]
@@ -233,7 +232,7 @@ local function ApplyFallDamage(health, amount)
 end
 
 local damage_to_diff = {
-	burn = {hediff = "scp_burn"},
+	burn = {hediff = "burn"},
 	impulse = {
 		hediff = "gunshot",
 		uniqueEffect = function(health, hit_group, info)
@@ -358,20 +357,6 @@ local function ApplyDamageToPart(health, hit_group, info)
 	
 	local halfDamage = false
 	local target = health.character:GetPlayer()
-	if ix.field and not info.plateHandled then
-	 local reduced=ix.field.Absorb(target,hit_group,info,amount)
-	 if reduced~=nil then
-	  local protected=table.Copy(info); protected.amount=reduced; protected.plateHandled=true
-	  if ix.field.HasLimbPadding(target,hit_group) then
-	   -- Shoulder pads protect the arm after the carrier absorbs its share.
-	   info=protected; amount=reduced
-	  else
-	   local hediff,mul=SelectDamageHediff(health,hit_group,protected)
-	   if hediff then health:AddHediff(hediff,hit_group,{severity=reduced*mul}) end
-	   return reduced>0
-	  end
-	 end
-	end
 
 	hit_group, halfDamage = DamageToOuterParts(health, hit_group)
 
@@ -421,7 +406,6 @@ local function ApplyDamageToPart(health, hit_group, info)
 			end
 		end
 
-		if ix.field then ap_dmg = ix.field.LimbPaddingWear(item, info, ap_dmg) end
 		value = value - ap_dmg
 		if item.limbPadding and value <= 0.000001 and value >= -0.000001 then value = 0 end
 
@@ -454,13 +438,6 @@ local function ApplyStaminaDamage(health, hit_group, info)
 	local client = info.attacker
 	local target = info.target
 	local damage_class = info.class
-	if ix.field then
-	 local reduced=ix.field.Absorb(target,hit_group,info,physicalDamage)
-	 if reduced~=nil then
-	  local ratio=physicalDamage>0 and reduced/physicalDamage or 1
-	  physicalDamage=reduced; staminaDamage=staminaDamage*ratio
-	 end
-	end
 
 	local halfDamage = false
 
@@ -514,33 +491,13 @@ function PLUGIN:EvasionChance(client, isStanding, isBackstab)
 	local staminaFactor = (0.5 + 0.5 * client:GetLocalVar("stm", 0) / character:GetMaxStamina())
 	local speedFactor = isStanding and 0 or 1 + math.Clamp(math.Remap(client:GetVelocity():LengthSqr(), 2500, 55225, 0, 0.75), 0, 0.75)
 
-	local luckMod = math.min(0.25 * character:GetSpecial("lk"), 50)
-	local agilityMod = math.min(0.75 * character:GetSpecial("ag"), 75)
-
-	return ((10 + agilityMod + luckMod) * staminaFactor) * speedFactor
+	return 10 * staminaFactor * speedFactor
 end
 
-function PLUGIN:MeleeHitChance(client, skill, isStanding, isBackstab)
-	local character = client:GetCharacter()
-
-	local staminaFactor = (0.75 + 0.5 * client:GetLocalVar("stm", 0) / character:GetMaxStamina())
-	local skillMod = 15 + math.Remap(character:GetSkillModified(skill), 0, 10, 0, 85)
-	
-	local luckMod = math.min(0.25 * character:GetSpecial("lk"), 50)
-	local agilityMod = math.min(0.75 * character:GetSpecial("ag"), 75)
-
-	return ((isStanding and 15 or 0) + (isBackstab and 100 or 0) + skillMod + agilityMod + luckMod) * staminaFactor
+-- A connected melee trace is not rerolled against a character skill.
+function PLUGIN:MeleeHitChance(client, isStanding, isBackstab)
+ return 100
 end
-
-function PLUGIN:MeleeCritChance(character)
-	local strength = character:GetSpecial("st", 1)
-	local LVL25 = strength >= 25 and 1 or 0
-	local LVL75 = strength >= 75 and 1 or 0
-	local LVL100 = strength >= 100 and 1 or 0
-
-	return (LVL25 + LVL75 + LVL100) * 5
-end
-
 
 local hot_fix = {
 	["grenade_spit"] = function(dmg)
@@ -566,7 +523,7 @@ function PLUGIN:GetMeleeDamageDef(class)
 
 			-- info.Skill != "guns": огнестрел исключаем из ближнего реестра, иначе его Info.Damage
 			-- превратил бы пулю в slash. Огнестрел обрабатывается отдельно (см. Info.Damage ниже).
-			if item.class and istable(info) and info.Skill != "guns" and info.Skill != "impulse" and istable(info.Damage) and info.Damage[1] then
+			if item.class and istable(info) and (item.weaponCategory == "melee" or item.isMelee) and istable(info.Damage) and info.Damage[1] then
 				self.ixMeleeDamage[item.class] = {
 					min = info.Damage[1],
 					max = info.Damage[2] or info.Damage[1],
@@ -628,29 +585,10 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 
 	-- Run after ragdoll forwarding and downed protection, before generic damage
 	-- classification (CPT uses crush/direct damage for bites and cardiac arrest).
-	if ix.SCPMedicine and ix.SCPMedicine.Damage and ix.SCPMedicine.Damage(target, dmg, ApplyDamageToPart) then return true end
 	local inflictor = dmg:GetInflictor()
 	local client = dmg:GetAttacker()
 	local amount = dmg:GetDamage()
 
-	-- Огнестрел: игнорируем урон SWEP/ArcCW (включая модификаторы аттачментов) и берём урон
-	-- из item-файла оружия — Info.Damage = {min, max}, как это сделано для ближнего боя. Тип
-	-- урона (пуля/дробь/энергия) НЕ трогаем: он нужен ниже для isBuckshot/isEnergy и ран.
-	-- Оружие без Info.Damage остаётся на ArcCW-уроне (плавный переход, ничего не ломается).
-	-- Урон падения НЕ трогаем. Взрыв берём из item-файла ТОЛЬКО если в руках гранатомёт
-	-- (Info.Launcher) — иначе брошенная граната / чужой взрыв унаследовали бы урон
-	-- случайно зажатой в руках винтовки. Обычные пули/дробь/энергия работают как раньше.
-	if IsValid(client) and client:IsPlayer() and not dmg:IsDamageType(DMG_FALL) then
-		local activeWep = client:GetActiveWeapon()
-		local wepInfo = IsValid(activeWep) and activeWep.ixItem and activeWep.ixItem.Info
-
-		if istable(wepInfo) and (wepInfo.Skill == "guns" or wepInfo.Skill == "impulse")
-			and istable(wepInfo.Damage) and wepInfo.Damage[1]
-			and ((not dmg:IsExplosionDamage()) or wepInfo.Launcher) then
-			amount = math.random(wepInfo.Damage[1], wepInfo.Damage[2] or wepInfo.Damage[1])
-			dmg:SetDamage(amount)
-		end
-	end
 
 	local isAttackingMelee
 	local isAttackingFists
@@ -674,44 +612,13 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 			local character = client:GetCharacter()
 
 			if isFists then
-				character:DoAction("unarmedSuccess")
 
 				isAttackingFists = true
 			elseif isMelee then
-				character:DoAction("meleeSuccess")
 
 				isAttackingMelee = true
 			else
-				character:DoAction("shootSuccess")
-			end
 
-			local endurance = character:GetSpecial("st", 1)
-			local strength = character:GetSpecial("st", 1)
-			local LVL5 = strength >= 5
-			local LVL25 = strength >= 25
-			local LVL50 = strength >= 50
-
-			local enduranceBonus = endurance >= 150
-			local strengthBonus = (0.005 * strength)
-
-			local baseAmount = amount
-			
-			if LVL5 then 
-				amount = amount + (baseAmount * 0.1) + (baseAmount * strengthBonus)
-			end
-
-			if LVL50 and (dmg:GetDamageType() == DMG_CLUB) then 
-				amount = amount + (baseAmount * 0.25)
-			end
-
-			if enduranceBonus then
-				amount = amount + (baseAmount * (endurance * 0.01))
-			end
-
-			local critChance = self:MeleeCritChance(character)
-
-			if critChance > 0 and (math.random(0, 100) < critChance) then
-				amount = amount * 3
 			end
 
 			dmg:SetDamage(amount)
@@ -797,25 +704,6 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 	local isAcid = damageType == DMG_ACID
 	local isExplosive = dmg:IsExplosionDamage()
 
-	local AVOID_DAMAGE = character:HasSpecialLevel("en", 100)
-	local RESIST_1 = character:HasSpecialLevel("en", 50) and 0.25 or 0
-	local RESIST_2 = character:HasSpecialLevel("en", 75) and 0.25 or 0
-
-	if AVOID_DAMAGE then
-		if math.random(1, 100) <= 25 then
-			return true
-		end
-	end
-
-	local baseResist = 0
-	baseResist = baseResist + RESIST_1 + RESIST_2
-
-	if baseResist > 0 then
-		amount = math.max(amount - (amount * baseResist), 0)
-
-		dmg:SetDamage(amount)
-	end
-
 	if isFallDamage then
 		ApplyFallDamage(health, amount)
 
@@ -833,7 +721,7 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 		end
 
 		local evasionChance = self:EvasionChance(target, isStanding, isBackstab)
-		local hitChance = self:MeleeHitChance(client, "unarmed", isStanding, isBackstab)
+		local hitChance = self:MeleeHitChance(client, isStanding, isBackstab)
 		hitChance = hitChance - evasionChance
 
 		local isParried = false
@@ -844,7 +732,7 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 				local targetWeapon = target:GetActiveWeapon()
 				local isFists = IsValid(targetWeapon) and targetWeapon.IsFists or true
 
-				local parryChance = self:MeleeHitChance(target, isFists and "unarmed" or "meleeguns", isStanding, false)
+				local parryChance = self:MeleeHitChance(target, isStanding, false)
 				parryChance = parryChance + evasionChance
 
 				isParried = math.random(1, 100) > parryChance
@@ -857,9 +745,9 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 			local isFists = targetWeapon.IsFists
 
 			if isFists then
-				character:DoAction("unarmedParry")
+
 			elseif isMelee then
-				character:DoAction("meleeParry")
+
 			end
 
 			showBlood = false
@@ -922,7 +810,6 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 		end
 	else
 		local class = GetDamageClass(isEnergy, isFists, isBuckshot, isSlash, isClub, isExplosive, isAcid)
-		-- Includes SCP-457's env_fire trails, which Source attributes to the fire
 		-- entity rather than the NPC. Fire must not create gunshot wounds.
 		if dmg:IsDamageType(DMG_BURN) or dmg:IsDamageType(DMG_SLOWBURN) then class = "burn" end
 		showBlood = ApplyDamageToPart(health, hit_group, {

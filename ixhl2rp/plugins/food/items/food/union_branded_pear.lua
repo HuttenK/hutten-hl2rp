@@ -1,5 +1,5 @@
-ITEM.name = "item.union_branded_pear"
-ITEM.description = "item.union_branded_pear.desc"
+ITEM.name = "Груша"
+ITEM.description = "Спелая груша."
 ITEM.model = "models/bioshockinfinite/hext_pear.mdl"
 ITEM.cost = 2
 ITEM.width = 1

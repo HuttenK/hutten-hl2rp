@@ -18,7 +18,6 @@ local icons = {
 	["item.category.ration"] = "page",
 	["item.category.coupon"] = "coins",
 	["item.category.book"] = "book_addresses",
-	["item.category.skillbook"] = "book_open",
 	["item.category.cooking"] = "cup",
 	["loot.categoryJunk"] = "bin",
 	["item.category.craft_chemical"] = "asterisk_orange",

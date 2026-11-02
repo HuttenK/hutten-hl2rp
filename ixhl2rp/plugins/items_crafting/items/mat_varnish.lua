@@ -1,6 +1,6 @@
 ITEM.name = "item.mat_varnish"
 ITEM.description = "item.mat_varnish.desc"
-ITEM.model = "models/illusion/eftcontainers/gpblue.mdl"
+ITEM.model = "models/props_junk/glassjug01.mdl"
 ITEM.width = 1
 ITEM.height = 2
 ITEM.cost = 7

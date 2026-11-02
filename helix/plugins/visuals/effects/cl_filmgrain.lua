@@ -21,8 +21,8 @@ end
 function C.Visible()
  local p=LocalPlayer()
  return ix.option.Get("cinematicEffects",true) and IsValid(p) and p.GetCharacter and p:GetCharacter() and p:Alive()
-  and not gui.IsGameUIVisible() and not IsValid(ix.gui.fieldlink) and not IsValid(ix.gui.menu) and not IsValid(ix.gui.characterMenu)
-  and not IsValid(ix.gui.levelup) and not (ix.infoMenu and ix.infoMenu.open)
+  and not gui.IsGameUIVisible() and not IsValid(ix.gui.menu) and not IsValid(ix.gui.characterMenu)
+  and not (ix.infoMenu and ix.infoMenu.open)
 end
 -- Material also returns load time; parenthesize the final call to keep it out of the array.
 local edges={Material("vgui/gradient-l"),Material("vgui/gradient-r"),Material("vgui/gradient-u"),(Material("vgui/gradient-d"))}

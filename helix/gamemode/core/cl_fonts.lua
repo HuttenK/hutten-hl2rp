@@ -35,41 +35,41 @@ function GM:LoadFonts(font, genericFont)
 	})
 
 	surface.CreateFont("ixMenuMiniFont", {
-		font = "Roboto",
+		font = "Georgia",
 		size = math.max(ScreenScale(4), 18),
 		weight = 300,
 	})
 
 	surface.CreateFont("ixMenuButtonFont", {
-		font = "Tahoma",
+		font = "Georgia",
 		size = ix.UI.Scale(20),
 		extended = true,
 		weight = 500
 	})
 
 	surface.CreateFont("ixMenuButtonFontSmall", {
-		font = "Roboto Th",
+		font = "Georgia",
 		size = ScreenScale(10),
 		extended = true,
 		weight = 100
 	})
 
 	surface.CreateFont("ixMenuButtonFontThick", {
-		font = "Roboto",
+		font = "Georgia",
 		size = ScreenScale(14),
 		extended = true,
 		weight = 300
 	})
 
 	surface.CreateFont("ixMenuButtonLabelFont", {
-		font = "Roboto Th",
+		font = "Georgia",
 		size = 28,
 		extended = true,
 		weight = 100
 	})
 
 	surface.CreateFont("ixMenuButtonHugeFont", {
-		font = "Roboto Th",
+		font = "Georgia",
 		size = ScreenScale(24),
 		extended = true,
 		weight = 100
@@ -83,14 +83,14 @@ function GM:LoadFonts(font, genericFont)
 	})
 
 	surface.CreateFont("ixMonoSmallFont", {
-		font = "Consolas",
+		font = "Georgia",
 		size = 12,
 		extended = true,
 		weight = 800
 	})
 
 	surface.CreateFont("ixMonoMediumFont", {
-		font = "Consolas",
+		font = "Georgia",
 		size = 22,
 		extended = true,
 		weight = 800
@@ -144,7 +144,7 @@ function GM:LoadFonts(font, genericFont)
 	})
 
 	surface.CreateFont("ixChatFont", {
-		font = "Roboto",
+		font = "Georgia",
 		size = math.max(ScreenScale(7), 17) * ix.option.Get("chatFontScale", 1),
 		extended = true,
 		//weight = 600,
@@ -152,7 +152,7 @@ function GM:LoadFonts(font, genericFont)
 	})
 
 	surface.CreateFont("ixChatFontItalics", {
-		font = "Roboto",
+		font = "Georgia",
 		size = math.max(ScreenScale(7), 17) * ix.option.Get("chatFontScale", 1),
 		extended = true,
 		//weight = 600,
@@ -161,14 +161,14 @@ function GM:LoadFonts(font, genericFont)
 	})
 
 	surface.CreateFont("ixSmallTitleFont", {
-		font = "Roboto Th",
+		font = "Georgia",
 		size = math.max(ScreenScale(12), 24),
 		extended = true,
 		weight = 100
 	})
 
 	surface.CreateFont("ixMinimalTitleFont", {
-		font = "Roboto",
+		font = "Georgia",
 		size = math.max(ScreenScale(8), 22),
 		extended = true,
 		weight = 800
@@ -205,7 +205,7 @@ function GM:LoadFonts(font, genericFont)
 	})
 
 	-- Introduction fancy font.
-	font = "Roboto Th"
+	font = "Georgia"
 
 	surface.CreateFont("ixIntroTitleFont", {
 		font = font,
@@ -272,7 +272,7 @@ function GM:LoadFonts(font, genericFont)
 	})
 
 	surface.CreateFont("autonomous.hud.lvl", {
-		font = "Tahoma",
+		font = "Georgia",
 		extended = true,
 		size = ix.UI.Scale(28),
 		weight = 500,
@@ -282,7 +282,7 @@ function GM:LoadFonts(font, genericFont)
 	})
 
 	surface.CreateFont("autonomous.hud.lvltext", {
-		font = "Tahoma",
+		font = "Georgia",
 		extended = true,
 		size = ix.UI.Scale(12),
 		weight = 500,
@@ -292,14 +292,14 @@ function GM:LoadFonts(font, genericFont)
 	})
 
 	surface.CreateFont("item.contraband", {
-		font = "Tahoma",
+		font = "Georgia",
 		size = math.max(ix.UI.Scale(15), 14),
 		extended = true,
 		weight = 500
 	})
 
 	surface.CreateFont("char.create.button", {
-		font = "Tahoma",
+		font = "Georgia",
 		extended = true,
 		size = ix.UI.Scale(30),
 		weight = 500,

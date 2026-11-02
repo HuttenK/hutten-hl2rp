@@ -1,0 +1,10 @@
+local def = ix.Medicine.Catalog.splint
+ITEM.name = def.name
+ITEM.description = "Деревянные планки и перевязь для фиксации сломанной конечности."
+ITEM.model = Model(def.model)
+ITEM.width = 1
+ITEM.height = 2
+ITEM.cost = 30
+ITEM.stats.uses = def.uses
+ITEM.stats.time = def.time
+ITEM.medicalID = "splint"

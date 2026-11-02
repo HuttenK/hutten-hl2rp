@@ -1,7 +1,7 @@
 ITEM.name = "item.mat_sulfur"
 ITEM.description = "item.mat_sulfur.desc"
 ITEM.category = "item.category.raw"
-ITEM.model = "models/illusion/eftcontainers/gpred.mdl"
+ITEM.model = "models/props_junk/garbage_glassbottle003a.mdl"
 ITEM.width = 1
 ITEM.height = 1
 ITEM.max_stack = 8

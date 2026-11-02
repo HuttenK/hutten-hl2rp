@@ -31,7 +31,6 @@ Farming:RegisterPlant("tomato", {
 	MaxCount = 6,
 	Result = "tomato",
 	HarvestBodygroup = 2,
-	RewardXP = 200,
 	SkillXP = 30
 })
 
@@ -66,6 +65,5 @@ Farming:RegisterPlant("potato", {
 	MaxCount = 6,
 	Result = "union_branded_potato",
 	HarvestBodygroup = 2,
-	RewardXP = 100,
 	SkillXP = 15
 })

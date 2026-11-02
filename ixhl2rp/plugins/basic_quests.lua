@@ -6,22 +6,22 @@ PLUGIN.description = ""
 
 ix.lang.AddTable("ru", {
 	questsTitle = "Задачи",
-	["quest.cwu_garbage.title"] = "Ежедневная работа в ГСР",
+	["quest.cwu_garbage.title"] = "Уборка поселения",
 	["quest.cwu_garbage.progress"] = "Собрать в городе мусор [%s/4]",
 })
 ix.lang.AddTable("en", {
 	questsTitle = "Quests",
-	["quest.cwu_garbage.title"] = "Daily CWU garbage duty",
+	["quest.cwu_garbage.title"] = "Daily town cleanup",
 	["quest.cwu_garbage.progress"] = "Collect garbage in the city [%s/4]",
 })
 ix.lang.AddTable("fr", {
 	questsTitle = "Quêtes",
-	["quest.cwu_garbage.title"] = "Travail quotidien GSR",
+	["quest.cwu_garbage.title"] = "Nettoyage quotidien",
 	["quest.cwu_garbage.progress"] = "Ramasser les ordures en ville [%s/4]",
 })
 ix.lang.AddTable("es-es", {
 	questsTitle = "Misiones",
-	["quest.cwu_garbage.title"] = "Trabajo diario de basura GSR",
+	["quest.cwu_garbage.title"] = "Limpieza diaria",
 	["quest.cwu_garbage.progress"] = "Recoger basura en la ciudad [%s/4]",
 })
 

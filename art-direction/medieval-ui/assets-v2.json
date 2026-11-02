@@ -1,0 +1,89 @@
+{
+  "date": "2026-11-02",
+  "generator": "Built-in image_gen (imagegen skill)",
+  "reference": "art-direction/ui-concepts/2026-11-02/b-ash-and-iron.png",
+  "status": "Integrated into native Lua UI; visually inspected as PNGs and browser preview. GMod runtime not tested.",
+  "assets": [
+    {
+      "file": "addons/medieval_ui_content/materials/cloister_v2.png",
+      "source": "C:\\Users\\q1236\\.codex\\generated_images\\01a0af77-7b63-7de0-8e91-c3f54d495190\\exec-eb535458-2f46-4532-94fe-1ee4bbbcb6ee.png",
+      "dimensions": [
+        1672,
+        941
+      ],
+      "transparent": false,
+      "reference": "approved concept",
+      "prompt": "Use case: background-extraction / game UI asset. Reference image is the approved inventory UI concept, style and scene source. Create ONLY the matching background plate, not another menu mockup. 16:9 landscape. Reconstruct the cold gray ruined medieval stone cloister behind the figure in the reference, with the arched hallway concentrated in the RIGHTMOST 35% of the image; floor visible at the bottom for a future live character to stand on. Remove the character completely. Left 65% is close dark charcoal weathered fine-grained stone / blackened mottled parchment, subtly illuminated, quiet enough behind panels, NO strong architectural edges there. Preserve the reference's bleak gray, muted brown, almost monochrome realism. The right cloister should be as clearly readable and bright as in the reference, with pale overcast daylight through the Gothic arch, NOT a tiny dark doorway in a black scene. No character, no items, no text, no icons, no frames, no HUD, no watermarks. This is a full-screen game background, all the way to every edge."
+    },
+    {
+      "file": "addons/medieval_ui_content/materials/panel_v2.png",
+      "source": "C:\\Users\\q1236\\.codex\\generated_images\\01a0af77-7b63-7de0-8e91-c3f54d495190\\exec-31742ced-c28c-44d6-8cb2-56c04957a317.png",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "transparent": false,
+      "reference": "approved concept",
+      "prompt": "Use case: UI production sprite, using the supplied approved game inventory reference as the exact art direction. Produce ONE square panel surface, straight-on orthographic 2D, edge-to-edge, no surrounding scene. Extremely close to the inventory panel and description panel borders in the reference: fine irregular worn antique-bronze double bevel rails, engraved intertwined small Gothic knot flourishes at ALL FOUR corners, blackened iron trim, delicate scratches and rubbed highlights, subtle aged tarnish. Ornament should occupy the outermost 8 percent only, with corner shapes up to 14 percent; frame lines narrow, not a giant heavy picture frame. Central 75 percent is empty nearly black charcoal fine granular stone/leather with natural variation and no motifs. Visibly tangible painted material and engraved corners, NOT a flat CSS rectangle and NOT an outline drawing. Square sides perfectly straight so this can be sliced into 9 regions and resized. Frame meets canvas edges, no blank padding. No text, no emblems in center, no items, no outer drop shadow, no perspective, no gold shine, no modern vector graphics. High-quality dark fantasy game UI texture consistent with the exact reference."
+    },
+    {
+      "file": "addons/medieval_ui_content/materials/button_v2.png",
+      "source": "C:\\Users\\q1236\\.codex\\generated_images\\01a0af77-7b63-7de0-8e91-c3f54d495190\\exec-7ac8c236-c17f-42cb-965a-325a54a5cfb1.png",
+      "dimensions": [
+        2172,
+        724
+      ],
+      "transparent": false,
+      "reference": "panel_v2.png",
+      "prompt": "EDIT this supplied UI frame into a single wide low BUTTON at 3:1 aspect ratio. Keep the exact dark fine-grained leather center and narrow aged bronze rails with small engraved corner knots. One rectangle only: FOUR corners, TWO horizontal sides, TWO vertical sides. No duplicate rails, no extra button or strip beneath it. Everything is inside that one closed rectangle which occupies the FULL image, edge to edge. All corners aligned at the actual image corners. Interior is empty no text, no icon, no object. Flat orthographic 2D production UI texture; subtle warm patina like dark fantasy game inventory. Ornamental corners small and restrained. Same texture everywhere inside. The button is complete, no margins or extensions outside its border."
+    },
+    {
+      "file": "addons/medieval_ui_content/materials/slot_v2.png",
+      "source": "C:\\Users\\q1236\\.codex\\generated_images\\01a0af77-7b63-7de0-8e91-c3f54d495190\\exec-605378cc-f290-4282-b719-e957018fd1d0.png",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "transparent": false,
+      "reference": "approved concept",
+      "prompt": "Create one production texture for a SQUARE EMPTY INVENTORY SLOT, from the exact supplied dark medieval inventory reference. Flat 2D orthographic UI, fills canvas, no margin, no text or items. Finely worn dark antique-bronze double beveled square edge, subtle engraved corners, oxidized iron, rubbed soft brass highlights and hairline scratches. Border occupying outer 5 percent, corners outer 8 percent. Center is empty nearly black charcoal rough leather. Soft ambient shadow at the INSIDE of the bevel gives depth. This will be shown at 80-110 pixels square, so corners and raised rails must read at that size. restrained realistic dark fantasy, not a flat vector line. No weapon, no icon, no letters, no scene, no extra objects, one square frame only."
+    },
+    {
+      "file": "addons/medieval_ui_content/materials/slot_selected_v2.png",
+      "source": "C:\\Users\\q1236\\.codex\\generated_images\\01a0af77-7b63-7de0-8e91-c3f54d495190\\exec-cf68be4c-6b36-43a1-a6eb-7d62599d7000.png",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "transparent": false,
+      "reference": "approved concept",
+      "prompt": "Create one production texture for a SQUARE SELECTED INVENTORY SLOT matching the supplied dark medieval inventory reference. Flat 2D orthographic, fills canvas, no margin, no text, no object, no icon. Fine worn antique brass double beveled square border, subtle engraved corners, rubbed golden highlights and hairline scratches. Border outer 5 percent, corners outer 8 percent. The empty CENTER is deep warm dark ochre-brown textured leather with subtle inner golden light, as the selected equipped sword slot in the reference. Strong enough gold to distinguish it, not bright magical yellow. Soft inset bevel shadows for tangible depth at 80-110 pixels square. One square slot only. No extra frames, no text, no scene."
+    },
+    {
+      "file": "addons/medieval_ui_content/materials/divider_v2.png",
+      "source": "C:\\Users\\q1236\\.codex\\generated_images\\01a0af77-7b63-7de0-8e91-c3f54d495190\\exec-d45f2a95-13ff-4975-b8d2-d7ea83a6e048.png",
+      "dimensions": [
+        2172,
+        724
+      ],
+      "transparent": true,
+      "reference": "approved concept",
+      "prompt": "Generate a production ornamental UI horizontal divider on TRANSPARENT BACKGROUND. Match the exact worn antique bronze engraving style of the supplied medieval UI reference. One very long delicate thin double metal rule, with tiny intertwined gothic knot at each end and an elegant small diamond/lozenge at the center. Ratio 8:1 canvas. Rule lies horizontally through the vertical center. Fine realistic metal patina, subtle scratched bevel edges, muted brass highlights, no neon. Very restrained like the reference, not huge Victorian flourishes. Transparent spaces everywhere else including inside loops. No text, no black rectangle, no scene, no objects. Pixel-perfect front-on 2D UI element."
+    }
+  ],
+  "deferred": [
+    {
+      "file": "art-direction/medieval-ui/deferred-item-icons/icons_v2.png",
+      "source": "C:\\Users\\q1236\\.codex\\generated_images\\01a0af77-7b63-7de0-8e91-c3f54d495190\\exec-8c66452f-98ac-427c-871a-4281387c5bd0.png",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "transparent": true,
+      "reference": "approved concept",
+      "prompt": "Production UI ICON ATLAS for the supplied medieval UI concept. Transparent background. Square image divided into EXACT 4 by 4 evenly spaced grid, 16 distinct icons, each icon perfectly centered in its cell, generous identical 20 percent padding inside every cell, all same visual scale. NO visible grid, NO labels, NO text, NO frames. Engraved relief emblems in aged bronze and silver iron, dimensional bevelled edges, subdued brass highlights, scratched handmade metal. Readable filled silhouettes, NOT thin line art. Row 1 from left to right: diagonal medieval sword, kite shield, closed medieval helmet, leather tunic. Row 2: tied leather satchel, pair of boots, medieval leather glove, open book. Row 3: anatomical symbolic heart, three gold coins, forging hammer, feather quill. Row 4: open eye symbol, old iron key, burning short candle, hourglass. EXACTLY these 16 icons, exactly four rows of four. Each is an independent isolated cutout on transparent background. No drop shadow crossing cell boundaries. Match the reference's restrained realistic dark-fantasy metalwork, not cartoon or jewel-colored fantasy. Icons will be used at 24-64 pixels.",
+      "status": "Deferred by user; excluded from the content addon and from runtime loading"
+    }
+  ],
+  "materialRoot": "materials/ (PNG files directly in root, no subfolder)"
+}

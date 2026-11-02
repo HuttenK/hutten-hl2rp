@@ -95,7 +95,6 @@ end
 function Q:EditRewards(parent, reward, solo)
     if not solo then UI.Choice(parent, "Кому выдавать награду", reward, "mode", {each = "Каждому участнику", leader = "Только лидеру"}) end
     UI.Number(parent, "Деньги (0 — без денег)", reward, "money", 0, 1000000):SetDecimals(0)
-    UI.Number(parent, "Опыт персонажа (0 — без опыта)", reward, "xp", 0, 1000000):SetDecimals(0)
     UI.Label(parent, "Предметы", true)
     UI.Label(parent, "100% — гарантированно; 0% — не выдавать. Шанс проверяется на всё количество строки отдельно для каждого получателя.")
     local items = parent:Add("DPanel") items:Dock(TOP) items.Paint = nil
@@ -128,26 +127,5 @@ function Q:EditRewards(parent, reward, solo)
         end)
     end)
     renderItems()
-    UI.Label(parent, "Опыт навыков", true)
-    local choices, first = {}, nil
-    for id, skill in SortedPairs(ix.skills and ix.skills.list or {}) do choices[id] = L(skill.name) first = first or id end
-    local skills = parent:Add("DPanel") skills:Dock(TOP) skills.Paint = nil
-    skills.PerformLayout = function(s) s:SizeToChildren(false, true) end
-    local function renderSkills()
-        skills:Clear()
-        for index, skill in ipairs(reward.skills) do
-            local card = skills:Add("DPanel") card:Dock(TOP) card:SetTall(116) card:DockMargin(0, 0, 0, 8)
-            local remove = UI.Button(card, "×", function() table.remove(reward.skills, index) renderSkills() end)
-            remove:Dock(RIGHT) remove:SetWide(32) remove:SetTooltip("Убрать навык из награды")
-            local controls = card:Add("DPanel") controls:Dock(FILL) controls:DockPadding(8, 0, 8, 4) controls.Paint = nil
-            UI.Choice(controls, "Навык", skill, "skill", choices)
-            compactNumber(controls, "Опыт навыка", skill, "xp", 1, 100000)
-        end
-        skills:InvalidateLayout(true)
-    end
-    UI.Button(parent, "+ Опыт выбранного навыка", function()
-        if not first or #reward.skills >= 16 then return end
-        reward.skills[#reward.skills + 1] = {skill = first, xp = 100} renderSkills()
-    end)
-    renderSkills()
+
 end

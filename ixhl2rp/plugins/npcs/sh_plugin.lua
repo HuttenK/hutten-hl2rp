@@ -40,7 +40,7 @@ ix.char.RegisterVar("dialogData", {
 })
 
 ix.util.Include("sh_rumours.lua")
-ix.util.Include("sh_dialogues.lua")
+-- Quest Director supplies the medieval dialogue content.
 
 ix.util.Include("meta/sh_dialogue.lua")
 ix.util.Include("sv_plugin.lua")

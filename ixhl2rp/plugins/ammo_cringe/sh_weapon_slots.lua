@@ -5,19 +5,19 @@ local W = ix.WeaponSlots
 W.count = 3
 
 function W.Label(slot)
- return slot == 3 and "Пистолет / нож" or "Двуручное " .. slot
+ return slot == 3 and "Одноручное оружие" or "Двуручное " .. slot
 end
 
 function W.Description(slot)
- return slot == 3 and "Пистолеты и малое одноручное холодное оружие." or
-  "Двуручное огнестрельное и холодное оружие."
+ return slot == 3 and "Малое одноручное оружие." or
+  "Двуручное оружие."
 end
 
 function W.Kind(item)
  if not item or not item.isWeapon then return end
- if item.twoHanded or item.isFlamethrower or item.isDisposableEFT then return "long" end
+ if item.twoHanded then return "long" end
  if item.weaponCategory == "melee" then return "pistol" end
- if item.isGrenade or item.isGrenadeARC9 or item.weaponCategory == "utility" then return "utility" end
+ if item.weaponCategory == "utility" then return "utility" end
  return item.weaponCategory == "sidearm" and "pistol" or "long"
 end
 
@@ -81,10 +81,9 @@ function W.Busy(weapon)
 end
 
 function W.CanEquip(client, item)
- if not W.Owns(client, item) or not item.isWeapon or item:GetData("arc9Spent") then return false end
+ if not W.Owns(client, item) or not item.isWeapon then return false end
  if not client:Alive() or client:IsRestricted() then return false end
  if client.GetNoDraw and client:GetNoDraw() then return false end
- if item.hasLock and item:CheckBiolock(client) == false then return false end
  if ix.Amputation and ix.Amputation.IsTwoHanded(item) and
   ix.Amputation.HasKind(client:GetCharacter(), "arm") then return false end
  return true
@@ -149,7 +148,7 @@ if CLIENT then
    return
   end
   -- Wait for the replacement entity and its identity to arrive. Selecting on
-  -- the client preserves ARC9's predicted draw animation and switch hooks.
+  -- the client preserves the weapon's predicted draw animation and switch hooks.
   if item and W.Owns(client, item) and W.Equipped(item) and item.id == pending.id and IsValid(weapon) and weapon:GetOwner() == client and
    weapon:GetNWInt("ixWeaponItem", 0) == pending.id then
    W.pendingDraw = nil
@@ -205,21 +204,15 @@ end)
 -- undrawn duplicate must never strip the other copy of the same weapon class.
 function W.Save(item, weapon)
  if not IsValid(weapon) or weapon.ixItem ~= item then return end
- if weapon.ARC9 then
-  ix.arc9Inventory.Save(item, weapon)
-  if weapon.GetFiremode then item:SetData("weaponFiremode", weapon:GetFiremode()) end
-  if weapon.GetSafe then item:SetData("weaponSafety", weapon:GetSafe()) end
- else
-  item:SetData("ammo", weapon:Clip1())
-  item:SetData("ammo2", weapon:Clip2())
- end
+ item:SetData("ammo", weapon:Clip1())
+ item:SetData("ammo2", weapon:Clip2())
 end
 
 function W.Release(client, item)
  local weapon = W.Live(client, item)
  if not weapon then return end
  if weapon.CancelReload then weapon:CancelReload() end
- ix.arc9Inventory.Settle(client)
+ ix.weaponInventory.Settle(client)
  W.Save(item, weapon)
  weapon.ixItem = nil
  client.ixAmmoReady = false
@@ -241,28 +234,12 @@ end
 local function give(client, item)
  local weapon = client:Give(item.class, true)
  if not IsValid(weapon) then return end
- if weapon.ARC9 then
-  if not ix.arc9Inventory.Bind(item, weapon, client) then
-   weapon.ixItem = nil
-   client:StripWeapon(item.class)
-   client:CalculateAmmo()
-   return
-  end
- else
-  weapon.ixItem = item
-  weapon:SetClip1(item:GetData("ammo", 0))
-  weapon:SetClip2(item:GetData("ammo2", 0))
-  weapon.ixInventoryReady = true
-  client:CalculateAmmo()
- end
+ weapon.ixItem = item
+ weapon:SetClip1(item:GetData("ammo", 0))
+ weapon:SetClip2(item:GetData("ammo2", 0))
+ weapon.ixInventoryReady = true
+ client:CalculateAmmo()
  weapon:SetNWInt("ixWeaponItem", item.id)
- if weapon.ARC9 then
-  local modes = weapon:GetValue("Firemodes") or {}
-  if weapon.SetFiremode and #modes > 0 then
-   weapon:SetFiremode(math.Clamp(item:GetData("weaponFiremode", 1), 1, #modes))
-  end
-  if weapon.SetSafe then weapon:SetSafe(item:GetData("weaponSafety", false)) end
- end
  client.carryWeapons = client.carryWeapons or {}
  client.carryWeapons[item.weaponCategory] = weapon
  return weapon
@@ -295,7 +272,6 @@ function W.Activate(client, item, noSelect)
   client:Notify("Не удалось взять оружие. Предмет и его состояние сохранены в слоте.")
   return false
  end
- if item.hasLock and not item:GetData("locked") then item:SetData("locked", client:GetCharacter():GetID()) end
  -- Respect normal weapon-switch restrictions (injuries, carts, crawling etc.).
  if not noSelect then W.SelectLive(client, item, weapon) end
  W.Publish(client)
@@ -317,8 +293,8 @@ end
 
 function W.Equip(client, item, slot, noSelect, noSound)
  if not W.CanEquip(client, item) then return false end
- -- Grenades and utility devices remain ordinary inventory equipment.
- -- Melee weapons share the same limited slots as firearms.
+ -- Utility weapons remain ordinary inventory equipment.
+ -- Large and small weapons use the same finite equipment slots.
  if W.Kind(item) == "utility" and not slot then
   if W.Slot(item) or W.Pending(item) or W.Busy(client:GetActiveWeapon()) then return false end
   local wasEquipped = item:GetData("equip") == true
@@ -332,7 +308,7 @@ function W.Equip(client, item, slot, noSelect, noSound)
   for index = 1, W.count do if W.Accepts(item, index) and not W.Item(client, index) then slot = index break end end
  end
  if not slot or not W.Accepts(item, slot) then
-  client:Notify("Нет подходящего свободного слота: два двуручных и один для пистолета или малого холодного оружия.")
+  client:Notify("Нет подходящего свободного слота: два двуручных и один для одноручного оружия.")
   return false
  end
  if not W.Transfer(client, item, client:GetInventory("weapon" .. slot)) then return false end
@@ -371,7 +347,7 @@ function W.Publish(client)
    local profile = HOLSTER_DRAWINFO and HOLSTER_DRAWINFO[item.class]
    data.items[slot] = {id = item.id, class = item.class, model = item.holsterModel or (profile and profile.model) or item.model,
     fallback = item.holsterFallbackModel, small = slot == 3,
-    tree = item:GetData("arc9_atts", {}), rounds = item:GetData("ammo", 0)}
+    rounds = item:GetData("ammo", 0)}
    if weapon and weapon == active then data.active = item.id end
   end
  end

@@ -12,42 +12,10 @@ ENT.bNoPersist = true
 
 function ENT:SetupDataTables()
 	self:NetworkVar("String", 0, "ItemID")
-	self:NetworkVar("Float", 0, "AssemblyHullLength")
 end
 
 function ENT:GetItem()
 	return ix.Item.instances[self.ixItemID] or ix.Item.instances[self:GetItemID()]// ix.Item:Get(self:GetItemID())
-end
-
--- Physics and ray tests are separate in Source. Share the same trace geometry
--- on both realms without creating a moving client physics object.
-function ENT:UpdateAssemblyTrace()
-	local length = self:GetAssemblyHullLength()
-	if length == self.ixTraceLength then return end
-	if IsValid(self.ixTraceShape) then self.ixTraceShape:Destroy() end
-	self.ixTraceShape = nil
-	self.ixTraceLength = length
-	if length <= 0 then return end
-	local mins, maxs = Vector(-length, -3, -4), Vector(length, 3, 4)
-	self.ixTraceShape = CreatePhysCollideBox(mins, maxs)
-	self:SetCollisionBounds(mins, maxs)
-	self:EnableCustomCollisions(true)
-end
-
-function ENT:TestCollision(startpos, delta, isbox, extents)
-	self:UpdateAssemblyTrace()
-	if not IsValid(self.ixTraceShape) then return end
-	local mins = -extents
-	local maxs = Vector(extents.x, extents.y, extents.z - mins.z)
-	mins.z = 0
-	local hit, normal, fraction = self.ixTraceShape:TraceBox(
-		self:GetPos(), self:GetAngles(), startpos, startpos + delta, mins, maxs)
-	if hit then return {HitPos = hit, Normal = normal, Fraction = fraction} end
-end
-
-function ENT:RemoveAssemblyTrace()
-	if IsValid(self.ixTraceShape) then self.ixTraceShape:Destroy() end
-	self.ixTraceShape = nil
 end
 
 if SERVER then
@@ -55,38 +23,15 @@ if SERVER then
 	local invalidBoundsMax = Vector(8, 8, 8)
 
 	function ENT:InitializeItemPhysics(item)
-		local definition = item and item.isWeapon and item.class and weapons.Get(item.class)
-		local assembled = definition and definition.MirrorVMWM and ix.arc9Inventory and
-			ix.arc9Inventory.IsClass(item.class)
-		self.ixAssemblyHull = assembled and true or nil
 		self:SetMoveType(MOVETYPE_VPHYSICS)
-		if assembled then
-			-- EFT viewmodels have no reliable world collision mesh. Keep a centered,
-			-- server-owned pickup hull matching the centered client assembly.
-			local hold = definition.HoldType
-			local pistol = hold == "pistol" or hold == "revolver"
-			local length = pistol and 7 or 22
-			self:SetAssemblyHullLength(length)
-			self:PhysicsInitBox(Vector(-length, -3, -4), Vector(length, 3, 4))
+		self:PhysicsInit(SOLID_VPHYSICS)
+		self:SetSolid(SOLID_VPHYSICS)
+		if not IsValid(self:GetPhysicsObject()) then
+			self:PhysicsInitBox(invalidBoundsMin, invalidBoundsMax)
 			self:SetSolid(SOLID_VPHYSICS)
-			self:EnableCustomCollisions(true)
-		else
-			self:SetAssemblyHullLength(0)
-			self:PhysicsInit(SOLID_VPHYSICS)
-			self:SetSolid(SOLID_VPHYSICS)
-			if not IsValid(self:GetPhysicsObject()) then
-				self:PhysicsInitBox(invalidBoundsMin, invalidBoundsMax)
-				self:SetSolid(SOLID_VPHYSICS)
-				self:EnableCustomCollisions(true)
-			end
 		end
-		self:UpdateAssemblyTrace()
 		local physics = self:GetPhysicsObject()
-		if IsValid(physics) then
-			if assembled then physics:SetMass(4) end
-			physics:EnableMotion(true)
-			physics:Wake()
-		end
+		if IsValid(physics) then physics:EnableMotion(true); physics:Wake() end
 	end
 
 	function ENT:Initialize()
@@ -172,7 +117,6 @@ if SERVER then
 	end
 
 	function ENT:OnRemove()
-		self:RemoveAssemblyTrace()
 		if !ix.shuttingDown and !self.ixIsSafe and self.ixItemID then
 			local item = self:GetItem()
 
@@ -233,9 +177,6 @@ if SERVER then
 		ix.Item:PerformItemEntityAction(client, item, entity, actionID)
 	end)
 else
-	function ENT:Initialize() self:UpdateAssemblyTrace() end
-	function ENT:Think() self:UpdateAssemblyTrace() end
-	function ENT:OnRemove() self:RemoveAssemblyTrace() end
 	ENT.PopulateEntityInfo = true
 
 	local shadeColor = Color(0, 0, 0, 200)
@@ -311,7 +252,6 @@ else
 	end
 
 	function ENT:Draw()
-		if ix.WeaponAssembly and ix.WeaponAssembly.DrawItem(self, self:GetItem(), self:WorldSpaceCenter(), self:GetAngles()) then return end
 		self:DrawModel()
 	end
 end

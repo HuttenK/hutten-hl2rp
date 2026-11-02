@@ -9,17 +9,8 @@ local function DrawCorners(x,y,w,h)
  U.Plate(x,y,w,h,Color(12,8,13,235),U.line)
 end
 
-local function SortByLevel(recipe)
-	local TableMemberSort = function(a, b, MemberName, bReverse)
-		if !istable(a) then return !bReverse end
-		if !istable(b) then return bReverse end
-		if !a.skill[2] then return !bReverse end
-		if !b.skill[2] then return bReverse end
-
-		return a.skill[2] < b.skill[2]
-	end
-
-	table.sort(recipe, function(a, b) return TableMemberSort(a, b, memberName, true) end)
+local function SortByName(recipes)
+ table.sort(recipes, function(a, b) return a:GetName() < b:GetName() end)
 end
 
 local sortFuncCat = function(a, b)
@@ -45,7 +36,7 @@ function PANEL:Setup(isMini, inventoryID)
 	firstTitle:Dock(TOP)
 	firstTitle:DockMargin(0, 10, 0, 0)
 	firstTitle:SetContentAlignment(5)
-	firstTitle:SetTextColor(Color(245, 95, 112))
+	firstTitle:SetTextColor(Color(213, 187, 130))
 	firstTitle:SetFont("legends.Heading")
 	firstTitle:SetText(L("craftRecipesTitle"))
  firstTitle:SetTall(scale(34))
@@ -65,7 +56,7 @@ function PANEL:Setup(isMini, inventoryID)
 		surface.SetDrawColor(210, 48, 72, 120)
 		surface.DrawOutlinedRect(0, 0, w, h)
 
-		panel:DrawTextEntryText(Color(245, 95, 112), Color(135, 30, 55), Color(245, 95, 112))
+		panel:DrawTextEntryText(Color(213, 187, 130), Color(135, 30, 55), Color(213, 187, 130))
 
 		if panel:GetText() == "" and !panel:IsEditing() then
 			surface.SetFont("legends.Body")
@@ -93,17 +84,6 @@ function PANEL:Setup(isMini, inventoryID)
 	local flatRecipes = {} -- плоский список всех доступных здесь рецептов, для поиска
 
 	for _, recipe in pairs(ix.Craft.recipes) do
-		if recipe.skill then
-			local skill = recipe.skill[1]
-			local level = recipe.skill[2]
-
-			local currentLevel = LocalPlayer():GetCharacter():GetSkillModified(skill)
-
-			if level > currentLevel then
-				continue
-			end
-		end
-
 		if recipe.blueprint then
 			local learned = LocalPlayer():GetCharacter():GetData("craftLearned", {})
 
@@ -112,10 +92,10 @@ function PANEL:Setup(isMini, inventoryID)
 			end
 		end
 
-		-- Station filter (additive): the combine terminal is a master station and
+		-- Station filter:
 		-- shows everything. Station-less recipes (basics) show everywhere — at any
 		-- bench and in the F1 menu. Bench-bound recipes only show at their bench.
-		if stationID != "station_combine" and recipe.station then
+		if recipe.station then
 			local match = false
 
 			if istable(recipe.station) then
@@ -134,37 +114,14 @@ function PANEL:Setup(isMini, inventoryID)
 			end
 		end
 
-		if recipe.mainCategory then
-			flatRecipes[#flatRecipes + 1] = recipe
-
-			local list = recipesList[recipe.mainCategory] or {recipes = {}, subcategories = {}, noSkill = true}
-
-			if recipe.category then
-				list.subcategories[recipe.category] = list.subcategories[recipe.category] or {}
-				
-				table.insert(list.subcategories[recipe.category], recipe)
-			else
-				list.recipes[#list.recipes + 1] = recipe
-			end
-
-			recipesList[recipe.mainCategory] = list
-		else
-			if !recipe.skill then continue end
-
-			flatRecipes[#flatRecipes + 1] = recipe
-
-			local list = recipesList[recipe.skill[1]] or {recipes = {}, subcategories = {}}
-
-			if recipe.category then
-				list.subcategories[recipe.category] = list.subcategories[recipe.category] or {}
-				
-				table.insert(list.subcategories[recipe.category], recipe)
-			else
-				list.recipes[#list.recipes + 1] = recipe
-			end
-
-			recipesList[recipe.skill[1]] = list
-		end
+		local category = recipe.mainCategory or "item.category.misc"
+		flatRecipes[#flatRecipes + 1] = recipe
+		local list = recipesList[category] or {recipes = {}, subcategories = {}}
+		if recipe.category then
+			list.subcategories[recipe.category] = list.subcategories[recipe.category] or {}
+			table.insert(list.subcategories[recipe.category], recipe)
+		else list.recipes[#list.recipes + 1] = recipe end
+		recipesList[category] = list
 	end
 
 	for category, recipeList in pairs(recipesList) do
@@ -173,21 +130,18 @@ function PANEL:Setup(isMini, inventoryID)
 			category = category
 		}
 
-		if !recipeList.noSkill then
-			SortByLevel(recipeList.recipes)
-		end
+			SortByName(recipeList.recipes)
+
 
 		local subCategoryList = {}
 		for subCategory, subCatRecipeList in pairs(recipeList.subcategories) do
 			subCategoryList[#subCategoryList + 1] = {
 				recipesList = subCatRecipeList,
-				category = subCategory,
-				noSkill = recipeList.noSkill
+				category = subCategory
 			}
 
-			if !recipeList.noSkill then
-				SortByLevel(subCatRecipeList)
-			end
+				SortByName(subCatRecipeList)
+
 		end
 
 		recipeList.subcategories = subCategoryList
@@ -198,10 +152,9 @@ function PANEL:Setup(isMini, inventoryID)
 
 	ix.gui.craft_categories = ix.gui.craft_categories or {}
 
-	local category_style = Color(245, 95, 112)
+	local category_style = Color(213, 187, 130)
 
 	for k, v in ipairs(categories) do
-		local noSkill = (v.recipesList or {}).noSkill
 		local collapsibleCategory = parent.first:Add("DCollapsibleCategory")
 
 		ix.gui.craft_categories[v.category] = ix.gui.craft_categories[v.category] or {false, {}}
@@ -233,7 +186,7 @@ function PANEL:Setup(isMini, inventoryID)
 		
 		local categoryTitle = vgui.Create("DLabel", collapsibleCategory)
 		
-		categoryTitle:SetText(noSkill and L(v.category) or ix.skills.list[v.category].name)
+		categoryTitle:SetText(L(v.category))
 		categoryTitle:SetFont("legends.Body")
 		categoryTitle:SetTextColor(category_style)
 		categoryTitle:SizeToContents()
@@ -405,7 +358,7 @@ function PANEL:Setup(isMini, inventoryID)
 		firstTitle:Dock(TOP)
 		firstTitle:DockMargin(0, 10, 0, 0)
 		firstTitle:SetContentAlignment(5)
-		firstTitle:SetTextColor(Color(245, 95, 112))
+		firstTitle:SetTextColor(Color(213, 187, 130))
 		firstTitle:SetFont("legends.Heading")
 		firstTitle:SetText(L("inv"))
 
@@ -450,7 +403,7 @@ function PANEL:Setup(isMini, inventoryID)
 		stationTitle:Dock(TOP)
 		stationTitle:DockMargin(0, 10, 0, 0)
 		stationTitle:SetContentAlignment(5)
-		stationTitle:SetTextColor(Color(245, 95, 112))
+		stationTitle:SetTextColor(Color(213, 187, 130))
 		stationTitle:SetFont("legends.Heading")
 		stationTitle:SetText(L("craftStationTitle"))
 

@@ -2,9 +2,9 @@ local Q = ix.questDirector
 Q.ui = Q.ui or {}
 local UI = Q.ui
 Q.pending, Q.queue, Q.requestID = {}, {}, 0
-local dark, card, accent = Color(22, 26, 31), Color(36, 42, 49), Color(120, 195, 190)
-surface.CreateFont("ixQDTitle", {font = "Roboto", size = 24, weight = 600, extended = true})
-surface.CreateFont("ixQDBody", {font = "Roboto", size = 18, weight = 400, extended = true})
+local dark, card, accent = ix.Legends.dark, ix.Legends.panel, ix.Legends.accent
+surface.CreateFont("ixQDTitle", {font = "Georgia", size = 24, weight = 600, extended = true})
+surface.CreateFont("ixQDBody", {font = "Georgia", size = 18, weight = 400, extended = true})
 
 function Q:Request(action, data, callback, owner)
     if #self.queue >= 20 then if callback then callback(false, "Очередь занята. Подождите.") end return end
@@ -52,7 +52,7 @@ function UI.Frame(title, width, height)
     frame:SetSize(math.min(width or 850, ScrW() - 40), math.min(height or 720, ScrH() - 40))
     frame:Center() frame:SetTitle(title) frame:MakePopup()
     frame:DockPadding(16, 36, 16, 14)
-    frame.Paint = function(_, w, h) draw.RoundedBox(6, 0, 0, w, h, dark) end
+    frame.Paint = function(_, w, h) ix.Legends.Plate(0,0,w,h) end
     frame.notice = frame:Add("DLabel")
     frame.notice:Dock(BOTTOM) frame.notice:SetTall(46) frame.notice:SetWrap(true)
     frame.notice:SetTextColor(accent) frame.notice:SetText("")
@@ -73,7 +73,7 @@ end
 function UI.Button(parent, text, callback)
     local button = parent:Add("DButton") button:Dock(TOP) button:DockMargin(0, 0, 0, 6)
     button:SetTall(38) button:SetText(text) button:SetFont("ixQDBody") button:SetTextColor(color_white)
-    button.Paint = function(s, w, h) draw.RoundedBox(4, 0, 0, w, h, s:IsHovered() and Color(52, 70, 76) or card) end
+    button.Paint = function(s, w, h) ix.Legends.ButtonFace(s,w,h) end
     button.DoClick = callback
     return button
 end

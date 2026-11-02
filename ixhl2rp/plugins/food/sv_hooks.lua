@@ -73,7 +73,6 @@ local chatTypes = {
 	["ic"] = true,
 	["w"] = true,
 	["y"] = true,
-	["radio"] = true,
 }
 
 function PLUGIN:PlayerMessageSend(speaker, chatType, text, bAnonymous, receivers, rawText)

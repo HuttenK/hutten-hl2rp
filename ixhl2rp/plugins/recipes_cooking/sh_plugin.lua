@@ -1,7 +1,3 @@
-PLUGIN.name = "Cooking"
-PLUGIN.author = ""
-PLUGIN.description = ""
-
-
+PLUGIN.name = "Приготовление пищи"
 ix.Craft:LoadFromDir(PLUGIN.folder.."/stations", "station")
-ix.Craft:LoadFromDir(PLUGIN.folder.."/cooking", "recipe", "recipe.mainCategory.cooking")
+ix.Craft:LoadFromDir(PLUGIN.folder.."/recipes", "recipe", "Кулинария")

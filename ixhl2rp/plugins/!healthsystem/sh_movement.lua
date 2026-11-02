@@ -40,19 +40,15 @@ function PLUGIN:OnPlayerHitGround(ply, inWater, onFloater, speed)
 	ply:SetStopModifier(math.max(ply:GetStopModifier() - (speed * 0.0012), 0.2))
 end
 
-local function CalcAthleticsSpeed(athletics)
-	return 1 + (athletics * 0.1) * 0.15
-end
-
-local function CalcAthletics(ply)
+local function UpdateMovementDefaults(ply)
 	local character = ply:GetCharacter()
 
 	if character then
 		local id = character:GetID()
 
 		if ply.speedCharID != id or ply.recalculateSpeed then
-			ply.runSpeed = ix.config.Get("runSpeed") * CalcAthleticsSpeed(character:GetSkillModified("athletics"))
-			ply.jumpPower = 130 * (1 + math.min(math.Remap(character:GetSkillModified("acrobatics"), 1, 10, 0, 0.7), 0.7))
+			ply.runSpeed = ix.config.Get("runSpeed")
+			ply.jumpPower = 130
 			ply.speedCharID = id
 			ply.recalculateSpeed = false
 			ply:SetRunSpeed(ply.runSpeed)
@@ -86,7 +82,6 @@ local function CheckJump(ply, mv)
 
 			local ct = CurTime()
 			if !ply.nextJumpTick or ct > ply.nextJumpTick then
-				ply:GetCharacter():DoAction("jump")
 
 				ply.nextJumpTick = ct + 0.24
 			end
@@ -143,7 +138,6 @@ function PLUGIN:SetupMove(ply, mv, cmd)
 		end
 
 		ply.movementPenalty = fraction
-		if ix.SCPMedicine then ply.movementPenalty = ply.movementPenalty * ix.SCPMedicine.MovementFactor(hp) end
 		ply.fracturedLegs = hasFracture
 	end
 
@@ -170,10 +164,7 @@ function PLUGIN:SetupMove(ply, mv, cmd)
 
 		if IsValid(holdingObject) then
 			if holdingObject:IsRagdoll() then
-				local strength = character:GetSpecial("st")
-				local strengthFactor = 0.8 * math.Clamp(math.Remap(strength, 1, 50, 0, 1), 0, 1)
-
-				speedFactor = speedFactor * (0.2 + strengthFactor)
+				speedFactor = speedFactor * 0.5
 			end
 		end
 	end
@@ -199,7 +190,7 @@ function PLUGIN:SetupMove(ply, mv, cmd)
 
 	local velLength = ply:GetVelocity():Length2DSqr()
 
-	CalcAthletics(ply)
+	UpdateMovementDefaults(ply)
 
 	if bit.band(mv:GetButtons(), IN_JUMP) != 0 then
 		CheckJump(ply, mv)

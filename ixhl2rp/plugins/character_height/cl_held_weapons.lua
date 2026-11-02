@@ -3,10 +3,9 @@ if H.ClearWeaponCallbacks then H.ClearWeaponCallbacks() end
 local attached = {}
 
 -- Stock weapons may inherit the scaled right-hand bone through bone merging.
--- ARC9/ArcCW assemble their own world models at an authored scale instead.
 function H.FixedWeaponBones(weapon)
  local owner = weapon:GetOwner()
- if not IsValid(owner) or not owner:IsPlayer() or weapon.ARC9 or weapon.ArcCW then return end
+ if not IsValid(owner) or not owner:IsPlayer() then return end
  local scale = owner:GetModelScale()
  if math.abs(scale - 1) < .00001 then return end
  local handID = weapon:LookupBone("ValveBiped.Bip01_R_Hand")
@@ -39,7 +38,7 @@ end
 timer.Create("ixCharacterHeightWeapons", .25, 0, function()
  for _, owner in ipairs(player.GetAll()) do
   local weapon = owner:GetActiveWeapon()
-  if IsValid(weapon) and not weapon.ARC9 and not weapon.ArcCW and not attached[weapon] then
+  if IsValid(weapon) and not attached[weapon] then
    attached[weapon] = weapon:AddCallback("BuildBonePositions", H.FixedWeaponBones)
   end
  end

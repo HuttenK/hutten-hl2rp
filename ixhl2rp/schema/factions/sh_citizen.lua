@@ -1,13 +1,11 @@
-FACTION.name = "faction.citizen"
-FACTION.info = "faction.citizen.info"
-FACTION.description = "faction.citizen.desc"
+FACTION.name = "Жители"
+FACTION.info = "Житель средневекового мира"
+FACTION.description = "Начните историю своего персонажа."
 FACTION.color = Color(150, 125, 100, 255)
 FACTION.icon = Material("autonomous/factions/citizen.png")
 FACTION.showCreationMenu = true
 FACTION.isDefault = true
 FACTION.bHumanVoices = true
-FACTION.bCanUseRations = true
-FACTION.bAllowDatafile = true
 
 -- Stable server/client indices generated from the installed Sectorial District models.
 FACTION.models = {
@@ -123,18 +121,6 @@ end
 
 function FACTION:OnTransferred(character)
 	Schema:ResetFactionClass(character, self.index)
-end
-
-function FACTION:GetRationType(character)
-	return Schema:GetCitizenRationTypes(character)
-end
-
-function FACTION:OnSpawn(client, firstTime)
-	if firstTime then
-		local character = client:GetCharacter()
-
-		character:CreateIDCard("card")
-	end
 end
 
 -- Стартовый баланс гражданина. Вызывается ядром (GM:OnCharacterCreated ->

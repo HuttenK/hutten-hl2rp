@@ -16,18 +16,13 @@ function Q:ValidateDefinition(kind, row)
         for _, goal in ipairs(row.objectives) do
             if goal.target == "" then return false, "У каждой цели должна быть метка." end
             if goal.type == "deposit" and not ix.Item:Get(goal.item) then return false, "Предмет для передачи не найден." end
-            if goal.check.skill ~= "" and not (ix.skills and ix.skills.list[goal.check.skill]) then return false, "Навык цели не найден." end
-            if goal.check.stat ~= "" and not (ix.specials and ix.specials.list[goal.check.stat]) then return false, "Характеристика цели не найдена." end
         end
         for _, item in ipairs(row.reward.items) do if not ix.Item:Get(item.item) then return false, "Предмет награды не найден: " .. item.item end end
-        for _, skill in ipairs(row.reward.skills) do if not (ix.skills and ix.skills.list[skill.skill]) then return false, "Навык награды не найден: " .. skill.skill end end
     elseif kind == "npc" then
         if not util.IsValidModel(row.model) then return false, "Модель отсутствует на сервере." end
         for _, node in ipairs(row.nodes) do
             for _, option in ipairs(node.options) do
                 if option.action == "quest" and not self.defs.quest[option.quest] then return false, "Задание ответа не найдено." end
-                if option.check.skill ~= "" and not (ix.skills and ix.skills.list[option.check.skill]) then return false, "Навык ответа не найден." end
-                if option.check.stat ~= "" and not (ix.specials and ix.specials.list[option.check.stat]) then return false, "Характеристика ответа не найдена." end
             end
         end
     elseif kind == "object" then
@@ -191,7 +186,6 @@ function Q:CreateSimple(client, data)
     if not object then return false, reason end
     if not util.IsValidModel(object.model) then return false, "Модель объекта не найдена." end
     for _, item in ipairs(quest.reward.items) do if not ix.Item:Get(item.item) then return false, "Предмет награды не найден." end end
-    for _, skill in ipairs(quest.reward.skills) do if not (ix.skills and ix.skills.list[skill.skill]) then return false, "Навык награды не найден." end end
     object.id, object.revision = self:NewID("object"), 1
     if newNPC then self.defs.npc[npc.id] = npc end
     self.defs.quest[quest.id], self.defs.object[object.id] = quest, object

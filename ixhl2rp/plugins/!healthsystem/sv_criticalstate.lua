@@ -14,9 +14,6 @@ function PLAYER:SetCriticalState(state)
 		if !self:Alive() then return end
 		local alreadyCritical = self:InCriticalState()
 		local persistedCritical = character:GetData("crit", false)
-		local paralyzed = ix.SCPMedicine and ix.SCPMedicine.IsParalyzed(character:Health())
-		local consciousParalysis = paralyzed and character:Health():GetConsciousness() > 0.3
-		self:SetNetVar("scpParalyzed", consciousParalysis and true or nil)
 		if !alreadyCritical and self.LeaveSequence and self:GetNetVar("forcedSequence") then self:LeaveSequence() end
 		self:SetHealth(1)
 		self:SetNetVar("crit", true)
@@ -24,19 +21,11 @@ function PLAYER:SetCriticalState(state)
 		character:SetData("crit", true)
 		character:SetData("critTime", nil)
 		if !alreadyCritical then self:SetNetVar("downedSince", CurTime()) end
-		if !alreadyCritical and !paralyzed and ix.Downed and ix.Downed.BeginCrawl then
+		if !alreadyCritical and ix.Downed and ix.Downed.BeginCrawl then
 			ix.Downed.BeginCrawl(self, persistedCritical)
 		end
 
-		if paralyzed then
-			if ix.Downed and ix.Downed.EndRescueWindow then ix.Downed.EndRescueWindow(self) end
-			if self:InVehicle() then self:ExitVehicle() end
-			self:SetAction()
-			self.ixRegainConscious = nil
-			if !IsValid(self.ixRagdoll) then self:SetRagdolled(true) end
-			if IsValid(self.ixRagdoll) then self.ixRagdoll.ixGrace = nil end
-			self:SetLocalVar("knocked", !consciousParalysis)
-		elseif ix.Downed and ix.Downed.Falling and ix.Downed.Falling(self) then
+		if ix.Downed and ix.Downed.Falling and ix.Downed.Falling(self) then
 			if !alreadyCritical or !IsValid(self.ixRagdoll) then self:SetRagdolled(true) end
 			if IsValid(self.ixRagdoll) then self.ixRagdoll.ixGrace = nil end
 			self:SetLocalVar("knocked", false)
@@ -50,7 +39,6 @@ function PLAYER:SetCriticalState(state)
 	else
 		if self:Alive() then self:SetHealth(100) end
 		self:SetNetVar("crit", nil)
-		self:SetNetVar("scpParalyzed", nil)
 		self:SetNetVar("downedSince", nil)
 		self:SetNetVar("criticalCrawlUntil", nil)
 		self:SetNetVar("criticalFallUntil", nil)
@@ -166,16 +154,6 @@ net.Receive("crit.apply", function(len, client)
 			return true
 		end, function(success)
 			if success and ix.Downed and ix.Downed.FinishAction(target, client, isSlay and "rob" or "finish") then
-				local character = target:GetCharacter()
-				local targetLevel = character:GetLevel()
-				local bonusXP = 0
-
-				if targetLevel >= 20 then
-					bonusXP = 50 * targetLevel
-				end
-				
-				client:RewardXP(((10 * targetLevel) + bonusXP) * (isSlay and 1 or 1.25), isSlay and "ограбление" or "убийство")
-
 				ix.chat.Send(nil, "dmgAdminMsg", "", nil, nil, {
 					t = 2,
 					b = isSlay,
@@ -231,16 +209,6 @@ net.Receive("crit.use", function(len, client)
 
 	if admins <= 0 then
 		client:Notify(L("health.noAdmins", client))
-		return
-	end
-
-	if client:GetCharacter():GetLevel() < 10 then
-		client:Notify(L("health.needLevel10", client))
-		return
-	end
-
-	if !isSlay and client:GetCharacter():GetLevel() < 20 then
-		client:Notify(L("health.needLevel20", client))
 		return
 	end
 

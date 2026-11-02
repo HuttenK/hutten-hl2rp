@@ -19,7 +19,6 @@ function GCAL.SolveArmReach(root, target, pole, upperLength, foreLength)
     return root + direction * along + bend:GetNormalized() * height, root + direction * distance
 end
 
--- Simple TPIK: direct bone copy (ARC9-style)
 
 function GCAL.InstallTPIK(deps)
     deps = deps or {}

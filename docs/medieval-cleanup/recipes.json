@@ -1,0 +1,314 @@
+[
+  {
+    "id": "boil_water",
+    "file": "ixhl2rp/plugins/recipes_cooking/recipes/boil_water.lua",
+    "name": "Кипячёная вода",
+    "description": "",
+    "requirements": {
+      "dirty_water": 1
+    },
+    "results": {
+      "purified_water": 1
+    },
+    "tools": [
+      "tool_kettle"
+    ],
+    "station": "station_stove"
+  },
+  {
+    "id": "bread",
+    "file": "ixhl2rp/plugins/recipes_cooking/recipes/bread.lua",
+    "name": "Хлеб",
+    "description": "",
+    "requirements": {
+      "cook_flour": 2,
+      "purified_water": 1,
+      "cook_yeast": 1
+    },
+    "results": {
+      "fresh_bread": 1
+    },
+    "station": "station_stove"
+  },
+  {
+    "id": "egg",
+    "file": "ixhl2rp/plugins/recipes_cooking/recipes/egg.lua",
+    "name": "Варёное яйцо",
+    "description": "",
+    "requirements": {
+      "cook_egg": 1,
+      "purified_water": 1
+    },
+    "results": {
+      "boiled_egg": 1
+    },
+    "tools": [
+      "tool_pot"
+    ],
+    "station": "station_stove"
+  },
+  {
+    "id": "fish",
+    "file": "ixhl2rp/plugins/recipes_cooking/recipes/fish.lua",
+    "name": "Жареная рыба",
+    "description": "",
+    "requirements": {
+      "raw_fish": 1
+    },
+    "results": {
+      "cooked_fish": 1
+    },
+    "tools": [
+      "tool_pan"
+    ],
+    "station": "station_stove"
+  },
+  {
+    "id": "fish_soup",
+    "file": "ixhl2rp/plugins/recipes_cooking/recipes/fish_soup.lua",
+    "name": "Рыбная похлёбка",
+    "description": "",
+    "requirements": {
+      "raw_fish": 1,
+      "purified_water": 1
+    },
+    "results": {
+      "fish_soup": 1
+    },
+    "tools": [
+      "tool_pot"
+    ],
+    "station": "station_stove"
+  },
+  {
+    "id": "meat",
+    "file": "ixhl2rp/plugins/recipes_cooking/recipes/meat.lua",
+    "name": "Жареное мясо",
+    "description": "",
+    "requirements": {
+      "raw_meat": 1
+    },
+    "results": {
+      "fried_meat": 1
+    },
+    "tools": [
+      "tool_pan"
+    ],
+    "station": "station_stove"
+  },
+  {
+    "id": "potato",
+    "file": "ixhl2rp/plugins/recipes_cooking/recipes/potato.lua",
+    "name": "Печёный картофель",
+    "description": "",
+    "requirements": {
+      "union_branded_potato": 1
+    },
+    "results": {
+      "baked_potato": 1
+    },
+    "station": "station_stove"
+  },
+  {
+    "id": "soup",
+    "file": "ixhl2rp/plugins/recipes_cooking/recipes/soup.lua",
+    "name": "Овощная похлёбка",
+    "description": "",
+    "requirements": {
+      "carrot": 1,
+      "cabbage": 1,
+      "purified_water": 1
+    },
+    "results": {
+      "vegetable_soup": 1
+    },
+    "tools": [
+      "tool_pot"
+    ],
+    "station": "station_stove"
+  },
+  {
+    "id": "tea",
+    "file": "ixhl2rp/plugins/recipes_cooking/recipes/tea.lua",
+    "name": "Чай",
+    "description": "",
+    "requirements": {
+      "cook_tea": 1,
+      "purified_water": 1
+    },
+    "results": {
+      "cup_of_tea": 1
+    },
+    "tools": [
+      "tool_kettle"
+    ],
+    "station": "station_stove"
+  },
+  {
+    "id": "bag",
+    "file": "ixhl2rp/plugins/recipes_crafting/recipes/bag.lua",
+    "name": "Дорожная сумка",
+    "description": "",
+    "requirements": {
+      "mat_leather": 3,
+      "mat_cloth": 2
+    },
+    "results": {
+      "bag": 1
+    },
+    "tools": [
+      "box_of_needles"
+    ],
+    "station": "station_tailor"
+  },
+  {
+    "id": "bandage",
+    "file": "ixhl2rp/plugins/recipes_crafting/recipes/bandage.lua",
+    "name": "Льняные повязки",
+    "description": "",
+    "requirements": {
+      "mat_cloth": 1
+    },
+    "results": {
+      "bandage": 2
+    }
+  },
+  {
+    "id": "chain",
+    "file": "ixhl2rp/plugins/recipes_crafting/recipes/chain.lua",
+    "name": "Цепь",
+    "description": "",
+    "requirements": {
+      "metal_reclaimed": 2
+    },
+    "results": {
+      "chain": 1
+    },
+    "tools": [
+      "tool_hammer"
+    ],
+    "station": "station_tokar"
+  },
+  {
+    "id": "cloth",
+    "file": "ixhl2rp/plugins/recipes_crafting/recipes/cloth.lua",
+    "name": "Полотно",
+    "description": "",
+    "requirements": {
+      "mat_cloth_reclaimed": 3
+    },
+    "results": {
+      "mat_cloth": 1
+    },
+    "tools": [
+      "box_of_needles"
+    ],
+    "station": "station_tailor"
+  },
+  {
+    "id": "hammer",
+    "file": "ixhl2rp/plugins/recipes_crafting/recipes/hammer.lua",
+    "name": "Молоток",
+    "description": "",
+    "requirements": {
+      "metal_reclaimed": 1,
+      "mat_wood": 1
+    },
+    "results": {
+      "tool_hammer": 1
+    },
+    "station": "station_tokar"
+  },
+  {
+    "id": "iron",
+    "file": "ixhl2rp/plugins/recipes_crafting/recipes/iron.lua",
+    "name": "Переплавка железа",
+    "description": "",
+    "requirements": {
+      "metal_scrap": 3,
+      "mat_charcoal": 1
+    },
+    "results": {
+      "metal_reclaimed": 1
+    },
+    "tools": [
+      "tool_hammer"
+    ],
+    "station": "station_tokar"
+  },
+  {
+    "id": "mallet",
+    "file": "ixhl2rp/plugins/recipes_crafting/recipes/mallet.lua",
+    "name": "Деревянный молоток",
+    "description": "",
+    "requirements": {
+      "mat_wood": 2
+    },
+    "results": {
+      "tool_woodhammer": 1
+    },
+    "station": "station_tokar"
+  },
+  {
+    "id": "nails",
+    "file": "ixhl2rp/plugins/recipes_crafting/recipes/nails.lua",
+    "name": "Кованые гвозди",
+    "description": "",
+    "requirements": {
+      "metal_reclaimed": 1
+    },
+    "results": {
+      "box_of_nails": 1
+    },
+    "tools": [
+      "tool_hammer"
+    ],
+    "station": "station_tokar"
+  },
+  {
+    "id": "rope",
+    "file": "ixhl2rp/plugins/recipes_crafting/recipes/rope.lua",
+    "name": "Кандалы",
+    "description": "",
+    "requirements": {
+      "metal_reclaimed": 2
+    },
+    "results": {
+      "ziptie": 1
+    },
+    "tools": [
+      "tool_hammer"
+    ],
+    "station": "station_tokar"
+  },
+  {
+    "id": "smallbag",
+    "file": "ixhl2rp/plugins/recipes_crafting/recipes/smallbag.lua",
+    "name": "Поясной мешочек",
+    "description": "",
+    "requirements": {
+      "mat_leather": 1,
+      "mat_cloth": 1
+    },
+    "results": {
+      "smallbag": 1
+    },
+    "tools": [
+      "box_of_needles"
+    ],
+    "station": "station_tailor"
+  },
+  {
+    "id": "splint",
+    "file": "ixhl2rp/plugins/recipes_crafting/recipes/splint.lua",
+    "name": "Деревянная шина",
+    "description": "",
+    "requirements": {
+      "mat_wood": 1,
+      "mat_cloth": 1
+    },
+    "results": {
+      "splint": 1
+    }
+  }
+]

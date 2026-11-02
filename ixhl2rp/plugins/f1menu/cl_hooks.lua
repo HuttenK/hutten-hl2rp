@@ -22,13 +22,7 @@ function PLUGIN:PlayerBindPress(client, bind, pressed)
 end
 
 function PLUGIN:SetInfoMenuData(character, faction)
-	ix.infoMenu.Add(L("infoMenuLevel", character:GetLevel()))
 
-	local card = LocalPlayer():GetIDCard()
-
-	if card then
-		ix.infoMenu.Add(L("infoMenuCID", card:GetData("cid", 0)))
-	end
 
 	ix.infoMenu.Add(L("infoMenuTokens", ix.currency.Get(character:GetMoney())))
 

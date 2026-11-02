@@ -1,5 +1,5 @@
-ITEM.name = "item.smallbag"
-ITEM.description = "item.smallbag.desc"
+ITEM.name = "Поясной мешочек"
+ITEM.description = "Сумка для вещей путника."
 ITEM.model = "models/eft/misk/scontainer_bag_sport.mdl"
 ITEM.width = 3
 ITEM.height = 2
@@ -10,10 +10,4 @@ ITEM.inventory_data = {
 	multislot = true
 }
 
-ITEM.displayID = "backpack" 
-
-
-ITEM.sdDisplayID = ix.Appearance:New("sd_smallbag", {
- slot = ix.Appearance.Slot.Backpack, layer = ix.Appearance.Layer.Main,
- bodyGroups = {}, variants = {sd = {bodyGroups = {[10] = 1}}}
-})
+ITEM.displayID = "backpack"

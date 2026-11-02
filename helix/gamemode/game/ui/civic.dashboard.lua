@@ -16,26 +16,18 @@ function C.Snapshot()
 	local noFood = faction and faction.dontNeedFood
 	local snapshot = {
 		name = character:GetName(), faction = faction and L(faction.name) or "",
-		money = ix.currency.Get(character:GetMoney()), level = Value(character, "GetLevel", 1),
-		xp = Value(character, "GetLevelXP", 0), points = Value(character, "GetSkillPoints", 0),
+		money = ix.currency.Get(character:GetMoney()),
 		vitals = {
 			{"health", health and health.GetPercent and health:GetPercent() or client:Health() / math.max(client:GetMaxHealth(), 1)},
 			{"stamina", client:GetLocalVar("stm", 0) / math.max(Value(character, "GetMaxStamina", 100), 1)},
 			{"hunger", not noFood and Value(character, "GetHunger", 100) / 100 or nil},
 			{"thirst", not noFood and Value(character, "GetThirst", 100) / 100 or nil},
-			{"memory", Value(character, "GetSkillMemory", 0) / math.max(Value(character, "GetMaxSkillMemory", 750), 1)}
 		},
 		alerts = {}, journal = character:GetData("civicJournal", {})
 	}
-	local blackout = ix.plugin.Get("blackout")
-	snapshot.powerKnown = blackout and istable(blackout.zones) or false
-	snapshot.blackout = snapshot.powerKnown and blackout:IsPosBlackedOut(client:GetPos()) or false
-	local levels = ix.plugin.Get("!!levelsystem")
-	snapshot.requiredXP = levels and levels:GetRequiredLevelXP(snapshot.level) or 0
 	if client:GetNetVar("isBleeding", false) then snapshot.alerts[#snapshot.alerts + 1] = "civic.bleeding" end
 	if not noFood and Value(character, "GetHunger", 100) < 25 then snapshot.alerts[#snapshot.alerts + 1] = "civic.lowFood" end
 	if not noFood and Value(character, "GetThirst", 100) < 25 then snapshot.alerts[#snapshot.alerts + 1] = "civic.lowWater" end
-	if Value(character, "GetSkillMemory", 100) < 50 then snapshot.alerts[#snapshot.alerts + 1] = "civic.lowMemory" end
 	return snapshot
 end
 
@@ -122,66 +114,19 @@ function PANEL:Overview()
 			end
 		end
 	end
-	local development = self:Card(190, colors.cool, self.overviewGrid)
-	development.Paint = function(_, w, h)
-		C.Card(w, h, colors.cool)
-		local data = self.snapshot
-		if not data then return end
-		C.Text(L("civic.progress"), "Mono", S(22), S(18), colors.muted)
-		C.Text(L("civic.level", data.level), "Heading", S(22), S(44))
-		C.Text(L("civic.points", data.points), "Body", S(22), S(74), colors.accent)
-		local width = w - S(44)
-		local fraction = data.requiredXP > 0 and math.Clamp(data.xp / data.requiredXP, 0, 1) or 1
-		C.Rect(S(22), h - S(21), width, S(3), colors.raised)
-		C.Rect(S(22), h - S(21), width * fraction, S(3), colors.cool)
-		C.Text(data.requiredXP > 0 and L("civic.xp", math.floor(data.xp), data.requiredXP) or L("civic.maxLevel"), "Mono", S(22), h - S(43), colors.muted)
-	end
-	local develop = C.Button(development, L("civic.allocate"), function()
-		local character = LocalPlayer():GetCharacter()
-		if character and Value(character, "GetSkillPoints", 0) ~= 0 and vgui.GetControlTable("autonomous.levelup") then
-			self.workspace:Close()
-			vgui.Create("autonomous.levelup")
-		end
-	end)
-	develop:SetWide(S(210))
-	develop.Think = function(button)
-		button:SetPos(S(22), S(100))
-		button:SetDisabled(not self.snapshot or self.snapshot.points == 0 or not vgui.GetControlTable("autonomous.levelup"))
-	end
 	self.alertCard = self:Card(100, colors.danger, self.overviewGrid)
 	self.alertTitle = Label(self.alertCard, L("civic.attention"), "Mono", colors.danger)
 	self.alertText = Label(self.alertCard, "", "Body")
-	self.powerCard = self:Card(175, nil, self.overviewGrid)
-	Label(self.powerCard, L("civic.city"), "Mono", colors.muted)
-	self.powerTitle = Label(self.powerCard, "", "Heading")
-	self.powerText = Label(self.powerCard, "", "Body", colors.muted)
-	local cards = {condition, development, self.alertCard, self.powerCard}
+	local cards = {condition, self.alertCard}
 	for _, card in ipairs(cards) do card:Dock(NODOCK) end
 	self.overviewGrid.PerformLayout = function(grid, width)
-		local gap = S(14)
-		if width >= S(820) then
-			local left = math.floor((width - gap) * 0.57)
-			condition:SetPos(0, 0)
-			condition:SetWide(left)
-			self.alertCard:SetPos(0, condition:GetTall() + gap)
-			self.alertCard:SetWide(left)
-			development:SetPos(left + gap, 0)
-			development:SetWide(width - left - gap)
-			self.powerCard:SetPos(left + gap, development:GetTall() + gap)
-			self.powerCard:SetWide(width - left - gap)
-			local height = math.max(condition:GetTall() + self.alertCard:GetTall(), development:GetTall() + self.powerCard:GetTall()) + gap
-			if grid:GetTall() ~= height then grid:SetTall(height) end
-		else
-			local y = 0
-			for _, card in ipairs(cards) do
-				card:SetPos(0, y)
-				card:SetWide(width)
-				y = y + card:GetTall() + gap
-			end
-			if grid:GetTall() ~= y then grid:SetTall(y) end
+		local y = 0
+		for _, card in ipairs(cards) do
+			card:SetPos(0, y); card:SetWide(width)
+			y = y + card:GetTall() + S(14)
 		end
+		if grid:GetTall() ~= y then grid:SetTall(y) end
 	end
-	self:RefreshOverview()
 end
 
 function PANEL:RefreshOverview()
@@ -194,9 +139,6 @@ function PANEL:RefreshOverview()
 	self.alertText:SetText(table.concat(alerts, "\n"))
 	self.alertCard:SetTall(S(60 + math.max(#alerts, 1) * 26))
 	self.overviewGrid:InvalidateLayout()
-	self.powerTitle:SetText(L(not data.powerKnown and "civic.powerUnknown" or data.blackout and "civic.outage" or "civic.power"))
-	self.powerTitle:SetTextColor(data.blackout and colors.danger or colors.cool)
-	self.powerText:SetText(L(data.blackout and "civic.powerHint" or "civic.safeHint"))
 end
 
 function PANEL:Assignments()

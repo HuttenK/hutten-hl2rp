@@ -259,7 +259,6 @@ if CLIENT then
 
 			if character then
 				table.insert(text, {
-					text = "Level: "..character:GetLevel(), 
 					color = Color(170, 170, 170, 255),
 				})
 			end

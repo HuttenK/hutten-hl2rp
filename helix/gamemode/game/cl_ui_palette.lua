@@ -22,10 +22,10 @@ ix.Palette.darkpink = Color( 100, 27, 59)
 ix.Palette.darkgray = Color( 71, 71, 71)
 
 -- Autonomous colors
-ix.Palette.autonomousblue = Color( 248, 64, 64)
+ix.Palette.autonomousblue = Color( 182, 151, 91)
 
 -- Combine colors
-ix.Palette.combineblue = Color( 248, 64, 64 )
+ix.Palette.combineblue = Color( 182, 151, 91 )
 ix.Palette.combinegreen = Color( 48, 255, 228 )
 ix.Palette.combineyellow = Color( 255, 214, 48 )
 ix.Palette.combinered = Color( 255, 76, 53 )

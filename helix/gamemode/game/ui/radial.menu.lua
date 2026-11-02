@@ -3,7 +3,7 @@ local RADIUS_INNER = 100
 local RADIUS_OUTER = 250
 
 surface.CreateFont("autonomous.radialmenu.btn", {
-	font = "Tahoma",
+	font = "Georgia",
 	extended = true,
 	size = 21,
 	weight = 500,
@@ -29,7 +29,7 @@ function PANEL:Init()
 	self.segmentAngles = {}
 
 	self.alpha = 0
-	self.innerColor = Color(48, 8, 8, 0)
+	self.innerColor = Color(45, 37, 24, 0)
 
 	self.centerX = ScrW() * 0.5
 	self.centerY = ScrH() * 0.5
@@ -76,7 +76,7 @@ function PANEL:Open()
 		},
 		easing = "outCubic",
 		OnComplete = function()
-			print(1)
+			-- Open animation complete.
 		end
 	})
 end
@@ -162,7 +162,7 @@ do
 		for i = 1, self.optionCount do
 			local hoverFrac = math.ease.OutQuad(self.options[i].anim)
 
-			local hoverColor = self.options[i].hoverColor or Color(48, 8, 8)
+			local hoverColor = self.options[i].hoverColor or Color(45, 37, 24)
 			hoverColor.a = 100 * hoverFrac
 			self.options[i].hoverColor = hoverColor
 
@@ -189,7 +189,7 @@ do
 			local angCenter = self.sectionAngle * (i - 0.5) + (math.pi / 2)
 			local posX, posY = math.cos(angCenter), math.sin(angCenter)
 
-			local textColor = self.options[i].textColor or Color(248, 64, 64)
+			local textColor = self.options[i].textColor or Color(230, 222, 202)
 			textColor.a = (150 + 105 * hoverFrac) * alpha
 			self.options[i].textColor = textColor
 

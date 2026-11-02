@@ -72,7 +72,6 @@ if (SERVER) then
 				money = entity.money,
 				scale = entity.scale,
 				anim = entity.anim,
-				card_access = entity.card_access,
 				password = entity.password
 			}
 		end
@@ -120,7 +119,6 @@ if (SERVER) then
 			entity.money = v.money
 			entity.scale = v.scale or 0.5
 
-			entity.card_access = v.card_access or ""
 			entity.password = v.password or ""
 
 			entity:InitOrders()
@@ -466,7 +464,6 @@ else
 
 		entity.money = net.ReadUInt(16)
 		entity.password = net.ReadString()
-		entity.card_access = net.ReadString()
 		entity.items = net.ReadTable()
 		entity.scale = net.ReadFloat()
 		entity.messages = net.ReadTable()
@@ -557,7 +554,6 @@ else
 		local key = net.ReadString()
 		local data = net.ReadType()
 
-		editor.card_access:SetText(entity.card_access)
 		editor.password:SetText(entity.password)
 
 		if (key == "name") then
@@ -632,7 +628,6 @@ else
 		local editor = ix.gui.vendorEditor
 
 		if (IsValid(editor)) then
-			editor.card_access:SetText(entity.card_access)
 			editor.password:SetText(entity.password)
 			local useMoney = tonumber(value) != nil
 
@@ -664,7 +659,6 @@ else
 		local editor = ix.gui.vendorEditor
 
 		if (IsValid(editor)) then
-			editor.card_access:SetText(entity.card_access)
 			editor.password:SetText(entity.password)
 			local _, max = entity:GetStock(uniqueID)
 
@@ -722,7 +716,6 @@ properties.Add("vendor_edit", {
 			net.WriteEntity(entity)
 			net.WriteUInt(entity.money or 0, 16)
 			net.WriteString(entity.password)
-			net.WriteString(entity.card_access)
 			net.WriteTable(itemsTable)
 			net.WriteFloat(entity.scale or 0.5)
 			net.WriteTable(entity.messages)

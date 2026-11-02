@@ -41,8 +41,6 @@ function I.UpdateCamera()
  if IsValid(weapon) and weapon.GetSightAmount then aiming=aiming or weapon:GetSightAmount()>.01 end
  local target=grounded and not aiming and math.Clamp(speed/150,0,1) or 0
  if p:Crouching() then target=target*.3 end
- -- ARC9 already supplies weapon/camera movement. Add only a small contribution.
- if IsValid(weapon) and (weapon.ARC9 or weapon.ArcCW) then target=target*.45 end
  state.weight=I.Approach(state.weight,target,dt,.13)
  state.sprint=I.Approach(state.sprint,grounded and not aiming and p:KeyDown(IN_SPEED) and speed>150 and 1 or 0,dt,.22)
  -- Stretch the running cycle without increasing its amplitude. Use the

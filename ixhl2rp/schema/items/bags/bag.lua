@@ -1,5 +1,5 @@
-ITEM.name = "item.bag"
-ITEM.description = "item.bag.desc"
+ITEM.name = "Дорожная сумка"
+ITEM.description = "Сумка для вещей путника."
 ITEM.model = "models/cultist/backpacks/world/backpack_small.mdl"
 ITEM.rarity = 1
 ITEM.width = 3
@@ -10,7 +10,3 @@ ITEM.inventory_data = {
 	type = 'item_container',
 	multislot = true
 }
-ITEM.sdDisplayID = ix.Appearance:New("sd_bag", {
- slot = ix.Appearance.Slot.Backpack, layer = ix.Appearance.Layer.Main,
- bodyGroups = {}, variants = {sd = {bodyGroups = {[10] = 1}}}
-})

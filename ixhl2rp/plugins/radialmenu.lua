@@ -147,7 +147,7 @@ local function BuildAmputationOptions(target)
 	local client = LocalPlayer()
 
 	if (!ix.Amputation or !client.GetItems) then return {} end
-	if (!ix.Amputation.HasSkill(client:GetCharacter())) then return {} end
+	if (!ix.Amputation.CanOperate(client:GetCharacter())) then return {} end
 
 	local tool
 
@@ -183,7 +183,7 @@ local function BuildReattachOptions(target)
 	local client = LocalPlayer()
 
 	if (!ix.Amputation or !client.GetItems) then return {} end
-	if (!ix.Amputation.HasSkill(client:GetCharacter())) then return {} end
+	if (!ix.Amputation.CanOperate(client:GetCharacter())) then return {} end
 
 	local options = {}
 
@@ -381,10 +381,10 @@ local function PersonalOptions(target, entity, ragdoll)
  hook.Run("CreatePersonalRadialOptions",options)
  return options
 end
-surface.CreateFont("ixRadialLabel",{font="Consolas",size=18,weight=500,extended=true})
-surface.CreateFont("ixRadialSmall",{font="Consolas",size=14,weight=400,extended=true})
-local red=Color(246,83,99)
-local pale=Color(220,195,194)
+surface.CreateFont("ixRadialLabel",{font="Georgia",size=18,weight=500,extended=true})
+surface.CreateFont("ixRadialSmall",{font="Georgia",size=14,weight=400,extended=true})
+local red=Color(213,187,130)
+local pale=Color(230,222,202)
 local PANEL={}
 function PANEL:Init()
  self:SetSize(ScrW(),ScrH()); self:SetPos(0,0)
@@ -394,7 +394,7 @@ function PANEL:Init()
  self.started=SysTime()
  self.hoverFade={}
  self:SetAlpha(0); self:AlphaTo(255,.2,0)
- surface.PlaySound("ix/ui/radial_open.wav")
+
 end
 function PANEL:SetTarget(target,entity,ragdoll,personal)
  self.character=LocalPlayer():GetCharacter()
@@ -416,6 +416,7 @@ function PANEL:PageOptions()
   self.options[#self.options+1]={label="Следующие",pageDelta=1,disabled=self.page==pages,detail=self.page.." / "..pages}
  end
  if #self.menuStack>0 then self.options[#self.options+1]={label="Назад",isBack=true} end
+ for _,option in ipairs(self.options) do option.medievalIcon=ix.Legends.IconName(option.label) end
  self.hovered=0; self.hoverFade={}
  if self.OnOptionsChanged then self:OnOptionsChanged() end
  self:SetAlpha(145); self:AlphaTo(255,.14,0)
@@ -449,7 +450,7 @@ function PANEL:Think()
    if math.abs(NormDiff(angle,-90+(i-1)*360/#self.options))<=180/#self.options then hover=i break end
   end
  end
- if hover~=self.hovered and hover>0 then surface.PlaySound("ix/ui/radial_hover.wav") end
+
  if hover~=self.hovered and self.OnOptionHover then self:OnOptionHover(self.options[hover]) end
  self.hovered=hover
  if self.PreviewThink then self:PreviewThink() end
@@ -467,7 +468,7 @@ end
 function PANEL:Paint(w,h)
  local cx,cy,r,inner=self:Geometry()
  local a=self.openFrac
- surface.SetDrawColor(4,3,6,90*a); surface.DrawRect(0,0,w,h)
+ surface.SetDrawColor(7,8,6,90*a); surface.DrawRect(0,0,w,h)
  draw.NoTexture()
  local count=#self.options
  for i,opt in ipairs(self.options) do
@@ -476,23 +477,23 @@ function PANEL:Paint(w,h)
   local selected=i==self.hovered and not opt.disabled
   local glow=opt.disabled and 0 or (self.hoverFade[i] or 0)
   surface.SetDrawColor(0,0,0,110*a); Arc(cx,cy+4,inner-5,r+6,from,to)
-  surface.SetDrawColor(14+44*glow,10,13+7*glow,235*a)
+  surface.SetDrawColor(18+28*glow,18+21*glow,15+10*glow,235*a)
   Arc(cx,cy,inner,r,from,to)
-  surface.SetDrawColor(246,83,99,(55+175*glow)*a); Arc(cx,cy,r-2,r,from,to)
+  surface.SetDrawColor(182,151,91,(55+175*glow)*a); Arc(cx,cy,r-2,r,from,to)
   if glow>.01 then
-   surface.SetDrawColor(246,83,99,24*a*glow); Arc(cx,cy,r+2,r+8,from,to)
+   surface.SetDrawColor(182,151,91,24*a*glow); Arc(cx,cy,r+2,r+8,from,to)
   end
   local angle=math.rad(center); local mid=(inner+r)*.5
   local x,y=cx+math.cos(angle)*mid,cy+math.sin(angle)*mid
   local lines=WrapTextSafe(opt.label,math.min(r*.48,150),"ixRadialLabel")
-  local color=opt.disabled and Color(115,98,100) or (selected and red or pale)
+  local color=opt.disabled and Color(112,105,88) or (selected and red or pale)
   for n,line in ipairs(lines) do
    draw.SimpleTextOutlined(line,"ixRadialLabel",x,y+(n-(#lines+1)*.5)*20,color,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER,1,Color(0,0,0,220))
   end
-  draw.SimpleText(string.format("%02d",i),"ixRadialSmall",x,y-(#lines*10)-12,Color(170,78,91),TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
+  ix.Legends.Icon(opt.medievalIcon or "seal",x-10,y-(#lines*10)-28,20,color)
  end
- surface.SetDrawColor(8,5,8,230*a); Arc(cx,cy,0,inner-8,0,360)
- surface.SetDrawColor(246,83,99,90*a); Arc(cx,cy,inner-9,inner-8,0,360)
+ surface.SetDrawColor(12,13,10,230*a); Arc(cx,cy,0,inner-8,0,360)
+ surface.SetDrawColor(182,151,91,90*a); Arc(cx,cy,inner-9,inner-8,0,360)
  local selected=self.options[self.hovered]
  local customCenter=self.PaintCenter and self:PaintCenter(cx,cy,inner)
  if not customCenter then
@@ -502,14 +503,14 @@ function PANEL:Paint(w,h)
  draw.SimpleText(selected and selected.disabled and "НЕДОСТУПНО" or "ВЫБРАТЬ", "ixRadialSmall",cx,cy+inner*.5,pale,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
  end
  draw.SimpleText(selected and selected.detail or "", "ixRadialLabel",cx,cy+r+30,pale,TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
- draw.SimpleText("ЛКМ — ВЫБОР    /    ПКМ — НАЗАД    /    ESC — ЗАКРЫТЬ", "ixRadialSmall",cx,cy+r+58,Color(160,136,139),TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
+ draw.SimpleText("ЛКМ — ВЫБОР    /    ПКМ — НАЗАД    /    ESC — ЗАКРЫТЬ", "ixRadialSmall",cx,cy+r+58,Color(161,151,128),TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
 end
 function PANEL:OnMousePressed(code)
  if code==MOUSE_RIGHT then if not self:PopOptions() then self:Remove() end return end
  if code~=MOUSE_LEFT then return end
  local opt=self.options[self.hovered]
  if not opt or opt.disabled then return end
- surface.PlaySound("ix/ui/radial_select.wav")
+ ix.Legends.PlayUISound("click")
  if opt.isBack then self:PopOptions()
  elseif opt.pageDelta then self.page=self.page+opt.pageDelta; self:PageOptions()
  elseif opt.children then self:PushOptions(opt.children,opt.label)

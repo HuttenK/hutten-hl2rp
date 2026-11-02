@@ -103,25 +103,11 @@ if SERVER then
 				return false, "craftNeedWorkstation"
 			end
 		end
-		-- Reject broken recipes before consuming any material or granting XP.
+		-- Reject broken recipes before consuming any material or granting results.
 		for id in pairs(recipe.results or {}) do
 			if not ix.Item:Get(id) then return false, "craftNeedItems" end
 		end
 		
-		if recipe.skill and istable(recipe.skill) then
-			local skill = recipe.skill[1]
-			local skillTable = ix.skills.list[skill]
-
-			if skillTable then
-				local needed = tonumber(recipe.skill[2])
-				local ourSkill = character:GetSkillModified(skill)
-
-				if ourSkill < needed then
-					return false, "craftNeedSkill", L(skillTable.name, client), needed
-				end
-			end
-		end
-
 		if recipe.blueprint then
 			local learned = character:GetData("craftLearned", {})
 
@@ -133,11 +119,6 @@ if SERVER then
 		if recipe.station then
 			local hasStation
 			local current = IsValid(client.ixStation) and client.ixStation:GetStationTable()
-
-			-- The Combine fabrication terminal is a master station: it satisfies any recipe's station requirement.
-			if current and current.uniqueID == "station_combine" then
-				hasStation = true
-			end
 
 			if istable(recipe.station) then
 				if !hasStation then
@@ -261,27 +242,8 @@ if SERVER then
 		return true
 	end
 
-	function Craft:GetSkillScale(client, skill, level)
-		local character = client:GetCharacter()
-		local currentLevel = character:GetSkillModified(skill)
-
-		return math.Clamp(math.Remap(level, currentLevel - 4, currentLevel, 0, 1), 0, 1)
-	end
-
 	function Craft:OnCraft(recipe, client)
 		local character = client:GetCharacter()
-
-		local xp = recipe.xp or 0
-
-		if recipe.skill then
-			local skill = recipe.skill[1]
-			local level = recipe.skill[2]
-			
-			xp = xp * self:GetSkillScale(client, skill, level)
-
-			-- Award skill XP silently; DoAction still applies hunger and memory limits.
-			character:DoAction("craft_"..skill, xp)
-		end
 
 		local inventory = client:GetInventory("main")
 

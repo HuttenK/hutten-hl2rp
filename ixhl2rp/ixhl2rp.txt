@@ -1,7 +1,7 @@
 "sample"
 {
 	"base"		"helix"
-	"title"		"HL2 RP"
+	"title"		"Medieval RP"
 	"author"	"nebulous.cloud"
 	"menusystem" "1"
 }

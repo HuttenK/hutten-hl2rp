@@ -155,16 +155,9 @@ end
 
 function UI.Check(parent, check)
     UI.Label(parent, "Проверка действия", true)
-    UI.Label(parent, "Порог: навык × вес + характеристика × вес ≥ сложность. Бросок добавляет d20. Сложность 0 без броска отключает проверку.")
-    UI.Choice(parent, "Механика", check, "mode", {threshold = "Порог значения", roll = "d20 + значения"})
-    local skills, stats = {[""] = "Не учитывать"}, {[""] = "Не учитывать"}
-    for id, row in pairs(ix.skills and ix.skills.list or {}) do skills[id] = L(row.name) .. " (" .. id .. ")" end
-    for id, row in pairs(ix.specials and ix.specials.list or {}) do stats[id] = L(row.name) .. " (" .. id .. ")" end
-    UI.Choice(parent, "Навык", check, "skill", skills)
-    UI.Number(parent, "Вес навыка", check, "skillWeight", 0, 100)
-    UI.Choice(parent, "Характеристика", check, "stat", stats)
-    UI.Number(parent, "Вес характеристики", check, "statWeight", 0, 100)
-    UI.Number(parent, "Сложность", check, "difficulty", 0, 10000)
+    UI.Label(parent, "Проверка случайным броском d20, без характеристик и навыков.")
+    UI.Choice(parent, "Механика", check, "mode", {threshold = "Без проверки", roll = "Бросок d20"})
+    UI.Number(parent, "Сложность броска", check, "difficulty", 0, 20)
     UI.Number(parent, "Пауза между попытками, секунд", check, "retry", 1, 86400)
 end
 

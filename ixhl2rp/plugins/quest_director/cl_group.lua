@@ -141,15 +141,10 @@ function Q:ShowGroup(view)
             D.Text(body, "Награда" .. (data.quest.maxMembers > 1 and (reward.mode == "each" and " · каждому" or " · лидеру") or ""), true)
             local rewards = {}
             if reward.money > 0 then rewards[#rewards + 1] = "Деньги: " .. reward.money end
-            if reward.xp > 0 then rewards[#rewards + 1] = "Опыт: " .. reward.xp end
             for _, item in ipairs(reward.items) do
                 local definition = ix.Item:Get(item.item)
                 rewards[#rewards + 1] = (definition and L(definition.name) or item.item) .. " × " .. item.count
                     .. ((item.chance or 100) < 100 and " · шанс " .. item.chance .. "%" or "")
-            end
-            for _, skill in ipairs(reward.skills) do
-                local definition = ix.skills and ix.skills.list[skill.skill]
-                rewards[#rewards + 1] = (definition and L(definition.name) or skill.skill) .. ": +" .. skill.xp .. " опыта"
             end
             D.Text(body, #rewards > 0 and table.concat(rewards, "\n") or "Без денег, предметов и опыта", false, #rewards == 0)
         end

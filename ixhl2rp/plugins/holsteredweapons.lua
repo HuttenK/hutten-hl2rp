@@ -188,17 +188,7 @@ local defaults = {
 	back = {bone = "ValveBiped.Bip01_Spine1", pos = Vector(4, 5, -2), ang = Angle(-20, 8, 0)}
 }
 
--- EFT pistols use several stock world models. Place their visual centre at the
--- right hip in the character's facing frame instead of inheriting pelvis roll.
-local eftHip = {
-	bone = "ValveBiped.Bip01_Pelvis",
-	pos = Vector(0, -8, -4),
-	ang = Angle(90, 0, 0),
-	bodyFrame = true
-}
-
 function PLUGIN:HolsterProfile(class, hip)
-	if hip and class:sub(1, 9) == "arc9_eft_" then return eftHip end
 	return HOLSTER_DRAWINFO[class] or defaults[hip and "hip" or "back"]
 end
 
@@ -221,9 +211,6 @@ end
 
 function PLUGIN:ClearHolsters(client)
  if ix.WeaponSlots and ix.WeaponSlots.ClearHolsters then ix.WeaponSlots.ClearHolsters(client) end
-	if ix.WeaponAssembly and client.GetWeapons then
-		for _, weapon in ipairs(client:GetWeapons()) do ix.WeaponAssembly.Remove(weapon) end
-	end
 	for _, model in pairs(client.holsteredWeapons or {}) do
 		if IsValid(model) then model:Remove() end
 	end
@@ -252,27 +239,10 @@ function PLUGIN:PostPlayerDraw(client)
 			weapon:GetNWEntity("ixHolsterOwner") ~= client or
 			weapon:GetNWInt("ixHolsterCharacter") ~= characterID then continue end
 		local profile = HOLSTER_DRAWINFO[weapon:GetClass()] or defaults[weapon:GetNWString("ixHolsterSlot")]
-		if weapon:GetNWString("ixHolsterSlot") == "hip" and weapon:GetClass():sub(1, 9) == "arc9_eft_" then
-			profile = eftHip
-		end
 		if not profile then continue end
 		local bone = client:LookupBone(profile.bone)
 		local matrix = bone and client:GetBoneMatrix(bone)
 		if not matrix then continue end
-		if weapon.ARC9 and ix.WeaponAssembly then
-			local A = ix.WeaponAssembly
-			local tree = ix.arc9Inventory.AttachmentTree(weapon.Attachments)
-			local assembly = A.Get(weapon, weapon:GetClass(), tree, weapon:Clip1())
-			if assembly then
-				local hip = weapon:GetNWString("ixHolsterSlot") == "hip"
-				local facing = self:HolsterBoneFrame(client, profile.bone, matrix)
-				local pos, ang = LocalToWorld((hip and Vector(0, -8, -4) or Vector(-3.5, 0, 9)) * client:GetModelScale(),
-					hip and Angle(90, 0, 0) or Angle(-65, 90, 0), matrix:GetTranslation(), facing)
-				local offset = LocalToWorld(A.Center(assembly), angle_zero, vector_origin, ang)
-				A.Draw(assembly, pos - offset, ang)
-			end
-			continue
-		end
 		local path = weapon:GetNWString("ixHolsterModel")
 		if not util.IsValidModel(path) then path = weapon:GetNWString("ixHolsterFallback") end
 		if path == "" or not util.IsValidModel(path) then continue end

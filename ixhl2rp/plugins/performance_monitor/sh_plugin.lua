@@ -64,10 +64,7 @@ function P.Start(duration, requester)
  local c = {started=now,last=now,ends=now+duration,nextPopulation=now,requester=requester,
   samples=0,total=0,maximum=0,gaps50=0,gaps100=0,histogram={},counters={},population={}}
  c.settings={}
- for _,name in ipairs({"arc9_bullet_physics","arc9_bullet_physics_shotguns","arc9_mod_penetration","arc9_ricochet",
-  "ix_arc9_indoor_mode","arc9_indoorsound","ix_render_budget","ix_render_budget_arms",
-  "arc9_tpik","arc9_tpik_others","arc9_tpik_framerate_local","arc9_tpik_framerate_others","arc9_eft_nontpik_mode",
-  "arc9_tpik_helper_bone_force_full_fps"}) do
+ for _,name in ipairs({"ix_render_budget"}) do
   local setting=GetConVar(name);c.settings[name]=setting and setting:GetString() or "unavailable"
  end
  P.capture = c
@@ -93,7 +90,6 @@ function P.Start(duration, requester)
    c.nextPopulation=at+1
    local players=player.GetAll()
    local row={at=at-c.started,players=#players,entities=ents.GetCount(),luaKB=collectgarbage("count")}
-   row.arc9Bullets=ARC9 and ARC9.PhysBullets and #ARC9.PhysBullets or 0
    if SERVER then
     local sum,maximum=0,0
     for _,p in ipairs(players) do local ping=p:Ping();sum=sum+ping;maximum=math.max(maximum,ping) end

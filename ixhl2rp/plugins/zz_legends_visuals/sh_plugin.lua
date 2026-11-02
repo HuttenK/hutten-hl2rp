@@ -1,9 +1,9 @@
-PLUGIN.name = "Fieldlink visual presentation"
+PLUGIN.name = "Medieval visual presentation"
 PLUGIN.author = "Legends"
-PLUGIN.description = "Restrained colour grading and adaptive night optics."
+PLUGIN.description = "Restrained colour grading."
 ix.lang.AddTable("ru", {
     ["option.category.fieldVisuals"] = "Изображение",
-    ["option.fieldCustomShaders"] = "Шейдеры Fieldlink",
+    ["option.fieldCustomShaders"] = "Шейдеры окружения",
     ["option.fieldLens"] = "Эффект объектива",
     ["option.fieldLensStrength"] = "Интенсивность эффекта объектива",
     ["option.fieldSunGlare"] = "Солнечные блики",
@@ -12,13 +12,10 @@ ix.lang.AddTable("ru", {
     ["option.fieldCinematicStrength"] = "Интенсивность цветокоррекции",
     ["option.fieldLightBloom"] = "Свечение ярких источников света",
     ["option.fieldEdgeShading"] = "Затемнение краёв изображения",
-    ["option.fieldFlashlightPolish"] = "Плавный луч фонаря",
-    ["option.fieldNVGPolish"] = "Адаптивное изображение ПНВ",
-    ["option.fieldNVGGrain"] = "Зерно ПНВ"
 })
 ix.lang.AddTable("en", {
     ["option.category.fieldVisuals"] = "Visual presentation",
-    ["option.fieldCustomShaders"] = "Fieldlink shaders",
+    ["option.fieldCustomShaders"] = "World shaders",
     ["option.fieldLens"] = "Camera lens effect",
     ["option.fieldLensStrength"] = "Camera lens intensity",
     ["option.fieldSunGlare"] = "Sun glare",
@@ -27,11 +24,8 @@ ix.lang.AddTable("en", {
     ["option.fieldCinematicStrength"] = "Colour grading strength",
     ["option.fieldLightBloom"] = "Bright light bloom",
     ["option.fieldEdgeShading"] = "Screen edge shading",
-    ["option.fieldFlashlightPolish"] = "Smooth flashlight beam",
-    ["option.fieldNVGPolish"] = "Adaptive night vision",
-    ["option.fieldNVGGrain"] = "Night vision grain"
 })
-for _, name in ipairs({"fieldCustomShaders", "fieldCinematic", "fieldLens", "fieldFlashlightPolish", "fieldNVGPolish", "fieldNVGGrain"}) do
+for _, name in ipairs({"fieldCustomShaders", "fieldCinematic", "fieldLens"}) do
     ix.option.Add(name, ix.type.bool, true, {category = "option.category.fieldVisuals"})
 end
 ix.option.Add("fieldLensStrength", ix.type.number, .4, {

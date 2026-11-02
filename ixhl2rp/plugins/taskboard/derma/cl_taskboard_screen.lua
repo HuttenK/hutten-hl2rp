@@ -1,5 +1,5 @@
--- Экран доски объявлений (3D2D на терминале): список заданий + просмотр.
--- Публикация — отдельный попап-окно (ixTaskBoardPost), т.к. ввод текста в 3D2D неудобен.
+-- Окно деревянной доски объявлений: список поручений и публикация.
+-- Публикация использует отдельное окно ixTaskBoardPost.
 
 local SCREEN_W, SCREEN_H = 600, 360
 
@@ -13,7 +13,7 @@ end
 local function C() return P().Colors end
 
 ----------------------------------------------------------------------
--- ЭКРАН (3D2D)
+-- СПИСОК ПОРУЧЕНИЙ
 ----------------------------------------------------------------------
 local PANEL = {}
 
@@ -189,10 +189,8 @@ function PANEL:MakeScrollButtons(canUp, canDown, onUp, onDown)
 end
 
 -- ===== ОТРИСОВКА =====
-local function DrawBackground(w, h)
-	surface.SetDrawColor(C().bg); surface.DrawRect(0, 0, w, h)
-	surface.SetDrawColor(0, 0, 0, 40)
-	for y = 0, h, 3 do surface.DrawRect(0, y, w, 1) end
+local function DrawBackground(w,h)
+ ix.Legends.Plate(0,0,w,h)
 end
 
 function PANEL:Paint(w, h)
@@ -201,12 +199,12 @@ function PANEL:Paint(w, h)
 	local title = (self.mode == "detail" and self.task) and self.task.title or "ДОСКА ОБЪЯВЛЕНИЙ"
 	surface.SetDrawColor(C().line)
 	surface.DrawRect(16, 30, w - 32, 1)
-	draw.SimpleText(":: " .. string.upper(tostring(title)) .. " ::", "ixTaskHead", 18, 7, C().line, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+	draw.SimpleText(tostring(title), "ixTaskHead", 18, 7, C().line, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 
 	if (self.mode == "detail" and self.task) then
 		self:PaintDetail(w, h)
 	elseif (#P():GetTasks() == 0) then
-		draw.SimpleText("// НЕТ АКТИВНЫХ ОБЪЯВЛЕНИЙ", "ixTaskBody", w * 0.5, h * 0.5, C().dim, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		draw.SimpleText("Пока нет объявлений", "ixTaskBody", w * 0.5, h * 0.5, C().dim, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 	end
 
 	surface.SetDrawColor(C().line.r, C().line.g, C().line.b, 160)
@@ -216,7 +214,7 @@ end
 function PANEL:PaintDetail(w, h)
 	local entry = self.task
 
-	local meta = string.format("Заказчик: %s   ::   %s", entry.posterName or "?", os.date("%d.%m.%Y", entry.time or os.time()))
+	local meta = string.format("Заказчик: %s   ·   %s", entry.posterName or "?", os.date("%d.%m.%Y", entry.time or os.time()))
 	draw.SimpleText(meta, "ixTaskSmall", 18, 72, C().green, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 
 	if (isstring(entry.reward) and entry.reward != "") then

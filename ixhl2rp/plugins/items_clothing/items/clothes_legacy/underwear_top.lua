@@ -1,5 +1,5 @@
 ITEM.name = "item.underwear_top"
-ITEM.model = "models/props_lab/box01a.mdl"
+ITEM.model = "models/props_wasteland/prison_pillow001a.mdl"
 ITEM.width = 1
 ITEM.height = 1
 ITEM.description = "item.underwear_top.desc"

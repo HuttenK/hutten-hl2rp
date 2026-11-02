@@ -1,3 +1,3 @@
-STATION.name = "craft.station.tailor"
-STATION.description = ""
-STATION.model = "models/mosi/fallout4/furniture/workstations/armorworkbench.mdl"
+STATION.name = "Стол портного"
+STATION.description = "Рабочее место"
+STATION.model = "models/props_c17/furnituretable001a.mdl"

@@ -3,11 +3,11 @@ local PLUGIN = PLUGIN
 -- Rebuild the live overlay when this file is refreshed, including older panels
 -- created before the give-up control was restored.
 if IsValid(ix.gui.downedScreen) then ix.gui.downedScreen:Remove() end
-local red, white, muted = Color(215, 67, 78), Color(239, 232, 223), Color(174, 171, 172)
+local red, white, muted = Color(163, 72, 51), Color(230, 222, 202), Color(161, 151, 128)
 local function scale(n) return math.floor(n * math.Clamp(ScrH() / 1080, 0.65, 1.5)) end
 local function fonts()
-    for name, size in pairs({Title = 34, Body = 19, Small = 15}) do
-        surface.CreateFont("ixDowned" .. name, {font = "Segoe UI", size = scale(size),
+    for name, size in pairs({Death = 58, Title = 34, Body = 19, Small = 15}) do
+        surface.CreateFont("ixDowned" .. name, {font = "Georgia", size = scale(size),
             weight = name == "Title" and 300 or 400, antialias = true, extended = true})
     end
 end
@@ -49,19 +49,20 @@ function PANEL:Init()
         if key == nil or key == MOUSE_LEFT then self:CancelGiveUp() end
     end
     self.button.Paint = function(button, w, h)
+        ix.Legends.ButtonFace(button,w,h)
         draw.NoTexture()
         local progress = button.started and math.Clamp((CurTime() - button.started) / D.HoldTime, 0, 1) or 0
         surface.SetDrawColor(red)
         surface.DrawRect(w * 0.15, h - 2, w * 0.7 * progress, 1)
         text(button.sent and "Вы отпускаете…" or "Сдаться", "Body", w / 2, scale(8),
             button:IsHovered() and white or muted, TEXT_ALIGN_CENTER)
-        text("Удерживайте ЛКМ · 1,5 сек", "Small", w / 2, scale(35), muted, TEXT_ALIGN_CENTER)
+        text("Удерживайте ЛКМ · " .. string.format("%.1f", D.HoldTime) .. " сек", "Small", w / 2, scale(35), muted, TEXT_ALIGN_CENTER)
     end
 end
 function PANEL:PerformLayout(w, h)
     self.button:SetSize(math.min(scale(290), w - 32), scale(65))
     self.button:SetPos((w - self.button:GetWide()) / 2,
-        self.paralyzed and h - scale(92) or h * 0.48 + scale(145))
+        h * 0.48 + scale(145))
 end
 function PANEL:CancelGiveUp()
     local button = self.button
@@ -80,8 +81,6 @@ function PANEL:Think()
         (client:Alive() and not D.Active(client)) then self:Remove() return end
     if self:GetWide() ~= ScrW() or self:GetTall() ~= ScrH() then self:SetSize(ScrW(), ScrH()) end
     local active = D.Active(client)
-    local paralyzed = D.ConsciousParalysis and D.ConsciousParalysis(client) or false
-    if self.paralyzed ~= paralyzed then self.paralyzed = paralyzed self:InvalidateLayout() end
     self:SetMouseInputEnabled(active)
     self.button:SetVisible(active)
     if not active then self:CancelGiveUp() return end
@@ -104,43 +103,43 @@ function PANEL:Paint(w, h)
     if not IsValid(client) then return end
     draw.NoTexture()
     local dead = not client:Alive()
-    if not dead and D.ConsciousParalysis and D.ConsciousParalysis(client) then
-        -- Neck trauma immobilizes the body, not the eyes. Keep the scene clear
-        -- and retain the voluntary give-up control below this small status line.
-        text("Вы в сознании, но не можете двигаться.", "Body", w / 2, h - scale(155), white, TEXT_ALIGN_CENTER)
-        text("Паралич необратим. Лечение пока недоступно.", "Small", w / 2, h - scale(125), muted, TEXT_ALIGN_CENTER)
-        return
-    end
     local reveal = math.Clamp((RealTime() - self.birth) / 0.8, 0, 1)
     local blood = D.Blood(client:GetCharacter())
     self.blood = Lerp(math.Clamp(FrameTime() * 5, 0, 1), self.blood or blood, blood)
     -- Slow eyelid-like shadows, never a full blackout while rescue is possible.
     local breath = (math.sin(RealTime() * 0.8) + 1) * 0.5
-    surface.SetDrawColor(8, 5, 7, (dead and 205 or 40 + (1 - blood) * 35) * reveal)
+    surface.SetDrawColor(8, 7, 5, (dead and 205 or 40 + (1 - blood) * 35) * reveal)
     surface.DrawRect(0, 0, w, h)
     -- Procedural eyelid gradient: no external material can cover the view in errors.
     local edge = h * (0.34 + breath * 0.025)
     for band = 0, 63 do
         local y = edge * band / 64
         local height = math.ceil(edge / 64)
-        surface.SetDrawColor(4, 3, 5, (200 + breath * 24) * reveal * (1 - band / 64)^2)
+        surface.SetDrawColor(4, 4, 3, (200 + breath * 24) * reveal * (1 - band / 64)^2)
         surface.DrawRect(0, y, w, height)
         surface.DrawRect(0, h - y - height, w, height)
     end
     local x, y = w / 2, h * 0.48
     if dead then
         local remaining = math.max(0, math.ceil(client:GetNetVar("deathTime", CurTime()) - CurTime()))
-        text("Возвращение через " .. remaining .. " сек", "Small", x, y + scale(62), muted, TEXT_ALIGN_CENTER)
+        local U=ix.Legends
+        local length=math.min(scale(500),w*.65)
+        U.Icon("candle",x-scale(18),y-scale(90),scale(36),U.accent)
+        text("ВЫ ПАЛИ", "Death", x, y-scale(25), red, TEXT_ALIGN_CENTER)
+        U.Rule(x-length/2,y+scale(57),length)
+        text(remaining>0 and ("Возвращение через " .. remaining .. " сек") or "Возвращение в мир…",
+            "Small", x, y + scale(82), muted, TEXT_ALIGN_CENTER)
         return
     end
     local ink = Color(white.r, white.g, white.b, (195 + breath * 35) * reveal)
-    text("В глазах всё темнеет…", "Title", x, y, ink, TEXT_ALIGN_CENTER)
+    ix.Legends.Icon("heart",x-scale(14),y-scale(49),scale(28),red)
+    text("На грани смерти", "Title", x, y, ink, TEXT_ALIGN_CENTER)
     text("Ожидайте помощи", "Body", x, y + scale(113), muted, TEXT_ALIGN_CENTER)
     local length = math.min(scale(260), w * 0.6)
     text("Кровь · " .. math.floor(self.blood * 100 + 0.5) .. "%", "Small", x, y + scale(53), muted, TEXT_ALIGN_CENTER)
     surface.SetDrawColor(27, 15, 19, 220); surface.DrawRect(x - length / 2 - 1, y + scale(82) - 1, length + 2, scale(3) + 2)
     surface.SetDrawColor(90, 49, 54, 170); surface.DrawRect(x - length / 2, y + scale(82), length, scale(3))
-    surface.SetDrawColor(181, 63, 72, 225); surface.DrawRect(x - length / 2, y + scale(82), length * self.blood, scale(3))
+    surface.SetDrawColor(151, 65, 46, 225); surface.DrawRect(x - length / 2, y + scale(82), length * self.blood, scale(3))
 end
 vgui.Register("ixDownedScreen", PANEL, "EditablePanel")
 

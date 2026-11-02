@@ -1,6 +1,6 @@
 local M=ix.Medicine
-local red=Color(246,83,99)
-local text=Color(232,216,214)
+local red=ix.Legends.accent
+local text=ix.Legends.ink
 local PANEL={}
 function PANEL:Init()
  self:SetSize(math.min(ScrW()-48,1000),math.min(ScrH()-48,780))
@@ -10,7 +10,7 @@ function PANEL:Init()
  self.close=self:Add("DButton"); self.close:SetText("НАЗАД / ESC")
  self.close:SetFont("ixRadialSmall"); self.close:SetTextColor(text)
  self.close.Paint=function(p,w,h)
-  surface.SetDrawColor(p:IsHovered() and Color(64,15,29) or Color(28,13,21)); surface.DrawRect(0,0,w,h)
+  surface.SetDrawColor(p:IsHovered() and Color(59,49,29) or Color(23,23,18)); surface.DrawRect(0,0,w,h)
   surface.SetDrawColor(red); surface.DrawRect(0,h-1,w,1)
  end
  self.close.DoClick=function() self:Remove(); RunConsoleCommand("ix_radial") end
@@ -44,8 +44,7 @@ function PANEL:Think()
  if self.lastInfo~=info then self.info:SetText(info); self.lastInfo=info end
 end
 function PANEL:Paint(w,h)
- surface.SetDrawColor(9,7,11,245); surface.DrawRect(0,0,w,h)
- surface.SetDrawColor(106,35,49); surface.DrawOutlinedRect(0,0,w,h)
+ ix.Legends.Plate(0,0,w,h)
  draw.SimpleText("ОСМОТР / СОСТОЯНИЕ ТЕЛА","ixRadialLabel",28,28,red)
  draw.SimpleText(self.patient==LocalPlayer() and "СОБСТВЕННОЕ СОСТОЯНИЕ" or "ПОМОЩЬ ПАЦИЕНТУ","ixRadialSmall",28,59,text)
  if ix.Anatomy and self.state then
@@ -65,7 +64,7 @@ function PANEL:OnMousePressed(code)
  for _,item in pairs(LocalPlayer():GetItems()) do if available[item.id] then items[#items+1]=item end end
  table.sort(items,function(a,b) return a:GetName()<b:GetName() end)
  local menu=DermaMenu()
- menu.Paint=function(_,w,h) surface.SetDrawColor(20,10,16,250); surface.DrawRect(0,0,w,h); surface.SetDrawColor(red); surface.DrawOutlinedRect(0,0,w,h) end
+ menu.Paint=function(_,w,h) surface.SetDrawColor(20,20,16,250); surface.DrawRect(0,0,w,h); surface.SetDrawColor(red); surface.DrawOutlinedRect(0,0,w,h) end
  for _,item in ipairs(items) do
   local option=menu:AddOption(item:GetName().." / "..item:GetResourceText(),function()
    if not IsValid(self.patient) then return end
@@ -74,16 +73,16 @@ function PANEL:OnMousePressed(code)
    if not action or not action.index then return end
    net.Start("item.action"); net.WriteUInt(item.id,32); net.WriteUInt(item.inventory_id or 0,32)
    net.WriteUInt(action.index,item.functions_bits); net.WriteTable({target=self.patient,limb=part.hitgroup}); net.WriteBool(false); net.SendToServer()
-   surface.PlaySound("ix/ui/radial_select.wav"); self:Remove()
+   ix.Legends.PlayUISound("click"); self:Remove()
   end)
   option:SetTextColor(text); option:SetFont("ixRadialLabel")
   option.Paint=function(p,w,h)
-   if p:IsHovered() then surface.SetDrawColor(80,20,35); surface.DrawRect(0,0,w,h); surface.SetDrawColor(red); surface.DrawRect(0,0,2,h) end
+   if p:IsHovered() then surface.SetDrawColor(67,55,31); surface.DrawRect(0,0,w,h); surface.SetDrawColor(red); surface.DrawRect(0,0,2,h) end
   end
  end
  if #items==0 then local option=menu:AddOption("Нет подходящих медикаментов"); option:SetEnabled(false) end
  menu:Open(); self.medicineMenu=menu
- surface.PlaySound("ix/ui/radial_open.wav")
+
 end
 function PANEL:OnRemove()
  if IsValid(self.medicineMenu) then self.medicineMenu:Remove() end

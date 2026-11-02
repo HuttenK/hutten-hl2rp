@@ -9,10 +9,7 @@ netstream.Hook("QueryDeleteLanguageSuccess", function(client)
 		return
 	end
 
-	local learningLanguages = character:GetLearningLanguages() or {}
 
-	table.Empty(learningLanguages)
-	character:SetLearningLanguages(learningLanguages)
 end)
 
 local shouts = {

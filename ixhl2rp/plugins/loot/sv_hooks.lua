@@ -19,6 +19,7 @@ function PLUGIN:LoadData()
 
 	if data then
 		for _, v in ipairs(data) do
+			if not ix.LootContainer:Get(v[3]) then continue end
 			local entity = ents.Create("ix_loot")
 			entity:SetPos(v[1])
 			entity:SetAngles(v[2])
@@ -38,6 +39,7 @@ net.Receive("loot.spawnpoint", function(len, client)
 	if !client:IsSuperAdmin() then return end
 
 	local id = net.ReadString()
+	if not ix.LootContainer:Get(id) then return end
 
 	local vStart = client:GetShootPos()
 	local vForward = client:GetAimVector()

@@ -351,8 +351,6 @@ end
 function Q:MakeReceipt(run, cid)
     local reward, steps = run.quest.reward, {}
     if reward.money > 0 then steps[#steps + 1] = {kind = "money", amount = reward.money} end
-    if reward.xp > 0 then steps[#steps + 1] = {kind = "xp", amount = reward.xp} end
-    for _, row in ipairs(reward.skills) do steps[#steps + 1] = {kind = "skill", skill = row.skill, amount = row.xp} end
     for _, row in ipairs(reward.items) do
         if math.random(1, 10000) <= (row.chance or 100) * 100 then
             for i = 1, row.count do steps[#steps + 1] = {kind = "item", item = row.item} end
@@ -462,12 +460,6 @@ function Q:Claim(client, data, statusOnly)
             deliver(item)
         end
     elseif step.kind == "money" then char:GiveMoney(step.amount) char:Save(finishStep)
-    elseif step.kind == "xp" then
-        if not char.AddLevelXP then return fail("Система уровней недоступна.") end
-        char:AddLevelXP(step.amount) char:Save(finishStep)
-    elseif step.kind == "skill" then
-        if not char.UpdateSkillProgress or not char:GetSkills()[step.skill] then return fail("Навык недоступен персонажу.") end
-        char:UpdateSkillProgress(step.skill, step.amount) char:Save(finishStep)
     else return fail("Неизвестный шаг награды.") end
     if self.claiming[receipt.id] then return true, {waiting = true} end
     if receipt.status == "applying" then return false, "Выдачу должен проверить администратор." end

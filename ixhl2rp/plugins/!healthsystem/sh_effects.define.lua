@@ -1,23 +1,5 @@
 local Hediffs = ix.Hediffs
 
-local TEMPLATE = Hediffs:New("painkiller", "Hediff_Medical")
-TEMPLATE.name = "Обезболивающее"
-TEMPLATE.color = Color(96, 255, 96)
-
-function TEMPLATE:Tooltip(tooltip)
-	local hp = tooltip:AddRow("hp")
-	hp:SetText(string.format("%s%%", self:GetSeverity()))
-	hp:SizeToContents()
-end
-
-local TEMPLATE = Hediffs:New("epinephrine", "Hediff_Medical")
-TEMPLATE.name = "Эпинефрин"
-TEMPLATE.color = Color(96, 255, 96)
-
-local TEMPLATE = Hediffs:New("epinephrine_revival", "Hediff_Medical")
-TEMPLATE.name = "Поддержка сознания"
-TEMPLATE.color = Color(96, 255, 96)
-
 local TEMPLATE = Hediffs:New("gunshot", "Hediff_Injury")
 TEMPLATE.name = "Огнестрельная рана"
 TEMPLATE.bleedRate = 0.06
@@ -591,3 +573,8 @@ local saveFields = {
 function TEMPLATE:Save()
 	return saveFields
 end
+
+local burn = Hediffs:New("burn", "Hediff_Injury")
+burn.name = "Термический ожог"
+burn.bleedRate, burn.painPerSeverity = 0, .0125
+burn.color = Color(235, 125, 70)

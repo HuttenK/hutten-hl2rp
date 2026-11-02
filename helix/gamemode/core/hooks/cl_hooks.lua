@@ -25,7 +25,7 @@ end
 local LOWERED_ANGLES = Angle(30, 0, -25)
 
 local function HasViewWeaponOwner(weapon, client)
-	if (!IsValid(weapon) or !weapon.ARC9) then return true end
+	if (!IsValid(weapon)) then return false end
 	local owner = weapon:GetOwner()
 	return IsValid(owner) and owner:IsPlayer() and owner == client
 end
@@ -224,7 +224,6 @@ function GM:CalcView(client, origin, angles, fov)
 	end
 
 	-- A valid active weapon may still have a NULL/non-player owner for a frame.
-	-- ARC9's camera assumes player methods just like its crosshair does.
 	if (!HasViewWeaponOwner(client:GetActiveWeapon(), client)) then return view end
 	view = self.BaseClass:CalcView(client, origin, angles, fov) or view
 

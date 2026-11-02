@@ -16,8 +16,6 @@ local whitelist = {
 
 function PLUGIN:TranslateActivity(client, act)
 	if ix.ActionAnimations and ix.ActionAnimations.BlockAutomatic(client) then return end
-	-- NPC turn gestures must not twist a body currently using ARC9's MP stance.
-	if ix.anim.CanUseARC9NativePose and ix.anim.CanUseARC9NativePose(client, client:GetActiveWeapon()) then return end
 	local modelClass = client.ixAnimModelClass or "player"
 
 	if not support[modelClass] or not whitelist[act] then

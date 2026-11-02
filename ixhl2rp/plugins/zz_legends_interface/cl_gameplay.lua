@@ -7,12 +7,12 @@ ix.GameplayHUD = H
 local U = ix.Legends
 local function S(n) return math.floor(n * math.Clamp(ScrH()/1080, 0.7, 1.5)) end
 local function T(en, ru) return U.T(en, ru) end
-local ink, muted = Color(232,228,224), Color(164,159,164)
+local ink, muted = U.ink, U.muted
 H.ManagedBars = {hunger=true, thirst=true}
 H.notices = {}
 
-ix.lang.AddTable("en", {optCinematicHUD="Cinematic gameplay HUD",optdCinematicHUD="Compact vitals, compass, action feedback and notifications."})
-ix.lang.AddTable("ru", {optCinematicHUD="Кинематографичный интерфейс",optdCinematicHUD="Компактные показатели, компас, действия и уведомления."})
+ix.lang.AddTable("en", {optCinematicHUD="Cinematic gameplay HUD",optdCinematicHUD="Compact vitals, action feedback and notifications."})
+ix.lang.AddTable("ru", {optCinematicHUD="Кинематографичный интерфейс",optdCinematicHUD="Компактные показатели, действия и уведомления."})
 ix.option.Add("cinematicHUD", ix.type.bool, true, {category="appearance"})
 function H.Enabled() return ix.option.Get("cinematicHUD", true) end
 function H.Visible()
@@ -20,7 +20,7 @@ function H.Visible()
  return H.Enabled() and IsValid(p) and p:GetCharacter() and p:Alive() and
   not p:GetNetVar("crit") and
   not (IsValid(ix.gui.characterMenu) and not ix.gui.characterMenu:IsClosing()) and
-  not IsValid(ix.gui.fieldlink) and not IsValid(ix.gui.menu) and not (ix.infoMenu and ix.infoMenu.open) and not gui.IsGameUIVisible() and GetConVar("cl_drawhud"):GetBool()
+  not IsValid(ix.gui.menu) and not (ix.infoMenu and ix.infoMenu.open) and not gui.IsGameUIVisible() and GetConVar("cl_drawhud"):GetBool()
 end
 function H.Ratio(value, maximum)
  value,maximum=tonumber(value),tonumber(maximum)
@@ -29,7 +29,7 @@ function H.Ratio(value, maximum)
 end
 local function Fonts()
  for name,size in pairs({Label=16,Body=20}) do
-  surface.CreateFont("cinematic."..name,{font=name=="Label" and "Consolas" or "Roboto",size=S(size),weight=name=="Hero" and 700 or 500,extended=true,antialias=true})
+  surface.CreateFont("cinematic."..name,{font="Georgia",size=S(size),weight=name=="Hero" and 700 or 500,extended=true,antialias=true})
  end
 end
 Fonts()
@@ -39,12 +39,8 @@ local function Text(text,font,x,y,color,align)
  draw.SimpleText(text,face,x+1,y+S(2),Color(0,0,0,math.min(210,(color and color.a) or 255)),align or TEXT_ALIGN_LEFT)
  draw.SimpleText(text,face,x,y,color or ink,align or TEXT_ALIGN_LEFT)
 end
-local hudShade = Material("vgui/gradient-l", "smooth")
 local function Panel(x,y,w,h)
- -- A single filtered gradient avoids fractional strip edges and alpha seams.
- surface.SetMaterial(hudShade)
- surface.SetDrawColor(7,9,14,145)
- surface.DrawTexturedRect(x,y,w,h)
+ U.Plate(x,y,w,h,Color(17,17,14,220),U.line)
 end
 -- Continuous, unnumbered readings: no dial, segments or enclosing HUD panel.
 local shadow = Color(0,0,0,185)
@@ -64,8 +60,8 @@ local function Icon(name,x,y,color)
  end
 end
 local function Meter(name,x,y,w,value)
- local color=value<0.25 and U.accent or ink
- Icon(name,x,y-S(7),name=="blood" and Color(235,65,82) or name=="stamina" and Color(238,199,78) or color)
+ local color=value<0.25 and Color(181,79,61) or (name=="blood" and Color(135,48,39) or name=="stamina" and Color(137,153,94) or ink)
+ Icon(name,x,y-S(7),color)
  local bx=x+S(29); local thickness=name=="blood" and S(4) or S(2)
  U.Rect(bx-1,y-1,w+2,thickness+2,shadow)
  U.Rect(bx,y,w,thickness,track)
@@ -87,7 +83,7 @@ function H.Action()
  Panel(x,y,w,S(63))
  Text(Fit(ix.bar.actionText,w-S(64)),"Body",x+S(14),y+S(10))
  Text(string.format("%.1fs",math.max(0,finish-now)),"Label",x+w-S(12),y+S(14),muted,TEXT_ALIGN_RIGHT)
- U.Rect(x+S(14),y+S(48),w-S(28),S(3),Color(65,48,54))
+ U.Rect(x+S(14),y+S(48),w-S(28),S(3),Color(65,58,43))
  U.Rect(x+S(14),y+S(48),(w-S(28))*H.Ratio(now-start,finish-start),S(2),U.accent)
 end
 function H.Pickup()
@@ -101,7 +97,7 @@ function H.Pickup()
  local x,y=ScrW()/2,ScrH()/2+S(48)
  local key=string.upper(input.LookupBinding("+use") or "?")
  Text("["..key.."]  "..T("HOLD","УДЕРЖИВАЙТЕ"),"Label",x,y,ink,TEXT_ALIGN_CENTER)
- U.Rect(x-S(45),y+S(20),S(90),S(2),Color(65,48,54))
+ U.Rect(x-S(45),y+S(20),S(90),S(2),Color(65,58,43))
  U.Rect(x-S(45),y+S(20),S(90)*H.Ratio(SysTime()-start,duration),S(2),U.accent)
 end
 function H.Notify(message)
@@ -114,7 +110,8 @@ function H.Notify(message)
  p.started=RealTime(); p.duration=math.Clamp(#tostring(message)/16,5,14)
  p.Paint=function(this,w,h)
   Panel(0,0,w,h)
-  Text(T("UPDATE","СООБЩЕНИЕ"),"Label",S(16),S(6),U.accent)
+  U.Icon("seal",S(15),S(6),S(14),U.accent)
+  Text(T("NOTICE","ИЗВЕЩЕНИЕ"),"Label",S(36),S(5),U.accent)
   U.Rect(S(16),h-S(5),(w-S(32))*math.Clamp(1-(RealTime()-this.started)/this.duration,0,1),1,U.line)
  end
  p.Think=function(this)

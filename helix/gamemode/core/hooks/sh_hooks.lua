@@ -45,19 +45,6 @@ function GM:TranslateActivity(client, act)
 	local bRaised = client:IsWepRaised()
 
 	clientInfo.CalcSeqOverride2 = nil
-	local pdaSequence = ix.Fieldlink and ix.Fieldlink.PDABaseSequence and ix.Fieldlink.PDABaseSequence(client, act)
-	if pdaSequence then
-		clientInfo.CalcSeqOverride = pdaSequence
-		return
-	end
-	local arc9Activity = ix.anim.GetARC9NativeActivity and
-		ix.anim.GetARC9NativeActivity(client, client:GetActiveWeapon(), act)
-	if arc9Activity then
-		-- Do not let the model's legacy Cellar/NPC sequence override this stance.
-		clientInfo.CalcSeqOverride = -1
-		return arc9Activity
-	end
-
 	if (modelClass == "player") then
 		local weapon = client:GetActiveWeapon()
 		local bAlwaysRaised = ix.config.Get("weaponAlwaysRaised")
@@ -81,9 +68,7 @@ function GM:TranslateActivity(client, act)
 			local holdType = ix.anim.GetWeaponHoldType(client, weapon)
 
 			if (!bAlwaysRaised and weapon and !bRaised and client:OnGround()) then
-				if not weapon.ARC9 then
-					holdType = PLAYER_HOLDTYPE_TRANSLATOR[holdType] or "passive"
-				end
+				holdType = PLAYER_HOLDTYPE_TRANSLATOR[holdType] or "passive"
 			end
 
 			local tree = ix.anim.player[holdType]
@@ -163,9 +148,6 @@ end
 
 function GM:DoAnimationEvent(client, event, data)
 	local class = client.ixAnimModelClass
-	if ix.anim.CanUseARC9NativePose and ix.anim.CanUseARC9NativePose(client, client:GetActiveWeapon()) then
-		class = "player"
-	end
 
 	if (class == "player") then
 		return self.BaseClass:DoAnimationEvent(client, event, data)
@@ -352,12 +334,6 @@ do
 		end
 		local forcedSequence = client:GetNetVar("forcedSequence")
 		local weapon = client:GetActiveWeapon()
-		if IsValid(weapon) and weapon.ARC9 and not client:InVehicle() then
-			-- ADS, sprint and safety can change without switching weapons.
-			local previous = clientInfo.ixAnimHoldType
-			UpdatePlayerHoldType(client, weapon)
-			if previous ~= clientInfo.ixAnimHoldType then UpdateAnimationTable(client) end
-		end
 
 		if (forcedSequence) then
 			if (client:GetSequence() != forcedSequence) then

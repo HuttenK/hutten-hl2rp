@@ -84,7 +84,6 @@ function D.CacheGrip(body)
     cached = {frame = frame}; grips[body] = cached
     local bone = body:GetNW2Int("ixDragBone", -1)
     if bone < 0 then return end
-    -- Sample once before rendering, never from a bone-build callback. ARC9 and
     -- secondary camera passes may rebuild the carrier's bones many times.
     body:SetupBones()
     local matrix = body:GetBoneMatrix(bone)
@@ -146,10 +145,6 @@ function D.WatchArm(entity, owner, viewmodel)
     state = {owner = owner, viewmodel = viewmodel}
     state.id = entity:AddCallback("BuildBonePositions", function(model)
         if not IsValid(state.owner) or applying[model] then return end
-        -- ARC9's helper repair samples this callback's output as its base pose.
-        -- Its third-person arm must be changed only after that repair completes.
-        local weapon = state.owner:GetActiveWeapon()
-        if not state.viewmodel and IsValid(weapon) and weapon.ARC9 and ix.arc9Helpers then return end
         applying[model] = true
         D.ApplyArm(model, state.owner, state.viewmodel)
         applying[model] = nil
@@ -157,18 +152,6 @@ function D.WatchArm(entity, owner, viewmodel)
     callbacks[entity] = state
     entity:InvalidateBoneCache()
 end
-
-function D.WatchARC9(weapon)
-    if ix.arc9Helpers then ix.arc9Helpers.Install(weapon) end
-end
-
-hook.Add("ixARC9PostArmPose", "ixBodyDragArms", function(_, owner)
-    if D.Body(owner) and not applying[owner] then
-        applying[owner] = true
-        D.ApplyArm(owner, owner, false)
-        applying[owner] = nil
-    end
-end)
 
 function D.CleanupArms(all)
     for entity, state in pairs(callbacks) do
@@ -188,7 +171,6 @@ hook.Add("Think", "ixBodyDragArms", function()
         if D.Body(owner) then
             active[owner] = true
             D.WatchArm(owner, owner, false)
-            D.WatchARC9(owner:GetActiveWeapon())
             if owner == LocalPlayer() then
                 D.WatchArm(owner:GetViewModel(), owner, true)
                 D.WatchArm(owner:GetHands(), owner, true)

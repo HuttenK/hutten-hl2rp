@@ -355,10 +355,6 @@ do
 	end
 
 	function hook.Call(name, gm, ...)
-		if ix.SCPCompat and ix.SCPCompat.OverrideHook then
-			local handled, value = ix.SCPCompat.OverrideHook(name, ...)
-			if handled then return value end
-		end
 		local cache = HOOKS_CACHE[name]
 
 		if (cache) then

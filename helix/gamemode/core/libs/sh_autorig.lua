@@ -91,7 +91,6 @@ end
 
 function ix.anim.ClearModelDetectionCache()
 	for model in pairs(cache) do cache[model] = nil end
-	if ix.anim.ClearARC9PoseCache then ix.anim.ClearARC9PoseCache() end
 end
 
 if concommand then

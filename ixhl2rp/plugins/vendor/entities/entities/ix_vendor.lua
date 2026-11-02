@@ -26,7 +26,7 @@ function ENT:Initialize()
 		self:SetBloodColor(BLOOD_COLOR_RED)
 
 		self.password = ""
-		self.card_access = ""
+		self.Sessions = {}
 		self.items = {}
 		self.messages = {}
 		self.factions = {}
@@ -55,13 +55,6 @@ function ENT:CanAccess(client)
 
 	if (self.password != "") then
 		free_access = false
-	end
-
-	if (self.card_access != "") then
-		free_access = false
-		if (client:HasIDAccess(self.card_access)) then
-			return true
-		end
 	end
 
 	if (self.factions and !table.IsEmpty(self.factions)) then
@@ -203,10 +196,6 @@ if (SERVER) then
 				self:SetBodygroup(i, tonumber(number))
 			end
 		end
-	end
-
-	function ENT:OnChangedAccess(access)
-		self.card_access = access
 	end
 
 	function ENT:OnChangedPassword(password)
@@ -484,39 +473,6 @@ properties.Add("ixvendor_bg", {
 		local text = net.ReadString()
 
 		entity:OnChangedBodyGroups(text)
-	end
-})
-
-properties.Add("ixvendor_access", {
-	MenuLabel = "Set Vendor Access",
-	Order = 400,
-	MenuIcon = "icon16/tag_blue_edit.png",
-
-	Filter = function(self, entity, client)
-		if (entity:GetClass() != "ix_vendor") then return false end
-		if (!gamemode.Call("CanProperty", client, "ixvendor_access", entity)) then return false end
-
-			return true
-	end,
-
-	Action = function(self, entity)
-		Derma_StringRequest("Specify Card Access", "", "cmbMpfAll", function(text)
-			self:MsgStart()
-			net.WriteEntity(entity)
-			net.WriteString(text)
-			self:MsgEnd()
-		end)
-	end,
-
-	Receive = function(self, length, client)
-		local entity = net.ReadEntity()
-
-		if (!IsValid(entity)) then return end
-		if (!self:Filter(entity, client)) then return end
-
-		local text = net.ReadString()
-
-		entity:OnChangedAccess(text)
 	end
 })
 

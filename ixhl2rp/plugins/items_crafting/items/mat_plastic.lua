@@ -1,9 +1,0 @@
-ITEM.name = "item.mat_plastic"
-ITEM.description = "item.mat_plastic.desc"
-ITEM.model = "models/illusion/eftcontainers/plexiglass.mdl"
-ITEM.category = "item.category.crafted"
-ITEM.rarity = 1
-ITEM.width = 2
-ITEM.height = 1
-ITEM.max_stack = 8
-ITEM.stackable = true

@@ -1,5 +1,5 @@
 local treatment
-surface.CreateFont("ixMedicalTreatment", {font="Consolas", size=18, weight=500, extended=true})
+surface.CreateFont("ixMedicalTreatment", {font = "Georgia", size=18, weight=500, extended=true})
 net.Receive("ixMedicalProgress", function()
  local name, duration = net.ReadString(), net.ReadFloat()
  if name == "" then treatment=nil return end

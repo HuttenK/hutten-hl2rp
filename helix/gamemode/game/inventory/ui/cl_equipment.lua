@@ -90,20 +90,6 @@ function PANEL:SetCharacter(client)
 		satchel:MoveBelow(torso, 16); satchel:SetTitle(L("equip.satchel"))
 	end
 
-	local cid = client:GetInventory("cid"):CreatePanel(self)
-	cid:SetSlotSize(64)
-	cid:Rebuild()
-	cid:SizeToContents()
-	cid:AlignBottom()
-	cid:SetTitle(L("equip.cid"))
-
-	local radio = client:GetInventory("radio"):CreatePanel(self)
-	radio:SetSlotSize(64)
-	radio:Rebuild()
-	radio:SizeToContents()
-	radio:MoveAbove(cid, 16)
-	radio:SetTitle(L("equip.radio"))
-
 	local ears = client:GetInventory("ears"):CreatePanel(self)
 	ears:SetSlotSize(64)
 	ears:Rebuild()
@@ -173,7 +159,7 @@ function PANEL:SetCharacter(client)
 	backpack:AlignRight(0)
 	backpack:SetTitle(L("equip.backpack"))
 
-    local weaponSize = math.Clamp(math.floor((self:GetWide() - cid:GetWide() - backpack:GetWide() - 48) / 3), 32, 64)
+    local weaponSize = math.Clamp(math.floor((self:GetWide() - backpack:GetWide() - 48) / 3), 32, 64)
     for slot = 1, 3 do
         local inventory = client:GetInventory("weapon" .. slot)
         if inventory then

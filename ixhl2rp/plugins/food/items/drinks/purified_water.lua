@@ -1,6 +1,6 @@
-ITEM.name = "item.purified_water"
-ITEM.description = "item.purified_water.desc"
-ITEM.model = "models/illusion/eftcontainers/waterbottle.mdl"
+ITEM.name = "Кипячёная вода"
+ITEM.description = "Вода после кипячения."
+ITEM.model = "models/props_junk/garbage_glassbottle003a.mdl"
 ITEM.cost = 18
 ITEM.width = 1
 ITEM.height = 2
@@ -12,4 +12,4 @@ ITEM.stats.container = true
 ITEM.stats.noExpire = true
 
 ITEM.rarity = 1
-ITEM.junk =  "empty_plastic_bottle"
+ITEM.junk = "empty_glass_bottle"

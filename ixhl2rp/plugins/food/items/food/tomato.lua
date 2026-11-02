@@ -24,10 +24,10 @@ ITEM.functions.zfarm = {
 	OnRun = function(item)
 		local client, character = item.player, item.player:GetCharacter()
 		
-		local skill = character:GetSkillModified("farming")
-		local chanceSkill = math.Remap(skill, 0, 10, 0, 75)
+		local harvestBonus = 0
+		local chanceSkill = math.Remap(harvestBonus, 0, 10, 0, 75)
 
-		if skill <= 0 then
+		if harvestBonus <= 0 then
 			client:NotifyLocalized("farming.needSkill")
 			return
 		end

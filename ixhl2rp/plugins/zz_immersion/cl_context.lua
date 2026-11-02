@@ -164,7 +164,7 @@ end)
 -- Never changes EyeAngles, aim, recoil or returns from a competing CalcView hook.
 function I.WeaponMotion(p,weapon,pos,ang)
  if not I.Active() or ix.option.Get("disableAnimations",false) or not IsValid(weapon) then return end
- if weapon.GetViewModelPosition or weapon.CalcViewModelView or weapon.GetPDAEquipped or weapon.ARC9 or weapon.ArcCW then return end
+ if weapon.GetViewModelPosition or weapon.CalcViewModelView then return end
  if p:KeyDown(IN_ATTACK2) or p:InVehicle() then return end
  local amount=I.Strength("immersionMotion")
  local speed=math.min(p:GetVelocity():Length2D()/220,1)

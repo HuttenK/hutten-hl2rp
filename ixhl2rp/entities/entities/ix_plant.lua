@@ -49,10 +49,9 @@ if SERVER then
 			local character = ix.char.loaded[id]
 
 			if character and IsValid(character:GetPlayer()) then
-				character:DoAction("farming", xp, self.Plant)
 
 				if info.Harvest then
-					character:GetPlayer():RewardXP(self.Plant.RewardXP, "xp.harvest")
+
 				end
 			end
 		end
@@ -287,8 +286,6 @@ if SERVER then
 		if newWater > 150 then
 			return
 		end
-
-		client:GetCharacter():DoAction("farmingWater", 0.4 * waterValue, self.Plant)
 
 		self:EmitSound("ambient/water/water_spray1.wav")
 

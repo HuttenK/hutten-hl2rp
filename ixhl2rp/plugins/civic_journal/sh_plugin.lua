@@ -12,9 +12,6 @@ local function Record(character, key, value)
 	character:SetData("civicJournal", entries)
 end
 
-function PLUGIN:CharacterLevelChanged(client, character, previous, current)
-	Record(character, "civic.event.level", current)
-end
 
 function PLUGIN:CharacterAcceptedTask(client, character, task)
 	Record(character, "civic.event.task", task.title)
@@ -24,9 +21,6 @@ function PLUGIN:CharacterCompletedTask(client, character, task)
 	Record(character, "civic.event.complete", task.title)
 end
 
-function PLUGIN:CharacterAllocatedSpecials(client, character)
-	Record(character, "civic.event.skills")
-end
 
 function PLUGIN:CharacterCraftedRecipe(client, character, recipe)
 	-- Batch repeated production into one entry per recipe per minute.

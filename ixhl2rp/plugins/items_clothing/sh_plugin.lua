@@ -162,11 +162,7 @@ if SERVER then
 
 		if character then
 			client.char_outfit:LoadCharacter(character)
-			timer.Simple(0, function()
-				if IsValid(client) and client:GetCharacter() == character then
-					ix.SDClothing.RepairLegacySlots(client)
-				end
-			end)
+
 		end
 	end
 

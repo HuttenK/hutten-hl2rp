@@ -136,13 +136,6 @@ if SERVER then
     end
 
     function D.FinishFall(p)
-        -- Systemic collapse cannot become conscious crawling while untreated.
-        -- Paralysis normally skips this window; also handle existing fall saves.
-        if ix.SCPMedicine and ix.SCPMedicine.BlocksRecovery(p:GetCharacter():Health()) then
-            D.EndRescueWindow(p)
-            p:SetCriticalState(true)
-            return
-        end
         local body = p.ixRagdoll
         if not IsValid(body) then D.EndRescueWindow(p) return end
         D.StopFallAnimation(body)

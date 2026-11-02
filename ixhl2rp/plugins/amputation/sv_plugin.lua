@@ -182,7 +182,7 @@ end
 local function CanOperate(surgeon, target, item)
 	if !IsValid(surgeon) or !IsValid(target) or surgeon == target then return false end
 	if !surgeon:Alive() or !target:Alive() or !target:GetCharacter() then return false end
-	if !Amputation.HasSkill(surgeon:GetCharacter()) or !OwnsItem(surgeon, item) then return false end
+	if !Amputation.CanOperate(surgeon:GetCharacter()) or !OwnsItem(surgeon, item) then return false end
 	if IsValid(surgeon.ixRagdoll) or surgeon:GetNetVar("crit", false) or surgeon:GetNetVar("restricted", false) then return false end
 	return Amputation.GetTarget(surgeon) == target
 end
@@ -349,7 +349,7 @@ net.Receive("ixAmputationConsent", function(_, target)
 	-- Условия перепроверяются: за время раздумий всё могло измениться.
 	if !target:Alive() or !surgeon:Alive() then return end
 	if Amputation.Get(target:GetCharacter()) then return end
-	if !Amputation.HasSkill(surgeon:GetCharacter()) then return end
+	if !Amputation.CanOperate(surgeon:GetCharacter()) then return end
 	if !CanOperate(surgeon, target, request.item) then return end
 
 	Amputation.BeginCut(surgeon, target, request.key, request.item)

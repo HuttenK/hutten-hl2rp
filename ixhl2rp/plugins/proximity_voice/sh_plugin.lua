@@ -1,7 +1,7 @@
 local PLUGIN=PLUGIN
-PLUGIN.name="Proximity and radio voice"
+PLUGIN.name="Proximity voice"
 PLUGIN.author="Hutten"
-PLUGIN.description="Spatial voice with existing SCiPNet radio channel access."
+PLUGIN.description="Spatial voice and wall attenuation."
 ix.voice=ix.voice or {}; local V=ix.voice
 ix.config.Add("voiceRange",600,"Proximity voice radius in Source units.",nil,{category="Voice",data={min=100,max=3000}})
 ix.config.Add("voiceWallVolume",0.3,"Proximity volume through walls.",nil,{category="Voice",data={min=0,max=1}})
@@ -24,8 +24,4 @@ function V.RemoveStandalone()
 end
 V.RemoveStandalone(); hook.Add("InitPostEntity","ixVoiceRemoveStandalone",V.RemoveStandalone)
 ix.util.Include("sv_voice.lua")
-ix.util.Include("sv_filter.lua")
-ix.util.Include("cl_settings.lua")
-if SERVER then resource.AddFile("sound/legends/radio/receiver_static.wav") end
-ix.util.Include("cl_effects.lua")
 ix.util.Include("cl_voice.lua")

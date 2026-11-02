@@ -46,8 +46,6 @@ Amputation.stumbleInterval = 1
 Amputation.stumbleTime = 3
 
 -- Ампутация холодным оружием.
-Amputation.skill = "medicine"
-Amputation.skillRequired = 5
 Amputation.cutTime = 60
 Amputation.reattachTime = 45
 Amputation.range = 96
@@ -56,22 +54,7 @@ Amputation.consentTimeout = 30
 -- Только тяжёлые клинки и ножи: перерубить кость вилкой или отвёрткой нельзя,
 -- хотя формально у них тоже Info.Class == "slash". uniqueID = имя файла без
 -- префикса sh_ и расширения (sh_wm_axe.lua -> wm_axe).
-Amputation.tools = {
- ["selected_eft_melee_6x5"]=true,
- ["selected_eft_melee_kukri"]=true,
- ["selected_eft_melee_gladius"]=true,
-	["selected_eft_melee_kukri"] = true,
-	["selected_eft_melee_kukri"] = true,
-	["selected_eft_melee_kukri"] = true,
-	["selected_eft_melee_kukri"] = true,
-	["selected_eft_melee_kukri"] = true,
-	["selected_eft_melee_gladius"] = true,
-	["selected_eft_melee_gladius"] = true,
-	["selected_eft_melee_6x5"] = true,
-	["selected_eft_melee_6x5"] = true,
-	["selected_eft_melee_kukri"] = true,
-	["selected_eft_melee_6x5"] = true,
-}
+Amputation.tools = {} -- Future blades opt in with canAmputate = true.
 
 -- Предмет-конечность, который получает хирург и которым конечность пришивают.
 Amputation.limbItems = {
@@ -81,14 +64,12 @@ Amputation.limbItems = {
 	rleg = "limb_rleg",
 }
 
-function Amputation.HasSkill(character)
-	if !character then return false end
-
-	return character:GetSkillModified(Amputation.skill) >= Amputation.skillRequired
+function Amputation.CanOperate(character)
+ return character != nil
 end
 
 function Amputation.IsTool(item)
-	return item != nil and Amputation.tools[item.uniqueID] == true
+	return item != nil and (item.canAmputate == true or Amputation.tools[item.uniqueID] == true)
 end
 
 -- Цель под прицелом: живой игрок либо его рэгдолл (ixPlayer), как в medical.
@@ -233,7 +214,6 @@ ix.lang.AddTable("ru", {
 	["amputation.beingCut"] = "Вам отрезают конечность...",
 	["amputation.reattaching"] = "Пришивание конечности...",
 	["amputation.beingReattached"] = "Вам пришивают конечность...",
-	["amputation.noSkill"] = "Нужен навык медицины 5.",
 	["amputation.noTarget"] = "Перед вами нет человека.",
 	["amputation.targetHasLimb"] = "У этого человека уже нет одной конечности.",
 	["amputation.busy"] = "Этот человек сейчас занят.",
@@ -273,7 +253,6 @@ ix.lang.AddTable("en", {
 	["amputation.beingCut"] = "A limb is being cut off...",
 	["amputation.reattaching"] = "Reattaching a limb...",
 	["amputation.beingReattached"] = "A limb is being reattached...",
-	["amputation.noSkill"] = "Requires medicine skill 5.",
 	["amputation.noTarget"] = "There is nobody in front of you.",
 	["amputation.targetHasLimb"] = "That person has already lost a limb.",
 	["amputation.busy"] = "That person is busy right now.",
@@ -337,19 +316,6 @@ ix.command.Add("AmputateCheck", {
 	OnRun = function(self, client)
 		local character = client:GetCharacter()
 		local lines = {}
-
-		local skill = character:GetSkillModified(Amputation.skill)
-
-		lines[#lines + 1] = string.format("ix.Amputation loaded: %s", tostring(ix.Amputation != nil))
-		lines[#lines + 1] = string.format("skill '%s' = %s (need %d): %s",
-			Amputation.skill, tostring(skill), Amputation.skillRequired,
-			Amputation.HasSkill(character) and "OK" or "FAIL -- опция скрыта")
-
-		-- Функция должна быть зарегистрирована на базе оружия при загрузке.
-		local sample = ix.Item.stored["selected_eft_melee_kukri"]
-		lines[#lines + 1] = string.format("item selected_eft_melee_kukri registered: %s | has amputate function: %s",
-			tostring(sample != nil),
-			tostring(sample != nil and sample.functions != nil and sample.functions.amputate != nil))
 
 		-- Какие из носимых предметов признаются инструментом.
 		local found = 0

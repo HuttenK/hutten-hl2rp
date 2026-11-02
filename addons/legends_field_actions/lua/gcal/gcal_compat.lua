@@ -466,41 +466,6 @@ if CLIENT then
         end
     })
 
-    GCAL:RegisterWeaponBaseStrategy("arc9", {
-        detect = function(_, weapon)
-            return IsValid(weapon)
-                and (
-                    weapon.ARC9
-                    or weapon.ARC9Weapon
-                    or weapon.Base == "arc9_base"
-                    or (isfunction(weapon.DoTPIK) and isfunction(weapon.GetWM))
-                )
-        end,
-        resolveViewModel = OwnerViewModel,
-        resolveLegsViewModel = OwnerViewModel,
-        thirdPersonMethod = function(_, weapon)
-            local arc9TPIK = GetConVar("arc9_tpik")
-            local noTPIK = weapon.NoTPIK or (ARC9 and ARC9.NoTPIK)
-            if not noTPIK and weapon.GetProcessedValue then
-                local ok, processedNoTPIK = pcall(weapon.GetProcessedValue, weapon, "NoTPIK", true)
-                if ok then noTPIK = processedNoTPIK end
-            end
-
-            local canUseARC9TPIK = ARC9
-                and ARC9.TPIK
-                and ARC9.TPIK.NativeExtensionPoints
-                and isfunction(ARC9.TPIK.GetIKTargets)
-                and (not arc9TPIK or arc9TPIK:GetBool())
-
-            if canUseARC9TPIK and not noTPIK then return "arc9_tpik" end
-            -- Fall back to GCAL's own TPIK (normal method)
-            return "normal"
-        end,
-        prePlayAnim = function(_, weapon)
-            if weapon.GetReloading and weapon:GetReloading() then return false end
-        end
-    })
-
     GCAL:RegisterWeaponBaseStrategy("mwbase", {
         detect = function(_, weapon)
             return IsValid(weapon) and IsValid(weapon.m_ViewModel)

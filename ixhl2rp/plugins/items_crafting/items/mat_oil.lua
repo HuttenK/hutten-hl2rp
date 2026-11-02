@@ -1,9 +1,0 @@
-ITEM.name = "item.mat_oil"
-ITEM.description = "item.mat_oil.desc"
-ITEM.category = "item.category.raw"
-ITEM.model = "models/mark2580/gtav/mp_apa_06/bathroom/prop_toilet_shamp_02_high.mdl"
-ITEM.rarity = 1
-ITEM.width = 1
-ITEM.height = 1
-ITEM.max_stack = 8
-ITEM.stackable = true

@@ -182,7 +182,7 @@ if SERVER then
 		if IsValid(client) and client:IsPlayer() then
 			local activeWeapon = tostring(client:GetActiveWeapon())
 
-			if string.find(activeWeapon, "tfa_nmrih_pickaxe") or string.find(activeWeapon, "arc9_eft_melee_hultafors") then
+			if string.find(activeWeapon, "tfa_nmrih_pickaxe") or (IsValid(client:GetActiveWeapon()) and client:GetActiveWeapon().ixItem and client:GetActiveWeapon().ixItem.miningTool) then
 				local activeWeapon = client:GetActiveWeapon()
 				local dmg = damageInfo:GetDamage()
 				local secDmg = activeWeapon.Bash2Damage or (activeWeapon.Secondary and activeWeapon.Secondary.Damage) or math.huge
@@ -237,7 +237,6 @@ if SERVER then
 							ix.Item:Spawn(client, nil, instance)
 						end
 
-						client:RewardXP(10, "xp.gathering")
 					end
 				else
 					client:NotifyLocalized("mining.notify.emptyOre")

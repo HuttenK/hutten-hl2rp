@@ -19,14 +19,14 @@ PANEL.TextHTML = [[
 			width: 10px;
 		}
 		::-webkit-scrollbar-thumb {
-			background-color: #3E65A0;
+			background-color: #8c7447;
 		}
 		::-webkit-scrollbar-thumb:active {
-			background-color: #4A78BF;
+			background-color: #b6975b;
 		}
 	</style>
 	</head>
-	<textarea id="textentry"; style="overflow-y: scroll; height: 100%; width: 100%; resize: none; font-size: 87%; font-family: sans-serif;" maxlength = ]]..PLUGIN.maxLength..[[;></textarea>
+	<textarea id="textentry"; style="overflow-y: scroll; height: 100%; width: 100%; resize: none; font-size: 87%; font-family: Georgia, serif; background: #d2c49f; color: #2a2115; border: 1px solid #8c7447; padding: 12px; box-sizing: border-box;" maxlength = ]]..PLUGIN.maxLength..[[;></textarea>
 	<script>
 		function SetText( text ) {
 			document.getElementById("textentry").value = text;
@@ -361,7 +361,7 @@ function PANEL:Load(data)
 		body {
 			margin: 0;
 			padding: 0;
-			font-family: sans-serif;
+			font-family: Georgia, serif; background: #d2c49f; color: #2a2115; border: 1px solid #8c7447; padding: 12px; box-sizing: border-box;
 		}
 		span {
 			display: inline-block;

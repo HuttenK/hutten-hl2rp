@@ -1,16 +1,16 @@
 local PANEL = {}
 AccessorFunc(PANEL, "m_pMenu", "Menu")
 
-local BG_COLOR = Color(200 * 0.2, 0, 0)
-local BG_DETAIL = Color(248, 64, 64, 255)
-local BG_DETAIL2 = Color(248, 64, 64, 16)
+local BG_COLOR = Color(20, 20, 17)
+local BG_DETAIL = Color(182, 151, 91, 255)
+local BG_DETAIL2 = Color(182, 151, 91, 16)
 local BG_DETAIL3 = Color(0, 0, 0, 255)
-local TEXT_COLOR = Color(248, 64, 64)
-local OPTION_HEIGHT = ix.UI.Scale(22)
+local TEXT_COLOR = Color(230, 222, 202)
+local OPTION_HEIGHT = ix.UI.Scale(32)
 
 do
 	surface.CreateFont('simple.option.button', {
-		font = "Tahoma",
+		font = "Georgia",
 		extended = true,
 		size = ix.UI.Scale(16),
 		weight = 500,
@@ -23,7 +23,8 @@ function PANEL:Init()
 	self:SetFont('simple.option.button')
 	self:SetTextColor(TEXT_COLOR)
 
-	self:SetContentAlignment(5)
+	self:SetContentAlignment(4)
+	self:SetTextInset(34,0)
 	--self:SetTextInset(32, 0) -- Room for icon on left
 
 end
@@ -38,42 +39,12 @@ function PANEL:SetSubMenu(menu)
 end
 
 function PANEL:SetImage(img)
-	if !img then
-		if IsValid(self.img) then
-			self.img:Remove()
-		end
-
-		return
-	end
-
-	if !IsValid(self.img) then
-		self.img = self:Add("DImage")
-	end
-
-	self.img:SetImage(img)
-	self.img:SizeToContents()
-
-	self:InvalidateLayout()
+ -- Keep the public API, but use a consistent engraving instead of icon16 art.
+ self.medievalIcon=ix.Legends.IconName(img or self:GetText())
+ if IsValid(self.img) then self.img:Remove();self.img=nil end
+ self:InvalidateLayout()
 end
-
-function PANEL:SetMaterial(img)
-	if !img then
-		if IsValid(self.img) then
-			self.img:Remove()
-		end
-
-		return
-	end
-
-	if !IsValid(self.img) then
-		self.img = self:Add("DImage")
-	end
-
-	self.img:SetImage(img)
-	self.img:SizeToContents()
-
-	self:InvalidateLayout()
-end
+function PANEL:SetMaterial(img) self:SetImage(img) end
 
 function PANEL:AddSubMenu()
 	local SubMenu = ix.SimpleMenu(true, self)
@@ -97,36 +68,12 @@ end
 function PANEL:OnCursorExited()
 end
 
-function PANEL:Paint(w, h)
-	self.stateAlpha = math.Approach((self.stateAlpha or 0), (self:IsHovered() or self.m_MenuClicking) and 1 or 0, FrameTime() * 10)
-	local a = 0
-
-	if (self.stateAlpha or 0) > 0 then
-		a = math.ease.OutCubic(self.stateAlpha)
-	end
-
-	local b = (self.m_MenuClicking and 2 or a)
-	local c = 128 + (127 * b)
-
-	self:SetTextColor(ColorAlpha(TEXT_COLOR, c))
-
-	surface.SetDrawColor(BG_COLOR)
-	surface.DrawRect(0, 0, w, h)
-
-	surface.SetDrawColor(ColorAlpha(BG_DETAIL, c))
-	surface.DrawRect(0, 0, OPTION_HEIGHT * 0.3, h)
-
-	if !self.isFirst then
-		surface.SetDrawColor(BG_DETAIL2)
-		surface.DrawRect(0, 0, w, 1, BG_DETAIL2)
-	end
-
-	render.OverrideBlend(true, 4, 1, BLENDFUNC_ADD, 4, 1, BLENDFUNC_ADD)
-		if (self.stateAlpha or 0) > 0 then
-			surface.SetDrawColor(190, 32, 32, 32 * b)
-			surface.DrawRect(0, 0, w, h)
-		end
-	render.OverrideBlend(false)
+function PANEL:Paint(w,h)
+ local U=ix.Legends
+ U.ButtonFace(self,w,h,false,self.m_MenuClicking)
+ self:SetTextColor(self:GetDisabled() and U.muted or U.ink)
+ local icon=self.medievalIcon or U.IconName(self:GetText())
+ U.Icon(icon,8,(h-18)/2,18,self:GetDisabled() and U.muted or U.accent)
 end
 
 function PANEL:OnMousePressed(mousecode)
@@ -151,26 +98,12 @@ function PANEL:DoClickInternal()
 end
 
 function PANEL:PerformLayoutImage()
-	if IsValid(self.img) then
-		local targetSize = math.min(self:GetWide() - 4, self:GetTall() - 4)
-
-		local imgW, imgH = self.img.ActualWidth, self.img.ActualHeight
-		local zoom = math.min(targetSize / imgW, targetSize / imgH, 1)
-		local newSizeX = math.ceil(imgW * zoom)
-		local newSizeY = math.ceil(imgH * zoom)
-
-		self.img:SetWide(newSizeX)
-		self.img:SetTall(newSizeY)
-
-		self.img:SetPos(OPTION_HEIGHT * 0.3 + 2, (self:GetTall() - self.img:GetTall()) * 0.5)
-
-		self:SetTextInset(32, 0)
-	end
+ self:SetTextInset(34,0)
 end
 
 function PANEL:PerformLayout(w, h)
 	self:SizeToContents()
-	self:SetWide(self:GetWide() + 30)
+	self:SetWide(self:GetWide() + 56)
 
 	local w = math.max(self:GetParent():GetWide(), self:GetWide())
 
@@ -221,7 +154,8 @@ end
 function PANEL:AddOption(strText, funcFunction)
 	local pnl = vgui.Create('simple.option.button', self)
 	pnl:SetMenu(self)
-	pnl:SetText(strText:utf8upper())
+	pnl:SetText(strText)
+	pnl.medievalIcon=ix.Legends.IconName(strText)
 
 	if funcFunction then pnl.DoClick = funcFunction end
 
@@ -246,7 +180,8 @@ end
 function PANEL:AddSubMenu(strText, funcFunction)
 	local pnl = vgui.Create('simple.option.button', self)
 	local SubMenu = pnl:AddSubMenu(strText, funcFunction)
-	pnl:SetText(strText:utf8upper())
+	pnl:SetText(strText)
+	pnl.medievalIcon=ix.Legends.IconName(strText)
 
 	if funcFunction then pnl.DoClick = funcFunction end
 

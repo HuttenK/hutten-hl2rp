@@ -10,20 +10,9 @@ function GM:PlayerInitialSpawn(client)
 		local data = {
 			name = client:Name(),
 			faction = faction and faction.uniqueID or "unknown",
-			model = faction and table.Random(faction:GetModels(client, table.Random(faction.genders or {GENDER_MALE, GENDER_FEMALE}))) or "models/gman.mdl",
-			specials = {
-				["st"] = 3,
-				["ag"] = 3,
-				["pe"] = 3,
-				["en"] = 3,
-				["in"] = 3,
-				["lk"] = 3,
-			},
-			skills = {}
+			model = faction and table.Random(faction:GetModels(client, table.Random(faction.genders or {GENDER_MALE, GENDER_FEMALE}))) or "models/gman.mdl"
 		}
-		for a, b in pairs(ix.skills.list) do
-			data.skills[a] = {0, 0, 0}
-		end
+
 		local character = ix.char.New(data, botID, client, client:SteamID64())
 		character.isBot = true
 
@@ -117,7 +106,7 @@ hook.Add("StartCommand", "rp.activate.player", function(ply, cmd)
 end)
 
 local slots = {
-	"head", "mask", "torso", "legs", "hands", "radio", "cid", "ears", "arm", "backpack"
+	"head", "mask", "torso", "legs", "hands", "ears", "arm", "backpack"
 }
 
 function GM:CreatePlayerInventories(client, inventories)
@@ -170,12 +159,6 @@ function GM:KeyPress(client, key)
 		local entity = util.TraceLine(data).Entity
 
 		if (IsValid(entity) and hook.Run("PlayerUse", client, entity)) then
-			-- Assembled ARC9 items use a custom hull instead of the viewmodel's
-			-- collision mesh. Start the usual hold interaction from our trace;
-			-- Source's native use search does not reliably select these models.
-			if entity:GetClass() == "ix_item" and entity.ixAssemblyHull then
-				entity:Use(client, client)
-			end
 			if (entity:IsDoor()) then
 				local result = hook.Run("CanPlayerUseDoor", client, entity)
 

@@ -1,200 +1,183 @@
--- Native VGUI art direction. No DHTML, remote assets or workshop UI fonts.
+-- Native Derma presentation. Optional artwork is loaded once; missing content
+-- falls back to solid surfaces instead of drawing an error material.
 ix.Legends = ix.Legends or {}
 local U = ix.Legends
--- Share the PDA sound player (including its rate limiting) once it is loaded.
-local nextUISound = {}
-function U.PlayUISound(name)
- if name ~= "click" and name ~= "hover" then return end
- if ix.Fieldlink and ix.Fieldlink.Sound then return ix.Fieldlink.Sound(name) end
- local now = RealTime()
- if now < (nextUISound[name] or 0) then return end
- nextUISound[name] = now + (name == "hover" and .12 or .07)
- surface.PlaySound("fieldlink/ui/" .. name .. ".wav")
-end
 U.Scale = ix.Civic.Scale
 local S = U.Scale
-U.ink = Color(246, 104, 113)
-U.muted = Color(181, 151, 155)
-U.accent = Color(255, 53, 76)
-U.cyan = Color(255, 106, 120)
-U.rose = Color(238, 85, 113)
-U.line = Color(150, 43, 57, 150)
-U.panel = Color(27, 12, 18, 240)
-U.dark = Color(12, 8, 12)
--- Retire previous atmosphere hooks on Lua refresh as well as fresh joins.
+U.ink = Color(230, 222, 202)
+U.muted = Color(161, 151, 128)
+U.accent = Color(182, 151, 91)
+U.cyan = Color(213, 187, 130) -- compatibility name used by existing controls
+U.rose = Color(156, 69, 54)
+U.line = Color(103, 88, 57, 180)
+U.panel = Color(18, 18, 16, 244)
+U.dark = Color(9, 10, 9)
+U.Boot, U.Atmosphere, U.LoadArtwork, U.BorderGlitch = nil, nil, nil, nil
 hook.Remove("PreRender", "LegendsBackgroundFocus")
-U.Atmosphere, U.LoadArtwork = nil, nil
-if ix.option.stored then ix.option.stored.legendsAtmosphere = nil end
-if ix.option.categories and ix.option.categories.appearance then
- ix.option.categories.appearance.legendsAtmosphere = nil
-end
 function U.T(en, ru) return ix.Locale.lang == "ru" and ru or en end
+local nextSound = 0
+function U.PlayUISound(name)
+ if name ~= "click" or RealTime() < nextSound then return end
+ nextSound = RealTime() + .09
+ surface.PlaySound("buttons/lightswitch2.wav")
+end
+function U.HoverSound() end
 function U.Fonts()
-	for name, size in pairs({Display = 58, Title = 28, Heading = 21, Body = 17, Small = 15, Mono = 13}) do
-		surface.CreateFont("legends." .. name, {font = "Consolas",
-			size = S(size), weight = (name == "Display" or name == "Heading") and 700 or 400,
-			extended = true, antialias = true})
-	end
+ for _, prefix in ipairs({"legends.", "facility."}) do
+  for name, size in pairs({Display=62, Title=32, Heading=22, Body=18, Small=15, Mono=14}) do
+   surface.CreateFont(prefix..name, {font="Georgia", size=S(size), weight=400, extended=true, antialias=true})
+  end
+ end
 end
 U.Fonts()
 hook.Add("OnScreenSizeChanged", "LegendsFonts", U.Fonts)
 function U.Text(text, font, x, y, color, align)
-	draw.SimpleText(tostring(text or ""), "legends." .. font, x, y, color or U.ink, align or TEXT_ALIGN_LEFT)
+ draw.SimpleText(tostring(text or ""), "legends."..(font or "Body"), x, y, color or U.ink, align or TEXT_ALIGN_LEFT)
 end
-function U.Rect(x, y, w, h, color)
-	surface.SetDrawColor(color); surface.DrawRect(x, y, w, h)
+function U.Fit(text, font, width)
+ text=tostring(text or "")
+ surface.SetFont("legends."..(font or "Body"))
+ if surface.GetTextSize(text)<=width then return text end
+ local count=text:utf8len()
+ while count>0 do
+  local value=text:utf8sub(1,count).."…"
+  if surface.GetTextSize(value)<=width then return value end
+  count=count-1
+ end
+ return ""
 end
--- Rectilinear terminal frame: no clipped corners, bevels or moving hitboxes.
-function U.Plate(x, y, w, h, color, accent)
- if w < 12 or h < 12 then return end
- local line = accent or U.line
- U.Rect(x, y, w, h, color)
- U.Rect(x, y+h-1, w, 1, Color(line.r,line.g,line.b,65))
- local length = math.min(S(12), w/4, h/3)
- for _, corner in ipairs({{x,y,1,1},{x+w-1,y,-1,1},{x,y+h-1,1,-1},{x+w-1,y+h-1,-1,-1}}) do
-  local cx,cy,dx,dy=corner[1],corner[2],corner[3],corner[4]
-  U.Rect(dx==1 and cx or cx-length+1,cy,length,1,line)
-  U.Rect(cx,dy==1 and cy or cy-length+1,1,length,line)
+function U.Rect(x,y,w,h,color)
+ surface.SetDrawColor(color); surface.DrawRect(x,y,w,h)
+end
+-- Original generated artwork stays in the content addon. Only the rails stretch;
+-- engraved corners retain their proportions on every screen size.
+U.Art = {
+ panel={path="panel_v2",u=.08,v=.08},
+ button={path="button_v2",u=.05,v=.15},
+ slot={path="slot_v2",u=.13,v=.13},
+ selected={path="slot_selected_v2",u=.13,v=.13}
+}
+-- Material paths are relative to garrysmod/materials, with no UI subfolder.
+for _,art in pairs(U.Art) do art.material=Material(art.path..".png","smooth") end
+local background = Material("cloister_v2.png", "smooth noclamp")
+local divider = Material("divider_v2.png", "smooth")
+local shade = Material("vgui/gradient-l", "smooth")
+local function Patch(x,y,w,h,u0,v0,u1,v1)
+ if w>0 and h>0 then surface.DrawTexturedRectUV(x,y,w,h,u0,v0,u1,v1) end
+end
+function U.NineSlice(name,x,y,w,h,corner,color,frameOnly)
+ local art=U.Art[name]
+ if w<=0 or h<=0 or not art or art.material:IsError() then return false end
+ local c=math.max(0,math.min(corner,w/2,h/2))
+ local u,v=art.u,art.v
+ surface.SetMaterial(art.material);surface.SetDrawColor(color or color_white)
+ Patch(x,y,c,c,0,0,u,v)
+ Patch(x+c,y,w-c*2,c,u,0,1-u,v)
+ Patch(x+w-c,y,c,c,1-u,0,1,v)
+ Patch(x,y+c,c,h-c*2,0,v,u,1-v)
+ if not frameOnly then Patch(x+c,y+c,w-c*2,h-c*2,u,v,1-u,1-v) end
+ Patch(x+w-c,y+c,c,h-c*2,1-u,v,1,1-v)
+ Patch(x,y+h-c,c,c,0,1-v,u,1)
+ Patch(x+c,y+h-c,w-c*2,c,u,1-v,1-u,1)
+ Patch(x+w-c,y+h-c,c,c,1-u,1-v,1,1)
+ return true
+end
+function U.SlotFace(x,y,w,h,selected,frameOnly)
+ local name=selected and "selected" or "slot"
+ local art=U.Art[name]
+ if not frameOnly and not art.material:IsError() then
+  surface.SetMaterial(art.material);surface.SetDrawColor(255,255,255)
+  surface.DrawTexturedRect(x,y,w,h)
+ elseif not U.NineSlice(name,x,y,w,h,math.min(w,h)*.13,nil,frameOnly) and not frameOnly then
+  U.Rect(x,y,w,h,U.panel)
  end
 end
-function U.ButtonFace(panel, w, h, primary, selected)
- local disabled = panel:GetDisabled()
- local active = not disabled and (panel:IsHovered() or panel:HasFocus() or selected)
- local pressed = not disabled and panel:IsDown()
- -- Terminal selection is immediate, with no lift, pulse or typing delay.
- local fill = disabled and Color(15,12,14,235) or
-  (pressed and Color(105,15,32,255) or (active and Color(66,12,25,255) or Color(15,8,12,242)))
- local line = disabled and Color(66,40,47) or (active and U.accent or U.line)
- U.Plate(0,0,w,h,fill,line)
- local gutter = math.min(S(40), w*0.2)
- U.Rect(gutter, S(8), 1, math.max(1,h-S(16)), Color(line.r,line.g,line.b,95))
+function U.Backdrop(w,h)
+ U.Rect(0,0,w,h,U.dark)
+ if not background:IsError() then
+  local ratio=background:Width()/math.max(1,background:Height())
+  local view=w/math.max(1,h)
+  local u,v=math.min(1,view/ratio),math.min(1,ratio/view)
+  surface.SetMaterial(background);surface.SetDrawColor(255,255,255)
+  surface.DrawTexturedRectUV(0,0,w,h,(1-u)/2,(1-v)/2,(1+u)/2,(1+v)/2)
+ end
+ surface.SetMaterial(shade);surface.SetDrawColor(3,4,3,38);surface.DrawTexturedRect(0,0,w*.62,h)
+end
+function U.Plate(x,y,w,h,color,accent)
+ if w<=0 or h<=0 then return end
+ local tint=Color(255,255,255,color and color.a or 255)
+ if not U.NineSlice("panel",x,y,w,h,S(26),tint) then
+  U.Rect(x,y,w,h,color or U.panel)
+  surface.SetDrawColor(accent or U.line);surface.DrawOutlinedRect(x,y,w,h)
+ elseif accent then
+  U.NineSlice("panel",x,y,w,h,S(26),accent,true)
+ end
+end
+function U.Rule(x,y,w)
+ if divider:IsError() then U.Rect(x,y,w,1,U.line) return end
+ -- The transparent source has generous vertical padding around the metalwork.
+ surface.SetMaterial(divider);surface.SetDrawColor(255,255,255)
+ surface.DrawTexturedRectUV(x,y-S(7),w,S(14),0,.43,1,.56)
+end
+function U.ButtonFace(p,w,h,primary,selected)
+ local active=not p:GetDisabled() and (p:IsHovered() or p:HasFocus() or selected)
+ local tint=p:GetDisabled() and Color(130,130,125) or color_white
+ if not U.NineSlice("button",0,0,w,h,S(16),tint) then U.Plate(0,0,w,h) end
  if active or primary then
-  -- A narrow illuminated rail replaces the old neon polygon silhouette.
-  for i=0,3 do U.Rect(i,1,1,h-2,Color(line.r,line.g,line.b,180-i*42)) end
+  U.NineSlice("selected",0,0,w,h,S(16),Color(255,240,204,active and 105 or 35))
  end
- if primary then U.Rect(w-S(26),h-S(9),S(16),S(2),line) end
- return 0
+ return p:IsDown() and 1 or 0
 end
-function U.Label(parent, text, font, color)
-	local p = parent:Add("DLabel")
-	p:Dock(TOP); p:DockMargin(0, 0, 0, S(14))
-	p:SetFont("legends." .. (font or "Body")); p:SetTextColor(color or U.ink)
-	p:SetText(text); p:SetWrap(true); p:SetAutoStretchVertical(true)
-	return p
+function U.Button(parent,text,action,primary)
+ local p=parent:Add("DButton");p:SetText("");p:SetTall(S(46));p:SetTooltip(text)
+ p.Paint=function(this,w,h)
+  local offset=U.ButtonFace(this,w,h,primary)
+  local inset=S(18)
+  if U.Icon and w>=S(210) then
+   U.Icon(U.IconName(text),S(14),h/2-S(13),S(26),this:GetDisabled() and Color(255,255,255,90) or U.ink)
+   inset=S(49)
+  end
+  draw.SimpleText(U.Fit(text,"Body",w-inset-S(18)),"legends.Body",inset,h/2+offset,
+   this:GetDisabled() and U.muted or U.ink,TEXT_ALIGN_LEFT,TEXT_ALIGN_CENTER)
+ end
+ p.DoClick=function(this) if this:GetDisabled() then return end U.PlayUISound("click");action(this) end
+ return p
 end
-function U.Button(parent, text, action, primary)
-	local p = parent:Add("DButton")
-	p:SetText(""); p:SetTall(S(52)); p:SetTooltip(text)
-	p.OnCursorEntered = function(this)
-		if not this:GetDisabled() then U.HoverSound() end
-	end
-	p.Paint = function(this, w, h)
-		local down = U.ButtonFace(this, w, h, primary)
-  U.Text(this:GetDisabled() and "--" or ">_", "Mono", S(10), h/2-S(7), this:GetDisabled() and U.muted or U.accent)
-  U.Text(text, "Body", S(52), h/2-S(10)+down, this:GetDisabled() and U.muted or U.ink)
-  if this:IsHovered() or this:HasFocus() then U.Rect(w-S(16),h/2-S(6),S(5),S(12),U.accent) end
-	end
-	p.DoClick = function(this)
-		if this:GetDisabled() then return end
-		ix.Legends.PlayUISound("click"); action(this)
-	end
-	return p
-end
-function U.HoverSound()
-	local now = RealTime()
-	if now < (U.nextHoverSound or 0) then return end
-	U.nextHoverSound = now + 0.065
-	ix.Legends.PlayUISound("hover")
+function U.Label(parent,text,font,color)
+ local p=parent:Add("DLabel");p:Dock(TOP);p:DockMargin(0,0,0,S(12))
+ p:SetFont("legends."..(font or "Body"));p:SetTextColor(color or U.ink)
+ p:SetText(text);p:SetWrap(true);p:SetAutoStretchVertical(true)
+ return p
 end
 function U.Scroll(parent)
-	local p = parent:Add("DScrollPanel")
-	p:GetVBar():SetWide(S(3)); p:GetVBar():SetHideButtons(true)
-	p:GetVBar().Paint = function() end
-	p:GetVBar().btnGrip.Paint = function(_, w, h) U.Rect(0, 0, w, h, U.accent) end
-	return p
+ local p=parent:Add("DScrollPanel")
+ p:GetVBar():SetWide(S(4));p:GetVBar():SetHideButtons(true)
+ p:GetVBar().Paint=function() end
+ p:GetVBar().btnGrip.Paint=function(_,w,h) U.Rect(0,0,w,h,U.accent) end
+ return p
 end
-function U.Field(parent, title, value, callback, multiline)
-	U.Label(parent, title, "Mono", U.muted)
-	local p = parent:Add("DTextEntry")
-	p:Dock(TOP); p:DockMargin(0, 0, S(8), S(20)); p:SetTall(S(multiline and 106 or 48))
-	p:SetFont("legends.Body"); p:SetMultiline(multiline or false); p:SetUpdateOnType(true)
-	p:SetText(value or "")
-	p.Paint = function(this, w, h)
-		U.Plate(0, 0, w, h, U.panel, this:HasFocus() and U.cyan or U.line)
-		this:DrawTextEntryText(U.ink, U.accent, U.ink)
-	end
-	p.OnValueChange = function(_, text) callback(text) end
-	return p
+function U.Field(parent,title,value,callback,multiline)
+ U.Label(parent,title,"Small",U.muted)
+ local p=parent:Add("DTextEntry")
+ p:Dock(TOP);p:DockMargin(0,0,S(8),S(18));p:SetTall(S(multiline and 106 or 44))
+ p:SetFont("legends.Body");p:SetMultiline(multiline or false);p:SetUpdateOnType(true);p:SetText(value or "")
+ p.Paint=function(this,w,h)
+  U.Plate(0,0,w,h,U.panel,this:HasFocus() and U.cyan or U.line)
+  this:DrawTextEntryText(U.ink,U.accent,U.ink)
+ end
+ p.OnValueChange=function(_,text) callback(text) end
+ return p
 end
-function U.Choice(parent, title, entries, selected, callback)
-	U.Label(parent, title, "Mono", U.muted)
-	local p = parent:Add("DComboBox")
-	p:Dock(TOP); p:DockMargin(0, 0, S(8), S(18)); p:SetTall(S(44))
-	p:SetFont("legends.Body"); p:SetTextColor(U.ink); p:SetSortItems(false)
-	p.Paint = function(this, w, h) U.Plate(0, 0, w, h, U.panel, this:IsHovered() and U.cyan or U.line) end
-	for _, entry in ipairs(entries) do p:AddChoice(entry.label, entry.value, entry.value == selected) end
-	p.OnSelect = function(_, _, _, value) callback(value) end
-	return p
+function U.Choice(parent,title,entries,selected,callback)
+ U.Label(parent,title,"Small",U.muted)
+ local p=parent:Add("DComboBox")
+ p:Dock(TOP);p:DockMargin(0,0,S(8),S(18));p:SetTall(S(44))
+ p:SetFont("legends.Body");p:SetTextColor(U.ink);p:SetSortItems(false)
+ p.Paint=function(this,w,h) U.Plate(0,0,w,h,U.panel,this:IsHovered() and U.cyan or U.line) end
+ for _,entry in ipairs(entries) do p:AddChoice(entry.label,entry.value,entry.value==selected) end
+ p.OnSelect=function(_,_,_,value) callback(value) end
+ return p
 end
--- Menu-local scheduling: no timers or hooks keep running after menus close.
-local borderGlitch = {}
-function U.BorderGlitch(w, h)
- if ix.option.Get("disableAnimations", false) then
-  borderGlitch = {}
-  return
- end
- local now = RealTime()
- if not borderGlitch.last or now-borderGlitch.last > 1 then
-  borderGlitch.next = now + math.random(12, 25)
-  borderGlitch.started = nil
- end
- borderGlitch.last = now
- if now >= borderGlitch.next then
-  borderGlitch.started = now
-  borderGlitch.next = now + math.random(16, 30)
-  borderGlitch.side = math.random(0, 1)
-  borderGlitch.position = math.random(20, 65)/100
- end
- local age = borderGlitch.started and now-borderGlitch.started
- if not age or age > 0.22 then return end
- local strength = math.sin(age/0.22*math.pi)
- local band = math.min(S(30), w*0.025)
- local phase = math.floor(age*24)
- -- Fragmented red signal tears remain outside all menu content margins.
- for i = 0, 5 do
-  local length = band*(0.35+((i+phase)%4)*0.15)
-  local x = borderGlitch.side == 0 and 0 or w-length
-  local y = math.min(h-S(8), h*borderGlitch.position + S(i*19 + (phase%2)*3))
-  U.Rect(x, y, length, S(2+i%3), Color(240, 38, 65, 110*strength))
-  U.Rect(x, y+S(5), length*0.7, 1, Color(215, 159, 167, 65*strength))
- end
-end
-
-local terminalBackground = Material("legends/scp/terminal.jpg", "smooth")
-function U.Backdrop(w, h)
- U.Rect(0, 0, w, h, Color(12, 10, 13))
- if not terminalBackground:IsError() then
-  local ratio = terminalBackground:Width() / math.max(terminalBackground:Height(), 1)
-  local view = w / math.max(h, 1)
-  local u, v = math.min(1, view/ratio), math.min(1, ratio/view)
-  surface.SetMaterial(terminalBackground); surface.SetDrawColor(220, 194, 201, 255)
-  surface.DrawTexturedRectUV(0, 0, w, h, (1-u)/2, (1-v)/2, (1+u)/2, (1+v)/2)
- end
- U.Rect(0, 0, w, h, Color(15, 3, 9, 45))
- U.Rect(0, 0, w, S(88), Color(9, 5, 9, 205))
- U.Rect(0, h-S(98), w, S(98), Color(9, 5, 9, 205))
- -- Sparse scan texture; no flicker, camera shake or full-screen flashing.
- for y = S(90), h-S(100), math.max(12,S(16)) do
-  U.Rect(0, y, w, 1, Color(230, 70, 90, 4))
- end
- if not ix.option.Get("disableAnimations", false) then
-  local y = S(90) + (RealTime()*18 % math.max(1,h-S(190)))
-  U.Rect(w*0.06, y, w*0.88, S(2), Color(255, 45, 70, 12))
- end
- U.Rect(w*0.045, S(85), w*0.91, 1, U.line)
- U.BorderGlitch(w, h)
-end
-
 -- Active characters use the replicated player appearance, not the logout cache.
 function U.ApplyCharacterAppearance(entity,character)
  if ix.SDHair then ix.SDHair.Apply(entity, ix.SDHair.Saved(character)) end
@@ -218,9 +201,9 @@ end
 local PANEL = {}
 function PANEL:Init()
 	self:SetFOV(32); self:SetMouseInputEnabled(true)
-	self:SetAmbientLight(Color(65, 52, 59)); self:SetDirectionalLight(BOX_FRONT, Color(228, 212, 208))
-	self:SetDirectionalLight(BOX_RIGHT, Color(230, 37, 62))
-	self:SetDirectionalLight(BOX_LEFT, Color(191, 78, 104)); self.yaw = 12
+	self:SetAmbientLight(Color(69, 69, 61)); self:SetDirectionalLight(BOX_FRONT, Color(228, 212, 208))
+	self:SetDirectionalLight(BOX_RIGHT, Color(163, 151, 119))
+	self:SetDirectionalLight(BOX_LEFT, Color(81, 97, 108)); self.yaw = 12
 end
 function PANEL:Present(model, skin, groups)
  self.character=nil

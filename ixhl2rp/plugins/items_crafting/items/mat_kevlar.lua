@@ -1,9 +1,0 @@
-ITEM.name = "item.mat_kevlar"
-ITEM.description = "item.mat_kevlar.desc"
-ITEM.category = "item.category.raw"
-ITEM.model = "models/props_junk/cardboard_box004a.mdl"
-ITEM.width = 2
-ITEM.height = 1
-ITEM.max_stack = 8
-ITEM.stackable = true
-ITEM.contraband = true

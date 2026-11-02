@@ -6,49 +6,49 @@ PLUGIN.description = "Adds a better crafting solution to helix."
 
 if CLIENT then
 	surface.CreateFont("ui.craft.large", {
-		font = "Tahoma",
+		font = "Georgia",
 		extended = true,
 		size = ix.UI.Scale(19),
 		weight = 550,
 		antialias = true,
 	})
-	surface.CreateFont("ui.craft.xp", {
-		font = "Tahoma",
+	surface.CreateFont("ui.craft.detail", {
+		font = "Georgia",
 		extended = true,
 		size = ix.UI.Scale(15),
 		weight = 550,
 		antialias = true,
 	})
 	surface.CreateFont("craft.item.title", {
-		font = "Tahoma",
+		font = "Georgia",
 		extended = true,
 		size = ix.UI.Scale(24),
 		weight = 500,
 		antialias = true,
 	})
 	surface.CreateFont("craft.item.key", {
-		font = "Tahoma",
+		font = "Georgia",
 		extended = true,
 		size = ix.UI.Scale(21),
 		weight = 500,
 		antialias = true,
 	})
 	surface.CreateFont("craft.item.value", {
-		font = "Tahoma",
+		font = "Georgia",
 		extended = true,
 		size = ix.UI.Scale(21),
 		weight = 500,
 		antialias = true,
 	})
 	surface.CreateFont('craft.component.count', {
-		font = "Tahoma",
+		font = "Georgia",
 		extended = true,
 		size = ix.UI.Scale(24),
 		weight = 500,
 		antialias = true,
 	})
 	surface.CreateFont('craft.button', {
-		font = "Tahoma",
+		font = "Georgia",
 		extended = true,
 		size = ix.UI.Scale(24),
 		weight = 500,

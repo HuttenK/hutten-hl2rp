@@ -8,7 +8,6 @@ local owners = setmetatable({}, {__mode = "k"})
 
 function W.ClearHolsters(client)
  for _, entry in pairs(owners[client] or {}) do
-  if ix.WeaponAssembly then ix.WeaponAssembly.Remove(entry.host) end
   if IsValid(entry.host) then entry.host:Remove() end
  end
  owners[client] = nil
@@ -28,37 +27,7 @@ function W.HolsterMount(slot)
  return Vector(-3.5, slot == 2 and 5.5 or -5.5, 9), slot == 2 and W.MirrorHolsterAngle(rotation) or rotation
 end
 
--- These complete EFT world models run along local Z, unlike the firearm
--- assemblies. Hang them from the belt: blades down, crowbar/hammer head up.
-local meleeHipProfiles = {}
-for class, bladeDown in pairs({
- arc9_eft_melee_6x5 = true,
- arc9_eft_melee_gladius = true,
- arc9_eft_melee_kukri = true,
- arc9_eft_melee_crowbar = false,
- arc9_eft_melee_hultafors = false
-}) do
- meleeHipProfiles[class] = {
-  bone = "ValveBiped.Bip01_Pelvis", bodyFrame = true, staticModel = true,
-  pos = Vector(-2, -8, 2), ang = Angle(bladeDown and 180 or 0, 90, 0),
-  anchorZ = bladeDown and "min" or "max"
- }
-end
-
-local meleeBackProfiles = {}
-for _, class in ipairs({"arc9_eft_melee_crowbar", "arc9_eft_melee_gladius", "arc9_eft_melee_hultafors"}) do
- meleeBackProfiles[class] = {}
- for slot = 1, 2 do
-  meleeBackProfiles[class][slot] = {
-   bone = "ValveBiped.Bip01_Spine1", bodyFrame = true, staticModel = true, slotMount = true,
-   pos = W.HolsterMount(slot), ang = Angle(class == "arc9_eft_melee_gladius" and 180 or 0, slot == 2 and -90 or 90, 0)
-  }
- end
-end
-
 function W.HolsterProfile(plugin, class, hip, slot)
- if hip and meleeHipProfiles[class] then return meleeHipProfiles[class] end
- if not hip and meleeBackProfiles[class] then return meleeBackProfiles[class][slot or 1] end
  return plugin:HolsterProfile(class, hip)
 end
 
@@ -71,7 +40,6 @@ function W.DrawHolsters(plugin, client)
  for slot = 1, W.count do
   local row, entry = rows[slot], cache[slot]
   if entry and (not row or row.id ~= entry.id or row.model ~= entry.path) then
-   if ix.WeaponAssembly then ix.WeaponAssembly.Remove(entry.host) end
    if IsValid(entry.host) then entry.host:Remove() end
    entry = nil
    cache[slot] = nil
@@ -111,26 +79,9 @@ function W.DrawHolsters(plugin, client)
   if not matrix then break end
   local facing = plugin:HolsterBoneFrame(client, boneName, matrix)
   local scale = client:GetModelScale()
-  local A = ix.WeaponAssembly
-  if not profile.staticModel and A and ix.arc9Inventory.IsClass(row.class) then
-   -- Remote cosmetic attachment-tree comparison/rebuild is bounded. New rows,
-   -- weapons and destroyed preview models still invalidate immediately.
-   if interval == 0 or now >= (entry.nextAssembly or 0) or entry.row ~= row or
-    entry.class ~= row.class or not IsValid(entry.assembly) then
-    entry.assembly = A.Get(entry.host, row.class, row.tree, row.rounds)
-    entry.nextAssembly, entry.row, entry.class = now + interval, row, row.class
-   end
-   local assembly = entry.assembly
-   if not assembly then break end
-   local mount, rotation = W.HolsterMount(slot)
-   -- Follow the body, but retain enough lateral separation for two full-size guns.
-   mount = Vector(mount.x * scale, mount.y * (hip and scale or math.max(1, scale)), mount.z * scale)
-   local pos, ang = LocalToWorld(mount, rotation, matrix:GetTranslation(), facing)
-   local offset = LocalToWorld(A.Center(assembly), angle_zero, vector_origin, ang)
-   A.Draw(assembly, pos - offset, ang)
-  else
+  do
    -- Preserve the authored per-weapon profiles and origin handling for stock
-   -- and ArcCW models as well; centering every mesh changes those placements.
+   -- and other models as well; centering every mesh changes those placements.
    local model = entry.host
    local pos, ang = matrix:GetTranslation(), matrix:GetAngles()
    if profile.bodyFrame then

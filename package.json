@@ -1,9 +1,10 @@
 {
-  "name": "hutten-hl2rp-validation",
+  "name": "hutten-medieval-validation",
   "private": true,
   "scripts": {
     "audit": "node tools/audit.cjs",
-    "test": "node tools/test.cjs"
+    "test": "node tools/test-medieval.cjs",
+    "audit:medieval": "node tools/audit-medieval.cjs"
   },
   "devDependencies": {
     "fengari": "0.1.5",

@@ -1,4 +1,4 @@
-local font = "Roboto"
+local font = "Georgia"
 
 surface.CreateFont("ixInfoPanelFont", {
     font = font,

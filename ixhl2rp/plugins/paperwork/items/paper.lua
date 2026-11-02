@@ -1,12 +1,12 @@
 local PLUGIN = PLUGIN
 
-ITEM.name = "Персональный компьютер"
-ITEM.model = "models/nirrti/tablet/tablet_sfm.mdl"
+ITEM.name = "Записка"
+ITEM.model = "models/props_lab/clipboard.mdl"
 ITEM.stackable = true
 ITEM.max_stack = 5
 ITEM.width = 1
 ITEM.height = 1
-ITEM.description = "Стандартный КПК. Можно использовать вместо мобильного телефона."
+ITEM.description = "Лист с записями. Его можно прочесть и передать другому человеку."
 ITEM.isPaper = true
 ITEM.bAllowMultiCharacterInteraction = true
 
@@ -70,7 +70,7 @@ ITEM.functions.Write = {
 }
 
 function ITEM:GetDescription()
-	return self:GetData("O", 0) == 0 and L("Стандартный КПК. Можно использовать вместо телефона") or L("Стандартный КПК. Можно использовать вместо телефона")
+	return self:GetData("O", 0) == 0 and L("Лист с записями.") or L("Лист с записями.")
 end
 
 function ITEM:GetTitle()

@@ -1,6 +1,6 @@
 local PLUGIN = PLUGIN
 
--- Настоящая бумага. Функционально идентична paper_advanced (тот стал КПК):
+-- Настоящая бумага. Хранит записи, как обычная записка:
 -- владелец, заголовок, текст, окно записи/чтения через netstream "ixOpenPaper".
 ITEM.name = "Лист бумаги"
 ITEM.model = "models/props_lab/clipboard.mdl"

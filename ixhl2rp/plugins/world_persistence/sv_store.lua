@@ -10,7 +10,7 @@ end
 function P:Capture(ent, id)
  local row = {id=id, class=ent:GetClass(), pos=ent:GetPos(), ang=ent:GetAngles(),
   model=ent:GetModel(), skin=ent:GetSkin(), color=ent:GetColor(), material=ent:GetMaterial(),
-  collision=ent:GetCollisionGroup(), bodygroups={}, submaterials={}, screenHostID=ent.ixPropScreenHostID}
+  collision=ent:GetCollisionGroup(), bodygroups={}, submaterials={}}
  for _, group in ipairs(ent:GetBodyGroups() or {}) do row.bodygroups[tostring(group.id)] = ent:GetBodygroup(group.id) end
  for index in ipairs(ent:GetMaterials() or {}) do
   local value = ent:GetSubMaterial(index-1)
@@ -78,7 +78,6 @@ function P:Restore(record)
   ent = ents.Create(row.class)
   if not IsValid(ent) then error("unavailable entity class: " .. row.class) end
   ent.ixWorldPersistenceID = row.id
-  if ix.PropScreens and ix.PropScreens.ValidHostID(row.screenHostID) then ent.ixPropScreenHostID=row.screenHostID end
   ent:SetPos(row.pos); ent:SetAngles(row.ang); ent:Spawn(); ent:Activate()
   if not IsValid(ent) then error("entity removed during spawn: " .. row.class) end
   if isstring(row.model) and row.model ~= "" and ent:GetModel() ~= row.model then

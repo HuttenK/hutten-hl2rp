@@ -14,8 +14,8 @@ function PANEL:CacheRecipeNeeds(stationID, stationInventory)
 		for _, recipe in pairs(ix.Craft.recipes) do
 			local canCraft = true
 
-			-- The Combine fabrication terminal is a master station: it can craft anything.
-			if recipe.station and stationID != "station_combine" then
+			-- Stations must match the recipe.
+			if recipe.station then
 				if istable(recipe.station) then
 					canCraft = false
 
@@ -127,7 +127,7 @@ function PANEL:BuildCraftPanel()
 	itemTitle:Dock(TOP)
 	itemTitle:DockMargin(0, 10, 0, 0)
 	itemTitle:SetContentAlignment(5)
-	itemTitle:SetTextColor(Color(245, 95, 112))
+	itemTitle:SetTextColor(Color(213, 187, 130))
 	itemTitle:SetFont("legends.Heading")
 	itemTitle:SetText("")
 	itemTitle:SetVisible(false)
@@ -160,29 +160,6 @@ function PANEL:BuildCraftPanel()
 
 	self.itemCount = resultAmount
 
-	local itemLevelUp = top:Add("DLabel")
-	itemLevelUp:SetFont("legends.Mono")
-	itemLevelUp:Dock(TOP)
-	itemLevelUp:SetVisible(false)
-	itemLevelUp:SetText("")
-	itemLevelUp:SetContentAlignment(5)
-	itemLevelUp:SetTextColor(ix.Legends.muted)
-	itemLevelUp:SizeToContents()
-
-	self.itemXP = itemLevelUp
-
-	local skill = top:Add("DLabel")
-	skill:SetFont("legends.Mono")
-	skill:SetText("")
-	skill:SetTextColor(Color(255, 255, 255, 255))
-	skill:SetContentAlignment(5)
-	skill:SetVisible(false)
-	skill:Dock(TOP)
-	skill:DockMargin(0, 0, 0, 32)
-	skill:SizeToContents()
-
-	self.itemSkill = skill
-
 	local stationsPanel = top:Add("Panel")
 	stationsPanel:Dock(TOP)
 	stationsPanel:DockMargin(15, 0, 0, 0)
@@ -191,7 +168,7 @@ function PANEL:BuildCraftPanel()
 		local stationsTitle = stationsPanel:Add("DLabel")
 		stationsTitle:SetFont("legends.Mono")
 		stationsTitle:SetText(L("craftStationKey"))
-		stationsTitle:SetTextColor(Color(245, 95, 112, 255))
+		stationsTitle:SetTextColor(Color(213, 187, 130, 255))
 		stationsTitle:Dock(LEFT)
 		stationsTitle:SizeToContents()
 
@@ -213,7 +190,7 @@ function PANEL:BuildCraftPanel()
 		local toolsTitle = toolsPanel:Add("DLabel")
 		toolsTitle:SetFont("legends.Mono")
 		toolsTitle:SetText(L("craftToolsKey"))
-		toolsTitle:SetTextColor(Color(245, 95, 112, 255))
+		toolsTitle:SetTextColor(Color(213, 187, 130, 255))
 		toolsTitle:Dock(LEFT)
 		toolsTitle:SizeToContents()
 
@@ -225,7 +202,7 @@ function PANEL:BuildCraftPanel()
 	componentsTitle:DockMargin(15, 10, 0, 0)
 	componentsTitle:SetVisible(false)
 	componentsTitle:SetText(L("craftComponentsKey"))
-	componentsTitle:SetTextColor(Color(245, 95, 112, 255))
+	componentsTitle:SetTextColor(Color(213, 187, 130, 255))
 	componentsTitle:SizeToContents()
 
 	self.componentsTitle = componentsTitle
@@ -294,7 +271,7 @@ function PANEL:Setup()
 		close:MoveToFront()
 		close.Paint = function(btn, w, h)
 			local hovered = btn:IsHovered()
-			local clr = hovered and Color(255, 80, 80) or Color(245, 95, 112)
+			local clr = hovered and Color(255, 80, 80) or Color(213, 187, 130)
 
 			surface.SetDrawColor(30, 12, 20, 230)
 			surface.DrawRect(0, 0, w, h)
@@ -314,7 +291,7 @@ function PANEL:Setup()
 		local hint = self:Add("DLabel")
 		hint:SetFont("legends.Mono")
 		hint:SetText(L("craftCloseHint"))
-		hint:SetTextColor(Color(245, 95, 112, 200))
+		hint:SetTextColor(Color(213, 187, 130, 200))
 		hint:SizeToContents()
 		hint:SetPos(ScrW() - scale(54) - hint:GetWide() - scale(10), scale(18) + (scale(36) - hint:GetTall()) * 0.5)
 		hint:MoveToFront()

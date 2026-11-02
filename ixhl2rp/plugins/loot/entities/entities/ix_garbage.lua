@@ -2,19 +2,14 @@ DEFINE_BASECLASS("base_gmodentity")
 
 ENT.Type = "anim"
 ENT.Author = "SchwarzKruppzo"
-ENT.PrintName = "Garbage Point"
-ENT.Category = "HL2 RP"
+ENT.PrintName = "Куча обломков"
+ENT.Category = "Medieval RP"
 ENT.Spawnable = true
 ENT.bNoPersist = true -- Saved automatically by world_persistence.
 ENT.AdminSpawnable = true
 
 if SERVER then
-	local garbageModels = {
-		Model("models/props_junk/garbage128_composite001a.mdl"),
-		Model("models/props_junk/garbage128_composite001b.mdl"),
-		Model("models/props_junk/TrashCluster01a.mdl"),
-		Model("models/props_junk/garbage128_composite001d.mdl")
-	}
+	local garbageModels = {Model("models/props_debris/wood_board04a.mdl"),Model("models/props_junk/wood_pallet001a_chunka1.mdl")}
 
 	function ENT:Initialize()
 		self:SetModel(table.Random(garbageModels))
@@ -57,12 +52,13 @@ if SERVER then
 	end
 
 	function ENT:OnSuccess(client)
+		local character=client:GetCharacter()
 		local chance = ((math.Clamp(#player.GetAll(), 1, 90) / 90) * 100)
 		
 		if math.Rand(0, 100) < chance then
-			local character = client:GetCharacter()
 			local loot = {}
-			loot = ix.loot.Get("garbage_common"):Process(loot, true, client)
+			local source=ix.LootContainer:Get("supplies")
+			loot = source and source:Process(self) or {}
 
 			if loot[1] then
 				local item = ix.Item:Get(loot[1])

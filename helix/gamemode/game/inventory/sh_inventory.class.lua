@@ -1757,8 +1757,6 @@ else
 		["torso"] = true,
 		["legs"] = true,
 		["hands"] = true,
-		["radio"] = true,
-		["cid"] = true,
 		["ears"] = true,
 		["arm"] = true,
 		["backpack"] = true,

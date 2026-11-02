@@ -1,0 +1,10 @@
+{
+  "title": "Medieval RP - Interface Content",
+  "type": "servercontent",
+  "tags": [
+    "roleplay"
+  ],
+  "ignore": [
+    "*.md"
+  ]
+}

@@ -53,7 +53,6 @@ function PLUGIN:PlayerSpawn(client)
     client.ixDownedEnding = nil
     client.ixGiveUpRequest = nil
     client:SetNetVar("crit", nil)
-    client:SetNetVar("scpParalyzed", nil)
     client:SetNetVar("downedSince", nil)
     client:SetLocalVar("knocked", false)
 end

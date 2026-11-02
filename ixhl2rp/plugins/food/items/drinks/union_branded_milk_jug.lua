@@ -1,6 +1,6 @@
-ITEM.name = "item.union_branded_milk_jug"
-ITEM.description = "item.union_branded_milk_jug.desc"
-ITEM.model = "models/props_junk/garbage_milkcarton001a.mdl"
+ITEM.name = "Молоко"
+ITEM.description = "Свежее молоко в бутылке."
+ITEM.model = "models/props_junk/garbage_glassbottle003a.mdl"
 ITEM.cost = 17
 ITEM.width = 1
 ITEM.height = 2

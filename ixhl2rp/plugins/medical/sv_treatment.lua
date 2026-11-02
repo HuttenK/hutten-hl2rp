@@ -75,84 +75,10 @@ function M.Injuries(health, def, hitgroup)
  return result
 end
 
--- Build a fresh, non-mutating budget at completion; never trust client costs.
-function M.VolumePlan(item, health, hitgroup)
- local def=M.Catalog[item.uniqueID]
- local remaining=item:GetUses()
- local plan={cost=0, actions={}}
- local injuries=M.Injuries(health,def,hitgroup)
- if def.kind=="surgery" and injuries[1] then
-  injuries=M.Injuries(health,def,health.body.parts[injuries[1].part].hitgroup)
- end
- local function spend(cost) remaining=remaining-cost; plan.cost=plan.cost+cost end
- for _,diff in ipairs(injuries) do
-  local action={diff=diff,heal=0}
-  if diff.isFracture then
-   if def.kind=="surgery" and remaining>=def.fractureCost then
-    action.fracture=true; spend(def.fractureCost)
-   end
-  else
-   local bleeding=(diff.bleedRate or 0)>0 and diff.tended_time==-1
-   if bleeding and remaining>=def.bleedCost then
-    action.bandage=true; spend(def.bleedCost); bleeding=false
-   end
-   -- A kit cannot evade the dressing cost by healing an untreated bleed.
-   if not bleeding then
-    action.heal=math.min(diff:GetSeverity(),remaining/def.hpCost)
-    spend(action.heal*def.hpCost)
-   end
-  end
-  if action.fracture or action.bandage or action.heal>0 then plan.actions[#plan.actions+1]=action end
- end
- return plan
-end
-
-function M.CanRevive(target)
- if not IsValid(target) or not target:Alive() or not target:GetCharacter() then return false end
- local health = target:GetCharacter():Health()
- if ix.SCPMedicine then
-  local blocked, treatment, incurable, condition = ix.SCPMedicine.BlocksRecovery(health)
-  if blocked and incurable then return false, "Необратимое поражение: " .. condition .. ". Восстановление невозможно." end
-  if blocked then return false, "Сначала устраните причину критического состояния. Требуется: " .. treatment .. "." end
- end
- if health:GetBleedRate() >= 0.1 then return false, "Сначала остановите кровотечение." end
- for _, diff in health:GetHediffs() do
-  if diff.uniqueID == "bleeding" and diff:GetSeverity() >= 0.75 then
-   return false, "Сначала восстановите запас крови переливанием."
-  end
- end
- if health:GetPartHealth(health.consciousSource or 1) <= 0 or
-  health:GetPartHealth(2) <= 0 or health:GetPartHealth(3) <= 0 then
-  return false, "Сначала обработайте тяжёлые ранения головы и туловища."
- end
- return true
-end
-
 function M.Eligible(item, target, hitgroup)
  local health = target:GetCharacter():Health()
  local def = M.Catalog[item.uniqueID]
- if not def then
-  if item.uniqueID == "bloodbag_empty" then
-   if target:InCriticalState() or health:GetBleedRate() > 0 then return false, "Нельзя брать кровь при кровотечении или критическом состоянии." end
-   for _, diff in health:GetHediffs() do
-    if diff.uniqueID == "bleeding" and diff:GetSeverity() > .1 then return false, "Недостаточный запас крови для донорства." end
-   end
-  elseif item.uniqueID == "bloodbag" or item.uniqueID == "ivbag" then
-   for _, diff in health:GetHediffs() do if diff.uniqueID == "bleeding" and diff:GetSeverity() > 0 then return true end end
-   return false, "Переливание не требуется."
-  end
-  return true
- end
- -- Treat cardiac arrest even if blood loss prevents immediate revival. A
- -- stimulant's generic consciousness buff must never bypass an untreated cause.
- if ix.SCPMedicine and #ix.SCPMedicine.TreatmentMatches(health, item, hitgroup) > 0 then return true end
- if def.kind == "scp_treatment" then return false, "Нет соответствующего аномального поражения." end
- if def.revive and target:InCriticalState() then return M.CanRevive(target) end
- if def.capacity then
-  if M.VolumePlan(item,health,hitgroup).cost<=0 then return false, "Нет подходящей травмы или недостаточно запаса средства." end
-  return true
- end
- if def.pain then return true end
+ if not def then return false, "Неизвестное лечебное средство." end
  if #M.Injuries(health, def, hitgroup) == 0 then return false, "Нет подходящей травмы для этого средства." end
  return true
 end
@@ -160,36 +86,9 @@ end
 function M.Apply(item, target, medic, hitgroup)
  local health = target:GetCharacter():Health()
  local def = M.Catalog[item.uniqueID]
- if not def then
-  local data = item:OnConsume(target, medic ~= target and medic or nil, 1, target:GetCharacter()) or {}
-  health:OnUpdateDiffs()
-  health:GetBleedRate()
-  M.Sync(health)
-  return data
- end
- if ix.SCPMedicine then ix.SCPMedicine.Treat(health, item, hitgroup) end
- if def.capacity then
-  local plan=M.VolumePlan(item,health,hitgroup)
-  local healed=0
-  for _,action in ipairs(plan.actions) do
-   local diff=action.diff
-   if action.fracture then health:RemoveHediffByID(diff.id)
-   else
-    local remaining=math.max(0,diff:GetSeverity()-action.heal)
-    healed=healed+action.heal
-    if remaining<=0 then health:RemoveHediffByID(diff.id)
-    else
-     -- Rebase a previously regenerating injury before stopping its timer.
-     diff:SetSeverity(remaining)
-     if action.bandage or diff.tended_time~=-1 then diff.tended_time=0; diff.tended_start=os.time() end
-    end
-   end
-  end
-  health:OnUpdateDiffs(); health:GetBleedRate(); M.Sync(health)
-  return {dmg=healed,resourceCost=plan.cost}
- end
+ if not def then return {} end
  local healed = 0
- local skill = math.Clamp(tonumber(medic:GetCharacter():GetSkillModified("medicine")) or 0, 0, 10)
+ -- Treatment effectiveness is fixed; no character progression.
  local injuries = M.Injuries(health, def, hitgroup)
  if (def.kind == "surgery" or def.kind == "splint") and injuries[1] then
   hitgroup = health.body.parts[injuries[1].part].hitgroup
@@ -202,41 +101,16 @@ function M.Apply(item, target, medic, hitgroup)
   elseif def.kind == "bandage" then
    diff:SetSeverity(diff:GetSeverity()); diff.tended_time=0; diff.tended_start=os.time()
   elseif def.wounds then
-   local amount = math.min(diff:GetSeverity(), 10 + skill)
+   local amount = math.min(diff:GetSeverity(), 10)
    local remaining = diff:GetSeverity() - amount
    healed = healed + amount
    if remaining <= 0 then health:RemoveHediffByID(diff.id)
-   else diff:SetSeverity(remaining) health:TendHediff(diff, math.floor(180 / (1 + skill * .05))) end
+   else diff:SetSeverity(remaining) health:TendHediff(diff, 180) end
   end
- end
- if def.pain then
-  -- Refresh rather than stack analgesics; expiry is persisted in the existing medical hediff.
-  local old = {}
-  for _, diff in health:GetHediffs() do if diff.uniqueID == "painkiller" then old[#old+1] = diff.id end end
-  for _, id in ipairs(old) do health:RemoveHediffByID(id) end
-  health:AddHediff("painkiller", 0, {severity=10, tended_start=os.time(), tended_time=def.pain})
- end
- if def.kind == "stimulant" then
-  health:AddHediff("epinephrine", 0, {severity=100, tended_start=os.time(), tended_time=90})
- end
- local revive = def.revive and target:InCriticalState() and M.CanRevive(target)
- if revive then
-  local old = {}
-  for _, diff in health:GetHediffs() do if diff.uniqueID == "epinephrine_revival" then old[#old+1]=diff.id end end
-  for _, id in ipairs(old) do health:RemoveHediffByID(id) end
-  health:AddHediff("epinephrine_revival", 0, {severity=100, tended_start=os.time(), tended_time=def.revive})
  end
  health:OnUpdateDiffs()
  health:GetBleedRate()
  M.Sync(health)
- if revive then
-  target:SetAction()
-  target.ixRegainConscious = nil
-  target:SetLocalVar("knocked", false)
-  target:SetCriticalState(false)
-  target:SetRagdolled(false)
-  target:Notify("Вы пришли в сознание. Действие адреналина продлится 90 секунд; раны требуют лечения.")
- end
  return {dmg=healed}
 end
 
@@ -263,7 +137,7 @@ function M.Finish(client, success)
  local item = session.item
  if success then
   local data = M.Apply(item, session.target, client, session.hitgroup)
-  session.character:DoAction(session.target == client and "healing" or "healingTarget", data)
+
   local uses = item:GetUses()
   local cost = data.resourceCost or 1
   if uses <= cost + 0.000001 then
@@ -316,28 +190,13 @@ function M.Begin(item, target, hitgroup)
  local eligible, reason = M.Eligible(item, target, hitgroup)
  if not eligible then item.inUse=nil client:Notify(reason) return false end
  local def = M.Catalog[item.uniqueID]
- if def and not file.Exists(M.Model(def, true), "GAME") then
-  item.inUse=nil client:Notify("Не установлены модели EFT Medicine. Лечение не начато.") return false
- end
  client.bUsingMedical, client.ixMedicalSession = true, session
  M.activeSessions[client] = session
- session.rate = math.Clamp(1 + (tonumber(session.character:GetSkillModified("medicine")) or 0) * .025, 1, 1.25)
+ session.rate = 1
  session.started, session.deadline = CurTime(), CurTime() + 120
- if def then
-  session.plan = M.AnimationPlan(def)
-  local weapon = client:Give("ix_med_"..item.uniqueID, true)
-  if not IsValid(weapon) then M.Finish(client, false) return false end
-  session.weapon = weapon
-  session.selectDeadline = CurTime() + 2
-  client:SelectWeapon(weapon:GetClass())
-  if client:GetActiveWeapon() == weapon and not weapon.medNext then weapon:Deploy() end
-  -- Engine prediction/selection may not call Deploy until the next command.
- else
-  session.ends = CurTime() + math.max(3, (item.stats.time or 10) / session.rate)
-  if client:IsWepRaised() then client:ToggleWepRaised() end
-  client:EmitSound("items/medshot4.wav", 55)
-  M.AnnounceTreatment(client,session)
- end
+ session.ends = CurTime() + math.max(3, item.stats.time or 10)
+ if client:IsWepRaised() then client:ToggleWepRaised() end
+ M.AnnounceTreatment(client, session)
  net.Start("ixMedicalProgress") net.WriteString(item:GetName()) net.WriteFloat(session.ends and session.ends-CurTime() or 0) net.Send(client)
  return false
 end

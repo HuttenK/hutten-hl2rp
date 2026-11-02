@@ -1,33 +1,13 @@
 local Q, UI = ix.questDirector, ix.questDirector.ui
 -- The same palette, type roles and corner treatment as the economy screens
 -- and the existing NPC dialogue. Quest Director also works without that plugin.
-local theme = ix.EconomyUI
-local colors = theme and theme.colors or {
-    window = Color(15, 21, 28, 235), row = Color(16, 22, 29, 190),
-    rowActive = Color(150, 158, 166, 46), text = Color(214, 224, 232),
-    label = Color(110, 128, 140), micro = Color(70, 84, 94)
-}
-local style = theme and theme:GetStyle(1) or {
-    outline = Color(150, 158, 166, 48), outline2 = Color(150, 158, 166, 16),
-    corners = Color(214, 224, 232), hover = Color(110, 128, 140)
-}
-local fonts = {title = theme and "economy.title" or "ixQDTitle",
-    body = theme and "economy.section" or "ixQDBody", small = theme and "economy.value" or "ixQDBody"}
-
-local function border(panel, w, h)
-    if ix.util and ix.util.DrawBlur then ix.util.DrawBlur(panel, 2) end
-    surface.SetDrawColor(colors.window) surface.DrawRect(0, 0, w, h)
-    if theme then theme:DrawCorners(0, 0, w, h, 8, style)
-    else
-        surface.SetDrawColor(style.outline) surface.DrawOutlinedRect(0, 0, w, h)
-        surface.SetDrawColor(style.outline2) surface.DrawOutlinedRect(2, 2, w - 4, h - 4)
-        surface.SetDrawColor(style.corners)
-        for _, corner in ipairs({{0, 0, 1, 1}, {w - 1, 0, -1, 1}, {0, h - 1, 1, -1}, {w - 1, h - 1, -1, -1}}) do
-            surface.DrawLine(corner[1], corner[2], corner[1] + corner[3] * 8, corner[2])
-            surface.DrawLine(corner[1], corner[2], corner[1], corner[2] + corner[4] * 8)
-        end
-    end
-end
+local theme=nil
+local U=ix.Legends
+local colors={window=U.panel,row=Color(23,23,19,225),rowActive=Color(67,55,32,220),
+ text=U.ink,label=U.muted,micro=U.accent}
+local style={outline=U.line,outline2=Color(171,144,85,35),corners=U.accent,hover=U.cyan}
+local fonts={title="legends.Heading",body="legends.Body",small="legends.Small"}
+local function border(panel,w,h) U.Plate(0,0,w,h) end
 
 -- Measure and render the SAME line breaks. Reserving scrollbar space avoids
 -- a width/height feedback loop when the window reaches its maximum height.

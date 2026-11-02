@@ -211,54 +211,6 @@ do
 		end
 	})
 
-	ix.char.RegisterVar("primaryStat", {
-		field = "primarystat",
-		fieldType = ix.type.text,
-		default = {},
-		isLocal = true,
-		Net = {
-			Transmit = ix.transmit.owner
-		},
-		OnSet = function(character, value, bool)
-			character.vars.primaryStat = character.vars.primaryStat or {}
-
-			local oldVar = character.vars.primaryStat[value]
-
-			if ix.specials.list[value] then
-				if bool then
-					character.vars.primaryStat[value] = true
-				else
-					character.vars.primaryStat[value] = nil
-				end
-
-				net.Start("CharacterVarChanged")
-					net.WriteUInt(character:GetID(), 32
-						)
-					net.WriteCharVar(character, "primaryStat")
-				net.Send(character.player)
-
-				hook.Run("CharacterVarChanged", character, "primaryStat", oldVar, bool)
-			end
-		end,
-		OnGet = function(character, value)
-			character.vars.primaryStat = character.vars.primaryStat or {}
-
-			return character.vars.primaryStat[value]
-		end,
-		OnValidate = function(self, primaryStats, data, client)
-			if not istable(primaryStats) then return false, "unknownError" end
-			local count = 0
-			for k, v in pairs(primaryStats) do
-				count = count + 1
-				if not ix.specials.list[k] or v ~= true or count > 2 then
-					return false, "unknownError"
-				end
-			end
-
-			return primaryStats
-		end,
-	})
-
 	ix.char.RegisterVar("genetic", {
 		field = "genetic",
 		fieldType = ix.type.string,

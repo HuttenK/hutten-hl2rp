@@ -52,7 +52,7 @@ function Q:NewSimpleQuest(onCreated)
     local row = {name = "", npc = "", npcName = "Квестодатель", npcModel = "models/Humans/Group01/male_07.mdl",
         category = "Мои квесты", objectName = "Квестовый ящик", objectModel = "models/props_junk/wood_crate001a.mdl",
         goalName = "Осмотреть ящик", description = "Осмотри ящик и вернись к квестодателю.",
-        reward = {money = 0, xp = 0, mode = "each", items = {}, skills = {}}}
+        reward = {money = 0, mode = "each", items = {}}}
     UI.Label(body, "1. Кто выдаёт задание?", true)
     local chosen = UI.Label(body, "Будет создан новый NPC: Квестодатель")
     UI.Button(body, "Выбрать существующего NPC", function()

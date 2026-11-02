@@ -30,8 +30,7 @@ function PLUGIN:NearTerminal(client)
 
 	for _, e in ipairs(ents.FindInSphere(client:GetPos(), self.useRadius)) do
 		if (IsValid(e) and e:GetClass() == "ix_taskboard") then
-			local blackout = ix.plugin.Get("blackout")
-			if not blackout or not blackout:IsEntityBlackedOut(e) then return true end
+			return true
 		end
 	end
 

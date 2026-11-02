@@ -23,7 +23,6 @@ cmdCharSetHunger 				= "Définir le niveau de faim d'un personnage."
 cmdCharSetThirst 				= "Définir le niveau de soif d'un personnage."
 cmdCharSetNeeds 					= "Définir les niveaux de faim et de soif d'un personnage."
 
-farming.needSkill 				= "Compétence en agriculture niveau 1 ou plus requis!"
 farming.seedFailed 				= "Vous n'avez pas réussi à préparer les graines!"
 
 -- Food items

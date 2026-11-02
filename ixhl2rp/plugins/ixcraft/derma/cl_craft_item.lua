@@ -37,59 +37,6 @@ function PANEL:Init()
  end
  self:DockMargin(0,0,0,scale(6))
 
-	local character = LocalPlayer():GetCharacter()
-
-	if !self.recipe.skill then
-		return
-	end
-	
-	local skillName = self.recipe.skill[1]
-	local skillLevel = self.recipe.skill[2]
-
-	if skillLevel <= character:GetSkillModified(skillName) then
-		local result = self.recipe.xp or 0
-
-		self.experienceText = self:Add("DLabel")
-		self.experienceText:SetFont("legends.Mono")
-		self.experienceText:SetText(result.." XP")
-		self.experienceText:SizeToContents()
-		self.experienceText:SetPos(self:GetWide() - self.experienceText:GetWide() - 15, self:GetTall() * 0.5 - self.experienceText:GetTall() * 0.5)
-	end
-
-	if skillLevel > character:GetSkillModified(skillName) then
-		self.levelRequirement = self:Add("DLabel")
-		self.levelRequirement:SetFont("legends.Mono")
-		self.levelRequirement:SetText(skillLevel.." "..L("craftLevelShort"))
-		self.levelRequirement:SizeToContents()
-		self.levelRequirement:SetPos(self:GetWide() - self.levelRequirement:GetWide() - 15, self:GetTall() * 0.5 - self.levelRequirement:GetTall() * 0.5)
-	end
-end
-
-local skill_scale_colors = {
-	Color(0, 255, 120, 255),
-	Color(32, 240, 255, 255),
-	Color(233, 210, 85, 255),
-	Color(70, 208, 135, 255),
-	Color(200, 200, 200, 255),
-	Color(255, 72, 72, 255)
-}
-
-function PANEL:GetSkillScale(skill, level)
-	local character = LocalPlayer():GetCharacter()
-	local currentLevel = character:GetSkillModified(skill)
-	local int = math.Remap(level, currentLevel - 4, currentLevel, 0, 1)
-	
-	if int > 1 then
-		return int, skill_scale_colors[6]
-	elseif int == 1 then
-		return int, skill_scale_colors[1]
-	elseif int >= 0.75 and int < 1 then
-		return int, skill_scale_colors[3]
-	elseif int >= 0.5 and int < 0.75 then
-		return int, skill_scale_colors[4]
-	else
-		return int, skill_scale_colors[5]
-	end
 end
 
 function PANEL:SetupCraft()
@@ -161,34 +108,11 @@ function PANEL:SetupCraft()
 		end
 	end
 
-	local skill_scale, skill_color = 1, skill_scale_colors[1]
-
-	if self.recipe.skill then
-		skill_scale, skill_color = self:GetSkillScale(self.recipe.skill[1], self.recipe.skill[2])
-	end
-
 	parent.iconFrame:SetVisible(true)
 	parent.iconFrame:SetTall(parent.itemIcon:GetTall() + 20)
 	parent.itemIcon:Center()
 
-	if skill_scale >= 0 and self.recipe.skill then
-		parent.itemXP:SetText(skill_scale <= 1 and L("craftSkillXP", self.recipe.xp or 0) or L("craftSkillLevelTooLow"))
-		parent.itemXP:SetTextColor(skill_color)
-		parent.itemXP:SizeToContents()
-		parent.itemXP:SetVisible(true)
-	else
-		parent.itemXP:SetVisible(false)
-	end
 
-	if self.recipe.skill then
-		parent.itemSkill:SetText(string.format("%s %s", string.utf8upper(ix.skills.list[self.recipe.skill[1]].name), self.recipe.skill[2] or 0))
-		parent.itemSkill:SetTextColor(skill_color)
-		parent.itemSkill:SizeToContents()
-		parent.itemSkill:SetVisible(true)
-	else
-		parent.itemSkill:SetVisible(false)
-	end
-	
 	if self.recipe.station then
 		local info = ix.Craft.stations[self.recipe.station]
 
@@ -203,8 +127,8 @@ function PANEL:SetupCraft()
 		else
 			name = L(info.name)
 			local atStation = (parent.station or {}).uniqueID
-			-- The Combine fabrication terminal is a master station: it satisfies any requirement.
-			local satisfied = atStation == "station_combine" or self.recipe.station == atStation
+			-- Stations must match the recipe.
+			local satisfied = self.recipe.station == atStation
 			clr = satisfied and Color(255, 255, 255, 255) or Color(255, 72, 72, 255)
 		end
 
@@ -358,29 +282,10 @@ end
 local color_error = Color(255, 64, 64, 255)
 local color = Color(100, 100, 100, 255)
 function PANEL:GetColor()
-	local skill_scale, skill_color = 1, skill_scale_colors[1]
-
-	if self.recipe.skill then
-		skill_scale, skill_color = self:GetSkillScale(self.recipe.skill[1], self.recipe.skill[2])
-	end
-
-
-	if skill_scale > 1 then
-		return color
-	else
-		if !ix.gui.can_craft or !ix.gui.can_craft[self.recipe.uniqueID] then
-			return color_error
-		end
-
-		return ix.Legends.ink
-	end
+ if not ix.gui.can_craft or not ix.gui.can_craft[self.recipe.uniqueID] then return color_error end
+ return ix.Legends.ink
 end
 
-function PANEL:PerformLayout(w,h)
- for _,label in pairs({self.experienceText,self.levelRequirement}) do
-  if IsValid(label) then label:SetPos(scale(18),h-scale(22)) end
- end
-end
 function PANEL:Paint() end
 
 function PANEL:Think()
@@ -391,13 +296,7 @@ function PANEL:Think()
 	self.lastRecipeColor = color
 	self.recipeButton:SetTextColor(color)
 
-	if self.experienceText then
-		self.experienceText:SetTextColor(self.recipeButton:GetTextColor())
-	end
 
-	if self.levelRequirement then
-		self.levelRequirement:SetTextColor(self.recipeButton:GetTextColor())
-	end
 end
 
 vgui.Register("ui.craft.item", PANEL, "DPanel")

@@ -1,5 +1,3 @@
-STATION.name = "station.stove.name"
-STATION.description = "station.stove.desc"
-STATION.model = "models/props/appliances/kitchen_stove_home.mdl"
-
-STATION.tags = {"station_stove"}
+STATION.name = "Очаг"
+STATION.description = "Рабочее место"
+STATION.model = "models/props_wasteland/kitchen_stove001a.mdl"

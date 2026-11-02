@@ -1,5 +1,3 @@
-STATION.name = "station.cooking.name"
-STATION.description = "station.cooking.desc"
-STATION.model = "models/mosi/fallout4/furniture/workstations/cookingstation04.mdl"
-
-STATION.tags = {"station_stove"}
+STATION.name = "Кухонный стол"
+STATION.description = "Рабочее место"
+STATION.model = "models/props_c17/furnituretable001a.mdl"

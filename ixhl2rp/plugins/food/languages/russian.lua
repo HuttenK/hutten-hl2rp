@@ -23,7 +23,6 @@ cmdCharSetHunger 				= "Установить уровень голода пер�
 cmdCharSetThirst 				= "Установить уровень жажды персонажа."
 cmdCharSetNeeds 					= "Установить уровень голода и жажды персонажа."
 
-farming.needSkill 				= "Необходим навык фермерства 1 и выше!"
 farming.seedFailed 				= "Вам не удалось подготовить семена!"
 
 -- Drink items

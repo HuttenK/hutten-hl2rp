@@ -18,29 +18,7 @@ PushCart.CRATE_MAXS = Vector(10.5, 10.5, 22)
 
 -- Independent geometry in the driving frame (+X towards the attendant).
 -- Measurements come from the installed Roleplay Props models at their idle pose.
-PushCart.Transports = {
-	ix_pushcart = {item = "pushcart", yaw = 180},
-	ix_medical_gurney = {
-		item = "medical_gurney", yaw = 90,
-		gripRight = Vector(8, -32.6, 40), gripLeft = Vector(-8, -32.6, 40),
-		loadedGeometry = {BODY_MIN_X=-55, BODY_MAX_X=55, BODY_HALF_Y=27},
-		geometry = {HALF_BASE=15, WHEEL_CENTER_X=3, HALF_TRACK=8.5,
-			BODY_MIN_X=-40, BODY_MAX_X=40, BODY_HALF_Y=13, CLEARANCE=6,
-			BODY_TOP_EMPTY=42, WHEEL_BOTTOM=-.008218, REACH=45,
-			HOLD_MIN_X=40, HOLD_MAX_X=95, HOLD_MAX_Y=32, HANDLE_X=32.6, GRIP_Z=40,
-			BELLY_LINES={-8, -3, 3, 8}, MAX_PITCH=20, MAX_ROLL=15}
-	},
-	ix_medical_wheelchair = {
-		item = "medical_wheelchair", yaw = 180,
-		gripRight = Vector(-15, -9, 38), gripLeft = Vector(-15, 9, 38),
-		loadedGeometry = {BODY_MIN_X=-48, BODY_MAX_X=24, BODY_HALF_Y=24},
-		geometry = {HALF_BASE=9, WHEEL_CENTER_X=-9, HALF_TRACK=10.5,
-			BODY_MIN_X=-23, BODY_MAX_X=23, BODY_HALF_Y=15, CLEARANCE=3,
-			BODY_TOP_EMPTY=40, WHEEL_BOTTOM=-.116194, REACH=27,
-			HOLD_MIN_X=25, HOLD_MAX_X=70, HOLD_MAX_Y=28, HANDLE_X=15, GRIP_Z=38,
-			BELLY_LINES={-10, -5, 0, 5, 10}, MAX_PITCH=15, MAX_ROLL=12}
-	}
-}
+PushCart.Transports = {ix_pushcart = {item="pushcart", yaw=180}}
 function PushCart:Transport(cart)
 	-- SpawnFunction also receives the registered entity table, before an
 	-- instance (and therefore GetClass) exists.

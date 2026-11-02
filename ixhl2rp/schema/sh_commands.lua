@@ -1,33 +1,4 @@
-do
-	local COMMAND = {}
-	COMMAND.arguments = ix.type.text
 
-	function COMMAND:OnRun(client, message)
-		if (!client:IsRestricted()) then
-			ix.chat.Send(client, "dispatch", message)
-		else
-			return "@notNow"
-		end
-	end
-
-	ix.command.Add("Dispatch", COMMAND)
-end
-
-do
-	local COMMAND = {}
-	COMMAND.arguments = ix.type.text
-	COMMAND.superAdminOnly = true
-
-	function COMMAND:OnRun(client, message)
-		if (!client:IsRestricted()) then
-			ix.chat.Send(client, "broadcast", message)
-		else
-			return "@notNow"
-		end
-	end
-
-	ix.command.Add("Broadcast", COMMAND)
-end
 
 do
 	local COMMAND = {}
@@ -51,22 +22,6 @@ do
 	ix.command.Add("CharSearch", COMMAND)
 end
 
-do
-	local COMMAND = {
-		arguments = ix.type.text,
-		alias = {"C"}
-	}
-
-	function COMMAND:OnCheckAccess(client)
-		return client:IsDispatch() or client:IsAdmin()
-	end
-
-	function COMMAND:OnRun(client, message)
-		ix.chat.Send(client, "dispatch_radio", message)
-	end
-
-	ix.command.Add("DispatchRadio", COMMAND)
-end
 
 do
 	COMMAND = {
@@ -146,47 +101,4 @@ ix.command.Add("CharFallOver", {
 			client:SetRagdolled(true, time)
 		end
 	end
-})
-
-ix.command.Add("DoorKick", {
-	description = "@cmdDoorKickDesc",
-	OnCheckAccess = function(self, client)
-		if (!client:IsCombine()) then
-			return false
-		end
-
-		local entity = client:GetEyeTrace().Entity
-		if (!IsValid(entity) or !entity:IsDoor() or entity:GetNetVar("disabled")) then
-			return false, "doorKickNotLooking"
-		end
-
-		if entity:MapCreationID() == 5334 then
-			return false, "doorKickNotLooking"
-		end
-
-		if (client:GetPos():DistToSqr(entity:GetPos()) > 10000) then
-			return false, "doorKickTooFar"
-		end
-
-		return true
-	end,
-	OnRun = function(self, client)
-		local entity = client:GetEyeTrace().Entity
-		if (IsValid(entity.ixLock)) then
-			return "@doorKickAllianceLock"
-		end
-
-		local current = client:GetLocalVar("stm", 0)
-		if (current > 90) then
-			client:ConsumeStamina(35)
-			client:ForceSequence("adoorkick", nil, 1.5)
-
-			timer.Simple(0.5, function()
-				entity:Fire("unlock")
-				entity:Fire("open")
-			end)
-		else
-			client:NotifyLocalized("notEnoughStamina")
-		end
-    end
 })

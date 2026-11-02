@@ -12,10 +12,6 @@ function ItemArmor:Init()
 
 	self.category = "item.category.clothing_armor"
 
-	self:AddData("plates", {Transmit = ix.transmit.owner})
-	self.functions.inspectPlates = {name="Осмотреть пластины", icon="icon16/shield.png",
-	 OnCanRun=function(item) return ix.field and ix.field.Capacity(item)~=nil and not IsValid(item:GetEntity()) end,
-	 OnRun=function(item) ix.field.Inspect(item.player,item); return false end}
 	self:AddData("value", {
 		Transmit = ix.transmit.owner,
 	})
@@ -36,52 +32,14 @@ function ItemArmor:CanEquip(player)
 		end
 	end
 
-	local strength_check = false
-	if self.armor then
-		if self.armor.class == 2 then
-			strength_check = 4
-		elseif self.armor.class == 3 then
-			strength_check = 8
-		end
-	end
 
-	if IsValid(player) and isnumber(strength_check) then
-		local st = player:GetCharacter():GetSpecial("st")
-
-		if st < strength_check then
-			return false
-		end
-	end
-	
 	return true
 end
 
 function ItemArmor:OnEquipped(client)
 	ix.meta.ItemCloth.OnEquipped(self, client)
 
-	local strength = true
-	local strength_check = false
-	if self.armor then
-		if self.armor.class == 2 then
-			strength_check = 4
-		elseif self.armor.class == 3 then
-			strength_check = 8
-		end
-	end
-
-	if isnumber(strength_check) then
-		local st = client:GetCharacter():GetSpecial("st")
-
-		if st < strength_check then
-			strength = false
-		end
-	end
-
-	if strength then
-		client.char_outfit.armor[self] = true
-	else
-		client:ChatNotifyLocalized("armor.notEnoughStrength")
-	end
+	client.char_outfit.armor[self] = true
 
 	-- Бронежилеты переехали из слота 'torso' в 'vest', но замедление вешает
 	-- только нагрудная броня — оба имени слота оставлены для совместимости.
@@ -132,92 +90,7 @@ if CLIENT then
 	})
 
 	function ItemArmor:PaintOver(w, h)
-		if ix.field and ix.field.Capacity(self)~=nil then
-		 local cap=ix.field.Capacity(self); if cap==0 then return end
-		 for i,hp in ipairs(ix.field.Plates(self)) do
-		  surface.SetDrawColor(hp>0 and Color(175,60,65) or Color(45,30,33))
-		  surface.DrawRect(2+(i-1)*(w-4)/cap,h-6,(w-4)/cap-1,4)
-		 end
-		 return
-		end
-		surface.SetDrawColor(35, 35, 35, 225)
-		surface.DrawRect(2, h-9, w-4, 7)
-
-		local filledWidth = (w - 5) * (self:GetData("value", 1) / 1)
-		local barColor = Color(64, 200, 64, 160)
-
-		surface.SetDrawColor(barColor)
-		surface.DrawRect(3, h-8, filledWidth, 5)
-	end
-
-	local greenClr = Color(50, 200, 50)
-	local yellowClr = Color(255, 200, 50)
-	local redClr = Color(200, 50, 50)
-
-	local function StatRow(id, text, color, tooltip, bold, bol2)
-		local clr = ColorAlpha(color, bold and 40 or 16)
-		local s = tooltip:AddRow(id)
-		s:SetTextColor(color)
-		s:SetFont(bold and (bol2 and "item.stats.bold2" or "item.stats.bold") or "item.stats")
-	    s:SetText(text)
-		s:SizeToContents()
-		s.Paint = function(_, w, h)
-			surface.SetDrawColor(clr)
-			surface.DrawRect(0, 0, w, h)
-		end
-
-		return s
-	end
-	
-	local hit_groups = {
-		[HITGROUP_HEAD] = "armorHitHead",
-		[HITGROUP_CHEST] = "armorHitChest",
-		[HITGROUP_STOMACH] = "armorHitStomach",
-		[HITGROUP_LEFTARM] = "armorHitLeftArm",
-		[HITGROUP_RIGHTARM] = "armorHitRightArm",
-		[HITGROUP_LEFTLEG] = "armorHitLeftLeg",
-		[HITGROUP_RIGHTLEG] = "armorHitRightLeg"
-	}
-	local damage_types = {
-		bullet = "armorDmgBullet",
-		impulse = "armorDmgImpulse",
-		buckshot = "armorDmgBuckshot",
-		explosive = "armorDmgExplosive",
-		burn = "armorDmgBurn",
-		poison = "armorDmgPoison",
-		slash = "armorDmgSlash",
-		club = "armorDmgClub",
-		fists = "armorDmgFists"
-	}
-
-	function ItemArmor:PopulateTooltip(tooltip)
-		if ix.field and ix.field.Capacity(self)~=nil then
-		 local cap=ix.field.Capacity(self)
-		 StatRow("plates",cap==0 and "Противоударный жилет: защита от рукопашных атак" or ("Пластины: "..ix.field.Count(self).." / "..cap.." | Защита: "..(ix.field.Count(self)*25).."%"),color_white,tooltip,true)
-		 StatRow("legs","Ноги не защищены",Color(200,110,110),tooltip)
-		 return
-		end
 		if self.armor then
-			if self.armor.class > 1 then
-				local stat_color = greenClr
-				local st_need = (self.armor.class == 2 and 4 or 8)
-				local st = LocalPlayer():GetCharacter():GetSpecial("st")
-				if st < st_need then
-					stat_color = redClr
-				end
-
-				local clr = ColorAlpha(stat_color, 16)
-				local s = tooltip:AddRowAfter("name", "stat")
-				s:SetTextColor(stat_color)
-				s:SetFont("item.stats.bold2")
-			    s:SetText(L("armorStrengthRequired", st_need))
-				s:SizeToContents()
-				s.Paint = function(_, w, h)
-					surface.SetDrawColor(clr)
-					surface.DrawRect(0, 0, w, h)
-				end
-			end
-
 			StatRow("armor", L("armorClass", self.armor.class), color_white, tooltip, true)
 
 			if self.armor.density then

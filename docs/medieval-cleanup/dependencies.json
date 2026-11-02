@@ -1,0 +1,9 @@
+{
+  "note": "Static dependency checks, not engine validation.",
+  "luaFiles": 990,
+  "itemDefinitions": 145,
+  "itemBases": 23,
+  "recipes": 20,
+  "stations": 4,
+  "issues": []
+}

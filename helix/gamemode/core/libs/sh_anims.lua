@@ -362,33 +362,15 @@ end
 
 -- Keep the animation stance aligned with weapons that change hold type at runtime.
 function ix.anim.GetWeaponHoldType(client, weapon)
-	if not IsValid(weapon) then return "normal" end
-	if weapon.ARC9 then
-		-- ARC9's static HoldType is only its starting stance (EFT uses rpg).
-		-- Helix lowering does not set ARC9's safety/sprint state.
-		if not client:IsWepRaised() and not ix.config.Get("weaponAlwaysRaised") then
-			return weapon.HoldTypeHolstered or weapon.HoldTypeSprint or "passive"
-		end
-		local current = weapon:GetHoldType()
-		if current and current ~= "" then return current end
-	end
-	return weapon.HoldType or weapon:GetHoldType() or "normal"
+ if not IsValid(weapon) then return "normal" end
+ local current = weapon:GetHoldType()
+ return current and current ~= "" and current or weapon.HoldType or "normal"
 end
 
 -- Model-specific substitutions must not change unrelated NPC/player rigs.
 function ix.anim.GetWeaponAnimationHoldType(client, weapon)
 	local modelClass = client.ixAnimModelClass or "player"
 	local holdType = ix.anim.GetWeaponHoldType(client, weapon)
-	local definition = ix.anim[modelClass] or {}
-	if ix.anim.ARC9NeedsPistolFallback and definition.pistol and ix.anim.ARC9NeedsPistolFallback(client, weapon) then
-		return "pistol"
-	end
-	-- NPC rigs have no multiplayer passive stance. Translating passive to normal
-	-- puts the gun in an empty, hanging hand; use their relaxed rifle pair instead.
-	if IsValid(weapon) and weapon.ARC9 and modelClass ~= "player" and
-		holdType == "passive" and definition.smg then
-		return "smg"
-	end
 	return ix.anim.ResolveHoldType(modelClass, holdType)
 end
 
