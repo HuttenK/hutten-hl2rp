@@ -45,6 +45,15 @@ function GM:TranslateActivity(client, act)
 	local bRaised = client:IsWepRaised()
 
 	clientInfo.CalcSeqOverride2 = nil
+	-- AoC carries named stances for all ValveBiped models, including SD/Cellar.
+	-- Forced poses and crawling are resolved earlier in CalcMainActivity.
+	if ix.AOC and ix.AOC.MainActivity then
+		local activity, sequence = ix.AOC.MainActivity(client, act)
+		if sequence ~= nil then
+			clientInfo.CalcSeqOverride = sequence
+			return activity
+		end
+	end
 	if (modelClass == "player") then
 		local weapon = client:GetActiveWeapon()
 		local bAlwaysRaised = ix.config.Get("weaponAlwaysRaised")

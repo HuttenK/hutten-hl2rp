@@ -1,0 +1,9 @@
+ITEM.name = "Запас горючих горшков"
+ITEM.description = "Закупоренные сосуды с горючей смесью. Между ними проложена ветошь; её здесь положили не ради красоты и не стоит выбрасывать ради лишнего места."
+ITEM.model = "models/weapons/ageofchivalry/w_grenade.mdl"
+ITEM.base = "ammo"
+ITEM.ammo = "oilpots"
+ITEM.ammoAmount = 2
+ITEM.width = 1
+ITEM.height = 2
+ITEM.contraband = false

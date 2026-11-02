@@ -1,0 +1,9 @@
+ITEM.name = "Запас метательных топоров"
+ITEM.description = "Небольшие топоры для метания. Их обухи помечены одинаковыми зарубками, чтобы после боя не спорить с соседями о находках."
+ITEM.model = "models/weapons/ageofchivalry/w_throwable_axe.mdl"
+ITEM.base = "ammo"
+ITEM.ammo = "axes"
+ITEM.ammoAmount = 3
+ITEM.width = 1
+ITEM.height = 2
+ITEM.contraband = false

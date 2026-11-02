@@ -68,6 +68,8 @@ module.exports=suite=>{
    act,seq=GM:CalcMainActivity(p,velocity);eq(seq,42);eq(p.ixMainSequenceChoice,nil)
    p.named=0;act,seq=GM:CalcMainActivity(p,velocity);eq(seq,0)
    p.named=-1;act,seq=GM:CalcMainActivity(p,velocity);eq(seq,-1)
+   ix.AOC={MainActivity=function() return nil,88 end}
+   act,seq=GM:CalcMainActivity(p,velocity);eq(seq,88)
    p.forced=0;act,seq=GM:CalcMainActivity(p,velocity);eq(act,-1);eq(seq,0);eq(p.cycle,0)
    p.forced=nil;ix.Downed={CrawlActivity=function() return 76 end}
    act,seq=GM:CalcMainActivity(p,velocity);eq(act,ACT_MP_CROUCH_IDLE);eq(seq,76)

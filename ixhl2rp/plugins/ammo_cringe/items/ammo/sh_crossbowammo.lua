@@ -1,7 +1,9 @@
-ITEM.name = "Патроны для автоматов"
-ITEM.model = "models/ultimate_items_re9/re9_requiem_rifle_ammo_box.mdl"
+ITEM.name = "Арбалетные болты"
+ITEM.description = "Короткие тяжёлые болты с крепкими наконечниками. Перья подрезаны ровно; стрелок наверняка предпочитает исправлять промахи прицелом, а не искать оправдания в боеприпасах."
+ITEM.model = "models/weapons/ageofchivalry/aoc_arrow.mdl"
 ITEM.base = "ammo"
-ITEM.ammo = "XBowBolt" -- type of the ammo
-ITEM.ammoAmount = 180 -- amount of the ammo
-ITEM.description = "Коробка больших размеров, в которой лежат боеприпасы разных винтовочных калибров. Среди них вы точно найдете нужный вам патрон и в достаточном количестве."
-ITEM.flag = "V"
+ITEM.ammo = "XBowBolt"
+ITEM.ammoAmount = 10
+ITEM.width = 1
+ITEM.height = 2
+ITEM.contraband = false

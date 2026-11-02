@@ -1,0 +1,9 @@
+ITEM.name = "Запас метательных стрел"
+ITEM.description = "Тонкие дротики с острыми наконечниками. Связка не выглядит внушительно, зато её можно нести целый день, не проклиная собственную предусмотрительность."
+ITEM.model = "models/weapons/ageofchivalry/w_dart.mdl"
+ITEM.base = "ammo"
+ITEM.ammo = "darts"
+ITEM.ammoAmount = 10
+ITEM.width = 1
+ITEM.height = 2
+ITEM.contraband = false

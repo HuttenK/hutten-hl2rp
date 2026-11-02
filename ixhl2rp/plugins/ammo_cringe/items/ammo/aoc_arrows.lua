@@ -1,0 +1,9 @@
+ITEM.name = "Колчан стрел"
+ITEM.description = "Стрелы с ровными древками и аккуратным оперением. Несколько перьев отличаются цветом: колчан пополняли тем, что удавалось найти после стрельбы."
+ITEM.model = "models/weapons/ageofchivalry/quiver.mdl"
+ITEM.base = "ammo"
+ITEM.ammo = "arrows"
+ITEM.ammoAmount = 20
+ITEM.width = 1
+ITEM.height = 3
+ITEM.contraband = false

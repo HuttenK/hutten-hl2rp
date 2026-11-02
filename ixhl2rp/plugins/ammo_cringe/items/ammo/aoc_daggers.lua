@@ -1,0 +1,9 @@
+ITEM.name = "Запас метательных ножей"
+ITEM.description = "Короткие ножи с привычным для метателя весом. На тренировочной колоде от них остаются следы; на кошельке владельца — от каждого потерянного клинка."
+ITEM.model = "models/weapons/ageofchivalry/w_dagger2.mdl"
+ITEM.base = "ammo"
+ITEM.ammo = "daggers"
+ITEM.ammoAmount = 5
+ITEM.width = 1
+ITEM.height = 2
+ITEM.contraband = false

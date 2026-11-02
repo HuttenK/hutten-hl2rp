@@ -88,4 +88,6 @@ require('./test-sd-creation.cjs')(suite);
 require('./test-medieval-animation.cjs')(suite);
 require('./test-medieval-ui.cjs')(suite);
 require('./test-medical-examination.cjs')(suite);
+require('./test-aoc.cjs')(suite);
+require('./test-aoc-content.cjs');
 console.log(`${passed} medieval behavioral suites passed. Engine rendering/network timing still require GMod.`);

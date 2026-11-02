@@ -1,0 +1,9 @@
+ITEM.name = "Запас метательных копий"
+ITEM.description = "Лёгкие копья, собранные в одну связку. Древки отмечены краской: в суматохе боя полезно знать, какие из торчащих в земле копий были твоими."
+ITEM.model = "models/weapons/ageofchivalry/w_spear.mdl"
+ITEM.base = "ammo"
+ITEM.ammo = "spears"
+ITEM.ammoAmount = 3
+ITEM.width = 1
+ITEM.height = 4
+ITEM.contraband = false

@@ -1,0 +1,9 @@
+ITEM.name = "Запас дымовых горшков"
+ITEM.description = "Небольшие сосуды с едкой дымовой смесью. На пробках сделаны метки, чтобы в спешке не перепутать их с чем-нибудь съедобным."
+ITEM.model = "models/weapons/ageofchivalry/w_grenade_smoke.mdl"
+ITEM.base = "ammo"
+ITEM.ammo = "smokepots"
+ITEM.ammoAmount = 2
+ITEM.width = 1
+ITEM.height = 2
+ITEM.contraband = false

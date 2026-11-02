@@ -74,6 +74,9 @@ function W.Busy(weapon)
  if not IsValid(weapon) then return false end
  local now = CurTime()
  return (weapon.GetGrenadePrimed and weapon:GetGrenadePrimed()) or
+  (weapon.AOC_Base and weapon.GetLoaded and weapon:GetLoaded()) or
+  (weapon.AOC_Base and weapon.GetBlock and weapon:GetBlock()) or
+  (weapon.AOC_Base and weapon.GetNextHolster and weapon:GetNextHolster() > now) or
   (weapon.GetReloading and weapon:GetReloading()) or
   (weapon.GetAnimLockTime and weapon:GetAnimLockTime() > now) or
   (weapon.GetNextPrimaryFire and weapon:GetNextPrimaryFire() > now) or
@@ -238,6 +241,7 @@ local function give(client, item)
  weapon:SetClip1(item:GetData("ammo", 0))
  weapon:SetClip2(item:GetData("ammo2", 0))
  weapon.ixInventoryReady = true
+ if ix.AOC and ix.AOC.Prepare then ix.AOC.Prepare(weapon) end
  client:CalculateAmmo()
  weapon:SetNWInt("ixWeaponItem", item.id)
  client.carryWeapons = client.carryWeapons or {}

@@ -29,14 +29,9 @@ net.Receive("ixPlayerSit", function(len, player)
  local _, remaining = net.BytesLeft()
  local height = remaining and remaining >= 32 and net.ReadFloat() or 0
  if not isnumber(height) or height~=height or height < -24 or height > 48 then return end
-	local faction = player:Team()
 	local character = player:GetCharacter()
 
 	if not character or player.ixUntimedSequence or player:GetNetVar("forcedSequence") ~= nil then
-		return
-	end
-
-	if player:IsPilotScanner() then
 		return
 	end
 
@@ -54,7 +49,7 @@ net.Receive("ixPlayerSit", function(len, player)
   if not ix.PoseStudio.CheckPlacement(player,pos,ang.y,height,PLUGIN:GetPoseOffset(player,option,character)) then return end
  end
  if (!player.cwNextStance or CurTime() >= player.cwNextStance) then
-		if (player:IsProne()) then
+		if (player.IsProne and player:IsProne() and prone and prone.Exit) then
 			prone.Exit(player)
 		end
 

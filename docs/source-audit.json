@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
-  "files": 990,
-  "lines": 161010,
+  "files": 1043,
+  "lines": 161953,
   "syntaxFailures": [],
   "entries": [
     {
@@ -327,8 +327,8 @@
     },
     {
       "path": "helix/gamemode/core/hooks/sh_hooks.lua",
-      "lines": 607,
-      "sha256": "96256e2f539d763372da9f77cc59ca19b4dfde898e8cd8fa29b18fde6823f98a",
+      "lines": 616,
+      "sha256": "eaf9d24d0e2870c33d74111a587ae91aa3a4e97f2053ee06af2af0f7278ee229",
       "syntax": "pass",
       "networkHandlers": [
         "ixAnimEvent",
@@ -2917,9 +2917,65 @@
       "hooks": []
     },
     {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/ammo/aoc_arrows.lua",
+      "lines": 10,
+      "sha256": "de0feca798c2aa1451132caa6f1e224ad899ef977774910978f27fa8b1bb324d",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/ammo/aoc_axes.lua",
+      "lines": 10,
+      "sha256": "5e7330cd9562361fdd7da2a31b320b11c8daa8e9729e1e2a00fd6d7acf80acdd",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/ammo/aoc_daggers.lua",
+      "lines": 10,
+      "sha256": "03bae8ec4874fe054d2166dd20e0930b662b4c85646eaf8312bc07d8b30c6bce",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/ammo/aoc_darts.lua",
+      "lines": 10,
+      "sha256": "8c6b3f36021fa245ac4b2a4f2fcdd25d3f410ac968923a09fd90502aba32c0cd",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/ammo/aoc_oilpots.lua",
+      "lines": 10,
+      "sha256": "975e9f726ce5ea0518b159592d2895b4f7b34a9172269e6cb2c5432d4f775668",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/ammo/aoc_smokepots.lua",
+      "lines": 10,
+      "sha256": "7ca5059f8ae1a083414572b8a0f3066b073ccd7c7eb2022604505ff0595e69bc",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/ammo/aoc_spears.lua",
+      "lines": 10,
+      "sha256": "d3f201e6278dbd75d93e044fdab9bfe4149a90c702a8e72e3830b442f975ff3c",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
       "path": "ixhl2rp/plugins/ammo_cringe/items/ammo/sh_crossbowammo.lua",
-      "lines": 8,
-      "sha256": "f999734b534e472ca45c3ad9e3e12b66531a87af207bb371bf853b54f7de0ffa",
+      "lines": 10,
+      "sha256": "c81e944834011951c1927bcd8525578457a1162cb4c93ed69170f65821d2d5b5",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -2936,6 +2992,334 @@
       "path": "ixhl2rp/plugins/ammo_cringe/items/base/weapon.lua",
       "lines": 459,
       "sha256": "52c2b931075532992dbfc967befdcd6b7d0b7ef637b8cf3ab4afa659d6c8b041",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_axe_thrown.lua",
+      "lines": 13,
+      "sha256": "6a42bf2655c0e983e1d96eef2199241bb5cabdb2e685b765969819d5519bf70f",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_crossbow.lua",
+      "lines": 12,
+      "sha256": "124d916d40c249e4f93cbc3e8d8acde8226a04e8645c406a3d34a128924c0e11",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_dagger.lua",
+      "lines": 12,
+      "sha256": "81912f5c581d49d1b309f07587606abffc4f43f8d5636be21e4cd9e7e81e5c1d",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_dagger_onehand.lua",
+      "lines": 12,
+      "sha256": "1db7f2af1f243fcb9cd43fb9e0bb498e82e6c7828cc0217b423c8ab214e3ee88",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_dagger_thrown.lua",
+      "lines": 13,
+      "sha256": "a9fe426e0302c5801e27b2bc4170da532455d44d9c5bdf812c745b96d25575d8",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_dart_thrown.lua",
+      "lines": 13,
+      "sha256": "10c5b6f4a3dd02172bd6142a453a42c8d3d2674412663b0c4db343ad13e82ddf",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_doubleaxe.lua",
+      "lines": 12,
+      "sha256": "a737210a6d2932fa8bcb0f7b83f8a7f37eefbe26fb2c82070df098b970c159a1",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_flail_evil_shield.lua",
+      "lines": 12,
+      "sha256": "6de422eb764f779722349c9a8bb44e45e566ed79b2cb39f4eb81cb6b85ab768d",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_flail_good_shield.lua",
+      "lines": 12,
+      "sha256": "4049b6075a0e54e72a2ecc0172dd20bc16d847a5e34297802397647f26977696",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_flamberge.lua",
+      "lines": 12,
+      "sha256": "ed992da12458b8b47eadc79b75aea6635ac58143075d719a1bf270798a1d421c",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_flamberge_kiteshield.lua",
+      "lines": 12,
+      "sha256": "94582d8975fe4d60dcb81f8402b71009f18201ef95ca685c687aa20176081fb9",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_halberd.lua",
+      "lines": 12,
+      "sha256": "87c5758b9177ba5757ab016100f57025a24f6d2604941640e0c8172fd20626c6",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_halberd_evil.lua",
+      "lines": 12,
+      "sha256": "1287af0f18fc6b023d4e6769674e0228b68e5d38db3538598620710835b7700a",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_longbow.lua",
+      "lines": 12,
+      "sha256": "6b3c673294924f4e8556c7529a756b04b9152d1e8382d100600bf85e6803d0bb",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_longsword.lua",
+      "lines": 12,
+      "sha256": "af89e61f1db6035146131c492d73fa38c36865afd4f54e74b2a365f2c365950a",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_longsword_kiteshield.lua",
+      "lines": 12,
+      "sha256": "db42407f1a4e43ddcbc59b188234d733654b564a013518c15ff820dc2d156b73",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_mace.lua",
+      "lines": 12,
+      "sha256": "661b9f1b4d93daf974d0a3c65b8a6e8ca2b810c09e7a6ef32ac826c43560bfa0",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_mace_buckler.lua",
+      "lines": 12,
+      "sha256": "02abc7ce319a17c931af21de617a272c829a0f172e436bfdcfae77118e8d869d",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_oilpot.lua",
+      "lines": 13,
+      "sha256": "183ce1a81dd71de6fa1d99d7e4b315d23be50ff81c6f0134b2294ac7ad3c3355",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_onehandaxe.lua",
+      "lines": 12,
+      "sha256": "717bbd92a970d28749da6b82ec2de18b279dcfdb8a6364829815600d0c40bf21",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_shortsword.lua",
+      "lines": 12,
+      "sha256": "ac058c498bcec20478f5f1cae42b37523aef1d0a189f144d3141d70e142814aa",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_shortsword_evil.lua",
+      "lines": 12,
+      "sha256": "01f38a3e445f097538c6074989cdba3c0ae5a5100686178bba0bd6ce98909e04",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_shortsword_evil_shield.lua",
+      "lines": 12,
+      "sha256": "dbcd4e0ddbbc63a49d7769e8725a9cfe90deecdb040fcbe3bd7b3ca99fcc5c53",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_shortsword_shield.lua",
+      "lines": 12,
+      "sha256": "93eda454d1d8a37f55e701b5faa8f146ed1f310b3ec5d3d4ab3c6b8e24b7fcbb",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_smokepot.lua",
+      "lines": 13,
+      "sha256": "dc679b82ee13946bf99415b69a2145ede088fb0ace7599bae4a1f59f864de724",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_spear_buckler.lua",
+      "lines": 12,
+      "sha256": "0ca15626a47ed6daa4b11bc467ff124528655864f73444d6e6c90a2397b3f040",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_spear_buckler_good.lua",
+      "lines": 12,
+      "sha256": "ddfd2c7e2c18ca889ac90473d44fa23e3fb0d47dfb7b1b493c309ed658eacb30",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_spear_thrown.lua",
+      "lines": 13,
+      "sha256": "831b7e375839ebd53ad8145d42805328c4287005cf4d51ba8d21dc1e910d2ade",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_spikedmace.lua",
+      "lines": 12,
+      "sha256": "18ea18792f049bbdc0365f48387c25c8dc4d752b29790ad7bc5cf72cc3d240a6",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_spikedmace_buckler.lua",
+      "lines": 12,
+      "sha256": "3df3241547d82bd9e0b3991d0fae1df3898aec13ce4cbd040ac3fea08efd0aba",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_spikedmace_buckler_good.lua",
+      "lines": 12,
+      "sha256": "c0ef97aeaf08ca92e88ce78e054216a4b001e1d5f9db4880daf575f544c3e942",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_spikedmace_good.lua",
+      "lines": 12,
+      "sha256": "4bce958d2c815b60c440cfd9ddca96c168c4bb55ccabf34d6cb4ad77f6096b48",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_sword.lua",
+      "lines": 12,
+      "sha256": "3a99b84d82f7ae1ff8d424694877895f4a3eb45b9afe678ccb7c6ee62111a588",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_sword_evil.lua",
+      "lines": 12,
+      "sha256": "4a05bd87ce2e235b8e023f87dd41d5a01a2f501a23d37db792c8f4b018507411",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_sword_evil_shield.lua",
+      "lines": 12,
+      "sha256": "ee708374d40db661c73b866ac901a918add80302080464eb9f51806ff8506eea",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_sword_iron.lua",
+      "lines": 12,
+      "sha256": "f3a02166ab684bd13dfeee4a2265ee1ba1968c64f99fdcd71643a6451a1df48c",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_sword_iron_shield.lua",
+      "lines": 12,
+      "sha256": "90cdf22e0d3433618742efbe220410bc0c9132b3202be79d86f975d64ee9ef18",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_sword_shield.lua",
+      "lines": 12,
+      "sha256": "f8cf339c97689973d7efe9d8e6c511e91358ac6a33c1144f7c453099253cbdce",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_sword_silver.lua",
+      "lines": 12,
+      "sha256": "ced12bf1bb3c2340b41290f8e9569ae57c4722a93a24813b3f63f6af31922409",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_sword_silver_shield.lua",
+      "lines": 12,
+      "sha256": "3355f4c8fefb9c580f8db2502987a6718ea925cd5fd8221e419a90e16f5fc50a",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/ammo_cringe/items/weapon/aoc_warhammer.lua",
+      "lines": 12,
+      "sha256": "91ec4e7ebb0d7d22b64762ed6ce7726a0cababd00cdfed652456d14b37816b01",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -2959,7 +3343,7 @@
     {
       "path": "ixhl2rp/plugins/ammo_cringe/languages/russian.lua",
       "lines": 74,
-      "sha256": "d6164283f4b7f6742c8eaccbc778d7b893c6620600ef67fc23b01e44c586d92d",
+      "sha256": "abe47972449a01f079c7f17ea9267c96cd2f47f5a888f86d644107bf095e9a8e",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -2995,8 +3379,8 @@
     },
     {
       "path": "ixhl2rp/plugins/ammo_cringe/sh_weapon_slots.lua",
-      "lines": 445,
-      "sha256": "7a9e95996067212f2840a16a1f2dbf8cd1a7a7e9d1db8f2c2e93b88a879311a9",
+      "lines": 449,
+      "sha256": "0d0351433a0b9db2379a6b4fe65825d5d4fd2f493e12f2925c95f7e5b5553c8e",
       "syntax": "pass",
       "networkHandlers": [
         "ixWeaponSlotReady",
@@ -3086,6 +3470,53 @@
       "hooks": [
         "PlayerBindPress",
         "SetupMove"
+      ]
+    },
+    {
+      "path": "ixhl2rp/plugins/aoc_compat/sh_animations.lua",
+      "lines": 100,
+      "sha256": "5ebb344dbae25b7f83e4871c6aebd7d1cc2f70bf8ea7d229b027ff4519b27eff",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/aoc_compat/sh_content.lua",
+      "lines": 107,
+      "sha256": "87ef793322e61afa49170287d74c29e5b976369d2c250be290bf15521d831118",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/aoc_compat/sh_plugin.lua",
+      "lines": 62,
+      "sha256": "3b16d64ebec0475107c0712bee9674a74e699130133f4df22d54cd3c63e76405",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": [
+        "OnEntityCreated",
+        "PostLoadAnimations",
+        "InitPostEntity",
+        "DoAnimationEvent"
+      ]
+    },
+    {
+      "path": "ixhl2rp/plugins/aoc_compat/sh_weapons.lua",
+      "lines": 78,
+      "sha256": "6a3b978d3cd9289b83b7f74bae4bbf4248066ae63c83d1af19f976331d29a7c3",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/aoc_compat/sv_pickups.lua",
+      "lines": 18,
+      "sha256": "cefa39a51e332753bb59b08553688cbdfaa4ebb07de06804a5aabb32a2c00f44",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": [
+        "PlayerCanPickupItem"
       ]
     },
     {
@@ -8057,8 +8488,8 @@
     },
     {
       "path": "ixhl2rp/plugins/sithelper/sv_plugin.lua",
-      "lines": 129,
-      "sha256": "1250d9236299b664dc194b5aa4e9a531fec8058b76ec124eaad4801563ad3b5c",
+      "lines": 124,
+      "sha256": "25dd9396f619e8dfd116138756d9f35784ccc9cab2f541eb1271d8cbf5cfa9b0",
       "syntax": "pass",
       "networkHandlers": [
         "ixSitCapabilities",
