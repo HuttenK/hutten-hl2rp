@@ -12,10 +12,51 @@ ENT.bNoPersist = true
 
 function ENT:SetupDataTables()
 	self:NetworkVar("String", 0, "ItemID")
+	self:NetworkVar("Bool", 0, "ItemBoxPhysics")
+	self:NetworkVar("Vector", 0, "ItemBoxMins")
+	self:NetworkVar("Vector", 1, "ItemBoxMaxs")
 end
 
 function ENT:GetItem()
 	return ix.Item.instances[self.ixItemID] or ix.Item.instances[self:GetItemID()]// ix.Item:Get(self:GetItemID())
+end
+
+-- A server-created physics box does not replace the client's model collision
+-- mesh. Share its bounds for E, tooltips and hands, without client VPhysics.
+function ENT:RemoveItemTrace()
+	if IsValid(self.ixItemTraceShape) then self.ixItemTraceShape:Destroy() end
+	self.ixItemTraceShape = nil
+	self.ixItemTraceMins, self.ixItemTraceMaxs = nil, nil
+end
+
+function ENT:UpdateItemTrace()
+	-- Existing entities do not gain new datatable accessors during Lua refresh.
+	-- They retain their old physics until the map is restarted.
+	if not self.GetItemBoxPhysics then return end
+	if not self:GetItemBoxPhysics() then
+		if self.ixItemTraceMins then
+			self:RemoveItemTrace()
+			self:RemoveSolidFlags(bit.bor(FSOLID_CUSTOMRAYTEST, FSOLID_CUSTOMBOXTEST))
+		end
+		return
+	end
+	local mins, maxs = self:GetItemBoxMins(), self:GetItemBoxMaxs()
+	if mins == self.ixItemTraceMins and maxs == self.ixItemTraceMaxs then return end
+	-- Datatable fields may arrive separately on a newly visible entity.
+	if mins.x >= maxs.x or mins.y >= maxs.y or mins.z >= maxs.z then return end
+	self:RemoveItemTrace()
+	self.ixItemTraceShape = CreatePhysCollideBox(mins, maxs)
+	self.ixItemTraceMins, self.ixItemTraceMaxs = mins, maxs
+	self:SetCollisionBounds(mins, maxs)
+	self:EnableCustomCollisions()
+end
+
+function ENT:TestCollision(startpos, delta, isbox, extents)
+	self:UpdateItemTrace()
+	if not IsValid(self.ixItemTraceShape) then return true end
+	local hit, normal, fraction = self.ixItemTraceShape:TraceBox(
+		self:GetPos(), self:GetAngles(), startpos, startpos + delta, -extents, extents)
+	if hit then return {HitPos = hit, Normal = normal, Fraction = fraction} end
 end
 
 if SERVER then
@@ -23,14 +64,26 @@ if SERVER then
 	local invalidBoundsMax = Vector(8, 8, 8)
 
 	function ENT:InitializeItemPhysics(item)
+		self:RemoveItemTrace()
+		self:RemoveSolidFlags(bit.bor(FSOLID_CUSTOMRAYTEST, FSOLID_CUSTOMBOXTEST))
+		self:SetItemBoxPhysics(false)
 		self:SetMoveType(MOVETYPE_VPHYSICS)
 		self:PhysicsInit(SOLID_VPHYSICS)
 		self:SetSolid(SOLID_VPHYSICS)
-		if not IsValid(self:GetPhysicsObject()) then
-			self:PhysicsInitBox(invalidBoundsMin, invalidBoundsMax)
-			self:SetSolid(SOLID_VPHYSICS)
-		end
 		local physics = self:GetPhysicsObject()
+		local mins, maxs = hook.Run("GetItemPhysicsBounds", self, item)
+		if not IsValid(physics) or (mins and maxs) then
+			local mass = IsValid(physics) and physics:GetMass() or 4
+			mins, maxs = mins or invalidBoundsMin, maxs or invalidBoundsMax
+			self:PhysicsInitBox(mins, maxs)
+			self:SetSolid(SOLID_VPHYSICS)
+			self:SetItemBoxMins(mins)
+			self:SetItemBoxMaxs(maxs)
+			self:SetItemBoxPhysics(true)
+			self:UpdateItemTrace()
+			physics = self:GetPhysicsObject()
+			if IsValid(physics) then physics:SetMass(mass) end
+		end
 		if IsValid(physics) then physics:EnableMotion(true); physics:Wake() end
 	end
 
@@ -117,6 +170,7 @@ if SERVER then
 	end
 
 	function ENT:OnRemove()
+		self:RemoveItemTrace()
 		if !ix.shuttingDown and !self.ixIsSafe and self.ixItemID then
 			local item = self:GetItem()
 
@@ -178,6 +232,14 @@ if SERVER then
 	end)
 else
 	ENT.PopulateEntityInfo = true
+
+	function ENT:Think()
+		self:UpdateItemTrace()
+	end
+
+	function ENT:OnRemove()
+		self:RemoveItemTrace()
+	end
 
 	local shadeColor = Color(0, 0, 0, 200)
 	local blockSize = 4

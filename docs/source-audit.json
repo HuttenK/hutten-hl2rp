@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
   "files": 1043,
-  "lines": 162061,
+  "lines": 162143,
   "syntaxFailures": [],
   "entries": [
     {
@@ -38,8 +38,8 @@
     },
     {
       "path": "helix/entities/entities/ix_item.lua",
-      "lines": 308,
-      "sha256": "6c4866ef8821d0b4b34cf0119195cab0b199c8b8dbec5eb5537b077542e98ca2",
+      "lines": 370,
+      "sha256": "1d7066b44177a827d202f9fbe1a1ea5e49644f76d0121fd1cee20ebc6d462be2",
       "syntax": "pass",
       "networkHandlers": [
         "item.entity.action"
@@ -3512,11 +3512,12 @@
     },
     {
       "path": "ixhl2rp/plugins/aoc_compat/sv_pickups.lua",
-      "lines": 18,
-      "sha256": "cefa39a51e332753bb59b08553688cbdfaa4ebb07de06804a5aabb32a2c00f44",
+      "lines": 38,
+      "sha256": "12ed375d27918959499470c14556a01f85d950afeaff9b24d2671cf07ebdf728",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
+        "GetItemPhysicsBounds",
         "PlayerCanPickupItem"
       ]
     },
