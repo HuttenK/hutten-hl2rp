@@ -65,8 +65,9 @@ function A.UpdateWalkLayer(client)
  if client.ixAOCWalkLayer ~= upper or client.ixAOCWalkLayerModel ~= client:GetModel() or
   client.ixAOCWalkLayerRevision ~= A.revision then A.ClearWalkLayer(client) end
  if client:IsValidLayer(walkSlot) and client.ixAOCWalkLayer == nil then return end -- Do not steal another addon's slot.
+ local cycle = client:GetCycle()
  if not client:IsValidLayer(walkSlot) then
-  client:AddVCDSequenceToGestureSlot(walkSlot, upper, 0, false)
+  client:AddVCDSequenceToGestureSlot(walkSlot, upper, cycle, false)
   client.ixAOCWalkLayer = upper
   client.ixAOCWalkLayerModel = client:GetModel()
   client.ixAOCWalkLayerRevision = A.revision
@@ -74,6 +75,12 @@ function A.UpdateWalkLayer(client)
   client.ixAOCWalkLayer = nil
   return
  end
+ -- The grip clips also animate the pelvis over a 0.6-second running cycle.
+ -- Drive their phase from the walking sequence instead of letting a second,
+ -- faster clock move the torso independently. Preserve phase when entering
+ -- mid-stride or resuming after a gesture, on both server and client.
+ client:SetLayerPlaybackRate(walkSlot, 0)
+ client:SetLayerCycle(walkSlot, cycle)
  client:AnimSetGestureWeight(walkSlot, 1)
 end
 

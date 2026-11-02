@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
   "files": 1043,
-  "lines": 162054,
+  "lines": 162061,
   "syntaxFailures": [],
   "entries": [
     {
@@ -3474,8 +3474,8 @@
     },
     {
       "path": "ixhl2rp/plugins/aoc_compat/sh_animations.lua",
-      "lines": 166,
-      "sha256": "d76630c45f25804ac90bee2c9450704660e2a83c17f521fc1fbb4876c9e6a1f8",
+      "lines": 173,
+      "sha256": "207d5a5953e6c7524f7aede1d6a19bf2c5a3d7366ddce3ca9f18dbbe23fde26b",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []

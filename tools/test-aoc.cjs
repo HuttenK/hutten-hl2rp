@@ -92,22 +92,25 @@ module.exports=(suite)=>{
  `,setup+'\nSERVER=false CLIENT=true\n');
 
  for(const client of [true,false]){
-  suite(`AoC walk uses real steps and preserves the grip without restarting it per frame (${client?'client':'server'})`,files,`
+  suite(`AoC grip follows walking phase without an independent running cycle (${client?'client':'server'})`,files,`
    local A=ix.AOC;local w=weapon('aoc_sword_shield');A.Prepare(w)
    local clips={walk_all=10,wos_aoc_run_swordshield=20,wos_aoc_run_swordshield_mod=21,
     wos_aoc_cwalk_swordshield=22,wos_aoc_sword_slash_01=23}
-   p.ixAOCSequences=nil;p.layers={};p.starts=0;p.sequence=10
+   p.ixAOCSequences=nil;p.layers={};p.starts=0;p.sequence=10;p.cycle=0.37
    function p:LookupSequence(name) return clips[name] or -1 end
    function p:SelectWeightedSequence() return -1 end
    function p:GetSequence() return self.sequence end
+   function p:GetCycle() return self.cycle end
    function p:Alive() return not self.dead end
    function p:IsValidLayer(slot) return self.layers[slot]~=nil end
    function p:GetLayerSequence(slot) return self.layers[slot].seq end
    function p:GetLayerWeight(slot) return self.layers[slot].weight end
    function p:AnimResetGestureSlot(slot) self.layers[slot]=nil end
    function p:AnimSetGestureWeight(slot,weight) self.layers[slot].weight=weight end
+   function p:SetLayerPlaybackRate(slot,rate) self.layers[slot].rate=rate end
+   function p:SetLayerCycle(slot,cycle) self.layers[slot].cycle=cycle end
    function p:AddVCDSequenceToGestureSlot(slot,seq,cycle,auto)
-    self.layers[slot]={seq=seq,weight=1};self.starts=self.starts+1
+    self.layers[slot]={seq=seq,weight=1,cycle=cycle,rate=1};self.starts=self.starts+1;self.startCycle=cycle
    end
    w.ActivityTranslate[ACT_MP_WALK]='wos_aoc_run_swordshield'
    w.ActivityTranslate[ACT_MP_RUN]='wos_aoc_run_swordshield'
@@ -115,14 +118,24 @@ module.exports=(suite)=>{
    local _,walk=A.MainActivity(p,ACT_MP_WALK);eq(walk,10)
    for i=1,100 do A.MainActivity(p,ACT_MP_WALK);A.UpdateWalkLayer(p) end
    eq(p.starts,1);eq(p:GetLayerSequence(GESTURE_SLOT_GRENADE),21)
+   eq(p.startCycle,0.37) -- enter mid-stride without resetting the torso to frame zero
+   for _,phase in ipairs({0.38,0.39,0.65,0.98,0.02,0.12}) do
+    p.cycle=phase;A.MainActivity(p,ACT_MP_WALK);A.UpdateWalkLayer(p)
+    local layer=p.layers[GESTURE_SLOT_GRENADE]
+    eq(layer.cycle,phase);eq(layer.rate,0)
+    layer.cycle=layer.cycle+layer.rate*0.05 -- time alone must not advance the grip
+    eq(layer.cycle,phase)
+   end
+   eq(p.starts,1) -- changing cadence and wrapping the step do not restart the layer
    local _,run=A.MainActivity(p,ACT_MP_RUN);eq(run,20);A.UpdateWalkLayer(p)
    eq(p:IsValidLayer(GESTURE_SLOT_GRENADE),false)
    local _,crouch=A.MainActivity(p,ACT_MP_CROUCHWALK);eq(crouch,22)
    A.MainActivity(p,ACT_MP_WALK);A.UpdateWalkLayer(p)
    p.layers[GESTURE_SLOT_ATTACK_AND_RELOAD]={seq=23,weight=1};A.UpdateWalkLayer(p)
    eq(p:IsValidLayer(GESTURE_SLOT_GRENADE),false) -- swings and looping shield blocks win
-   p.layers[GESTURE_SLOT_ATTACK_AND_RELOAD]=nil;A.UpdateWalkLayer(p)
+   p.cycle=0.71;p.layers[GESTURE_SLOT_ATTACK_AND_RELOAD]=nil;A.UpdateWalkLayer(p)
    assert(p:IsValidLayer(GESTURE_SLOT_GRENADE))
+   eq(p.startCycle,0.71);eq(p.layers[GESTURE_SLOT_GRENADE].cycle,0.71)
    p.layers[GESTURE_SLOT_CUSTOM]={seq=23,weight=1};A.UpdateWalkLayer(p)
    eq(p:IsValidLayer(GESTURE_SLOT_GRENADE),false);p.layers[GESTURE_SLOT_CUSTOM]=nil
    p.ixAOCWalkActionWeapon=w;p.ixAOCWalkActionUntil=clock+1;A.UpdateWalkLayer(p)
@@ -131,8 +144,9 @@ module.exports=(suite)=>{
    p.ixAOCWalkActionWeapon={};p.ixAOCWalkActionUntil=clock+10;A.UpdateWalkLayer(p)
    assert(p:IsValidLayer(GESTURE_SLOT_GRENADE)) -- a previous weapon cannot suppress the new grip
    A.ClearWalkLayer(p)
-   p.layers[GESTURE_SLOT_GRENADE]={seq=90,weight=1};A.UpdateWalkLayer(p)
+   p.layers[GESTURE_SLOT_GRENADE]={seq=90,weight=1,rate=0.8,cycle=0.4};A.UpdateWalkLayer(p)
    eq(p:GetLayerSequence(GESTURE_SLOT_GRENADE),90) -- another plugin owns this slot
+   eq(p.layers[GESTURE_SLOT_GRENADE].rate,0.8);eq(p.layers[GESTURE_SLOT_GRENADE].cycle,0.4)
    p.layers[GESTURE_SLOT_GRENADE]=nil;A.UpdateWalkLayer(p)
    for _,state in ipairs({'forced','prone','vehicle','dead'}) do
     p[state]=true;A.UpdateWalkLayer(p);eq(p:IsValidLayer(GESTURE_SLOT_GRENADE),false)
