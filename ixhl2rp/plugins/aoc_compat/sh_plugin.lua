@@ -47,6 +47,7 @@ concommand.Add("ix_aoc_pose_info", function(client)
  local weapon = client:GetActiveWeapon()
  print("[AoC/Helix] Model:", client:GetModel(), "sequences:", client:GetSequenceCount())
  print("[AoC/Helix] Content bridge:", A.contentStatus or "not initialized")
+ for _, path in ipairs(A.contentPaths or {}) do print("[AoC/Helix] Bridged library:", path) end
  print("[AoC/Helix] DynaBase:", wOS and wOS.DynaBase ~= nil or false,
   "AoC registered:", wOS and wOS.DynaBase and wOS.DynaBase.Registers and wOS.DynaBase.Registers["Age of Chivalry Extension"] ~= nil or false)
  print("[AoC/Helix] Dynamic mount:", client:LookupSequence("_dynamic_wiltos_enabled_"),
@@ -56,6 +57,6 @@ concommand.Add("ix_aoc_pose_info", function(client)
  print("[AoC/Helix] Weapon:", weapon:GetClass(), "hold:", weapon:GetHoldType())
  for _, act in ipairs({ACT_MP_STAND_IDLE, ACT_MP_RUN, ACT_MP_CROUCH_IDLE, ACT_MP_ATTACK_STAND_PRIMARYFIRE}) do
   local entry = weapon.ActivityTranslate and weapon.ActivityTranslate[act]
-  print("[AoC/Helix] Pose:", act, tostring(entry), "sequence:", A.Sequence(client, entry))
+  print("[AoC/Helix] Pose:", act, tostring(entry), "sequence:", A.Sequence(client, entry) or "MISSING")
  end
 end)

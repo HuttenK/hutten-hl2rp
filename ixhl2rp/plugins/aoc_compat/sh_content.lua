@@ -1,9 +1,16 @@
 -- The old SD/Prone bridge and DynaBase both supply m_anm/f_anm. When the
 -- former wins, DynaBase's registry exists but its AoC sequences are unreachable.
--- Mount an additive cache only for our known Cellar bridge; never write into
--- an addon or replace meshes, animation data, ANI blocks or existing includes.
+-- SD also includes cellar/*_anims directly, bypassing m_anm altogether.
+-- Mount additive copies of those libraries and our known legacy bridge;
+-- never write into an addon or replace meshes, animation/ANI data or includes.
 local A = ix.AOC
 local donor = "models/player/aoc_male_anims.mdl"
+local cellarLibraries = {
+ ["models/cellar/male_anims.mdl"] = true,
+ ["models/cellar/female_anims.mdl"] = true,
+ ["models/cellar/police_anims.mdl"] = true,
+ ["models/cellar/combine_anims.mdl"] = true
+}
 
 local function U32(n)
  return string.char(n % 256, math.floor(n / 256) % 256, math.floor(n / 65536) % 256, math.floor(n / 16777216) % 256)
@@ -19,21 +26,31 @@ local function CString(bytes, offset)
  if not finish or finish - offset > 260 then return end
  return bytes:sub(offset + 1, finish - 1)
 end
+local function Relative32(bytes, offset)
+ local value = Read32(bytes, offset)
+ return value >= 2147483648 and value - 4294967296 or value
+end
 local function Replace32(bytes, offset, value)
  return bytes:sub(1, offset) .. U32(value) .. bytes:sub(offset + 5)
 end
 
-function A.BridgeModel(bytes)
+function A.BridgeModel(bytes, path)
  if not isstring(bytes) or #bytes < 408 or #bytes > 8388608 or bytes:sub(1, 4) ~= "IDST" then return end
  local version = Read32(bytes, 4)
  if (version ~= 48 and version ~= 49) or Read32(bytes, 76) ~= #bytes then return end
+ if Read32(bytes, 204) ~= 0 or Read32(bytes, 232) ~= 0 then return end
  local count, offset = Read32(bytes, 336), Read32(bytes, 340)
  if count > 64 or offset + count * 8 > #bytes then return end
- local includes, ours = {}, false
+ -- Only animation-only libraries at these exact paths may bypass the legacy
+ -- ix_cellar include check. A mesh or an unrelated replacement is not eligible.
+ local internal = CString(bytes, 12)
+ local ours = cellarLibraries[path] == true and internal ~= nil
+  and ("models/" .. internal:lower():gsub("\\", "/")) == path
+ local includes = {}
  for index = 0, count - 1 do
   local base = offset + index * 8
-  local name = CString(bytes, base + Read32(bytes, base + 4))
-  local label = CString(bytes, base + Read32(bytes, base))
+  local name = CString(bytes, base + Relative32(bytes, base + 4))
+  local label = CString(bytes, base + Relative32(bytes, base))
   if not name or not label then return end
   if name:lower() == donor then return end
   if name:lower():find("^models/ix_cellar/") then ours = true end
@@ -74,16 +91,20 @@ function A.MountBridge()
  if A.contentMounted then return end
  if not file.Exists(donor, "GAME") then A.contentStatus = "AoC animation extension is missing" return end
  if not game.MountGMA then A.contentStatus = "runtime content mounting unavailable" return end
- local entries = {}
+ local entries, paths = {}, {}
  for _, name in ipairs({"m_anm", "f_anm", "z_anm", "humans/male_postures", "humans/female_postures",
-  "police_ss", "combine_soldier_anims"}) do
+  "police_ss", "combine_soldier_anims", "cellar/male_anims", "cellar/female_anims",
+  "cellar/police_anims", "cellar/combine_anims"}) do
   name = "models/" .. name .. ".mdl"
-  local bytes = A.BridgeModel(file.Read(name, "GAME"))
-  if bytes then entries[#entries + 1] = {name = name, bytes = bytes} end
+  local bytes = A.BridgeModel(file.Read(name, "GAME"), name)
+  if bytes then
+   entries[#entries + 1] = {name = name, bytes = bytes}
+   paths[#paths + 1] = name
+  end
  end
- if #entries == 0 then A.contentStatus = "no legacy Cellar roots require bridging" return end
+ if #entries == 0 then A.contentStatus = "no eligible Cellar libraries found; check model sequences" return end
  local archive = A.BridgeArchive(entries)
- local destination = "ix_aoc/bridge_v1_" .. util.CRC(archive) .. ".dat"
+ local destination = "ix_aoc/bridge_v2_" .. util.CRC(archive) .. ".dat"
  file.CreateDir("ix_aoc")
  if file.Read(destination, "DATA") ~= archive then file.Write(destination, archive) end
  local success = game.MountGMA("data/" .. destination)
@@ -97,7 +118,8 @@ function A.MountBridge()
   end
  end
  A.contentMounted = true
- A.contentStatus = "legacy Cellar bridge: " .. #entries .. " additive roots mounted"
+ A.contentPaths = paths
+ A.contentStatus = "Cellar/AoC bridge v2: " .. #entries .. " additive libraries mounted"
  print("[AoC/Helix] " .. A.contentStatus)
 end
 
