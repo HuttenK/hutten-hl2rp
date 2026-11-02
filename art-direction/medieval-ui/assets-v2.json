@@ -5,7 +5,8 @@
   "status": "Integrated into native Lua UI; visually inspected as PNGs and browser preview. GMod runtime not tested.",
   "assets": [
     {
-      "file": "addons/medieval_ui_content/materials/cloister_v2.png",
+      "file": "art-direction/medieval-ui/archive-v2/cloister_v2.png",
+      "status": "Archived; hall_v3.png replaces this landscape in the game",
       "source": "C:\\Users\\q1236\\.codex\\generated_images\\01a0af77-7b63-7de0-8e91-c3f54d495190\\exec-eb535458-2f46-4532-94fe-1ee4bbbcb6ee.png",
       "dimensions": [
         1672,

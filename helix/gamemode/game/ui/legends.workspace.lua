@@ -180,7 +180,10 @@ function PANEL:AddInventory(parent, inventory, title, size, icon)
 end
 function PANEL:EquipmentGeometry(w,h)
  local gap=S(10)
- local lw,dw=math.floor(w*.40),math.floor(w*.235)
+ local seam=U.BackdropGeometry(w+S(48),h+S(155))
+ local available=math.max(1,seam-S(24)-gap*2)
+ local lw=math.floor(available*.63)
+ local dw=available-lw
  return lw,dw,gap,math.max(1,w-lw-dw-gap*2)
 end
 function PANEL:Equipment()
@@ -196,20 +199,20 @@ function PANEL:Equipment()
  vitals.Paint=function(_,w,h)
   local char=self.character
   U.Plate(0,0,w,h,Color(255,255,255,222))
-  U.Text(U.Fit(char:GetName(),"Heading",w-S(34)),"Heading",S(17),S(13))
+  U.Text(U.Fit(char:GetName(),"Heading",w-S(34)),"Heading",S(17),S(10))
   local health=char.Health and char:Health()
   local hp=health and health.GetPercent and health:GetPercent() or client:Health()/math.max(1,client:GetMaxHealth())
   local stamina=client:GetLocalVar("stm",0)/math.max(1,char.GetMaxStamina and char:GetMaxStamina() or 100)
   for i,bar in ipairs({{hp,U.rose,T("Health","Здоровье")},{stamina,Color(131,140,91),T("Stamina","Выносливость")}}) do
-   local y=S(49+(i-1)*30)
+   local y=S(40+(i-1)*22)
    U.Text(bar[3],"Small",S(17),y-S(2),U.muted)
    local x,bw=w*.44,w*.56-S(18)
    U.Rect(x,y+S(3),bw,S(8),U.dark)
    U.Rect(x+1,y+S(4),(bw-2)*math.Clamp(bar[1],0,1),S(6),bar[2])
    surface.SetDrawColor(U.line);surface.DrawOutlinedRect(x,y+S(3),bw,S(8))
   end
-  U.Icon("coins",S(16),h-S(33),S(23))
-  U.Text(ix.currency.Get(char:GetMoney()),"Body",S(48),h-S(31),U.ink)
+  U.Icon("coins",S(16),h-S(27),S(19))
+  U.Text(ix.currency.Get(char:GetMoney()),"Small",S(42),h-S(25),U.ink)
  end
  detail:DockPadding(S(22),S(18),S(22),S(18))
  detail.Paint=function(_,w,h) U.Plate(0,0,w,h) end
@@ -219,8 +222,9 @@ function PANEL:Equipment()
   leftFrame:SetPos(0,0);leftFrame:SetSize(lw,h)
   detail:SetPos(lw+gap,0);detail:SetSize(dw,h)
   local rx=lw+dw+gap*2
-  portrait:SetPos(rx,0);portrait:SetSize(rw,h-S(144))
-  vitals:SetPos(rx+S(16),h-S(144));vitals:SetSize(rw-S(32),S(144))
+  local px,py,pw,ph=U.PortraitBounds(w+S(48),h+S(155))
+  portrait:SetPos(px-S(24),py-S(80));portrait:SetSize(pw,ph)
+  vitals:SetPos(rx+S(16),h-S(104));vitals:SetSize(rw-S(32),S(104))
  end
  U.Label(left,T("Equipment","Экипировка"),"Heading")
  local slots=left:Add("DIconLayout");slots:Dock(TOP)

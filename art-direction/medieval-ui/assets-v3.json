@@ -1,0 +1,51 @@
+{
+  "date": "2026-11-02",
+  "generator": "Built-in image_gen (imagegen skill)",
+  "direction": "Kingdom Come-style character presentation; user requested integration into the original dark wall, not a separate overlay.",
+  "file": "addons/medieval_ui_content/materials/hall_v3.png",
+  "source": "C:\\Users\\q1236\\.codex\\generated_images\\01a0af77-7b63-7de0-8e91-c3f54d495190\\exec-7d0b24fd-b02f-49ae-9f39-d62fd05e1b4f.png",
+  "dimensions": [
+    1672,
+    941
+  ],
+  "transparent": false,
+  "prompt": "EDIT / MERGE the two supplied assets into ONE SEAMLESS fullscreen 16:9 medieval game menu background, high resolution 2560x1440 if available. First image is the existing full-screen background and defines composition: quiet dark mottled fine-grained charcoal wall on the left TWO THIRDS. Second image is the new empty wooden character niche to integrate IN PLACE OF THE RUINS on the right. Preserve the dark textured left-side background closely. Remove all the old outdoor ruins, sky, rubble, arch corridor. Build the carved wooden niche into the interior dark wall as one believable shallow wall recess, lit together: side masonry meets the timber framing, ambient contact shadows, subtle warm bounced light into adjacent charcoal stone, no rectangular pasted-on image edges and no separated floating UI card.\nNiche arrangement: centered horizontally at x=82 percent of the full image width, extends approximately from x=68 to x=96 percent; canopy top at y=8 percent, pedestal top at y=78 percent, bottom apron down to y=91 percent. Preserve the niche's dark walnut construction, slender carved columns, restrained gold details, brown cloth folds, wide low wooden standing pedestal. Cloth behind the future figure, not scenery. Enough empty central space for a live full-length person: top of future head y=24 percent, feet on pedestal y=78 percent. No figure, shadow of a figure, mannequin or silhouette. Shallow front-facing perspective, precise straight joinery, softly lit traditional RPG inventory dressing; no oversaturated gold bloom, no random AI filigree. Niche and left side share the same subdued atmosphere. Leftmost 60 percent must remain simple subdued dark surface with NO arches or distracting shapes behind text. The bottom foreground stays dark and unobtrusive. This image is the whole backdrop, not a picture of a monitor and not a menu mockup. No items, equipment icons, labels, letters, numbers, buttons or watermarks. Crisp authored texture, no depth-of-field blur.",
+  "references": [
+    {
+      "file": "art-direction/medieval-ui/archive-v2/cloister_v2.png",
+      "role": "Original wall and background composition"
+    },
+    {
+      "file": "C:\\Users\\q1236\\.codex\\generated_images\\01a0af77-7b63-7de0-8e91-c3f54d495190\\exec-8103ce5f-6507-4bdd-8d9a-03f4c881e82c.png",
+      "role": "Intermediate empty niche, not loaded separately in game",
+      "prompt": "Create a production game UI background asset inspired specifically by the CHARACTER NICHE on the RIGHT of the supplied Kingdom Come screenshot. Output one EMPTY portrait wooden character alcove, 2:3 aspect ratio. Not a whole inventory screen. No character and no silhouette: a live 3D character will be rendered in front.\nFront-on shallow carved dark walnut cabinet / medieval Gothic wardrobe niche. Two modest thin turned wood columns at the left and right edges, a restrained pointed carved arch at the very top, small worn old brass/gilt accents. Mostly plain architectural joinery, believable straight symmetry, NOT dense invented fantasy filigree. In the center a dark brown woolen cloth backing with a few broad vertical folds and soft shadows, matte and quiet, readable but low contrast. Behind a future character there is ONLY this cloth, no landscape, no passageway, no distant architecture.\nAt the bottom is a low broad wooden pedestal with a flat top surface seen slightly from above, a straight back edge at 85 percent down the image and front edge at 91 percent, a short simple carved apron underneath. Center of the top surface at 88 percent down the canvas, unobstructed, where the live character's feet will stand. Top of character's head will be around 22 percent down canvas. The center 60 percent of width must be free of ornament all the way from 20 to 90 percent height.\nSoft warm light from front upper left; dark shaded cloth behind, subtle natural edge highlights on wood. Carefully authored restrained historic RPG interface art: hand-painted material realism, coherent wood grain, clean legible low-relief carving, grounded modest craft rather than ornate AI fantasy scenery. Balanced dark-brown muted warm palette, no yellow glow, no glitter, no blur, no depth of field. Edges align exactly with image boundaries, no padding. Do not include the reference character, armor, weapons, interface text, equipment slots, icons, shields, buttons, logos or watermarks. Opaque background."
+    },
+    {
+      "file": "C:\\Users\\q1236\\AppData\\Local\\Temp\\codex-clipboard-88baad5f-fa29-4ef0-b1b8-340f384279c0.png",
+      "role": "User-supplied Kingdom Come inventory reference; not distributed as game content"
+    }
+  ],
+  "retainedAssets": [
+    "panel_v2.png",
+    "button_v2.png",
+    "slot_v2.png",
+    "slot_selected_v2.png",
+    "divider_v2.png"
+  ],
+  "materialRoot": "materials/ directly; no subfolder",
+  "layout": {
+    "horizontalSplitUV": 0.6,
+    "nicheAspect": "preserved on 16:9, 16:10 and ultrawide; only left wall expands",
+    "portraitUV": {
+      "left": 0.676,
+      "right": 0.95,
+      "top": 0.15,
+      "bottom": 0.8
+    },
+    "footUV": {
+      "x": 0.813,
+      "y": 0.787
+    }
+  },
+  "validation": "PNG inspected; native Lua integration and deterministic projection/layout tests. Browser preview is not a GMod capture; live model grounding needs in-game confirmation."
+}

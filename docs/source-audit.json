@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
   "files": 990,
-  "lines": 160906,
+  "lines": 160974,
   "syntaxFailures": [],
   "entries": [
     {
@@ -399,8 +399,8 @@
     },
     {
       "path": "helix/gamemode/core/libs/sh_anims.lua",
-      "lines": 559,
-      "sha256": "f3d69416ba3b86e491a1e4e795f9e2876582c8545490eca98bd4486677c28dec",
+      "lines": 582,
+      "sha256": "8e0615f874c04a02a786bb401ac6458040c4715971f97c25f403952dd6cb0f35",
       "syntax": "pass",
       "networkHandlers": [
         "ixSequenceSet",
@@ -873,8 +873,8 @@
     },
     {
       "path": "helix/gamemode/game/cl_legends_theme.lua",
-      "lines": 261,
-      "sha256": "961a3301532268b4db4ae4ebf2c6457100e72e07295c142b6e79f263bf9c3ee2",
+      "lines": 301,
+      "sha256": "3e5d1a5bd180311a33ce095b042a54959bf0f0ca0ddf91fbf9750dc4ad46fc4a",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -1128,8 +1128,8 @@
     },
     {
       "path": "helix/gamemode/game/ui/legends.workspace.lua",
-      "lines": 429,
-      "sha256": "aa92443b44f537f11cc6470e5fb376d6ee09b948a88c9a1fc8df2cb584161a1f",
+      "lines": 433,
+      "sha256": "9b09d9bb26671c48f505ed5a6d2e7616cab2206386d3cf2a1fc1cc40005b4725",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -8488,8 +8488,8 @@
     },
     {
       "path": "ixhl2rp/plugins/zz_legends_interface/cl_menu.lua",
-      "lines": 441,
-      "sha256": "09d267401a560fb81b4607f6d492655123ac047a6693224f89b71af1679fa4c6",
+      "lines": 442,
+      "sha256": "df0b601a74054b4ba194c18249b512f038ab4fe5fe3dcf4ddeecf478c63103ee",
       "syntax": "pass",
       "networkHandlers": [
         "ixCharacterAuthed",
@@ -8500,7 +8500,7 @@
     {
       "path": "ixhl2rp/plugins/zz_legends_interface/sh_plugin.lua",
       "lines": 14,
-      "sha256": "9a9f2373f78d1f788165c48a16e99054798e07745998417bafb0486f0aa6bdeb",
+      "sha256": "168a45c64e7564161f2c5fe63fafbe621fad40b30852363d63d49b4baa795388",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []

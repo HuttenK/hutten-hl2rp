@@ -59,7 +59,7 @@ U.Art = {
 }
 -- Material paths are relative to garrysmod/materials, with no UI subfolder.
 for _,art in pairs(U.Art) do art.material=Material(art.path..".png","smooth") end
-local background = Material("cloister_v2.png", "smooth noclamp")
+local background = Material("hall_v3.png", "smooth noclamp")
 local divider = Material("divider_v2.png", "smooth")
 local shade = Material("vgui/gradient-l", "smooth")
 local function Patch(x,y,w,h,u0,v0,u1,v1)
@@ -92,14 +92,24 @@ function U.SlotFace(x,y,w,h,selected,frameOnly)
   U.Rect(x,y,w,h,U.panel)
  end
 end
+-- One continuous illustration. Only its quiet left wall expands on ultrawide;
+-- the niche retains its aspect ratio and shares its coordinates with the model.
+function U.BackdropGeometry(w,h)
+ local imageWidth=h*(1672/941)
+ local rightWidth=math.min(w*.48,imageWidth*.4)
+ return w-rightWidth,rightWidth/.4
+end
+function U.PortraitBounds(w,h)
+ local _,imageWidth=U.BackdropGeometry(w,h)
+ return w-imageWidth*.324,h*.15,imageWidth*.274,h*.65
+end
 function U.Backdrop(w,h)
  U.Rect(0,0,w,h,U.dark)
  if not background:IsError() then
-  local ratio=background:Width()/math.max(1,background:Height())
-  local view=w/math.max(1,h)
-  local u,v=math.min(1,view/ratio),math.min(1,ratio/view)
+  local seam=U.BackdropGeometry(w,h)
   surface.SetMaterial(background);surface.SetDrawColor(255,255,255)
-  surface.DrawTexturedRectUV(0,0,w,h,(1-u)/2,(1-v)/2,(1+u)/2,(1+v)/2)
+  Patch(0,0,seam,h,0,0,.6,1)
+  Patch(seam,0,w-seam,h,.6,0,1,1)
  end
  surface.SetMaterial(shade);surface.SetDrawColor(3,4,3,38);surface.DrawTexturedRect(0,0,w*.62,h)
 end
@@ -201,9 +211,10 @@ end
 local PANEL = {}
 function PANEL:Init()
 	self:SetFOV(32); self:SetMouseInputEnabled(true)
-	self:SetAmbientLight(Color(69, 69, 61)); self:SetDirectionalLight(BOX_FRONT, Color(228, 212, 208))
-	self:SetDirectionalLight(BOX_RIGHT, Color(163, 151, 119))
-	self:SetDirectionalLight(BOX_LEFT, Color(81, 97, 108)); self.yaw = 12
+	self:SetAmbientLight(Color(65, 61, 55)); self:SetDirectionalLight(BOX_FRONT, Color(185, 174, 151))
+	self:SetDirectionalLight(BOX_TOP, Color(105, 95, 77))
+	self:SetDirectionalLight(BOX_RIGHT, Color(72, 65, 55))
+	self:SetDirectionalLight(BOX_LEFT, Color(150, 135, 110)); self.yaw = 8
 end
 function PANEL:Present(model, skin, groups)
  self.character=nil
@@ -231,8 +242,37 @@ function PANEL:SetPortraitFocus(face)
 	self.faceFocus = face
 	local height, floor = self.modelHeight, self.modelFloor
 	if not height then return end
-	self:SetLookAt(Vector(0, 0, floor + height * (face and 0.88 or 0.5)))
-	self:SetCamPos(Vector(height * (face and 0.55 or 1.85), height * 0.13, floor + height * (face and 0.89 or 0.57)))
+ -- Orthographic portrait: the feet stay at 98% of this transparent viewport,
+ -- on the painted pedestal, independent of window aspect or camera distance.
+ self.portraitSpan=height/(face and 2.5 or .88)
+ local center=floor+(face and height*.87 or self.portraitSpan*.48)
+ self:SetLookAt(Vector(0,0,center))
+ self:SetCamPos(Vector(height*3,0,center))
+end
+function PANEL:Paint(w,h)
+ if not IsValid(self.Entity) or w<=0 or h<=0 then return end
+ self:LayoutEntity(self.Entity)
+ if not IsValid(self.Entity) or not self.portraitSpan then return end
+ local x,y=self:LocalToScreen(0,0)
+ local half=self.portraitSpan*.5
+ cam.Start({type="3D",origin=self.vCamPos,angles=Angle(0,180,0),
+  x=x,y=y,w=w,h=h,znear=1,zfar=4096,
+  ortho={left=-half*w/h,right=half*w/h,top=-half,bottom=half}})
+ render.SuppressEngineLighting(true)
+ render.SetLightingOrigin(self.Entity:GetPos())
+ local light=self.colAmbientLight
+ render.ResetModelLighting(light.r/255,light.g/255,light.b/255)
+ render.SetColorModulation(self.colColor.r/255,self.colColor.g/255,self.colColor.b/255)
+ render.SetBlend((self:GetAlpha()/255)*(self.colColor.a/255))
+ for i=0,5 do
+  local color=self.DirectionalLight[i]
+  if color then render.SetModelLighting(i,color.r/255,color.g/255,color.b/255) end
+ end
+ -- Retain DModelPanel's clipping and Pre/PostDrawModel extension hooks.
+ self:DrawModel()
+ render.SetBlend(1);render.SetColorModulation(1,1,1)
+ render.SuppressEngineLighting(false);cam.End3D()
+ self.LastPaint=RealTime()
 end
 function PANEL:LayoutEntity(entity)
  if self.character then

@@ -62,8 +62,9 @@ end
 function PANEL:PerformLayout(w,h)
  if not self.controlsReady then return end
  local pad=math.max(S(40),w*.045)
- self.scene:SetPos(w*.59,S(116));self.scene:SetSize(w*.38,h-S(213))
- self.previewToggle:SetPos(w*.66,h-S(142));self.previewToggle:SetSize(w*.25,S(40))
+ local px,py,pw,ph=U.PortraitBounds(w,h)
+ self.scene:SetPos(px,py);self.scene:SetSize(pw,ph)
+ self.previewToggle:SetPos(px,h-S(142));self.previewToggle:SetSize(pw,S(40))
  if self.view=="home" then
   self.content:SetPos(pad,h*.45);self.content:SetSize(math.min(w*.38,S(480)),h*.49-S(40))
  else

@@ -81,6 +81,10 @@ module.exports=suite=>{
  function LocalPlayer() return {valid=true,GetCharacter=function() return nil end,HasWhitelist=function() return true end} end
  ix.Legends={Scale=function(n) return math.floor(n*math.Clamp(math.min(ScrW()/1600,ScrH()/900),.7,1.6)+.5) end,T=function(en,ru) return ru end}
  ix.InterfaceOS=ix.Legends
+ ix.Civic={Scale=ix.Legends.Scale};ix.Locale={lang='ru'}
+ function Color(r,g,b,a) return {r=r,g=g,b=b,a=a or 255} end;color_white=Color(255,255,255)
+ function Material() return {IsError=function() return false end} end
+ surface={CreateFont=function() end,SetDrawColor=function() end,SetMaterial=function() end}
  ix.gui={};ix.char={vars={},loaded={}};ix.characters={}
  ix.languages={stored={rus={uniqueID='rus'},hidden={notSelectable=true}}}
  ix.option={Get=function(_,d) return d end}
@@ -88,7 +92,7 @@ module.exports=suite=>{
  function pane() return {SetPos=function(self,x,y) self.x=x;self.y=y end,SetSize=function(self,w,h) self.w=w;self.h=h end,SetDisabled=function(self,v) self.disabled=v end} end
  `;
  suite('Character creation has four steps, rejects invalid input, and submits without stats',
-  ['ixhl2rp/plugins/zz_legends_interface/cl_menu.lua'],`
+  ['helix/gamemode/game/cl_legends_theme.lua','ixhl2rp/plugins/zz_legends_interface/cl_menu.lua'],`
   local P=registered.ixCharMenu;local p=setmetatable({view='create',step=1,next=pane()},{__index=P})
   p:ResetDraft();eq(p.draft.primaryStat,nil);eq(p.draft.skills,nil);eq(#p.draft.languages,1)
   p.valid=false;function p:Validate(keys) self.checked=keys;return self.valid end
@@ -99,7 +103,7 @@ module.exports=suite=>{
   p:Back();eq(p.step,3);p.awaitingResponse=100;p:Back();eq(p.step,3)
   `,setup);
  suite('Creation panels stay within 720p, 1080p and ultrawide viewports',
-  ['ixhl2rp/plugins/zz_legends_interface/cl_menu.lua'],`
+  ['helix/gamemode/game/cl_legends_theme.lua','ixhl2rp/plugins/zz_legends_interface/cl_menu.lua'],`
   local P=registered.ixCharMenu
   for _,size in ipairs({{1280,720},{1920,1080},{3440,1440}}) do
    viewport=size
@@ -115,17 +119,46 @@ module.exports=suite=>{
   end
   `,setup);
  suite('TAB defaults to inventory and discards remembered removed pages',
-  ['helix/gamemode/game/ui/legends.workspace.lua'],`
+  ['helix/gamemode/game/cl_legends_theme.lua','helix/gamemode/game/ui/legends.workspace.lua'],`
   local p=setmetatable({character={GetID=function() return 7 end}},{__index=registered['ui.tabmenu']})
   eq(p:RememberedPage(),'equipment')
   ix.Legends.lastTabByCharacter[7]='skills';eq(p:RememberedPage(),'equipment')
   ix.Legends.lastTabByCharacter[7]='journal';eq(p:RememberedPage(),'journal')
   for _,size in ipairs({{1280,720},{1920,1080},{3440,1440}}) do
    viewport=size
-   local w,h=size[1]-48,size[2]-155
+   local S=ix.Legends.Scale
+   local w,h=size[1]-S(48),size[2]-S(155)
    local lw,dw,gap,rw=p:EquipmentGeometry(w,h)
    eq(lw+dw+gap*2+rw,w);assert(lw>0 and dw>0 and rw>0 and gap>0)
-   assert(lw/w>=.39 and lw/w<=.41 and dw/w>.23 and dw/w<.24)
+   local seam=ix.Legends.BackdropGeometry(size[1],size[2])
+   assert(S(24)+lw+gap+dw<seam,'panels must not cover the niche')
+   local x,y,pw,ph=ix.Legends.PortraitBounds(size[1],size[2])
+   assert(x>seam and x+pw<size[1] and y>S(80))
+   assert(y+ph*.98<size[2]-S(75)-S(104),'vitals must not cover the feet')
   end
+  `,setup);
+ suite('The continuous backdrop and live portrait share pedestal coordinates at every aspect',
+  ['helix/gamemode/game/cl_legends_theme.lua'],`
+  local U=ix.Legends
+  for _,size in ipairs({{1280,720},{1920,1080},{1920,1200},{3440,1440}}) do
+   local w,h=size[1],size[2];local draws={}
+   surface.DrawRect=function() end;surface.DrawTexturedRect=function() end
+   surface.DrawTexturedRectUV=function(...) draws[#draws+1]={...} end
+   U.Backdrop(w,h);eq(#draws,2)
+   near(draws[1][3]+draws[2][3],w);near(draws[1][3],draws[2][1])
+   near(draws[1][7],draws[2][5]);eq(draws[1][8],1);eq(draws[2][8],1)
+   local x,y,pw,ph=U.PortraitBounds(w,h)
+   near(y+ph*.98,h*.787);assert(x>=draws[2][1] and x+pw<=w)
+   near(pw/ph,(1672/941)*.274/.65)
+  end
+  local P=registered['legends.portrait']
+  function Vector(x,y,z) return {x=x,y=y,z=z} end
+  local p=setmetatable({modelFloor=-2,modelHeight=74,SetLookAt=function(s,v) s.target=v end,
+   SetCamPos=function(s,v) s.camera=v end},{__index=P})
+  p:SetPortraitFocus(false)
+  near(.5+(p.target.z-p.modelFloor)/p.portraitSpan,.98)
+  near(.5+(p.target.z-p.modelFloor-p.modelHeight)/p.portraitSpan,.10)
+  local span=p.portraitSpan;p:SetPortraitFocus(true);assert(p.portraitSpan<span)
+  p:SetPortraitFocus(false);near(p.portraitSpan,span)
   `,setup);
 };
