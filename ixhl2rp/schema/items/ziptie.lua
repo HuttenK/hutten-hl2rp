@@ -1,6 +1,8 @@
-ITEM.name = "Кандалы"
-ITEM.description = "Железные кандалы для пленников."
-ITEM.model = "models/katharsmodels/handcuffs/handcuffs-1.mdl"
+ITEM.name = "Крепкая верёвка"
+ITEM.description = "Плотно свитая верёвка. Хороший узел удержит пленника надёжнее грозных обещаний."
+ITEM.model = "models/props/tools/humans/rope_rigging_big_c.mdl"
+ITEM.worldModelScale = 0.1
+ITEM.physicsMass = 1
 ITEM.rarity = 1
 ITEM.max_stack = 8
 ITEM.stackable = true

@@ -1,6 +1,4 @@
-RECIPE.name = "Кандалы"
-RECIPE.description = ""
-RECIPE.requirements = {metal_reclaimed=2}
+RECIPE.name = "Крепкая верёвка"
+RECIPE.description = "Сплести прочную верёвку из полос ткани."
+RECIPE.requirements = {mat_cloth=2}
 RECIPE.results = {ziptie=1}
-RECIPE.tools = {"tool_hammer"}
-RECIPE.station = "station_tokar"

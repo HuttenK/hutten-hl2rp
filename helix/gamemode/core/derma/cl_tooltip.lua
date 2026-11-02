@@ -298,21 +298,6 @@ end
 function PANEL:Paint(width, height)
 	self:PaintUnder()
 
-	-- directional arrow
-	self.bRaised = LocalPlayer():IsWepRaised()
-
-	if (!self.bClosing) then
-		if (self.bEntity and IsValid(self.entity) and self.bArrowFollowEntity) then
-			local entity = self.entity
-			local position = select(1, entity:GetBonePosition(entity:LookupBone("ValveBiped.Bip01_Spine") or -1)) or
-				entity:LocalToWorld(entity:OBBCenter())
-
-			position = position:ToScreen()
-			self.arrowX = math.Clamp(position.x, 0, ScrW())
-			self.arrowY = math.Clamp(position.y, 0, ScrH())
-		end
-	end
-
 	-- arrow
 	if (self.bDrawArrow or (self.bDrawArrow and self.bRaised and !self.bHideArrowWhenRaised)) then
 		local x, y = self:ScreenToLocal(self.arrowX, self.arrowY)
@@ -349,6 +334,52 @@ function PANEL:GetCursorPosition()
 	return math.Clamp(mouseX + self.mousePadding, 0, ScrW() - width), math.Clamp(mouseY, 0, ScrH() - height)
 end
 
+-- Called from PreDrawHUD, where the main view is available. VGUI Think/Paint
+-- can inherit the FOV of a viewmodel or model panel, so projecting separately
+-- there made the window and its leader jump between different camera contexts.
+function PANEL:UpdateEntityPosition()
+	if self.bMinimal or not self.bEntity or self.bClosing or not IsValid(self.entity) then return end
+	local entity = self.entity
+	local screenW, screenH = ScrW(), ScrH()
+	local width, height = self:GetSize()
+	local maxX, maxY = math.max(screenW - width, 0), math.max(screenH - height, 0)
+	local client = LocalPlayer()
+	self.bRaised = IsValid(client) and client:IsWepRaised() or false
+	local anchor = entity:LocalToWorld(entity:OBBCenter())
+	local bone = entity:LookupBone("ValveBiped.Bip01_Spine")
+	if bone then anchor = entity:GetBonePosition(bone) or anchor end
+	local low, high = entity:OBBMins() * 0.5, entity:OBBMaxs() * 0.5
+	local right = screenW * 0.5 + 64
+	local point
+	-- No explicit FOV: reset ToScreen's cached projection to the main camera.
+	cam.Start3D()
+		point = anchor:ToScreen()
+		if not self.bRaised then
+			for i = 0, 7 do
+				local corner = Vector(i % 2 == 0 and low.x or high.x,
+					math.floor(i / 2) % 2 == 0 and low.y or high.y, i < 4 and low.z or high.z)
+				local projected = entity:LocalToWorld(corner):ToScreen()
+				if projected.visible then right = math.max(right, projected.x) end
+			end
+		end
+	cam.End3D()
+	if self.bArrowFollowEntity then
+		self.arrowX = math.Clamp(point.x, 0, screenW)
+		self.arrowY = math.Clamp(point.y, 0, screenH)
+	end
+	if self.bRaised then
+		self:SetPos(math.Clamp(screenW * 0.5 - width * 0.5, 0, maxX),
+			math.Clamp(screenH * 0.5 + height + 32, 0, maxY))
+	else
+		self:SetPos(math.Clamp(right, 0, maxX), math.Clamp(screenH * 0.5 - height * 0.5, 0, maxY))
+	end
+end
+
+hook.Add("PreDrawHUD", "ixTooltipEntityPosition", function()
+	local panel = ix.gui.entityInfo
+	if IsValid(panel) and panel.UpdateEntityPosition then panel:UpdateEntityPosition() end
+end)
+
 function PANEL:Think()
 	if (!self.bEntity) then
 		if (!vgui.CursorVisible()) then
@@ -366,23 +397,6 @@ function PANEL:Think()
 		end
 
 		self:MoveToFront() -- dragging a panel w/ tooltip will push the tooltip beneath even the menu panel(???)
-	elseif (IsValid(self.entity) and !self.bClosing) then
-		if (self.bRaised) then
-			self:SetPos(
-				ScrW() * 0.5 - self:GetWide() * 0.5,
-				math.min(ScrH() * 0.5 + self:GetTall() + 32, ScrH() - self:GetTall())
-			)
-		else
-			local entity = self.entity
-			local min, max = entity:GetRotatedAABB(entity:OBBMins() * 0.5, entity:OBBMaxs() * 0.5)
-			min = entity:LocalToWorld(min):ToScreen().x
-			max = entity:LocalToWorld(max):ToScreen().x
-
-			self:SetPos(
-				math.Clamp(math.max(min, max), ScrW() * 0.5 + 64, ScrW() - self:GetWide()),
-				ScrH() * 0.5 - self:GetTall() * 0.5
-			)
-		end
 	end
 end
 

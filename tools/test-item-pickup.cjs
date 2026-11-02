@@ -58,6 +58,8 @@ module.exports=suite=>{
  end
  function ENT:GetModel() return self.model end
  function ENT:SetModel(v) self.model=v end
+ function ENT:GetModelScale() return self.scale or 1 end
+ function ENT:SetModelScale(v,time) eq(time,0);self.scale=v end
  function ENT:GetModelBounds() return self.low,self.high end
  function ENT:GetPos() return self.pos or Vector() end
  function ENT:GetAngles() return self.angle or 0 end
@@ -105,6 +107,25 @@ module.exports=suite=>{
  function p:PerformInteraction(duration,e,callback) eq(duration,.5);self.callback=callback;self.ixInteractionTarget=e end
  `+take+'\n'+canHold;
  const files=['helix/entities/entities/ix_item.lua','ixhl2rp/plugins/aoc_compat/sv_pickups.lua'];
+ suite('Rope uses one-tenth world size and matching pickup physics across spawn and reload',
+  [...files,'ixhl2rp/schema/items/ziptie.lua','ixhl2rp/plugins/recipes_crafting/recipes/rope.lua'],`
+   eq(ITEM.worldModelScale,.1);eq(ITEM.model,'models/props/tools/humans/rope_rigging_big_c.mdl')
+   eq(RECIPE.results.ziptie,1);eq(RECIPE.requirements.mat_cloth,2)
+   local e,item=newItemEntity(3,'rope')
+   for k,v in pairs(ITEM) do if k~='functions' then item[k]=v end end
+   e.low=Vector(-100,-40,-20);e.high=Vector(120,60,40)
+   e.hasPHY=true;e.mass=100
+   for i=1,3 do
+    e:SetItem(3);e:Initialize()
+    near(e:GetModelScale(),.1);eq(e.physics:GetMass(),1)
+    eq(e:GetItemBoxMins(),Vector(-10,-4,-2));eq(e:GetItemBoxMaxs(),Vector(12,6,4))
+    assert(e:TestCollision(Vector(0,0,40),Vector(0,0,-80),false,Vector()))
+    eq(e:TestCollision(Vector(80,0,40),Vector(0,0,-80),false,Vector()),nil)
+   end
+   local h=setmetatable({owner=p},{__index=SWEP});assert(h:CanHoldObject(e))
+   e:Use(p,p);p.callback(p);eq(p.inventory.item,item);eq(e.valid,false)
+   local ordinary=newItemEntity(4,'ordinary');eq(ordinary:GetModelScale(),1)
+  `,setup+'\nITEM={functions={}};RECIPE={}');
  const wire=`hook.Add('GetItemPhysicsBounds','aoc',function(...) return PLUGIN:GetItemPhysicsBounds(...) end)`;
  suite('Dropped AoC item can be targeted at blade, held with hands, and taken once; full bags retain it',files,wire+`
   local e,item=newItemEntity(1);local h=setmetatable({owner=p},{__index=SWEP})

@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
   "files": 1096,
-  "lines": 163154,
+  "lines": 163178,
   "syntaxFailures": [],
   "entries": [
     {
@@ -38,8 +38,8 @@
     },
     {
       "path": "helix/entities/entities/ix_item.lua",
-      "lines": 370,
-      "sha256": "1d7066b44177a827d202f9fbe1a1ea5e49644f76d0121fd1cee20ebc6d462be2",
+      "lines": 380,
+      "sha256": "baa5c61a713708088c5f5aa94de83ef5cb1368903277f32944bb0820a5daa078",
       "syntax": "pass",
       "networkHandlers": [
         "item.entity.action"
@@ -309,8 +309,8 @@
     },
     {
       "path": "helix/gamemode/core/derma/cl_tooltip.lua",
-      "lines": 595,
-      "sha256": "c33416fd2a7a40a3623b19093c580cb3b001a4b728007413ffc6f9bdc15894e2",
+      "lines": 609,
+      "sha256": "8692ec683687f2829ff202a39bc958fdfd7c7a07974dbc96a6e7e91df7d8050c",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -8693,8 +8693,8 @@
     },
     {
       "path": "ixhl2rp/plugins/recipes_crafting/recipes/rope.lua",
-      "lines": 7,
-      "sha256": "871f364f5bdfb9781a6bc51a89466176de4443b49a5472d72d677661287333c9",
+      "lines": 5,
+      "sha256": "65076837292ac16e1a86e2fae57e8a592b9af1486323323f4d212f24ee27bc13",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -9474,8 +9474,8 @@
     },
     {
       "path": "ixhl2rp/schema/items/ziptie.lua",
-      "lines": 56,
-      "sha256": "a505631f5166c149536e60e8dfc3417adc267730e3f958534ff25be5c910626f",
+      "lines": 58,
+      "sha256": "3883a476b36dcf37c9ced33481c01b017da7b24f8418bd458cb85c304d9c0d65",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []

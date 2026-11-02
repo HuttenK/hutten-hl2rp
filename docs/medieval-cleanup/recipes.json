@@ -268,18 +268,14 @@
   {
     "id": "rope",
     "file": "ixhl2rp/plugins/recipes_crafting/recipes/rope.lua",
-    "name": "Кандалы",
-    "description": "",
+    "name": "Крепкая верёвка",
+    "description": "Сплести прочную верёвку из полос ткани.",
     "requirements": {
-      "metal_reclaimed": 2
+      "mat_cloth": 2
     },
     "results": {
       "ziptie": 1
-    },
-    "tools": [
-      "tool_hammer"
-    ],
-    "station": "station_tokar"
+    }
   },
   {
     "id": "smallbag",

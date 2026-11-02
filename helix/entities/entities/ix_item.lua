@@ -67,13 +67,23 @@ if SERVER then
 		self:RemoveItemTrace()
 		self:RemoveSolidFlags(bit.bor(FSOLID_CUSTOMRAYTEST, FSOLID_CUSTOMBOXTEST))
 		self:SetItemBoxPhysics(false)
+		local scale = tonumber(item and item.worldModelScale) or 1
+		if scale <= 0 or scale ~= scale then scale = 1 end
+		if self:GetModelScale() ~= scale then self:SetModelScale(scale, 0) end
 		self:SetMoveType(MOVETYPE_VPHYSICS)
 		self:PhysicsInit(SOLID_VPHYSICS)
 		self:SetSolid(SOLID_VPHYSICS)
 		local physics = self:GetPhysicsObject()
 		local mins, maxs = hook.Run("GetItemPhysicsBounds", self, item)
+		if scale ~= 1 then
+			-- GetModelBounds is unscaled. Reuse the networked box for physics
+			-- and client pickup traces instead of retaining a full-size mesh.
+			if not mins or not maxs then mins, maxs = self:GetModelBounds() end
+			mins, maxs = mins * scale, maxs * scale
+		end
 		if not IsValid(physics) or (mins and maxs) then
 			local mass = IsValid(physics) and physics:GetMass() or 4
+			if item and isnumber(item.physicsMass) then mass = math.max(item.physicsMass, 0.1) end
 			mins, maxs = mins or invalidBoundsMin, maxs or invalidBoundsMax
 			self:PhysicsInitBox(mins, maxs)
 			self:SetSolid(SOLID_VPHYSICS)

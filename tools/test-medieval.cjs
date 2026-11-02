@@ -87,6 +87,7 @@ suite('Context poses depend only on valid treatment or owned cargo, without devi
 require('./test-sd-creation.cjs')(suite);
 require('./test-medieval-animation.cjs')(suite);
 require('./test-medieval-ui.cjs')(suite);
+require('./test-world-tooltip.cjs')(suite);
 require('./test-medical-examination.cjs')(suite);
 require('./test-aoc.cjs')(suite);
 require('./test-item-pickup.cjs')(suite);
