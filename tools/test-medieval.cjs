@@ -85,5 +85,6 @@ suite('Context poses depend only on valid treatment or owned cargo, without devi
  ix.Medicine={ValidSession=function() return true end}
  `);
 require('./test-sd-creation.cjs')(suite);
+require('./test-medieval-animation.cjs')(suite);
 require('./test-medieval-ui.cjs')(suite);
 console.log(`${passed} medieval behavioral suites passed. Engine rendering/network timing still require GMod.`);

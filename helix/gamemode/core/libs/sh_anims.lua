@@ -20,6 +20,29 @@ class, simply add to the `ix.anim` table with a model class name and the require
 -- @module ix.anim
 
 ix.anim = ix.anim or {}
+
+-- Shared by CalcMainActivity for every weapon/model, independent of any addon.
+-- Keep a weighted idle choice stable between frames so its cycle can advance.
+function ix.anim.ResolveMainSequence(client, activity, override)
+ if isnumber(activity) and activity >= 0 then
+  local model, count = client:GetModel(), client:GetSequenceCount()
+  local choice = client.ixMainSequenceChoice
+  if choice and choice.model == model and choice.count == count and choice.activity == activity then
+   return choice.sequence
+  end
+  local sequence = client:SelectWeightedSequence(activity)
+  if isnumber(sequence) and sequence >= 0 then
+   client.ixMainSequenceChoice = {model = model, count = count, activity = activity, sequence = sequence}
+   return sequence
+  end
+ end
+ -- Named poses, sequence zero and retrying clips from newly loaded models must
+ -- remain valid; an unavailable activity must not retain the previous stance.
+ client.ixMainSequenceChoice = nil
+ if isnumber(override) and override >= 0 then return override end
+ return nil
+end
+
 ix.anim.citizen_male = {
 	normal = {
 		[ACT_MP_STAND_IDLE] = {ACT_IDLE, ACT_IDLE_ANGRY_SMG1},
