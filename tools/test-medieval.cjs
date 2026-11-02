@@ -87,4 +87,5 @@ suite('Context poses depend only on valid treatment or owned cargo, without devi
 require('./test-sd-creation.cjs')(suite);
 require('./test-medieval-animation.cjs')(suite);
 require('./test-medieval-ui.cjs')(suite);
+require('./test-medical-examination.cjs')(suite);
 console.log(`${passed} medieval behavioral suites passed. Engine rendering/network timing still require GMod.`);

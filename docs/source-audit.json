@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
   "files": 990,
-  "lines": 160974,
+  "lines": 161010,
   "syntaxFailures": [],
   "entries": [
     {
@@ -6286,8 +6286,8 @@
     },
     {
       "path": "ixhl2rp/plugins/medical/cl_examination.lua",
-      "lines": 108,
-      "sha256": "65e000f555fa9a1b0a09812443192a2ca53b3153c728f26984e5e1305c35f281",
+      "lines": 144,
+      "sha256": "573bb98aff53437c07cfdc9edbc7793acec7d3fb16a35b838625408319e24b9b",
       "syntax": "pass",
       "networkHandlers": [
         "ixMedicalExamine"
