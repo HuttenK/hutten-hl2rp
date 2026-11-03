@@ -343,6 +343,7 @@ if (CLIENT) then
 		-- Утраченная нога не должна отрастать в виде от первого лица: эта
 		-- модель — клиентская сущность, серверных манипуляций костей на ней нет.
 		if (ix.Amputation) then
+			if ix.Amputation.BindVisual then ix.Amputation.BindVisual(self.LegEnt, LocalPlayer()) end
 			local limb = ix.Amputation.GetLimb(LocalPlayer():GetCharacter())
 
 			if (limb and limb.kind == "leg") then

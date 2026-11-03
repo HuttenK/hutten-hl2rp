@@ -442,6 +442,7 @@ if (SERVER) then
 			end
 		end
 
+		hook.Run("OnPlayerServerRagdollCreated", self, entity)
 		return entity
 	end
 

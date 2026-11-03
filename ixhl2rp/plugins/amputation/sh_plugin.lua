@@ -4,10 +4,9 @@ PLUGIN.name = "Amputation"
 PLUGIN.author = "Claude"
 PLUGIN.description = "Разрушенная конечность отнимается навсегда: модель, ходьба и оружие."
 
--- Ампутация хранится в данных персонажа (character:GetData("amputation")) как
--- ключ конечности. Это источник истины: он переживает респавн, смену модели и
--- перезапуск сервера. Визуально конечность убирается сжатием кости в ноль
--- (ManipulateBoneScale) — у моделей игроков нет бодигрупп для культи.
+-- Character data is persistent; ixAmputation on the entity also informs other
+-- viewers. Server bones retain a positive scale for stable bounds. Client
+-- matrices gather the missing chain at its joint (cl_visuals), without a cap.
 ix.Amputation = ix.Amputation or {}
 
 local Amputation = ix.Amputation
@@ -26,7 +25,7 @@ Amputation.normal = Vector(1, 1, 1)
 
 Amputation.noOffset = Vector(0, 0, 0)
 
--- ТОЛЬКО МАСШТАБ. ManipulateBonePosition здесь не использовать — проверено дважды:
+-- SERVER: scale only. Do not translate bones via ManipulateBonePosition:
 --
 --  * сдвиг корня цепочки (Forearm/Calf) растягивает вершины сустава в длинные
 --    полосы кожи через всё тело: они привязаны и к оставленной кости выше;
@@ -34,10 +33,8 @@ Amputation.noOffset = Vector(0, 0, 0)
 --    смещение задаётся не в той системе координат, в которой лежит локальная
 --    позиция кости.
 --
--- Обнуление масштаба схлопывает геометрию в точку САМОЙ кости, но точку не
--- двигает, поэтому у сустава остаётся небольшой плоский остаток от вершин,
--- частично привязанных к сохранённой кости. Убрать его манипуляцией костей
--- нельзя — нужна культя в самой модели (бодигруппа).
+-- The render callback uses complete world matrices instead: all child origins
+-- share the joint, with the same positive scale and no local/world mismatch.
 
 -- Модификатор скорости при потере ноги и шанс споткнуться (за одну проверку).
 Amputation.legSpeed = 0.45
@@ -50,13 +47,14 @@ Amputation.cutTime = 60
 Amputation.reattachTime = 45
 Amputation.range = 96
 Amputation.consentTimeout = 30
+Amputation.meleeChance = 5 -- Percent per connected melee hit on an arm/leg.
 
 -- Только тяжёлые клинки и ножи: перерубить кость вилкой или отвёрткой нельзя,
 -- хотя формально у них тоже Info.Class == "slash". uniqueID = имя файла без
 -- префикса sh_ и расширения (sh_wm_axe.lua -> wm_axe).
 Amputation.tools = {} -- Future blades opt in with canAmputate = true.
 
--- Предмет-конечность, который получает хирург и которым конечность пришивают.
+-- Severed remains; ordinary treatment never reattaches them.
 Amputation.limbItems = {
 	larm = "limb_larm",
 	rarm = "limb_rarm",
@@ -129,6 +127,14 @@ Amputation.limbs = {
 -- модели. Работает на любом скелете, где корень найден по имени.
 function Amputation.CollectBones(entity, limb)
 	if !IsValid(entity) or !limb then return end
+	local model, count = entity:GetModel(), entity:GetBoneCount() or 0
+	if !model or count <= 0 then return end
+	local cache = entity.ixAmputationSkeleton
+	if !cache or cache.model != model or cache.count != count then
+		cache = {model = model, count = count, roots = {}}
+		entity.ixAmputationSkeleton = cache
+	end
+	if cache.roots[limb.root] then return cache.roots[limb.root] end
 
 	local root = entity:LookupBone(limb.root)
 	if !root then return end
@@ -137,7 +143,7 @@ function Amputation.CollectBones(entity, limb)
 
 	-- Порядок костей в модели не гарантирован, поэтому для каждой кости
 	-- поднимаемся по родителям и проверяем, не встретится ли корень конечности.
-	for i = 0, entity:GetBoneCount() - 1 do
+	for i = 0, count - 1 do
 		if i == root then continue end
 
 		local parent = entity:GetBoneParent(i)
@@ -154,6 +160,7 @@ function Amputation.CollectBones(entity, limb)
 		end
 	end
 
+	cache.roots[limb.root] = bones
 	return bones
 end
 
@@ -169,6 +176,14 @@ function Amputation.Get(character)
 	if !character then return end
 
 	local key = character:GetData("amputation")
+	if CLIENT and character.GetPlayer then
+		local client = character:GetPlayer()
+		-- Character data is owner-only. Observers need the same missing-leg
+		-- state to select the correct pose as well as hide the limb itself.
+		if IsValid(client) and client:GetCharacter() == character then
+			key = client:GetNetVar("ixAmputation", key)
+		end
+	end
 
 	return key and Amputation.limbs[key] and key or nil
 end
@@ -282,7 +297,9 @@ Amputation.painPhrases = {
 }
 
 ix.util.Include("sv_plugin.lua")
+ix.util.Include("sv_melee.lua")
 ix.util.Include("cl_plugin.lua")
+ix.util.Include("cl_visuals.lua")
 
 -- Команды регистрируются в общем файле, иначе клиент не знает о них и не
 -- показывает их в автодополнении чата. Сам OnRun выполняется только на сервере.
@@ -323,7 +340,7 @@ ix.command.Add("AmputateCheck", {
 		for _, item in ipairs(client:GetItems()) do
 			if !istable(item) then continue end
 
-			if Amputation.tools[item.uniqueID] then
+			if Amputation.IsTool(item) then
 				found = found + 1
 				lines[#lines + 1] = string.format("  tool in inventory: %s (%s)", item.uniqueID, item:GetName())
 			end

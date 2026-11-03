@@ -158,6 +158,7 @@ function M.ValidSession(client, session)
  return IsValid(client) and client:Alive() and client:GetCharacter() == session.character and
   not IsValid(client.ixRagdoll) and not client:InCriticalState() and not client:IsRestricted() and
   IsValid(target) and target:Alive() and target:GetCharacter() == session.patient and
+  not client.ixAmputationBusy and not target.ixAmputationBusy and
   item.inUse == client and M.Owns(client, item) and item:GetUses() > 0 and M.Reachable(client, target)
 end
 

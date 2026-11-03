@@ -831,7 +831,7 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 		end
 	end
 
-	hook.Run("CharacterBodyDamaged", target, dmg)
+	hook.Run("CharacterBodyDamaged", target, dmg, hit_group)
 
 	local head_hp = health:GetPartHealth(2)
 	local torso_hp = health:GetPartHealth(3)

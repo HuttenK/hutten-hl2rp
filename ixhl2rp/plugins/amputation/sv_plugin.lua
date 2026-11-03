@@ -4,6 +4,11 @@ local Amputation = ix.Amputation
 -- Применение к произвольной сущности (игрок, обморочный рэгдолл, труп).
 function Amputation.ApplyToEntity(entity, key)
     if !IsValid(entity) then return end
+	if entity.ixAmputationBoneModel and entity.ixAmputationBoneModel != entity:GetModel() then
+		Amputation.ClearEntity(entity)
+	end
+	entity.ixAmputationBoneModel = entity:GetModel()
+	if entity:GetNetVar("ixAmputation") != key then entity:SetNetVar("ixAmputation", key) end
 
 	local limb = Amputation.limbs[key]
 	if !limb then return end
@@ -33,9 +38,10 @@ end
 -- Restore only the bone indices modified by this plugin.
 function Amputation.ClearEntity(entity)
 	if !IsValid(entity) then return end
+	local count = entity:GetBoneCount() or 0
 	-- Recover pre-update amputations once, without resetting unrelated bones.
 	if !entity.ixAmputationBones then
-		for bone = 0, entity:GetBoneCount() - 1 do
+		for bone = 0, count - 1 do
 			if entity:GetManipulateBoneScale(bone) == Amputation.scale then
 				entity:ManipulateBoneScale(bone, Amputation.normal)
 			end
@@ -43,12 +49,21 @@ function Amputation.ClearEntity(entity)
 	end
 
 	for bone, previous in pairs(entity.ixAmputationBones or {}) do
-		if bone < entity:GetBoneCount() then
-			entity:ManipulateBoneScale(bone, previous.scale)
-			entity:ManipulateBonePosition(bone, previous.position)
+		if bone < count then
+			-- A new model may use this index for an unrelated bone. Only undo
+			-- values still owned by us; do not carry the old model's offsets over.
+			local sameModel = entity.ixAmputationBoneModel == entity:GetModel()
+			if entity:GetManipulateBoneScale(bone) == Amputation.scale then
+				entity:ManipulateBoneScale(bone, sameModel and previous.scale or Amputation.normal)
+			end
+			if sameModel and entity:GetManipulateBonePosition(bone) == Amputation.noOffset then
+				entity:ManipulateBonePosition(bone, previous.position)
+			end
 		end
 	end
 	entity.ixAmputationBones = nil
+	entity.ixAmputationBoneModel = nil
+	if entity:GetNetVar("ixAmputation") != nil then entity:SetNetVar("ixAmputation", nil) end
 end
 
 -- Единая точка повторного применения. Смена модели (костюм химзащиты, форма ГО)
@@ -57,8 +72,6 @@ function Amputation.Refresh(client)
 	if !IsValid(client) then return end
 
 	local character = client:GetCharacter()
-	if !character then return end
-
 	local key = Amputation.Get(character)
 	local model = client:GetModel()
 
@@ -108,9 +121,11 @@ function Amputation.Amputate(client, key, bSilent)
 
 	local character = client:GetCharacter()
 	if !character then return false end
+	if !client:Alive() then return false end
 
 	-- Одна конечность на персонажа.
 	if Amputation.Get(character) then return false end
+	if Amputation.CancelOperation then Amputation.CancelOperation(client) end
 
 	character:SetData("amputation", key)
 
@@ -160,9 +175,21 @@ function Amputation.Restore(client)
 	return true
 end
 
--- ОБКАТКА: урон по конечности НЕ отнимает её. Единственные пути — команда
--- администратора и ампутация холодным оружием (см. ниже). Автоматический хук по
--- OnHediffAdded намеренно не подключён.
+-- Combat uses a single resolved melee hit (sv_melee), never individual wound
+-- callbacks: armor and fractures can add several wounds for the same hit.
+
+function Amputation.GiveRemains(client, key, onGround)
+	local id = Amputation.limbItems[key]
+	if !id or !IsValid(client) then return end
+	local item = ix.Item:Instance(id)
+	if !item then return end
+	if onGround or !client:AddItem(item) then
+		-- This instance has never belonged to an inventory. DropItem would try
+		-- to remove it from a nil inventory before spawning it.
+		ix.Item:Spawn(client, nil, item)
+	end
+	return item
+end
 
 util.AddNetworkString("ixAmputationRequest")
 util.AddNetworkString("ixAmputationConsent")
@@ -183,21 +210,50 @@ local function CanOperate(surgeon, target, item)
 	if !IsValid(surgeon) or !IsValid(target) or surgeon == target then return false end
 	if !surgeon:Alive() or !target:Alive() or !target:GetCharacter() then return false end
 	if !Amputation.CanOperate(surgeon:GetCharacter()) or !OwnsItem(surgeon, item) then return false end
+	if Amputation.MedicallyBusy(surgeon) or Amputation.MedicallyBusy(target) then return false end
 	if IsValid(surgeon.ixRagdoll) or surgeon:GetNetVar("crit", false) or surgeon:GetNetVar("restricted", false) then return false end
 	return Amputation.GetTarget(surgeon) == target
 end
 
--- Общий «прогресс-бар» для операций: тик 0.5с, проверка условий на каждом тике,
--- сообщения жертве по ходу дела. Тот же приём, что и в базе medical.
+function Amputation.MedicallyBusy(client)
+	if client.bUsingMedical or client.ixMedicalSession or client.ixMedicalCleanup then return true end
+	for _, session in pairs(ix.Medicine and ix.Medicine.activeSessions or {}) do
+		if session.target == client then return true end
+	end
+	return false
+end
+
+function Amputation.CancelOperation(client)
+	local operation = IsValid(client) and client.ixAmputationBusy
+	if istable(operation) and operation.finish then operation.finish(false) end
+end
+
+-- One session owns both players and its tool. Every exit releases exactly
+-- those locks, including death, a character switch and disconnect.
 local function RunOperation(id, surgeon, target, time, item, onTick, onFinish)
 	local timerName = "ixAmputation" .. id .. surgeon:UniqueID()
 	local ticks = math.ceil(time / 0.5)
 	local tick = 0
 	local surgeonCharacter, targetCharacter = surgeon:GetCharacter(), target:GetCharacter()
-	local function cleanup()
-		for _, client in ipairs({surgeon, target}) do
-			if IsValid(client) then client.ixAmputationBusy = nil; client:SetAction() end
+	local operation = {surgeon = surgeon, target = target, item = item}
+	surgeon.ixAmputationBusy, target.ixAmputationBusy = operation, operation
+	item.ixAmputationOperation, item.inUse = operation, surgeon
+	function operation.finish(success)
+		if operation.finished then return end
+		operation.finished = true
+		timer.Remove(timerName)
+		if item.ixAmputationOperation == operation then
+			item.ixAmputationOperation = nil
+			if item.inUse == surgeon then item.inUse = nil end
 		end
+		for _, client in ipairs({surgeon, target}) do
+			if IsValid(client) and client.ixAmputationBusy == operation then
+				client.ixAmputationBusy = nil
+				client:SetAction()
+				if !success then client:NotifyLocalized("amputation.interrupted") end
+			end
+		end
+		if success then onFinish() end
 	end
 
 	timer.Create(timerName, 0.5, ticks, function()
@@ -205,22 +261,13 @@ local function RunOperation(id, surgeon, target, time, item, onTick, onFinish)
 
 		local ok = CanOperate(surgeon, target, item)
 			and surgeon:GetCharacter() == surgeonCharacter and target:GetCharacter() == targetCharacter
-			and !surgeon:KeyDown(IN_RELOAD)
+			and surgeon.ixAmputationBusy == operation and target.ixAmputationBusy == operation
+			and item.ixAmputationOperation == operation and item.inUse == surgeon
+			and !Amputation.Get(targetCharacter)
+			and !surgeon:KeyDown(IN_RELOAD) and !target:KeyDown(IN_RELOAD)
 
 		if !ok then
-			timer.Remove(timerName)
-			cleanup()
-
-			if IsValid(surgeon) then
-				surgeon:SetAction()
-				surgeon:NotifyLocalized("amputation.interrupted")
-			end
-
-			if IsValid(target) then
-				target:SetAction()
-				target:NotifyLocalized("amputation.interrupted")
-			end
-
+			operation.finish(false)
 			return
 		end
 
@@ -229,8 +276,7 @@ local function RunOperation(id, surgeon, target, time, item, onTick, onFinish)
 		end
 
 		if timer.RepsLeft(timerName) == 0 then
-			cleanup()
-			onFinish()
+			operation.finish(true)
 		end
 	end)
 end
@@ -239,13 +285,10 @@ end
 function Amputation.BeginCut(surgeon, target, key, item)
 	local limb = Amputation.limbs[key]
 	if !limb or !Amputation.IsTool(item) or !CanOperate(surgeon, target, item) then return end
-	if surgeon.ixAmputationBusy or target.ixAmputationBusy or Amputation.Get(target:GetCharacter()) then return end
+	if surgeon.ixAmputationBusy or target.ixAmputationBusy or item.inUse or Amputation.Get(target:GetCharacter()) then return end
 
 	surgeon:SetAction("@amputation.cutting", Amputation.cutTime)
 	target:SetAction("@amputation.beingCut", Amputation.cutTime)
-
-	surgeon.ixAmputationBusy = true
-	target.ixAmputationBusy = true
 
 	local nextPain = 0
 
@@ -275,19 +318,7 @@ function Amputation.BeginCut(surgeon, target, key, item)
 
 		surgeon:SetAction()
 
-		-- Хирург забирает отрезанную конечность.
-		local itemID = Amputation.limbItems[key]
-
-		if itemID then
-			local instance = ix.Item:Instance(itemID)
-
-			if instance then
-				-- Если инвентарь полон, конечность падает под ноги хирурга.
-				if !surgeon:AddItem(instance) then
-					ix.Item:DropItem(surgeon, instance.id)
-				end
-			end
-		end
+		Amputation.GiveRemains(surgeon, key)
 
 		surgeon:NotifyLocalized("amputation.cutDone")
 	end)
@@ -298,7 +329,7 @@ function Amputation.RequestCut(surgeon, target, key, item)
 	local limb = Amputation.limbs[key]
 	if !limb or !Amputation.IsTool(item) or !CanOperate(surgeon, target, item) then return end
 
-	if pending[target] or target.ixAmputationBusy or surgeon.ixAmputationBusy then
+	if pending[target] or target.ixAmputationBusy or surgeon.ixAmputationBusy or item.inUse then
 		surgeon:NotifyLocalized("amputation.busy")
 		return
 	end
@@ -360,6 +391,35 @@ function Amputation.BeginReattach(surgeon, target, item)
 	return false
 end
 
+local function releaseParticipant(client)
+	Amputation.CancelOperation(client)
+	for target, request in pairs(pending) do
+		if target == client or request.surgeon == client then pending[target] = nil end
+	end
+end
+hook.Add("PlayerDisconnected", "ixAmputationSession", releaseParticipant)
+hook.Add("PlayerDeath", "ixAmputationSession", releaseParticipant)
+hook.Add("PrePlayerLoadedCharacter", "ixAmputationSession", releaseParticipant)
+hook.Add("CanPlayerDropItem", "ixAmputationTool", function(_, item)
+	if item and item.ixAmputationOperation then return false end
+end)
+hook.Add("CanTransferItem", "ixAmputationTool", function(item)
+	if item and item.ixAmputationOperation then return false, "notAllowed" end
+end)
+hook.Add("StartCommand", "ixAmputationOperation", function(client, command)
+	local operation = client.ixAmputationBusy
+	if istable(operation) and operation.surgeon == client then
+		command:RemoveKey(IN_ATTACK)
+		command:RemoveKey(IN_ATTACK2)
+	end
+end)
+
+function PLUGIN:PlayerModelChanged(client)
+	-- Undo old numeric indices immediately, then resolve the new skeleton.
+	Amputation.Refresh(client)
+	timer.Simple(0, function() Amputation.Refresh(client) end)
+end
+
 function PLUGIN:PlayerLoadedCharacter(client)
 	timer.Simple(0, function()
 		Amputation.Refresh(client)
@@ -381,6 +441,11 @@ function PLUGIN:OnPlayerCorpseCreated(client, entity)
 	if !key then return end
 
 	Amputation.ApplyToEntity(entity, key)
+end
+
+function PLUGIN:OnPlayerServerRagdollCreated(client, entity)
+	local key = Amputation.Get(client:GetCharacter())
+	if key then Amputation.ApplyToEntity(entity, key) end
 end
 
 -- Сторож: одежда и формы меняют модель через SetModel в отложенном таймере, что

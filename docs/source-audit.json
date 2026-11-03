@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
-  "files": 1099,
-  "lines": 163186,
+  "files": 1101,
+  "lines": 163379,
   "syntaxFailures": [],
   "entries": [
     {
@@ -696,8 +696,8 @@
     },
     {
       "path": "helix/gamemode/core/meta/sh_player.lua",
-      "lines": 638,
-      "sha256": "a7554e82070dee382b01fb93727f2a0e7c8a76fdece4eafb974570ae7560bc23",
+      "lines": 639,
+      "sha256": "d1e2a836ce32d9177bdaefacbe6b528afad8b13f366242e20447cf0bde113439",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -2819,7 +2819,7 @@
     {
       "path": "ixhl2rp/plugins/!healthsystem/sv_combat.lua",
       "lines": 1060,
-      "sha256": "8d7e7d59eb7c957448928a33d3e780c5d9f2f2d84d47fb2d4b2dd822af921de5",
+      "sha256": "fdaccd0f0cdfaf8992a8583d645b42c80e2cbe5d83a75667f4bed612ed50018f",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
@@ -3379,8 +3379,8 @@
     },
     {
       "path": "ixhl2rp/plugins/ammo_cringe/sh_weapon_slots.lua",
-      "lines": 456,
-      "sha256": "468126fbae920638a9d6988c8d69588a149cf3eca8f9bf0793a1de6fa3b148b7",
+      "lines": 457,
+      "sha256": "b0b03406f33abe3ddd6eb3e38cdc5b3173ae3feedf891d4ecbc499aff6e99772",
       "syntax": "pass",
       "networkHandlers": [
         "ixWeaponSlotReady",
@@ -3396,6 +3396,14 @@
       "networkHandlers": [
         "ixAmputationRequest"
       ],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/amputation/cl_visuals.lua",
+      "lines": 65,
+      "sha256": "ddc205b07d86403980c582c1cf1e0261aa022ece2139febe73e5a53d12b0f47a",
+      "syntax": "pass",
+      "networkHandlers": [],
       "hooks": []
     },
     {
@@ -3440,24 +3448,34 @@
     },
     {
       "path": "ixhl2rp/plugins/amputation/sh_plugin.lua",
-      "lines": 406,
-      "sha256": "68e5c334a593b3112199ee35df1f589d28718c01099c70914aea577595229f45",
+      "lines": 423,
+      "sha256": "119e57c77779375ca791e396a183ebe280966bc3325f6c24dc97edf28f273a48",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/amputation/sv_melee.lua",
+      "lines": 42,
+      "sha256": "b31c803a3e1f0447dd2663ec42bbb58d05d1a845b353fda1a97ec681b3a6b0b7",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
     },
     {
       "path": "ixhl2rp/plugins/amputation/sv_plugin.lua",
-      "lines": 416,
-      "sha256": "cb2d9e99a10d65dbbc8bf6e7099810bd06c82393ebdd4d020188a716fa63ef09",
+      "lines": 481,
+      "sha256": "3774347d9a65ac35c147aa309c1811a737927af5de57fe81049ac21a1a14c88a",
       "syntax": "pass",
       "networkHandlers": [
         "ixAmputationConsent"
       ],
       "hooks": [
+        "PlayerModelChanged",
         "PlayerLoadedCharacter",
         "PlayerSpawn",
         "OnPlayerCorpseCreated",
+        "OnPlayerServerRagdollCreated",
         "PlayerTick"
       ]
     },
@@ -6882,8 +6900,8 @@
     },
     {
       "path": "ixhl2rp/plugins/legs.lua",
-      "lines": 393,
-      "sha256": "303bc6e8ae39869135018c4b80cfb028a66b50bdff5f7961f07ef9f7470679a0",
+      "lines": 394,
+      "sha256": "ce3971e4f17264ecce713600aaebd580352057b038d8d8aec0436f97320dd609",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
@@ -7279,8 +7297,8 @@
     },
     {
       "path": "ixhl2rp/plugins/medical/sv_treatment.lua",
-      "lines": 266,
-      "sha256": "98dd388fa1f8ddb59fd59a074ea54b7cee550f51ca462397cfa5917cc7079d53",
+      "lines": 267,
+      "sha256": "96021d581e93fae813c09862ce3c1602971bd552dddd34d3e8f0f6cb78d18ba2",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
