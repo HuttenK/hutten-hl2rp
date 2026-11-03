@@ -378,6 +378,7 @@ if (SERVER) then
 			end
 
 			text = hook.Run("PlayerMessageSend", speaker, chatType, text, bAnonymous, receivers, rawText) or text
+			if ix.Traits and IsValid(speaker) then text=ix.Traits.Speech(speaker:GetCharacter(),chatType,text) end
 
 			net.Start("ixChatMessage")
 				net.WriteEntity(speaker)
@@ -397,7 +398,8 @@ else
 		if (class) then
 			-- luacheck: globals CHAT_CLASS
 			CHAT_CLASS = class
-				local modified_text = class:OnChatAdd(speaker, text, anonymous, data)
+				local heard=ix.Traits and ix.Traits.Hear(LocalPlayer(),speaker,chatType,text) or text
+				local modified_text = class:OnChatAdd(speaker, heard, anonymous, data)
 			CHAT_CLASS = nil
 
 			if IsValid(speaker) then

@@ -108,15 +108,19 @@ function A.MainActivity(client, activity)
  end
 end
 
-local function Play(client, weapon, activity, slot, looping)
+local function Play(client, weapon, activity, slot, looping, rate)
  local entry = weapon.ActivityTranslate and weapon.ActivityTranslate[activity]
  local sequence = A.Sequence(client, entry)
  if sequence == nil then return end
  A.ClearWalkLayer(client)
  client.ixAOCWalkActionWeapon = weapon
- client.ixAOCWalkActionUntil = CurTime() + client:SequenceDuration(sequence)
+ rate=rate or 1
+ client.ixAOCWalkActionUntil = CurTime() + client:SequenceDuration(sequence)/rate
  client:AddVCDSequenceToGestureSlot(slot or GESTURE_SLOT_ATTACK_AND_RELOAD, sequence, 0, not looping)
- return client:SequenceDuration(sequence)
+ -- Gesture slots are not guaranteed to equal overlay layer IDs.
+ local layer=client.FindGestureSequenceLayer and client:FindGestureSequenceLayer(sequence) or -1
+ if layer>=0 then client:SetLayerPlaybackRate(layer,rate) end
+ return client:SequenceDuration(sequence)/rate
 end
 
 function A.AnimationEvent(client, event, data)
@@ -166,7 +170,11 @@ function A.AnimationEvent(client, event, data)
  else
   return -- Jump/cancel/other engine events retain their normal handling.
  end
- if CLIENT and activity then Play(client, weapon, activity) end
+ if CLIENT and activity then
+  local attacking=action==PLAYERANIMEVENT_ATTACK_PRIMARY or action==PLAYERANIMEVENT_ATTACK_SECONDARY or action==PLAYERANIMEVENT_ATTACK_GRENADE
+  local rate=attacking and ix.Traits and ix.Traits.AttackRate(weapon) or 1
+  Play(client, weapon, activity,nil,nil,rate)
+ end
  -- Helix plugins run before the addon hook: no second gesture or numeric
  -- activity conversion of the shared AoC name table on SD/Cellar models.
  return ACT_INVALID

@@ -222,7 +222,7 @@ do
 			if not istable(genetic) then return false, "invalid", "genetic" end
 			local height = tonumber(genetic[2])
 			if not height or height ~= height or math.abs(height) == math.huge then height = 180 end
-			genetic[2] = math.Clamp(math.Round(height), 155, 190)
+			genetic[2] = ix.Traits and ix.Traits.ClampHeight(height,data.traits) or math.Clamp(math.Round(height), 155, 190)
 			return genetic
 		end,
 	})

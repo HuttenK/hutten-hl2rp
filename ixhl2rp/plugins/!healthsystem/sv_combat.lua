@@ -425,6 +425,13 @@ local function ApplyDamageToPart(health, hit_group, info)
 		if hediff then
 			health:AddHediff(hediff, hit_group, {severity = amount * mul})
 		end
+		-- Only the actual penetrating injury rolls eye loss. Absorbed hits and
+		-- the outer recursive armor call must never roll a second time. Some
+		-- damage types add their wound inside SelectDamageHediff's uniqueEffect.
+		local definition=damage_to_diff[damage_class]
+		if ix.Traits and (hediff or (definition and definition.uniqueEffect)) then
+			ix.Traits.HeadInjury(health,hit_group,damage_class,amount*(mul or 1))
+		end
 
 		showBlood = true
 	end

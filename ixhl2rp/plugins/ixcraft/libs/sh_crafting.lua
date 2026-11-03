@@ -498,6 +498,7 @@ if SERVER then
 	end
 
 	function Craft:CraftRecipe(client, uniqueID)
+		if client.ixTraitCraft then return false end
 		local recipeTable = self.recipes[uniqueID]
 
 		if recipeTable then
@@ -509,6 +510,7 @@ if SERVER then
 				return false
 			end
 
+			if ix.Traits then return ix.Traits.BeginCraft(self,client,recipeTable) end
 			local success = self:OnCraft(recipeTable, client)
 			if success then hook.Run("CharacterCraftedRecipe", client, client:GetCharacter(), recipeTable) end
 

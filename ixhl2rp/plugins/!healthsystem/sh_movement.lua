@@ -47,7 +47,7 @@ local function UpdateMovementDefaults(ply)
 		local id = character:GetID()
 
 		if ply.speedCharID != id or ply.recalculateSpeed then
-			ply.runSpeed = ix.config.Get("runSpeed")
+			ply.runSpeed = ix.config.Get("runSpeed") * (ix.Traits and ix.Traits.Modifier(character,"sprint") or 1)
 			ply.jumpPower = 130
 			ply.speedCharID = id
 			ply.recalculateSpeed = false
@@ -114,7 +114,7 @@ function PLUGIN:SetupMove(ply, mv, cmd)
 		for k, v in hp:GetParts() do
 			if !v.movement then continue end
 
-			totalHP = totalHP + v.health
+			totalHP = totalHP + hp:GetMaxHealth(k)
 			value = value + hp:GetPartHealth(k)
 
 			table.insert(legs, v.id)

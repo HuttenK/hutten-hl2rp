@@ -23,6 +23,7 @@ function H.Valid(value)
 end
 
 function H.Saved(character)
+ if ix.Traits and ix.Traits.Has(character,"albino") then return "white" end
  local value = character and character.GetSdHairColor and character:GetSdHairColor()
  return H.Valid(value) and value or "original"
 end

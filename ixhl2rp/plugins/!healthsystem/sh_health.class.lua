@@ -304,7 +304,7 @@ function HEALTH:GetBleedRate()
 			num = num + v:GetSeverity() * (v.bleedRate or 1)
 		end
 
-		self.cachedBleed = (num / self.healthScale)
+		self.cachedBleed = (num / self.healthScale) * (ix.Traits and ix.Traits.Modifier(self.character,"bleeding") or 1)
 
 		if self.cachedBleed > 0 then
 			self:SetBleedingFX(true)
@@ -382,7 +382,8 @@ function HEALTH:GetMaxHealth(partID)
 		local part = self.body.parts[partID]
 
 		if part then
-			self.cachedParts[partID] = math.Round(part.health * self.healthScale)
+			local traitScale=ix.Traits and ix.Traits.HealthMultiplier(self.character,part.hitgroup) or 1
+			self.cachedParts[partID] = math.Round(part.health * self.healthScale * traitScale)
 		end
 	end
 	 

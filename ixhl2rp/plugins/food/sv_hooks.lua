@@ -29,7 +29,8 @@ function PLUGIN:FoodTick(client)
 	local tickTime = ix.config.Get("needsTickTime", 4)
 	local scale = 1
 	
-	character:SetHunger(math.Clamp(character:GetHunger() - (60 * scale * tickTime / (3600 * ix.config.Get("needsHungerHours", 6))), 0, 100))
+	local hungerScale=ix.Traits and ix.Traits.Modifier(character,"hunger") or 1
+	character:SetHunger(math.Clamp(character:GetHunger() - (60 * scale * hungerScale * tickTime / (3600 * ix.config.Get("needsHungerHours", 6))), 0, 100))
 	character:SetThirst(math.Clamp(character:GetThirst() - (60 * scale * tickTime / (3600 * ix.config.Get("needsThirstHours", 4))), 0, 100))
 end
 

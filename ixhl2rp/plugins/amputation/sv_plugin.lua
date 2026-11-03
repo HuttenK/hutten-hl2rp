@@ -128,6 +128,7 @@ function Amputation.Amputate(client, key, bSilent)
 	if Amputation.CancelOperation then Amputation.CancelOperation(client) end
 
 	character:SetData("amputation", key)
+	if ix.Traits then ix.Traits.SyncLeg(character,key) end
 
 	-- Сбрасывает cachedMovement, из которого sh_movement считает штраф скорости.
 	local health = character:Health()
@@ -162,6 +163,7 @@ function Amputation.Restore(client)
 	if !character or !Amputation.Get(character) then return false end
 
 	character:SetData("amputation", nil)
+	if ix.Traits then ix.Traits.SyncLeg(character,nil) end
 
 	local health = character:Health()
 

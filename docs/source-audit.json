@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
-  "files": 1101,
-  "lines": 163379,
+  "files": 1107,
+  "lines": 163884,
   "syntaxFailures": [],
   "entries": [
     {
@@ -448,8 +448,8 @@
     },
     {
       "path": "helix/gamemode/core/libs/sh_chatbox.lua",
-      "lines": 658,
-      "sha256": "30e7cc0cf0f4ee743d0a8164024650ccd26af419cb19f777765eb80f3ef9980e",
+      "lines": 660,
+      "sha256": "9b3abe8dc3fa2c5c4a085e88fade8db84b99c0570640082b1cf9465c3ae92a4a",
       "syntax": "pass",
       "networkHandlers": [
         "ixChatMessage"
@@ -1128,8 +1128,8 @@
     },
     {
       "path": "helix/gamemode/game/ui/legends.workspace.lua",
-      "lines": 433,
-      "sha256": "9b09d9bb26671c48f505ed5a6d2e7616cab2206386d3cf2a1fc1cc40005b4725",
+      "lines": 438,
+      "sha256": "f0df1ae0bc3d6fdeb6c7cb7f4e47a5319f5c3f141becd021cc27db031f8ac25c",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -2629,8 +2629,8 @@
     },
     {
       "path": "ixhl2rp/plugins/!character/sh_genetic.class.lua",
-      "lines": 172,
-      "sha256": "1e9d155cc5587f63104419655b609b63001484dd9fbe99f2ce72afacafc6c754",
+      "lines": 174,
+      "sha256": "d231f2ff776b04744c8f85e0fc83d9a0baa1b1d0ea005692b46b8bc0af7fe7c9",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -2662,7 +2662,7 @@
     {
       "path": "ixhl2rp/plugins/!character/sh_plugin.lua",
       "lines": 277,
-      "sha256": "9d7ea9609ad42400d5fe9eda0c75e69570c418b5a37afb9c85532b497434a5df",
+      "sha256": "3736d6c1c4a64b5190c65ae8a168430ca1450714331e981fa8e712214b002eea",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
@@ -2772,8 +2772,8 @@
     },
     {
       "path": "ixhl2rp/plugins/!healthsystem/sh_health.class.lua",
-      "lines": 868,
-      "sha256": "16b0578101dd7076c61838465675fb789c7fabeda33909194f48e65c34ec442f",
+      "lines": 869,
+      "sha256": "095bcec922d1f608d646e8e56cfc65a52ae5329e4e232f56d8ddbb4b838591c3",
       "syntax": "pass",
       "networkHandlers": [
         "hediff.use",
@@ -2797,7 +2797,7 @@
     {
       "path": "ixhl2rp/plugins/!healthsystem/sh_movement.lua",
       "lines": 281,
-      "sha256": "eb2f178cc745de63623c26bd6db78e1ac65e212cf2645f8427b9f194cdc299da",
+      "sha256": "41da95cc588c88663f70513bed3aeff3d32344525199f09f9f37ced35682621a",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
@@ -2818,8 +2818,8 @@
     },
     {
       "path": "ixhl2rp/plugins/!healthsystem/sv_combat.lua",
-      "lines": 1060,
-      "sha256": "fdaccd0f0cdfaf8992a8583d645b42c80e2cbe5d83a75667f4bed612ed50018f",
+      "lines": 1067,
+      "sha256": "1877bdacbf2547406e06465688f502e8fc2b87d93824691bd5398478b0f90aa2",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
@@ -3379,8 +3379,8 @@
     },
     {
       "path": "ixhl2rp/plugins/ammo_cringe/sh_weapon_slots.lua",
-      "lines": 457,
-      "sha256": "b0b03406f33abe3ddd6eb3e38cdc5b3173ae3feedf891d4ecbc499aff6e99772",
+      "lines": 458,
+      "sha256": "89de98682a1d5c43dcf9175c726072f0962fa42d096d3f24ddce11ee1e9486ba",
       "syntax": "pass",
       "networkHandlers": [
         "ixWeaponSlotReady",
@@ -3464,8 +3464,8 @@
     },
     {
       "path": "ixhl2rp/plugins/amputation/sv_plugin.lua",
-      "lines": 481,
-      "sha256": "3774347d9a65ac35c147aa309c1811a737927af5de57fe81049ac21a1a14c88a",
+      "lines": 483,
+      "sha256": "c2823b698b4a8bc48a19571fd1aa2bc37f34dc7b45438030b95319061265d208",
       "syntax": "pass",
       "networkHandlers": [
         "ixAmputationConsent"
@@ -3492,8 +3492,8 @@
     },
     {
       "path": "ixhl2rp/plugins/aoc_compat/sh_animations.lua",
-      "lines": 174,
-      "sha256": "e86cd2f42236e9c131db8a84f107213fa4f77c3451a5e1aa48a5ec855153c90e",
+      "lines": 182,
+      "sha256": "26937a08826d1e68e803230dcc66d7af85babee7882810164964ae770a8bf1fd",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -3522,8 +3522,8 @@
     },
     {
       "path": "ixhl2rp/plugins/aoc_compat/sh_weapons.lua",
-      "lines": 78,
-      "sha256": "6a3b978d3cd9289b83b7f74bae4bbf4248066ae63c83d1af19f976331d29a7c3",
+      "lines": 79,
+      "sha256": "90827d7d384a2919decb7147f8c7427810aae8d485eced80e3ae94e635d47825",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -3910,8 +3910,8 @@
     },
     {
       "path": "ixhl2rp/plugins/character_height/sh_height.lua",
-      "lines": 96,
-      "sha256": "d79ed96cb93136398aaa0a4ce7bed29518398b6b5d4013f2da1053fdd323ce05",
+      "lines": 101,
+      "sha256": "14e79aa0593b3ef686dfb8cceca0e1b52d67bee2537000014cae217c9e7609da",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -3920,6 +3920,58 @@
       "path": "ixhl2rp/plugins/character_height/sh_plugin.lua",
       "lines": 10,
       "sha256": "9503aa822773bc17d91c7cf14c8beaef93e661a1d07de11f648dea7cea4e6ed3",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/character_traits/cl_creation.lua",
+      "lines": 100,
+      "sha256": "2f876aa81857449215ede1d286d6daf97241f0f94f905ecdca21f5e9a717abd0",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/character_traits/sh_catalog.lua",
+      "lines": 123,
+      "sha256": "758308aba60530701f5ed4a6917924a8b903d104256da6a60dc67ad00d8625a1",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/character_traits/sh_plugin.lua",
+      "lines": 37,
+      "sha256": "7ca842f883ca6cd6603d4a2e2d737df8104c524ec18509cbc4b30f6607c04aaa",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": [
+        "CharacterMaxStamina",
+        "AdjustStaminaOffsetRunning",
+        "PlayerSwitchWeapon"
+      ]
+    },
+    {
+      "path": "ixhl2rp/plugins/character_traits/sh_speech.lua",
+      "lines": 33,
+      "sha256": "7d661d4e2a34fecfb54b0f4e1eb6f25d3cf449f2dd431a97903bb83c461058d7",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/character_traits/sh_weapons.lua",
+      "lines": 59,
+      "sha256": "c68d9064a256d88fb4d2d196af054fdca8da785c6880dacbea77e29c86823dfc",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/character_traits/sv_effects.lua",
+      "lines": 97,
+      "sha256": "fcb69900afc9a0f80459aa0b40152e01616da59c89d36c07f10e59fd7c248360",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -5355,8 +5407,8 @@
     },
     {
       "path": "ixhl2rp/plugins/food/sv_hooks.lua",
-      "lines": 88,
-      "sha256": "6c2e8749573722099b6e0c6f8d722fe680d3f96c59ace9413ded196aa8d6c89a",
+      "lines": 90,
+      "sha256": "5e792cdd83ffd57b0a8e8a3105accb0001b58b107dd3dd22acc78639b2b7ce97",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
@@ -6642,8 +6694,8 @@
     },
     {
       "path": "ixhl2rp/plugins/ixcraft/derma/cl_craft_container.lua",
-      "lines": 426,
-      "sha256": "a8dc5d053e0a601401149d46e65144832305f6a0497f7bd80343ba5a323fb1fb",
+      "lines": 436,
+      "sha256": "bd75c0e88fa369ab23d336caec0afb4b15eee612055092431d7c2dbd796321c7",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -6709,8 +6761,8 @@
     },
     {
       "path": "ixhl2rp/plugins/ixcraft/libs/sh_crafting.lua",
-      "lines": 525,
-      "sha256": "2dc74bef8f139edaab30037115d7f874b07a2ca6e54e3322a62d715b8347dded",
+      "lines": 527,
+      "sha256": "b69ad02fb02136d6bea0585114aaf87cd4eb99838aa195a72934f109084605de",
       "syntax": "pass",
       "networkHandlers": [
         "ixCraftRecipe"
@@ -8851,8 +8903,8 @@
     },
     {
       "path": "ixhl2rp/plugins/sd_hair_colour/sh_colour.lua",
-      "lines": 62,
-      "sha256": "63ea80d1f5909eb7a4a0488fe3b2814bc2ddb9d98ad7313a9a0203fd0dde7efb",
+      "lines": 63,
+      "sha256": "2c21ad315529b97cf0b6b612405b49445f9f7b51a74f9bc0c8e0a801e10930de",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -9387,8 +9439,8 @@
     },
     {
       "path": "ixhl2rp/plugins/zz_legends_interface/cl_menu.lua",
-      "lines": 450,
-      "sha256": "69bbde53c5396e8c4d9fdd5ff6cc1d45a8a17a118d1bdd17a99fb207808ae968",
+      "lines": 457,
+      "sha256": "a83560e132d706f944ad07cdcd947c10667fb7b59a6f58bf0af4afe48e88f93b",
       "syntax": "pass",
       "networkHandlers": [
         "ixCharacterAuthed",

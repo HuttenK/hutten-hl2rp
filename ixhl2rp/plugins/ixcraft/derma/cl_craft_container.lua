@@ -380,12 +380,22 @@ function PANEL:Setup(isMini, inventoryID)
 	button:DockMargin(0, 0, 0, !isMini and margin or 0)
 	button:SetTall(scale(50))
 	button.DoClick = function()
+		if ix.Traits and ix.Traits.CraftProgress() then return end
 		if not ix.gui.currentCraft or not ix.Craft.recipes[ix.gui.currentCraft] then return end
 		net.Start("ixCraftRecipe")
 			net.WriteString(ix.gui.currentCraft)
 		net.SendToServer()
 
 		surface.PlaySound("helix/ui/press.wav")
+	end
+	button.PaintOver = function(this,w,h)
+		local progress,remaining
+		if ix.Traits then progress,remaining=ix.Traits.CraftProgress() end
+		if not progress or not ix.Legends then return end
+		local U=ix.Legends
+		U.ButtonFace(this,w,h,true)
+		U.Text(string.format("Изготовление · %.1f с",remaining),"Body",w/2,h/2-scale(10),U.ink,TEXT_ALIGN_CENTER)
+		U.Rect(scale(12),h-scale(7),(w-scale(24))*progress,scale(2),U.accent)
 	end
 	
 	parent.button = button

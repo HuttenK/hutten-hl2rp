@@ -92,6 +92,11 @@ function PANEL:Identity()
  U.Label(info,snapshot.name,"Heading")
  U.Label(info,snapshot.money,"Body",U.muted)
  local content=self.body:Add("Panel"); content:Dock(FILL)
+ if ix.Traits then
+  local traits=U.Scroll(content); traits:Dock(RIGHT); traits:SetWide(S(300)); traits:DockMargin(S(20),0,0,0)
+  U.Label(traits,T("Character traits","Черты персонажа"),"Heading",U.accent)
+  ix.Traits.BuildSummary(traits,self.character)
+ end
  local medical=content:Add("Panel"); medical:Dock(FILL)
  self:Health(medical)
 end

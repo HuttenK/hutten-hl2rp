@@ -1,0 +1,252 @@
+{
+  "source_page": "https://ck3.paradoxwikis.com/Traits",
+  "downloaded": "2026-11-03",
+  "attribution": "Crusader Kings III trait artwork, Paradox Interactive. Downloaded from the Paradox CK3 Wiki at the user's request; no original-art claim or new license grant. Wiki text license does not automatically license game artwork.",
+  "icons": [
+    {
+      "file": "ck3_trait_albino.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/b/bb/Trait_albino.png/64px-Trait_albino.png",
+      "width": 64,
+      "height": 64,
+      "sha256": "6c7df4d9ad48e3d10b9bb65c46535b95f363f61bd0b769f3270aad955f147d79"
+    },
+    {
+      "file": "ck3_trait_lisping.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/b/b3/Trait_lisping.png/64px-Trait_lisping.png",
+      "width": 64,
+      "height": 64,
+      "sha256": "28a8d364c804a82a57d3c47fc84979fe526c2e9fb79d92f7d4d37b5d7129423c"
+    },
+    {
+      "file": "ck3_trait_stuttering.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/9/9b/Trait_stuttering.png/64px-Trait_stuttering.png",
+      "width": 64,
+      "height": 64,
+      "sha256": "0671d06f3f953bfa48b927417dcb25818ac1cea94afd62bd306553a33f3320cf"
+    },
+    {
+      "file": "ck3_trait_giant.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/9/99/Trait_giant.png/64px-Trait_giant.png",
+      "width": 64,
+      "height": 64,
+      "sha256": "a4e4a62437a980d29d03f83a78545badf2c7f0af01555e4c63c2601037f5e25e"
+    },
+    {
+      "file": "ck3_trait_clubfooted.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/4/4f/Trait_clubfooted.png/64px-Trait_clubfooted.png",
+      "width": 64,
+      "height": 64,
+      "sha256": "ac45bb4d57b5cd3209067d98ecce2d61b774966d8d7de4d9d8b2021d9b95f3e6"
+    },
+    {
+      "file": "ck3_trait_dwarf.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/c/cc/Trait_dwarf.png/64px-Trait_dwarf.png",
+      "width": 64,
+      "height": 64,
+      "sha256": "7c217ab4198eec18b12ff053aaf0c1ea9f44149acb2561b66384331a29b255dd"
+    },
+    {
+      "file": "ck3_trait_hunchbacked.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/d/df/Trait_hunchbacked.png/64px-Trait_hunchbacked.png",
+      "width": 64,
+      "height": 64,
+      "sha256": "e62d7b6a90bc099d82dd382aad87981ee373144728eadaa3ebb1cbbfa413e148"
+    },
+    {
+      "file": "ck3_trait_wheezing.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/7/7f/Trait_wheezing.png/64px-Trait_wheezing.png",
+      "width": 64,
+      "height": 64,
+      "sha256": "70e63d349e90d19e6c40ab0df5ff60a6d3dfea8ec248595fbc442853d4378df6"
+    },
+    {
+      "file": "ck3_trait_spindly.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/3/3f/Trait_spindly.png/64px-Trait_spindly.png",
+      "width": 64,
+      "height": 64,
+      "sha256": "5c03d89d096616d20a47210680f4e1ff0bd9a5cb6dd0f9058de98b37b7905514"
+    },
+    {
+      "file": "ck3_trait_bleeder.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/3/36/Trait_bleeder.png/64px-Trait_bleeder.png",
+      "width": 64,
+      "height": 64,
+      "sha256": "9116e0b93a8ed45a55b4050b3ae7937d73b0bdb44ef89229e3d964cd83141d5b"
+    },
+    {
+      "file": "ck3_trait_shrewd.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/f/f9/Trait_shrewd.png/64px-Trait_shrewd.png",
+      "width": 64,
+      "height": 64,
+      "sha256": "a936edae5f745ee2ba5befaa6794714d90ee9c0fe62169ae309a402be8e44995"
+    },
+    {
+      "file": "ck3_trait_strong.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/c/c2/Trait_strong.png/64px-Trait_strong.png",
+      "width": 64,
+      "height": 64,
+      "sha256": "7dbc5ee3f2c6b7571b15b3e861de64dfd6ba39655fe55d164244a549d2aaf669"
+    },
+    {
+      "file": "ck3_trait_one_eyed.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/4/46/Trait_one_eyed.png/64px-Trait_one_eyed.png",
+      "width": 64,
+      "height": 64,
+      "sha256": "153284b71586053a3fb4717a233f81711a75396a506f45f4f5b7477bbc0469ab"
+    },
+    {
+      "file": "ck3_trait_one_legged.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/f/ff/Trait_one_legged.png/64px-Trait_one_legged.png",
+      "width": 64,
+      "height": 64,
+      "sha256": "b4f7f7d95a72d8129d34e52c1620b5236231ea61386457736f35f5b9aa90e609"
+    },
+    {
+      "file": "ck3_trait_weak.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/f/f7/Trait_weak.png/64px-Trait_weak.png",
+      "width": 64,
+      "height": 64,
+      "sha256": "c179a83ba4bb53bb1195c043a8610b0d0d8e4f592cf480cb775a5a1e8758ed48"
+    },
+    {
+      "file": "ck3_trait_dull.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/0/00/Trait_dull.png/64px-Trait_dull.png",
+      "width": 64,
+      "height": 64,
+      "sha256": "83b80977c5572db28b8883073477f1193c5675a923b92094ec3fb4670dfca945"
+    },
+    {
+      "file": "ck3_trait_eunuch.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/7/7c/Trait_eunuch.png/64px-Trait_eunuch.png",
+      "width": 64,
+      "height": 64,
+      "sha256": "cbaa4021032d5e196021a3e0c67570a7796f646f88e7de0cbbbe93315f78b439"
+    },
+    {
+      "file": "ck3_trait_beauty_bad_3.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/6/68/Trait_beauty_bad_3.png/60px-Trait_beauty_bad_3.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "ea0397a911737a668a56d1ab258aac59bde42fb034f3a43957f5cc284091301e"
+    },
+    {
+      "file": "ck3_trait_beauty_bad_2.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/1/12/Trait_beauty_bad_2.png/60px-Trait_beauty_bad_2.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "4336e6e0324c4fa47ae8be4675a59dec923632e76ef45f1ab3494b3932d6516d"
+    },
+    {
+      "file": "ck3_trait_beauty_bad_1.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/2/21/Trait_beauty_bad_1.png/60px-Trait_beauty_bad_1.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "2f836e40efc3e1be9240f37bbd2fbd8a2b4c3ebe78e1b2226719bc9bc8a8cd53"
+    },
+    {
+      "file": "ck3_trait_beauty_good_1.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/1/15/Trait_beauty_good_1.png/60px-Trait_beauty_good_1.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "36a8ada571e2830b896cdf849b2a62fddb85b985f30a57c136e98e345daa1e77"
+    },
+    {
+      "file": "ck3_trait_beauty_good_2.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/8/8f/Trait_beauty_good_2.png/60px-Trait_beauty_good_2.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "3607e137bfbb414e195c9d4c9ba0fd25285c0d576de9ef3c5067d5b8743347cc"
+    },
+    {
+      "file": "ck3_trait_beauty_good_3.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/e/ed/Trait_beauty_good_3.png/60px-Trait_beauty_good_3.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "218fc89f28ab929d0a27b3903fb5812e98532a48e3737a090065078ff7e44a09"
+    },
+    {
+      "file": "ck3_trait_intellect_bad_3.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/7/75/Trait_intellect_bad_3.png/60px-Trait_intellect_bad_3.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "544fbaba96bcc76b1f3ee8b145ba34590d348564de185d846f19b1b5b1710af3"
+    },
+    {
+      "file": "ck3_trait_intellect_bad_2.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/e/e6/Trait_intellect_bad_2.png/60px-Trait_intellect_bad_2.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "35ca12f42ff161cd4989035107ce0dfa301e48d30f8813c509a9ae94fd3e8129"
+    },
+    {
+      "file": "ck3_trait_intellect_bad_1.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/c/c9/Trait_intellect_bad_1.png/60px-Trait_intellect_bad_1.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "dd44c63c6f02301da6e592dcdaebbf5fc7ad583a075a1374e7a7f098f49fe083"
+    },
+    {
+      "file": "ck3_trait_intellect_good_1.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/b/b9/Trait_intellect_good_1.png/60px-Trait_intellect_good_1.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "9017ad533f1d8d2fdccd9dbb5002b0a15074a1b7da8621b6fe14005ff71aebb7"
+    },
+    {
+      "file": "ck3_trait_intellect_good_2.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/8/8c/Trait_intellect_good_2.png/60px-Trait_intellect_good_2.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "4b7547035cc6aa5f1ae46d769d117e6a297d89912f364d5dc23c0d9880c6210c"
+    },
+    {
+      "file": "ck3_trait_intellect_good_3.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/6/63/Trait_intellect_good_3.png/60px-Trait_intellect_good_3.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "f4f716778ffa01d27ef94a4ee04abbd7618081ec68a4276ffe14eae1462f3dcd"
+    },
+    {
+      "file": "ck3_trait_physique_bad_3.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/8/84/Trait_physique_bad_3.png/60px-Trait_physique_bad_3.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "4b4db3a700faca622b3bfa304574a0c93356cda4a7a5e90666adc03210d6a355"
+    },
+    {
+      "file": "ck3_trait_physique_bad_2.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/b/ba/Trait_physique_bad_2.png/60px-Trait_physique_bad_2.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "e4e4af44239d19ef4f82190fbb9f24db53a48c1fd2ae86a09266cb6d33d41686"
+    },
+    {
+      "file": "ck3_trait_physique_bad_1.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/3/33/Trait_physique_bad_1.png/60px-Trait_physique_bad_1.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "ce05fd85063cf776ac8683f58a942cc8fd4bfb3a296cf5fbcffdc3174afd3a97"
+    },
+    {
+      "file": "ck3_trait_physique_good_1.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/9/9b/Trait_physique_good_1.png/60px-Trait_physique_good_1.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "7863ff86e42eb284c865e843e29b7be3358be7a7ca06bf1ddc1b72940f06769e"
+    },
+    {
+      "file": "ck3_trait_physique_good_2.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/1/1a/Trait_physique_good_2.png/60px-Trait_physique_good_2.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "297b62ae338dd6206fa675190336cd3e59cbe336e37b3b6f6c6ee36015d19d4c"
+    },
+    {
+      "file": "ck3_trait_physique_good_3.png",
+      "source": "https://ck3.paradoxwikis.com/images/thumb/7/76/Trait_physique_good_3.png/60px-Trait_physique_good_3.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "654d3b793a2f9275c48759fd42cdf12a32452c80cf423712456eff78ef46dfc2"
+    }
+  ]
+}

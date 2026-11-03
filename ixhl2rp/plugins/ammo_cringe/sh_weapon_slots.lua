@@ -92,6 +92,7 @@ end
 
 function W.CanEquip(client, item)
  if not W.Owns(client, item) or not item.isWeapon then return false end
+ if ix.Traits and not ix.Traits.CanUseWeapon(client:GetCharacter(),item.class) then return false end
  if item.ixAmputationOperation then return false end
  if not client:Alive() or client:IsRestricted() then return false end
  if client.GetNoDraw and client:GetNoDraw() then return false end

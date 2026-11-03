@@ -9,7 +9,11 @@ function H.Height(value)
  return math.Clamp(math.Round(value), H.MIN, H.MAX)
 end
 
-function H.Scale(value) return H.Height(value) / H.BASE end
+function H.Scale(value)
+ value=tonumber(value) or H.BASE
+ if value~=value or math.abs(value)==math.huge then value=H.BASE end
+ return math.Clamp(value,125,215) / H.BASE
+end
 
 function H.Supported(entity)
  return entity:LookupBone("ValveBiped.Bip01_Head1") ~= nil
@@ -22,6 +26,7 @@ function H.SavedHeight(client)
  local character = client:GetCharacter()
  local genetics = character and character.Genetic and character:Genetic()
  if client.ixHeightPreview and client.ixHeightPreview.character == character then return client.ixHeightPreview.height end
+ if ix.Traits then return ix.Traits.ClampHeight(genetics and genetics.height,ix.Traits.Selection(character)) end
  return H.Height(genetics and genetics.height)
 end
 
@@ -57,7 +62,7 @@ function H.Apply(client, force)
   scale = client:GetCharacter() and H.Supported(client) and H.Scale(height) or 1
   if math.abs(client:GetNW2Float("ixCharacterScale", 1) - scale) > .00001 then client:SetNW2Float("ixCharacterScale", scale) end
  else
-  scale = math.Clamp(client:GetNW2Float("ixCharacterScale", 1), H.MIN / H.BASE, H.MAX / H.BASE)
+  scale = math.Clamp(client:GetNW2Float("ixCharacterScale", 1), 125 / H.BASE, 215 / H.BASE)
  end
  local model, state = client:GetModel(), H.states[client]
  local changed = not state or state.model ~= model or math.abs(state.scale - scale) > .00001

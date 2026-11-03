@@ -2,7 +2,7 @@ local U, S = ix.InterfaceOS or ix.Legends, ix.Legends.Scale
 local T = U.T
 local PANEL = {}
 local chapters = {{"Origin", "Происхождение"}, {"Identity", "Личность"},
-	{"Appearance", "Внешность"}, {"Review", "Проверка"}}
+	{"Traits", "Черты"}, {"Appearance", "Внешность"}, {"Review", "Проверка"}}
 
 local function Path(entry) return istable(entry) and entry[1] or entry end
 local function DockButton(parent, title, action, primary)
@@ -53,7 +53,7 @@ end
 
 function PANEL:ResetDraft()
 	self.draft = {name = "", description = "", gender = 1, model = 1, face = {1, 1},
-		genetic = {11, 175, 25, 1}, languages = {}}
+		genetic = {11, 175, 25, 1}, languages = {}, traits = {}}
 	for key, language in SortedPairs(ix.languages and ix.languages.stored or {}) do
 		if not language.notSelectable then self.draft.languages = {language.uniqueID or key}; break end
 	end
@@ -88,13 +88,16 @@ function PANEL:Paint(w,h)
   U.Rule(pad,S(150),w*.49-pad)
   if self.view=="create" then
    for i,chapter in ipairs(chapters) do
-    local x=w*.55+(i-1)*w*.105
+    local x=w*.53+(i-1)*w*.092
     U.Text(tostring(i).." · "..T(unpack(chapter)),"Small",x,S(46),i==self.step and U.ink or U.muted)
-    U.Rect(x,S(75),w*.085,1,i<=self.step and U.accent or U.line)
+    U.Rect(x,S(75),w*.078,1,i<=self.step and U.accent or U.line)
    end
   end
  end
- U.Text(T("Choose your path","Выберите свой путь"),"Small",pad,h-S(30),U.muted)
+ if self.view=="create" and self.step==3 then
+  local balance=ix.Traits.Balance(self.draft.traits)
+  U.Text("Осталось очков: "..balance..(balance<0 and " · добавьте недостатки" or ""),"Small",pad,h-S(30),balance<0 and Color(211,102,91) or U.accent)
+ else U.Text(T("Choose your path","Выберите свой путь"),"Small",pad,h-S(30),U.muted) end
  if self.view~="home" then U.Text(T("Drag to rotate the character","Зажмите ЛКМ, чтобы повернуть персонажа"),"Small",w*.79,h-S(53),U.muted,TEXT_ALIGN_CENTER) end
 end
 
@@ -175,8 +178,8 @@ end
 function PANEL:BeginView(view, title, nextText)
 	self.view = view; self.heading = title; self.nextText = nextText
 	self.scene:SetVisible(view ~= "home")
-	self.previewToggle:SetVisible(view == "create" and self.step == 3)
-	if view ~= "create" or self.step ~= 3 then self.scene:SetPortraitFocus(false) end
+	self.previewToggle:SetVisible(view == "create" and self.step == 4)
+	if view ~= "create" or self.step ~= 4 then self.scene:SetPortraitFocus(false) end
 	self.content:Clear(); self.next:SetDisabled(false); self.next:SetVisible(view ~= "home")
 	self.back:SetVisible(view ~= "home")
 	self.content:GetVBar():SetScroll(0)
@@ -253,15 +256,16 @@ function PANEL:PresentDraft()
  if faction.sdSkinCounts and faction.sdSkinCounts[Path(entry)] then skin = self.draft.sdSkin or 0 end
 	if ix.Templar and ix.Templar.Supported(Path(entry)) then groups[1] = self.draft.templarEyes or 0 end
 	self.scene:Present(Path(entry), skin, groups)
- if ix.SDHair then ix.SDHair.Apply(self.scene:GetEntity(), self.draft.sdHairColor or "original") end
+ if ix.SDHair then ix.SDHair.Apply(self.scene:GetEntity(), self.draft.traits and self.draft.traits.albino and "white" or self.draft.sdHairColor or "original") end
 end
 function PANEL:ShowStep()
 	self:BeginView("create", string.format("%02d / ", self.step) .. T(unpack(chapters[self.step])),
-		self.step == 4 and T("Create character", "Создать персонажа") or T("Continue", "Продолжить"))
+		self.step == 5 and T("Create character", "Создать персонажа") or T("Continue", "Продолжить"))
 	self:PresentDraft()
 	if self.step == 1 then self:Origin()
 	elseif self.step == 2 then self:Identity()
-	elseif self.step == 3 then self:Appearance()
+	elseif self.step == 3 then ix.Traits.BuildCreation(self)
+	elseif self.step == 4 then self:Appearance()
 	else self:Review() end
 end
 function PANEL:Origin()
@@ -348,7 +352,7 @@ function PANEL:Appearance()
 		end
 		U.Choice(self.content, T("HAIR COLOUR", "ЦВЕТ ВОЛОС"), colours, self.draft.sdHairColor or "original", function(value)
 			self.draft.sdHairColor = value
-			ix.SDHair.Apply(self.scene:GetEntity(), value)
+			ix.SDHair.Apply(self.scene:GetEntity(), self.draft.traits.albino and "white" or value)
 		end)
 	end
 	local function numeric(label, slot, low, high)
@@ -362,7 +366,8 @@ function PANEL:Appearance()
 		local ages = {}; for i, name in ipairs(faction.ageSelector) do ages[#ages + 1] = {value = i, label = L(name)} end
 		U.Choice(self.content, T("AGE", "ВОЗРАСТ"), ages, self.draft.genetic[3], function(value) self.draft.genetic[3] = value end)
 	else numeric(T("AGE", "ВОЗРАСТ"), 3, 18, 60) end
-	numeric(T("HEIGHT / CM", "РОСТ / СМ"), 2, 155, 190)
+	local low,high=ix.Traits.HeightRange(self.draft.traits)
+	numeric(T("HEIGHT / CM", "РОСТ / СМ"), 2, low, high)
 	local shapes = {}; for i = 1, 20 do shapes[i] = {value = i, label = L("shape" .. math.ceil(i / 5) .. "_" .. ((i - 1) % 5 + 1))} end
 	U.Choice(self.content, T("BUILD", "ТЕЛОСЛОЖЕНИЕ"), shapes, self.draft.genetic[1], function(value) self.draft.genetic[1] = value end)
 	local eyes = {}; for i, eye in ipairs(faction.eyeColors or {{"eyes1"}, {"eyes2"}, {"eyes3"}, {"eyes4"}, {"eyes5"}, {"eyes6"}}) do eyes[i] = {value = i, label = L(eye[1])} end
@@ -373,6 +378,8 @@ function PANEL:Review()
 	U.Label(self.content, self.draft.name, "Title")
 	U.Label(self.content, L(faction.name), "Mono", U.accent)
 	U.Label(self.content, self.draft.description, "Body", U.muted)
+	U.Label(self.content,"Черты · остаток очков: "..ix.Traits.Balance(self.draft.traits),"Heading",U.accent)
+	ix.Traits.BuildSummary(self.content,self.draft.traits)
 	U.Label(self.content, T("Your character is ready. Begin your story.", "Персонаж готов. Начните свою историю."), "Small", U.muted)
 end
 function PANEL:Validate(keys)
@@ -392,9 +399,9 @@ function PANEL:Advance()
 		if not self.selected then return end
 		self.pendingChoose = RealTime() + 15; self.next:SetDisabled(true)
 		net.Start("ixCharacterChoose"); net.WriteUInt(self.selected:GetID(), 32); net.SendToServer()
-	elseif self.step == 4 then self:Submit()
+	elseif self.step == 5 then self:Submit()
 	else
-		local checks = {{"faction"}, {"name", "description", "languages"}, {"gender", "model", "genetic", "face", "sdSkin", "sdHairColor", "templarEyes"}}
+		local checks = {{"faction"}, {"name", "description", "languages"}, {"traits"}, {"gender", "model", "genetic", "face", "sdSkin", "sdHairColor", "templarEyes"}}
 		if not self:Validate(checks[self.step]) then return end
 		self.step = self.step + 1; self:ShowStep()
 	end

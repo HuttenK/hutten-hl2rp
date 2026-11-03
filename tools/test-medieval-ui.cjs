@@ -91,16 +91,16 @@ module.exports=suite=>{
  registered={};vgui={Register=function(name,panel) registered[name]=panel end,GetControlTable=function() return {} end}
  function pane() return {SetPos=function(self,x,y) self.x=x;self.y=y end,SetSize=function(self,w,h) self.w=w;self.h=h end,SetDisabled=function(self,v) self.disabled=v end} end
  `;
- suite('Character creation has four steps, rejects invalid input, and submits without stats',
+ suite('Character creation has five steps including traits, rejects invalid input, and submits without stats',
   ['helix/gamemode/game/cl_legends_theme.lua','ixhl2rp/plugins/zz_legends_interface/cl_menu.lua'],`
   local P=registered.ixCharMenu;local p=setmetatable({view='create',step=1,next=pane()},{__index=P})
   p:ResetDraft();eq(p.draft.primaryStat,nil);eq(p.draft.skills,nil);eq(#p.draft.languages,1)
   p.valid=false;function p:Validate(keys) self.checked=keys;return self.valid end
   function p:ShowStep() self.shown=self.step end
   p:Advance();eq(p.step,1);p.valid=true;p:Advance();eq(p.step,2)
-  p:Advance();eq(p.step,3);p:Advance();eq(p.step,4);eq(p.shown,4)
+  p:Advance();eq(p.step,3);p:Advance();eq(p.checked[1],'traits');eq(p.step,4);p:Advance();eq(p.step,5);eq(p.shown,5)
   local called=false;function p:Submit() called=true end;p:Advance();assert(called)
-  p:Back();eq(p.step,3);p.awaitingResponse=100;p:Back();eq(p.step,3)
+  p:Back();eq(p.step,4);p.awaitingResponse=100;p:Back();eq(p.step,4)
   `,setup);
  suite('Creation panels stay within 720p, 1080p and ultrawide viewports',
   ['helix/gamemode/game/cl_legends_theme.lua','ixhl2rp/plugins/zz_legends_interface/cl_menu.lua'],`
