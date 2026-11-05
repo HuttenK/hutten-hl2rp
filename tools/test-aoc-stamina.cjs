@@ -7,25 +7,38 @@ module.exports=suite=>{
  ix.AOC={revision=1};ix.meta.character={};ix.config.Add=function() end
  ix.Net={Type={}};function ix.Net:AddPlayerVar() end
  ix.char={RegisterVar=function() end};ix.type={};ix.transmit={};ix.lang={AddTable=function() end}
- MOVETYPE_NOCLIP=8;IN_SPEED=1
+ MOVETYPE_NOCLIP=8;IN_SPEED=1;IN_DUCK=2
  AOC_ATTACK_SLASH=1;AOC_ATTACK_OVERHEAD=2;AOC_ATTACK_STAB=3
  PLAYERANIMEVENT_ATTACK_PRIMARY=101;PLAYERANIMEVENT_ATTACK_SECONDARY=102;PLAYERANIMEVENT_ATTACK_GRENADE=103
  ACT_VM_PRIMARYATTACK=201;ACT_VM_SECONDARYATTACK=202;ACT_VM_HITCENTER=203
  local character=setmetatable({traits={}}, {__index=ix.meta.character})
  function character:GetTraits() return self.traits end
+ function character:GetData(key,default) return self.data and self.data[key] or default end
  local meta=FindMetaTable('Player')
- p=setmetatable({valid=true,stm=100,vars={},writes=0,events={}}, {__index=meta})
+ p=setmetatable({valid=true,stm=100,vars={},locals={},writes=0,deadlineWrites=0,events={}}, {__index=meta})
  function p:GetCharacter() return not self.noCharacter and character or nil end
- function p:GetLocalVar(key,default) return key=='stm' and self.stm or default end
- function p:SetLocalVar(key,n) eq(key,'stm');self.stm=n;self.writes=self.writes+1 end
+ function p:GetLocalVar(key,default)
+  if key=='stm' then return self.stm end
+  if self.locals[key]~=nil then return self.locals[key] end
+  return default
+ end
+ function p:SetLocalVar(key,n)
+  if key=='stm' then self.stm=n;self.writes=self.writes+1
+  else eq(key,'stmRegenAt');self.locals[key]=n;self.deadlineWrites=self.deadlineWrites+1 end
+ end
  function p:GetNetVar(key,default) if self.vars[key]==nil then return default end;return self.vars[key] end
  function p:SetNetVar(key,value) self.vars[key]=value end
  function p:IsPlayer() return not self.npc end
  function p:SteamID() return 'test' end
  function p:GetMoveType() return self.noclip and MOVETYPE_NOCLIP or 0 end
- function p:KeyDown() return self.running end
+ function p:KeyDown(key) return (key==IN_SPEED and self.running) or (key==IN_DUCK and self.crouching) or false end
+ function p:Crouching() return self.ducked end
  function p:GetSprintMove() return true end
- function p:GetVelocity() return {LengthSqr=function() return self.moving and 1 or 0 end} end
+ function p:GetVelocity()
+  local length=function() return self.moving and 1 or 0 end
+  return {LengthSqr=length,Length2DSqr=length}
+ end
+ function moveCommand() PLUGIN:StartCommand(p,{KeyDown=function(_,key) return p:KeyDown(key) end}) end
  function p:DoAnimationEvent(event) self.events[#self.events+1]=event end
  function p:GetPos() return 'attacker_position' end
  function p:EmitSound(...) self.cries=self.cries or {};self.cries[#self.cries+1]={...} end
@@ -76,6 +89,7 @@ module.exports=suite=>{
    eq(p.stm,before-cost);eq(p.writes,writes+1);eq(w.attack,kind);eq(w.slice,1);eq(w.sliceTime,clock)
    eq(w.animations[#w.animations],200+kind);eq(p.events[#p.events],100+kind)
    eq(w.idleAt,clock+2);eq(w.fallbacks,0);eq(#p.cries,kind)
+   near(p:GetLocalVar('stmRegenAt'),clock+7)
    w:DoAttack(kind);eq(p.writes,writes+1) -- held fire/cooldown cannot charge again
   end
   clock=clock+3;local before=p.stm
@@ -94,6 +108,7 @@ module.exports=suite=>{
   char.traits={strong=true};w:DoAttack(1);eq(p.stm,92)
   near(w.Primary.Duration,1.3/1.08);near(w.Primary[1].Time,.3/1.08)
   near(w.idleAt,clock+2/1.08);near(p:GetViewModel().rate,1.08)
+  near(p:GetLocalVar('stmRegenAt'),clock+2/1.08+5)
   eq(w.Primary.Drain,8);eq(w.Primary[1].Damage,30)
   clock=clock+3;w:DoAttack(1);eq(p.stm,84);near(w.Primary.Duration,1.3/1.08)
   char.traits={weak=true};clock=clock+3;local count=#w.animations
@@ -108,9 +123,10 @@ module.exports=suite=>{
   for i=1,19 do clock=clock+job.interval;job.fn();eq(p.stm,i*5) end
   eq(p.vars.brth,nil);clock=clock+.25;job.fn();eq(p.stm,100)
   job.fn();eq(p.stm,100)
-  p.running=true;p.moving=true;job.fn();eq(p.stm,99)
+  p.running=true;p.moving=true;moveCommand();job.fn();eq(p.stm,99)
   p:GetCharacter().traits={wheezing=true,clubfooted=true};p.stm=85;job.fn();near(p.stm,83.9)
-  p.running=false;job.fn();eq(p.stm,85)
+  p.running=false;moveCommand();job.fn();near(p.stm,83.9)
+  clock=clock+5;job.fn();eq(p.stm,85)
   p:GetCharacter().traits={};p.stm=0
   hook.Add('AdjustStaminaRegeneration','debuff',function() return 3 end)
   job.fn();eq(p.stm,3)
@@ -118,16 +134,79 @@ module.exports=suite=>{
   job.fn();eq(p.stm,4.5)
   p.noclip=true;job.fn();eq(p.stm,4.5)
  `,setup);
- suite('Client predicts five-second recovery and swing refusals without spending stamina twice',files,`
+ suite('Client waits after the swing, respects server deadlines and predicts recovery without spending stamina twice',files,`
   local w=newMelee();ix.AOC.Prepare(w)
+  local started=clock
   w:DoAttack(1);eq(p.stm,100);eq(p.writes,0);eq(w.attack,1);eq(p.cries,nil)
   clock=clock+3;p.stm=7;local count=#w.animations
   w:DoAttack(1);eq(#w.animations,count);eq(p.stm,7)
   PLUGIN.predictedStamina=0;p.stm=0
+  clock=started+6.99;PLUGIN:Think();eq(PLUGIN.predictedStamina,0)
+  clock=started+7
   for i=1,100 do clock=clock+FrameTime();PLUGIN:Think() end
   near(PLUGIN.predictedStamina,100);eq(p.writes,0)
   PLUGIN:OnLocalVarSet('stm',20);eq(PLUGIN.predictedStamina,20)
+  p.locals.stmRegenAt=clock+5;PLUGIN:Think();eq(PLUGIN.predictedStamina,20)
+  clock=clock+5;PLUGIN:Think();eq(PLUGIN.predictedStamina,21)
+  -- A character change clears the previous local prediction along with the server deadline.
+  p.ixStaminaRegenAt=clock+100;p.ixStaminaExerting=true;p.locals.stmRegenAt=0
+  PLUGIN:OnLocalVarSet('stmRegenAt',0)
+  PLUGIN:Think();eq(PLUGIN.predictedStamina,22);eq(p.ixStaminaExerting,nil)
  `,setup+`SERVER=false;CLIENT=true`);
+ suite('Repeated swings deplete the pool; changing weapons and regeneration bonuses cannot bypass five seconds of rest',files,`
+  PLUGIN:PostPlayerLoadout(p);local tick=timer.jobs.ixStamtest.fn
+  local w=newMelee();ix.AOC.Prepare(w)
+  for swing=1,5 do
+   w:DoAttack(3);eq(p.stm,100-swing*20)
+   for step=1,12 do clock=clock+.25;tick();eq(p.stm,100-swing*20) end
+  end
+  local deadline=p:GetLocalVar('stmRegenAt');eq(p:GetNetVar('brth'),true)
+  local other=newMelee();ix.AOC.Prepare(other);other:DoAttack(1)
+  eq(p:GetLocalVar('stmRegenAt'),deadline);eq(p.stm,0)
+  hook.Add('AdjustStaminaOffset','bonus',function(_,offset) return offset+10 end)
+  clock=deadline-.01;tick();eq(p.stm,0)
+  hook.Remove('AdjustStaminaOffset','bonus')
+  clock=deadline;tick();eq(p.stm,5)
+  for i=1,19 do clock=clock+.25;tick() end
+  eq(p.stm,100);eq(p:GetNetVar('brth'),nil)
+ `,setup);
+ suite('Sprint and crouch block recovery even while exhausted; walking and sparse deadline messages preserve rest',files,`
+  PLUGIN:PostPlayerLoadout(p);local tick=timer.jobs.ixStamtest.fn
+  p.stm=0;p.vars.brth=true;p.running=true;p.moving=true
+  for i=1,40 do moveCommand();clock=clock+.25;tick();eq(p.stm,0) end
+  eq(p.deadlineWrites,0) -- no per-command or per-tick network writes during a long sprint
+  p.running=false;moveCommand();eq(p.deadlineWrites,1)
+  -- Ordinary walking can continue throughout the rest period.
+  for i=1,19 do clock=clock+.25;moveCommand();tick();eq(p.stm,0) end
+  eq(p.deadlineWrites,1)
+  clock=clock+.25;moveCommand();tick();eq(p.stm,5)
+  p.moving=false;p.crouching=true
+  for i=1,24 do moveCommand();clock=clock+.25;tick();eq(p.stm,5) end
+  p.crouching=false;p.ducked=true;moveCommand() -- still physically crouching after releasing CTRL
+  eq(p.deadlineWrites,1)
+  p.ducked=false;moveCommand();eq(p.deadlineWrites,2)
+  clock=clock+4.9;tick();eq(p.stm,5)
+  clock=clock+.11;tick();eq(p.stm,10)
+  -- A tap shorter than the stamina tick also restarts the cooldown.
+  p.crouching=true;moveCommand();clock=clock+.01;p.crouching=false;moveCommand()
+  tick();eq(p.stm,10);clock=clock+4.99;tick();eq(p.stm,10)
+  clock=clock+.02;tick();eq(p.stm,15)
+ `,setup);
+ suite('Other stamina costs also delay natural recovery, without blocking explicit restoration or leaking into a new character',files,`
+  PLUGIN:PostPlayerLoadout(p);local tick=timer.jobs.ixStamtest.fn
+  p:ConsumeStamina(20);tick();eq(p.stm,80)
+  p:RestoreStamina(5);eq(p.stm,85);tick();eq(p.stm,85)
+  clock=clock+4.99;tick();eq(p.stm,85)
+  clock=clock+.02;tick();eq(p.stm,90)
+  p:ConsumeStamina(10);p.ixStaminaExerting=true
+  p:GetCharacter().data={stamina=50}
+  PLUGIN:PlayerLoadedCharacter(p,p:GetCharacter())
+  eq(p:GetLocalVar('stmRegenAt'),0);eq(p.ixStaminaExerting,nil)
+  tick();eq(p.stm,55)
+  local writes=p.deadlineWrites;p.noclip=true;p.crouching=true;moveCommand()
+  eq(p.deadlineWrites,writes);eq(p.ixStaminaExerting,nil)
+  p.noclip=false;p.noCharacter=true;moveCommand();eq(p.ixStaminaExerting,nil)
+ `,setup);
  suite('Attack cries randomly select all four clips and reach the attacker plus nearby listeners on one voice channel',files,`
   local w=newMelee();ix.AOC.Prepare(w)
   local chosen,rolls=1,0

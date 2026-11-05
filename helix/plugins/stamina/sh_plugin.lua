@@ -9,6 +9,34 @@ ix.config.Add("punchStamina", 10, "How much stamina punches use up.", nil, {
 
 ix.Net:AddPlayerVar("stm", true, nil, ix.Net.Type.Float)
 ix.Net:AddPlayerVar("brth", false, nil, ix.Net.Type.Bool)
+ix.Net:AddPlayerVar("stmRegenAt", true, nil, ix.Net.Type.Float)
+
+local restDelay = 5
+local playerMeta = FindMetaTable("Player")
+
+function playerMeta:DelayStaminaRecovery(actionDuration)
+	local deadline = CurTime() + math.max(0, actionDuration or 0) + restDelay
+	self.ixStaminaRegenAt = math.max(self.ixStaminaRegenAt or 0, deadline)
+	if SERVER and self.ixStaminaRegenAt > self:GetLocalVar("stmRegenAt", 0) then
+		self:SetLocalVar("stmRegenAt", self.ixStaminaRegenAt)
+	end
+end
+
+function PLUGIN:StartCommand(client, command)
+	if not client:GetCharacter() or client:GetMoveType() == MOVETYPE_NOCLIP then return end
+	-- Commands catch quick crouch taps between the 0.25-second stamina ticks.
+	-- Held sprint while moving remains exertion even after exhaustion stops it.
+	local active = command:KeyDown(IN_DUCK) or client:Crouching() or
+		(command:KeyDown(IN_SPEED) and client:GetVelocity():Length2DSqr() > 0)
+	if active then
+		client.ixStaminaExerting = true
+		client.ixStaminaRegenAt = math.max(client.ixStaminaRegenAt or 0, CurTime() + restDelay)
+	elseif client.ixStaminaExerting then
+		client.ixStaminaExerting = nil
+		-- Publish once when movement ends, not every tick during a long sprint.
+		client:DelayStaminaRecovery()
+	end
+end
 
 do
 	local CHAR = ix.meta.character
@@ -27,7 +55,6 @@ local function CalcStaminaChange(client)
 		return 0
 	end
 	
-	local walkSpeed = ix.config.Get("walkSpeed")
 	local offset = 0
 
 	if (!client:GetNetVar("brth", false) and client:KeyDown(IN_SPEED) and client:GetSprintMove() and client:GetVelocity():LengthSqr() > 0) then
@@ -41,6 +68,8 @@ local function CalcStaminaChange(client)
 	end
 
 	offset = hook.Run("AdjustStaminaOffset", client, offset) or offset
+	local regenAt = math.max(client.ixStaminaRegenAt or 0, client:GetLocalVar("stmRegenAt", 0))
+	if offset > 0 and CurTime() < regenAt then offset = 0 end
 
 	if (CLIENT) then
 		return offset -- for the client we need to return the estimated stamina change
@@ -89,13 +118,14 @@ if (SERVER) then
 	end
 
 	function PLUGIN:PlayerLoadedCharacter(client, character)
+		client.ixStaminaRegenAt = nil
+		client.ixStaminaExerting = nil
+		client:SetLocalVar("stmRegenAt", 0)
 		timer.Simple(0.25, function()
 			if not IsValid(client) or client:GetCharacter() ~= character then return end
 			client:SetLocalVar("stm", character:GetData("stamina", character:GetMaxStamina()))
 		end)
 	end
-
-	local playerMeta = FindMetaTable("Player")
 
 	function playerMeta:RestoreStamina(amount)
 		local current = self:GetLocalVar("stm", 0)
@@ -112,6 +142,7 @@ if (SERVER) then
 	end
 
 	function playerMeta:ConsumeStamina(amount)
+		if amount > 0 then self:DelayStaminaRecovery() end
 		local current = self:GetLocalVar("stm", 0)
 		local value = math.Clamp(current - amount, 0, self:GetCharacter():GetMaxStamina())
 
@@ -137,6 +168,16 @@ else
 	end
 
 	function PLUGIN:OnLocalVarSet(key, var)
+		if key == "stmRegenAt" then
+			if (var or 0) <= 0 then
+				local client = LocalPlayer()
+				if IsValid(client) then
+					client.ixStaminaRegenAt = nil
+					client.ixStaminaExerting = nil
+				end
+			end
+			return
+		end
 		if (key != "stm") then return end
 		if (math.abs(self.predictedStamina - var) > 5) then
 			self.predictedStamina = var

@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
   "files": 1107,
-  "lines": 163536,
+  "lines": 163579,
   "syntaxFailures": [],
   "entries": [
     {
@@ -2245,11 +2245,12 @@
     },
     {
       "path": "helix/plugins/stamina/sh_plugin.lua",
-      "lines": 146,
-      "sha256": "6f1ccfddb8039cced203a53a68f7a83384e0b9254a2f639027c3e077360e2e2f",
+      "lines": 187,
+      "sha256": "3bd8b2cc2b74c85803242f915fbe93b2fdf0286b14f49806302258bcb2fa8584",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
+        "StartCommand",
         "PostPlayerLoadout",
         "CharacterPreSave",
         "PlayerLoadedCharacter",
@@ -3522,8 +3523,8 @@
     },
     {
       "path": "ixhl2rp/plugins/aoc_compat/sh_stamina.lua",
-      "lines": 57,
-      "sha256": "9ca25789fed844dde139c9c6d3b082a3d6bd0f25362274417bdf549d6ed847c8",
+      "lines": 59,
+      "sha256": "9b9d47107c366c1b2b8b0be7eb1ea5d8143afb639c6a5e30dc367ea321342586",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
