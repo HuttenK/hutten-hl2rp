@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
   "files": 1107,
-  "lines": 163884,
+  "lines": 163929,
   "syntaxFailures": [],
   "entries": [
     {
@@ -3926,16 +3926,16 @@
     },
     {
       "path": "ixhl2rp/plugins/character_traits/cl_creation.lua",
-      "lines": 100,
-      "sha256": "2f876aa81857449215ede1d286d6daf97241f0f94f905ecdca21f5e9a717abd0",
+      "lines": 121,
+      "sha256": "b43e7cefa2c16404d6aee0f9ceabdc6d560e4184d98030a1bbc388c95954755a",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
     },
     {
       "path": "ixhl2rp/plugins/character_traits/sh_catalog.lua",
-      "lines": 123,
-      "sha256": "758308aba60530701f5ed4a6917924a8b903d104256da6a60dc67ad00d8625a1",
+      "lines": 147,
+      "sha256": "801fe30728e0f3efe0b2c1c85b5e4f4aab35b0cbbf493c573e628e50b4fe0597",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []

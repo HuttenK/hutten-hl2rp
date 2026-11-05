@@ -200,6 +200,83 @@ module.exports=suite=>{
  clock=clock+2;local progress,remaining=T.CraftProgress();near(progress,.4);eq(remaining,3)
  ix.bar.actionText='ЛЕЧЕНИЕ';eq(T.CraftProgress(),nil)
  `,setup);
+ suite('Trait creation keeps the scrolled canvas and controls while refreshing balance, tier selection and loss sides', [catalog,dir+'cl_creation.lua'],`
+ local T,U=ix.Traits,ix.InterfaceOS
+ local function menuFor(traits)
+  local menu={draft={traits=traits or {},genetic={1,180}},content=panel(),next=panel(),previews=0}
+  function menu:ShowStep() error('Selection must not rebuild the scrolled step') end
+  function menu:PresentDraft() self.previews=self.previews+1 end
+  T.BuildCreation(menu)
+  return menu
+ end
+ local menu=menuFor();local content=menu.content
+ local originals={};for i,child in ipairs(content.children) do originals[i]=child end
+ local buttons,choices={},{}
+ for _,child in ipairs(content.children) do
+  if child.action then buttons[child.name]=child end
+  if child.callback then choices[#choices+1]=child end
+ end
+ eq(#choices,2);assert(choices[1].disabled and choices[2].disabled)
+ local function button(id) return buttons[T.byID[id].name] end
+ local function click(id) button(id).action() end
+ local function active(id)
+  local row=button(id);row:Paint(500,100);return row.drawnActive
+ end
+ content.scroll=1200
+ click('strong');eq(menu.next.disabled,true);eq(content.children[1].text,'Осталось очков: -1');assert(active('strong'))
+ click('stuttering');eq(menu.next.disabled,false);eq(content.children[1].text,'Осталось очков: 0')
+ click('strong');eq(active('strong'),false)
+ click('frail');assert(button('herculean').tooltip:find('Заменит: '..T.byID.frail.name,1,true))
+ click('herculean');eq(menu.draft.traits.frail,nil);eq(active('frail'),false);assert(active('herculean'));assert(menu.next.disabled)
+ click('feeble');eq(menu.draft.traits.herculean,nil);eq(menu.next.disabled,false)
+ click('quick');eq(T.Balance(menu.draft.traits),3)
+ -- Programmatic dropdown refresh fires its callback too; it must not select a trait or recurse.
+ eq(menu.draft.traits.one_eyed,nil);choices[1]:ChooseOptionID(2);eq(menu.draft.traits.one_eyed,nil)
+ click('one_eyed');eq(choices[1].disabled,false);eq(choices[1].selected,1)
+ choices[1]:ChooseOptionID(2);eq(menu.draft.traits.one_eyed,'right')
+ click('lisping');eq(menu.draft.traits.one_eyed,'right');eq(choices[1].selected,2)
+ click('one_eyed');assert(choices[1].disabled);eq(menu.draft.traits.one_eyed,nil)
+ click('one_eyed');eq(menu.draft.traits.one_eyed,'left');eq(choices[1].selected,1)
+ click('one_legged');choices[2]:ChooseOptionID(2);eq(menu.draft.traits.one_legged,'right')
+ eq(menu.previews,0);click('albino');eq(menu.previews,1);click('albino');eq(menu.previews,2)
+ click('dwarf');eq(menu.draft.genetic[2],145)
+ click('giant');eq(menu.draft.traits.dwarf,nil);eq(menu.draft.genetic[2],195)
+ click('giant');eq(menu.draft.genetic[2],190)
+ eq(content.scroll,1200);eq(#content.children,#originals)
+ for i,child in ipairs(content.children) do eq(child,originals[i]) end
+ local resumed=menuFor({one_eyed='right',one_legged='left',strong=true})
+ local side=0;for _,child in ipairs(resumed.content.children) do
+  if child.callback then side=side+1;eq(child.disabled,false);eq(child.selected,side==1 and 2 or 1) end
+ end
+ eq(resumed.next.disabled,false);eq(resumed.previews,0)
+ `,setup+`
+ TOP=1;TEXT_ALIGN_RIGHT=2
+ function Color(r,g,b) return {r=r,g=g,b=b} end
+ function Material() return {IsError=function() return true end} end
+ function panel()
+  local p={children={},scroll=0}
+  function p:Add() local child=panel();self.children[#self.children+1]=child;return child end
+  function p:SetText(s) self.text=s end
+  function p:SetTextColor(c) self.color=c end
+  function p:SetDisabled(b) self.disabled=b end
+  function p:SetTooltip(s) self.tooltip=s end
+  for _,name in ipairs({'Dock','DockMargin','SetTall','SetFont','SetWrap','SetMouseInputEnabled'}) do p[name]=function() end end
+  return p
+ end
+ ix.Legends={Scale=function(n) return n end}
+ ix.InterfaceOS={accent=Color(200,170,100),ink=Color(230,230,230),muted=Color(150,150,150)}
+ local U=ix.InterfaceOS
+ function U.Label(parent,text,font,color) local p=parent:Add();p:SetText(text);p:SetTextColor(color);return p end
+ function U.Button(parent,name,action) local p=parent:Add();p.name=name;p.action=action;return p end
+ function U.Choice(parent,title,entries,selected,callback)
+  U.Label(parent,title);local p=parent:Add();p.callback=callback
+  function p:ChooseOptionID(id) self.selected=id;self.callback(entries[id].value) end
+  return p
+ end
+ function U.ButtonFace(p,w,h,danger,active) p.drawnActive=active end
+ function U.Fit(s) return s end
+ function U.Text() end
+ `);
  const combat=normalize(fs.readFileSync(path.join(__dirname,'../ixhl2rp/plugins/!healthsystem/sv_combat.lua'),'utf8'));
  const damage=combat.slice(combat.indexOf('local parents ='),combat.indexOf('local function ApplyStaminaDamage'));
  suite('Actual wound routing checks eyes once after armor penetration, including arrow/bullet wounds', [catalog,dir+'sv_effects.lua'],damage+`

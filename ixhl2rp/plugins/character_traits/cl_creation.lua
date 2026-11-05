@@ -21,27 +21,46 @@ end
 function T.BuildCreation(menu)
  local U,S=ix.InterfaceOS,ix.Legends.Scale
  local selected=menu.draft.traits or {}
- local balance=T.Balance(selected)
- U.Label(menu.content,"Осталось очков: "..balance,"Heading",balance<0 and Color(211,102,91) or U.accent)
+ local rows,sides={},{}
+ local refreshingSides=false
+ local balanceLabel=U.Label(menu.content,"Осталось очков: "..T.Balance(selected),"Heading",U.accent)
  U.Label(menu.content,"Недостатки дают очки, достоинства тратят. Можно закончить с нулём или с запасом. Ступени одной черты заменяют друг друга.","Small",U.muted)
+ local function refresh()
+  local balance=T.Balance(selected)
+  balanceLabel:SetText("Осталось очков: "..balance)
+  balanceLabel:SetTextColor(balance<0 and Color(211,102,91) or U.accent)
+  menu.next:SetDisabled(balance<0)
+  for id,button in pairs(rows) do
+   local trait=T.byID[id]
+   local conflict=T.Conflict(selected,id)
+   button:SetTooltip(trait.name.."\n"..trait.description..(conflict and "\nЗаменит: "..T.byID[conflict].name or ""))
+  end
+  refreshingSides=true
+  for id,choice in pairs(sides) do
+   choice:SetDisabled(selected[id]==nil)
+   choice:ChooseOptionID(selected[id]=="right" and 2 or 1)
+  end
+  refreshingSides=false
+ end
  local function update(selection)
-  local scroll=menu.content:GetVBar():GetScroll()
+  local appearanceChanged=selection.albino~=selected.albino
+  selected=selection
   menu.draft.traits=selection
   menu.draft.genetic[2]=T.ClampHeight(menu.draft.genetic[2],selection)
-  menu:ShowStep()
-  menu.content:InvalidateLayout(true)
-  menu.content:GetVBar():SetScroll(scroll)
+  -- Keep the existing controls and canvas height: rebuilding clamps the scroll
+  -- before wrapped descriptions have completed their layout.
+  refresh()
+  if appearanceChanged then menu:PresentDraft() end
  end
  for _,sign in ipairs({-1,1}) do
   U.Label(menu.content,sign<0 and "ДОСТОИНСТВА" or "НЕДОСТАТКИ","Heading",U.accent)
   for _,trait in ipairs(T.list) do
    if (trait.points<0 and sign<0) or (trait.points>0 and sign>0) then
-    local active=selected[trait.id]~=nil
-    local conflict=T.Conflict(selected,trait.id)
     local button=U.Button(menu.content,trait.name,function() update(T.Toggle(selected,trait.id)) end)
+    rows[trait.id]=button
     button:Dock(TOP);button:DockMargin(0,0,S(8),S(7));button:SetTall(S(92))
-    button:SetTooltip(trait.name.."\n"..trait.description..(conflict and "\nЗаменит: "..T.byID[conflict].name or ""))
     button.Paint=function(p,w,h)
+     local active=selected[trait.id]~=nil
      U.ButtonFace(p,w,h,false,active)
      local mat=T.Icon(trait.id)
      if not mat:IsError() then
@@ -66,15 +85,17 @@ function T.BuildCreation(menu)
       p:SetTall(math.max(S(92),height+S(50)))
      end
     end
-    if active and (trait.id=="one_eyed" or trait.id=="one_legged") then
-     U.Choice(menu.content,"Сторона утраты",{{value="left",label="Левая"},{value="right",label="Правая"}},selected[trait.id],function(side)
+    if trait.id=="one_eyed" or trait.id=="one_legged" then
+     -- Reserve the side selector's space even while the trait is unselected.
+     sides[trait.id]=U.Choice(menu.content,"Сторона утраты",{{value="left",label="Левая"},{value="right",label="Правая"}},selected[trait.id] or "left",function(side)
+      if refreshingSides or not selected[trait.id] then return end
       local values=table.Copy(selected);values[trait.id]=side;update(values)
      end)
     end
    end
   end
  end
- menu.next:SetDisabled(balance<0)
+ refresh()
 end
 function T.BuildSummary(parent,characterOrSelection)
  local U=ix.InterfaceOS
