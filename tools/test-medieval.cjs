@@ -111,6 +111,7 @@ require('./test-medical-examination.cjs')(suite);
 require('./test-medieval-medicine.cjs')(suite);
 require('./test-amputation.cjs')(suite);
 require('./test-aoc.cjs')(suite);
+require('./test-aoc-stamina.cjs')(suite);
 require('./test-item-pickup.cjs')(suite);
 require('./test-medieval-catalog.cjs')(suite);
 require('./test-character-traits.cjs')(suite);

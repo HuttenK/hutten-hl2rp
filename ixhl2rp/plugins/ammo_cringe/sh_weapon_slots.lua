@@ -287,7 +287,6 @@ function W.Activate(client, item, noSelect)
  end
  -- Respect normal weapon-switch restrictions (injuries, carts, crawling etc.).
  if not noSelect then W.SelectLive(client, item, weapon) end
- W.Publish(client)
  return weapon
 end
 
@@ -300,7 +299,6 @@ function W.Transfer(client, item, target, quiet)
  local ok, reason = source:Transfer(item.id, target)
  if not ok then if not quiet then client:NotifyLocalized(reason or "noFit") end return false end
  target:SendDeltaTransfer(item.id, source, x, y, width, height)
- W.Publish(client)
  return true
 end
 
@@ -348,29 +346,6 @@ function W.OnTransfer(item, destination, source)
  item:SetData("equip", W.Accepts(item, W.Index(destination)) == true)
 end
 
-function W.Publish(client)
- if not IsValid(client) then return end
- local character = client:GetCharacter()
- local data = {character = character and character:GetID() or 0, items = {}, backpack = client:GetBackpack() ~= nil}
- local active = client:GetActiveWeapon()
- for slot = 1, W.count do
-  local item = W.Item(client, slot)
-  if item and W.Accepts(item, slot) then
-   local weapon = W.Live(client, item)
-   local profile = HOLSTER_DRAWINFO and HOLSTER_DRAWINFO[item.class]
-   data.items[slot] = {id = item.id, class = item.class, model = item.holsterModel or (profile and profile.model) or item.model,
-    fallback = item.holsterFallbackModel, small = slot == 3,
-    rounds = item:GetData("ammo", 0)}
-   if weapon and weapon == active then data.active = item.id end
-  end
- end
- local signature = util.TableToJSON(data)
- if signature ~= client.ixWeaponSlotsSignature then
-  client.ixWeaponSlotsSignature = signature
-  client:SetNetVar("ixWeaponSlots", data)
- end
-end
-
 function W.Restore(client)
  if not IsValid(client) or not client:GetCharacter() then return end
  -- One-time migration of old category-based equipment. No item is destroyed
@@ -414,24 +389,14 @@ function W.Restore(client)
    end
   end
  end
- W.Publish(client)
 end
 
 hook.Add("PlayerInventoriesLoaded", "ixWeaponSlotsRestore", W.Restore)
 hook.Add("InventoryItemAdded", "ixWeaponSlotsAdded", function(old, inventory, item)
  if W.Index(inventory) and item.isWeapon then item:SetData("equip", W.Accepts(item, W.Index(inventory)) == true) end
- if IsValid(inventory.owner) and inventory.owner:IsPlayer() then W.Publish(inventory.owner) end
- if old and old.owner ~= inventory.owner and IsValid(old.owner) and old.owner:IsPlayer() then W.Publish(old.owner) end
-end)
-hook.Add("PlayerPostThink", "ixWeaponSlotsState", function(client)
- if (client.ixNextSlotSync or 0) > CurTime() then return end
- client.ixNextSlotSync = CurTime() + 0.25
- W.Publish(client)
 end)
 hook.Add("PrePlayerLoadedCharacter", "ixWeaponSlotsSave", function(client)
  for _, weapon in ipairs(client:GetWeapons()) do if weapon.ixItem then W.Save(weapon.ixItem, weapon) end end
- client.ixWeaponSlotsSignature = nil
- client:SetNetVar("ixWeaponSlots", nil)
 end)
 hook.Add("PlayerDeath", "ixWeaponSlotsDeath", function(client)
  for _, weapon in ipairs(client:GetWeapons()) do if weapon.ixItem then W.Save(weapon.ixItem, weapon) end end

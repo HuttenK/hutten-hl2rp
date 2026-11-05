@@ -9,6 +9,7 @@ end
 
 function A.Prepare(weapon)
  if not IsValid(weapon) or not weapon.AOC_Base then return end
+ A.PrepareStamina(weapon)
  if ix.Traits then ix.Traits.PrepareWeapon(weapon) end
  if weapon.ixAOCRevision == A.revision then return end
  weapon.ixAOCRevision = A.revision

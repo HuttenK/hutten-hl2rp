@@ -4,7 +4,6 @@ PLUGIN.author = "Legends"
 PLUGIN.description = "Inventory-owned weapons, slots and ammunition."
 ix.util.Include("sh_ammo.lua")
 ix.util.Include("sh_weapon_slots.lua")
-ix.util.Include("cl_weapon_holsters.lua")
 local A = ix.weaponInventory
 local playerMeta = FindMetaTable("Player")
 

@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
-  "files": 1107,
-  "lines": 163929,
+  "files": 1106,
+  "lines": 163510,
   "syntaxFailures": [],
   "entries": [
     {
@@ -1275,8 +1275,8 @@
     },
     {
       "path": "helix/gamemode/shared.lua",
-      "lines": 244,
-      "sha256": "35da651dfab33816eda91b2118393ca76739a4be6c4818e544b236f109b7edea",
+      "lines": 242,
+      "sha256": "8cd2dee674383cd30aa35fab1db8c699e9454d3affcf162e2f9b29bbaf637180",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -2245,8 +2245,8 @@
     },
     {
       "path": "helix/plugins/stamina/sh_plugin.lua",
-      "lines": 144,
-      "sha256": "dd3685c27eae10aa5fb68252395a0e5d18e944833c3ba82526583db413345b59",
+      "lines": 146,
+      "sha256": "6f1ccfddb8039cced203a53a68f7a83384e0b9254a2f639027c3e077360e2e2f",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
@@ -2909,14 +2909,6 @@
       "hooks": []
     },
     {
-      "path": "ixhl2rp/plugins/ammo_cringe/cl_weapon_holsters.lua",
-      "lines": 134,
-      "sha256": "7b78b5f82d421b7567483d747fc58b72ed874d14407139d80309455bf15b6163",
-      "syntax": "pass",
-      "networkHandlers": [],
-      "hooks": []
-    },
-    {
       "path": "ixhl2rp/plugins/ammo_cringe/items/ammo/aoc_arrows.lua",
       "lines": 10,
       "sha256": "de0feca798c2aa1451132caa6f1e224ad899ef977774910978f27fa8b1bb324d",
@@ -3366,8 +3358,8 @@
     },
     {
       "path": "ixhl2rp/plugins/ammo_cringe/sh_plugin.lua",
-      "lines": 132,
-      "sha256": "8440a48f529b49a3a7deeed24634d866cd99bd647283570656e066657d5991e0",
+      "lines": 131,
+      "sha256": "521bc6d7f1d9c3777532345718f7618d909d71f01a67813cc2b94693210ca72a",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
@@ -3379,8 +3371,8 @@
     },
     {
       "path": "ixhl2rp/plugins/ammo_cringe/sh_weapon_slots.lua",
-      "lines": 458,
-      "sha256": "89de98682a1d5c43dcf9175c726072f0962fa42d096d3f24ddce11ee1e9486ba",
+      "lines": 423,
+      "sha256": "aef56cefcc613a2bb91705ed167802a1476cf60a5baee17f8c6fdf2bbd30c3e8",
       "syntax": "pass",
       "networkHandlers": [
         "ixWeaponSlotReady",
@@ -3508,8 +3500,8 @@
     },
     {
       "path": "ixhl2rp/plugins/aoc_compat/sh_plugin.lua",
-      "lines": 75,
-      "sha256": "6591f2ffcefa5b50c0187402871f6b5520d6497149df590207dcde23f964f782",
+      "lines": 76,
+      "sha256": "f03a92ba537d4a9d30fc8c58ac40f3586697548e0675a4849f514b528112c52a",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
@@ -3521,9 +3513,17 @@
       ]
     },
     {
+      "path": "ixhl2rp/plugins/aoc_compat/sh_stamina.lua",
+      "lines": 56,
+      "sha256": "c75606f934dbe349d18fec8875a30234010186de3180d3a46443c47d2c57fee0",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
       "path": "ixhl2rp/plugins/aoc_compat/sh_weapons.lua",
-      "lines": 79,
-      "sha256": "90827d7d384a2919decb7147f8c7427810aae8d485eced80e3ae94e635d47825",
+      "lines": 80,
+      "sha256": "1d9ea7dfaad4c738dcfe8bc119e5771fcc23c00954ef6a954cff50967277c982",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -5492,26 +5492,6 @@
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
-    },
-    {
-      "path": "ixhl2rp/plugins/holsteredweapons.lua",
-      "lines": 307,
-      "sha256": "179552b90cb6acad339d0b4f53dbd3623f48e236b36d807d2ae9d33fd8ac24a0",
-      "syntax": "pass",
-      "networkHandlers": [],
-      "hooks": [
-        "GetDisplayInfo",
-        "CollectEquipped",
-        "Think",
-        "HolsterProfile",
-        "HolsterBoneFrame",
-        "ClearHolsters",
-        "CanDrawHolsters",
-        "PostPlayerDraw",
-        "Think",
-        "EntityRemoved",
-        "ShutDown"
-      ]
     },
     {
       "path": "ixhl2rp/plugins/inventoryaction.lua",

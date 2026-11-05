@@ -19,7 +19,7 @@ module.exports=(suite)=>{
    net.handlers.ixPlayerSit(0,p);eq(p.exited,true);eq(p.requested,true)
   `);
  const prefix='ixhl2rp/plugins/aoc_compat/';
- const files=['sh_animations.lua','sh_weapons.lua'].map(f=>prefix+f);
+ const files=['sh_animations.lua','sh_stamina.lua','sh_weapons.lua'].map(f=>prefix+f);
  const src=files.map(f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8')).join('\n')+fs.readFileSync(__filename,'utf8');
  const enums=[...new Set(src.match(/\b(?:ACT|GESTURE_SLOT|PLAYERANIMEVENT|MOVETYPE)_[A-Z0-9_]+\b/g))].map((n,i)=>`${n}=${i+100}`).join('\n');
  const setup=enums+`

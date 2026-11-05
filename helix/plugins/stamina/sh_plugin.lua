@@ -35,7 +35,9 @@ local function CalcStaminaChange(client)
 		offset = -1
 		offset = hook.Run("AdjustStaminaOffsetRunning", client, offset) or -1
 	else
-		offset = hook.Run("AdjustStaminaRegeneration", client, offset) or 2
+		-- Five points per 0.25 s: an unmodified 100-point pool refills in 5 s.
+		-- Keep both regeneration hooks so traits/injuries can still adjust it.
+		offset = hook.Run("AdjustStaminaRegeneration", client, offset) or 5
 	end
 
 	offset = hook.Run("AdjustStaminaOffset", client, offset) or offset
