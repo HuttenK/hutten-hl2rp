@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
-  "files": 1106,
-  "lines": 163510,
+  "files": 1107,
+  "lines": 163536,
   "syntaxFailures": [],
   "entries": [
     {
@@ -3500,8 +3500,8 @@
     },
     {
       "path": "ixhl2rp/plugins/aoc_compat/sh_plugin.lua",
-      "lines": 76,
-      "sha256": "f03a92ba537d4a9d30fc8c58ac40f3586697548e0675a4849f514b528112c52a",
+      "lines": 77,
+      "sha256": "5fd8e8cab6ab9efb9bf50a112435d3a55f2637c912ec12490e501d868c037275",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
@@ -3513,9 +3513,17 @@
       ]
     },
     {
+      "path": "ixhl2rp/plugins/aoc_compat/sh_sounds.lua",
+      "lines": 24,
+      "sha256": "f4127d5551653e7e905d9a3f8370722cfd83575f3e791b8ee2b0cfb238dfb97b",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
       "path": "ixhl2rp/plugins/aoc_compat/sh_stamina.lua",
-      "lines": 56,
-      "sha256": "c75606f934dbe349d18fec8875a30234010186de3180d3a46443c47d2c57fee0",
+      "lines": 57,
+      "sha256": "9ca25789fed844dde139c9c6d3b082a3d6bd0f25362274417bdf549d6ed847c8",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []

@@ -1,7 +1,7 @@
 module.exports=suite=>{
  const files=['helix/plugins/stamina/sh_plugin.lua','ixhl2rp/plugins/!healthsystem/sh_combat.lua',
   'ixhl2rp/plugins/character_traits/sh_catalog.lua','ixhl2rp/plugins/character_traits/sh_weapons.lua',
-  'ixhl2rp/plugins/character_traits/sh_plugin.lua','ixhl2rp/plugins/aoc_compat/sh_stamina.lua',
+  'ixhl2rp/plugins/character_traits/sh_plugin.lua','ixhl2rp/plugins/aoc_compat/sh_sounds.lua','ixhl2rp/plugins/aoc_compat/sh_stamina.lua',
   'ixhl2rp/plugins/aoc_compat/sh_weapons.lua'];
  const setup=`
  ix.AOC={revision=1};ix.meta.character={};ix.config.Add=function() end
@@ -27,6 +27,15 @@ module.exports=suite=>{
  function p:GetSprintMove() return true end
  function p:GetVelocity() return {LengthSqr=function() return self.moving and 1 or 0 end} end
  function p:DoAnimationEvent(event) self.events[#self.events+1]=event end
+ function p:GetPos() return 'attacker_position' end
+ function p:EmitSound(...) self.cries=self.cries or {};self.cries[#self.cries+1]={...} end
+ CHAN_VOICE=2
+ function RecipientFilter()
+  local filter={players={}}
+  function filter:AddPAS(pos) self.pas=pos;self.players.nearby=true end
+  function filter:AddPlayer(client) self.players[client]=true end
+  return filter
+ end
  function p:GetSuitPower() error('Helix swings must not depend on HEV') end
  function p:SetSuitPower() error('Helix swings must not spend HEV') end
  function p:AOC_SetNextStamina() error('Helix swings must not suspend HEV recovery') end
@@ -66,7 +75,7 @@ module.exports=suite=>{
    w:DoAttack(kind)
    eq(p.stm,before-cost);eq(p.writes,writes+1);eq(w.attack,kind);eq(w.slice,1);eq(w.sliceTime,clock)
    eq(w.animations[#w.animations],200+kind);eq(p.events[#p.events],100+kind)
-   eq(w.idleAt,clock+2);eq(w.fallbacks,0)
+   eq(w.idleAt,clock+2);eq(w.fallbacks,0);eq(#p.cries,kind)
    w:DoAttack(kind);eq(p.writes,writes+1) -- held fire/cooldown cannot charge again
   end
   clock=clock+3;local before=p.stm
@@ -78,6 +87,7 @@ module.exports=suite=>{
   -- NPCs and non-character owners use their original addon entry point.
   clock=clock+1;p.npc=true;w:DoAttack(1);eq(w.fallbacks,1);eq(p.writes,writes)
   p.npc=false;p.noCharacter=true;w:DoAttack(1);eq(w.fallbacks,2);eq(p.writes,writes)
+  eq(#p.cries,4) -- three normal swings and the last swing that emptied stamina
  `,setup);
  suite('Strong retains timing bonuses with the same swing cost; Weak cannot bypass strength restrictions',files,`
   local char=p:GetCharacter();local w=newMelee();ix.AOC.Prepare(w)
@@ -110,7 +120,7 @@ module.exports=suite=>{
  `,setup);
  suite('Client predicts five-second recovery and swing refusals without spending stamina twice',files,`
   local w=newMelee();ix.AOC.Prepare(w)
-  w:DoAttack(1);eq(p.stm,100);eq(p.writes,0);eq(w.attack,1)
+  w:DoAttack(1);eq(p.stm,100);eq(p.writes,0);eq(w.attack,1);eq(p.cries,nil)
   clock=clock+3;p.stm=7;local count=#w.animations
   w:DoAttack(1);eq(#w.animations,count);eq(p.stm,7)
   PLUGIN.predictedStamina=0;p.stm=0
@@ -118,4 +128,23 @@ module.exports=suite=>{
   near(PLUGIN.predictedStamina,100);eq(p.writes,0)
   PLUGIN:OnLocalVarSet('stm',20);eq(PLUGIN.predictedStamina,20)
  `,setup+`SERVER=false;CLIENT=true`);
+ suite('Attack cries randomly select all four clips and reach the attacker plus nearby listeners on one voice channel',files,`
+  local w=newMelee();ix.AOC.Prepare(w)
+  local chosen,rolls=1,0
+  math.random=function(low,high) eq(low,1);eq(high,4);rolls=rolls+1;return chosen end
+  for i=1,4 do
+   chosen=i;clock=clock+3;w:DoAttack(1)
+   local sound=p.cries[i]
+   eq(sound[1],'medieval/combat/scream_'..i..'.wav');eq(sound[2],80);eq(sound[3],100);near(sound[4],.85)
+   eq(sound[5],CHAN_VOICE);eq(sound[6],0);eq(sound[7],0)
+   eq(sound[8].pas,p:GetPos());eq(sound[8].players[p],true);eq(sound[8].players.nearby,true)
+   w:DoAttack(1);eq(#p.cries,i) -- immediate second input/cooldown is silent
+  end
+  clock=clock+3;p.stm=0;w:DoAttack(1);eq(#p.cries,4);eq(rolls,4)
+ `,setup);
+ suite('All attack cry assets are registered for client download',[
+  'ixhl2rp/plugins/aoc_compat/sh_sounds.lua'],`
+  eq(#downloads,4)
+  for i=1,4 do eq(downloads[i],'sound/medieval/combat/scream_'..i..'.wav') end
+ `,`ix.AOC={};downloads={};resource.AddFile=function(path) downloads[#downloads+1]=path end`);
 };

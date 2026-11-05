@@ -1,0 +1,39 @@
+{
+  "source": "Four recordings supplied by the user",
+  "format": "WAV / PCM s16le / mono / 44100 Hz",
+  "processing": "Stereo downmix and sample-rate conversion only; no trimming, loudness normalization or added effects. Source MP3 files unchanged.",
+  "files": [
+    {
+      "source": "scream_1.MP3",
+      "source_sha256": "6b960eecbdd9826efbc03b7beecf32e78f6c684e7a4dfaa5a269c3f12066fc37",
+      "file": "addons/medieval_ui_content/sound/medieval/combat/scream_1.wav",
+      "duration_seconds": 0.809796,
+      "bytes": 71502,
+      "sha256": "8e007666be55beac0197ceb0b977bb0d64f46216c394af492b643584071422ff"
+    },
+    {
+      "source": "scream_2.MP3",
+      "source_sha256": "a728bc06739a54c2d3a1b15eaeb3ca13910a4ff1ccd7e54b5f98d363ffbd42a6",
+      "file": "addons/medieval_ui_content/sound/medieval/combat/scream_2.wav",
+      "duration_seconds": 1.201633,
+      "bytes": 106062,
+      "sha256": "0879ee510407f974081b572957c0a020fb2b339844e7b1a9f373143cf602d9a9"
+    },
+    {
+      "source": "scream_3.mp3",
+      "source_sha256": "e58190fb26eef7df4ad008d1d2e44b1f3055999876c38a1e25ad325afbca0841",
+      "file": "addons/medieval_ui_content/sound/medieval/combat/scream_3.wav",
+      "duration_seconds": 1.152018,
+      "bytes": 101686,
+      "sha256": "cd0baf8ba7149923e9a8a486b52e2a440de0a8134365bbc0b8ad3afdffe953ff"
+    },
+    {
+      "source": "scream_4.MP3",
+      "source_sha256": "89b740766f8a91f40d847ffcf8edb403083bb73969e0b3ba57d3c26671ec8a28",
+      "file": "addons/medieval_ui_content/sound/medieval/combat/scream_4.wav",
+      "duration_seconds": 1.17551,
+      "bytes": 103758,
+      "sha256": "7527490fe74a640496adb6f1615c163aedb3f99cdeb118331e57d0df911c1aaa"
+    }
+  ]
+}

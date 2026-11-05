@@ -21,6 +21,7 @@ timer={Simple=function(_,fn) fn() end,Create=function() end,Remove=function() en
 net={handlers={}};function net.Receive(name,fn) net.handlers[name]=fn end
 for _,name in ipairs({'Start','Send','WriteUInt','WriteInt','WriteBool','WriteString','WriteFloat'}) do net[name]=function() end end
 util={AddNetworkString=function() end}
+resource={AddFile=function() end}
 player={GetAll=function() return {} end}
 PLUGIN={}
 ix={meta={},config={Get=function(_,d) return d end},util={Include=function() end},plugin={list={}}}

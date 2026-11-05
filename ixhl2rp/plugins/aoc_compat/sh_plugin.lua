@@ -8,6 +8,7 @@ local A = ix.AOC
 A.revision = (A.revision or 0) + 1
 ix.util.Include("sh_content.lua")
 ix.util.Include("sh_animations.lua")
+ix.util.Include("sh_sounds.lua")
 ix.util.Include("sh_stamina.lua")
 ix.util.Include("sh_weapons.lua")
 ix.util.Include("sv_pickups.lua")

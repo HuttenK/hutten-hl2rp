@@ -51,5 +51,6 @@ function A.MeleeAttack(weapon, owner, kind)
  weapon:SetCurrentSlice(1)
  weapon:SetNextHolster(now + data.Duration)
  weapon:SetNextIdle(now + duration)
+ A.PlayAttackCry(owner)
  -- Do not touch HEV suit power or its recovery timer: Helix owns this cost.
 end
