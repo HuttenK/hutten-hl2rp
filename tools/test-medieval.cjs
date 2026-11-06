@@ -110,6 +110,7 @@ require('./test-medieval-ui.cjs')(suite);
 require('./test-medieval-controls.cjs')(suite);
 require('./test-world-tooltip.cjs')(suite);
 require('./test-medical-examination.cjs')(suite);
+require('./test-medieval-voice.cjs')(suite);
 require('./test-medieval-medicine.cjs')(suite);
 require('./test-amputation.cjs')(suite);
 require('./test-aoc.cjs')(suite);

@@ -1,10 +1,18 @@
 local PLUGIN = PLUGIN
 local V = ix.voice
 local speakers = setmetatable({}, {__mode="k"})
-function PLUGIN:PlayerStartVoice(client) speakers[client] = true end
+function PLUGIN:PlayerStartVoice(client)
+ if IsValid(client) then speakers[client] = true end
+ return true -- The base gamemode would create a VoiceNotify card with the speaker's name.
+end
 function PLUGIN:PlayerEndVoice(client)
- speakers[client] = nil
- if IsValid(client) then client:SetVoiceVolumeScale(1) end
+ if IsValid(client) then
+  speakers[client] = nil
+  client:SetVoiceVolumeScale(1)
+ end
+end
+function PLUGIN:HUDShouldDraw(name)
+ if name == "CHudVoiceSelfStatus" then return false end
 end
 timer.Create("ixVoiceOcclusion", .2, 0, function()
  local listener = LocalPlayer()

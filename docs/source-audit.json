@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
   "files": 1109,
-  "lines": 163578,
+  "lines": 163594,
   "syntaxFailures": [],
   "entries": [
     {
@@ -8122,13 +8122,14 @@
     },
     {
       "path": "ixhl2rp/plugins/proximity_voice/cl_voice.lua",
-      "lines": 21,
-      "sha256": "82e11dd46b7b147a57c6587d10b64deac71a8df92197c959abc053bd77bc9401",
+      "lines": 29,
+      "sha256": "34b7f4dc755b3c8afcc57c940cce0930c9cc0c5931c03c6474f23bc1ab48cfba",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
         "PlayerStartVoice",
-        "PlayerEndVoice"
+        "PlayerEndVoice",
+        "HUDShouldDraw"
       ]
     },
     {
@@ -8141,8 +8142,8 @@
     },
     {
       "path": "ixhl2rp/plugins/proximity_voice/sv_voice.lua",
-      "lines": 7,
-      "sha256": "c5e7718c2acfb2d72aae1f9c0440f3568bc213f4a4b2b156331a5322e152945a",
+      "lines": 15,
+      "sha256": "e7ad1afb710d39978e2cfa19f39338e6549480fd90453c9673adf0410eb60d5e",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
