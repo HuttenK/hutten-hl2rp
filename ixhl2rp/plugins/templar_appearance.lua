@@ -68,3 +68,27 @@ ix.char.RegisterVar("templarEyes", {
 })
 
 hook.Add("ApplyCharacterModelIdentity", "ixTemplarFace", T.Apply)
+
+if CLIENT then
+	local function installRiderMode()
+		local rider = BLH and BLH.RiderAnim
+		if not rider or not isfunction(rider.Mode) or not isfunction(rider.PuppetAvailable) then return end
+		if rider.Mode == T.riderMode then return end
+
+		-- Templar models report the riding clips but can render standing inside
+		-- the horse. Use Bannerlord's own posed copy with the rider's outfit.
+		local nativeMode = rider.Mode
+		T.riderMode = function(ply)
+			local mode = nativeMode(ply)
+			if mode == "dynabase" and T.Supported(ply:GetModel()) and rider.PuppetAvailable() then
+				return "puppet"
+			end
+			return mode
+		end
+		rider.Mode = T.riderMode
+	end
+
+	installRiderMode()
+	hook.Add("InitPostEntity", "ixTemplarRiderMode", installRiderMode)
+	hook.Add("OnReloaded", "ixTemplarRiderMode", installRiderMode)
+end

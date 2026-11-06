@@ -87,6 +87,33 @@ function owner(skin,eyes)
 end
 `;
 module.exports = function(suite) {
+ suite('Templar riders use the Bannerlord puppet in auto mode without overriding manual modes or other models',
+ ['ixhl2rp/plugins/templar_appearance.lua'],`
+ -- The optional addon can load after the schema, or refresh its method later.
+ hook.Run('InitPostEntity')
+ local option, available = 1, true
+ local rider={PuppetAvailable=function() return available end}
+ local function native(p)
+  if option==0 then return 'legacy' end
+  if option==1 and p.hasClips then return 'dynabase' end
+  return available and 'puppet' or 'legacy'
+ end
+ rider.Mode=native;BLH={RiderAnim=rider}
+ hook.Run('InitPostEntity')
+ local installed=rider.Mode
+ assert(installed~=native)
+ hook.Run('InitPostEntity');hook.Run('OnReloaded');eq(rider.Mode,installed)
+ local p={hasClips=true,GetModel=function(self) return self.model end}
+ for mdl in pairs(ix.Templar.models) do p.model=mdl;eq(rider.Mode(p),'puppet') end
+ p.model='models/player/kleiner.mdl';eq(rider.Mode(p),'dynabase')
+ p.model='models/players/templar_knight_01.mdl'
+ option=0;eq(rider.Mode(p),'legacy');option=2;eq(rider.Mode(p),'puppet')
+ option=1;available=false;eq(rider.Mode(p),'dynabase')
+ p.hasClips=false;eq(rider.Mode(p),'legacy');available=true;eq(rider.Mode(p),'puppet')
+ rider.Mode=function() return 'new-addon-mode' end
+ hook.Run('OnReloaded');eq(rider.Mode(p),'new-addon-mode')
+ `, classes+'\nSERVER=false;CLIENT=true');
+
  suite('Templar armor preserves every face and eye option through equip, reload, cloak changes and removal',armorFiles,
  register('armor','ItemMedievalArmor')+owners+`
  for skin=0,11 do for eyes=0,2 do
