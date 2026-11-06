@@ -140,7 +140,6 @@ function PANEL:OnRemove()
 end
 function PANEL:PlayMusic()
 	if self.bClosing or self.musicRequest or IsValid(self.channel) then return end
-	-- Optional local menu music, independent of in-game playback.
 	local path = "medieval_ui/menu.mp3"
 	if not file.Exists("sound/" .. path, "GAME") and file.Exists("sound/music/" .. path, "GAME") then
 		path = "music/" .. path
@@ -148,7 +147,7 @@ function PANEL:PlayMusic()
 	if not file.Exists("sound/" .. path, "GAME") then return end
 	local request = {}
 	self.musicRequest = request
-	sound.PlayFile("sound/" .. path, "noplay", function(channel)
+	sound.PlayFile("sound/" .. path, "noplay noblock", function(channel)
 		if not IsValid(self) or self.bClosing or self.musicRequest ~= request then
 			if IsValid(channel) then channel:Stop() end
 			return

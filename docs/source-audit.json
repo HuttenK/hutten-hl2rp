@@ -9428,8 +9428,8 @@
     },
     {
       "path": "ixhl2rp/plugins/zz_legends_interface/cl_menu.lua",
-      "lines": 457,
-      "sha256": "a83560e132d706f944ad07cdcd947c10667fb7b59a6f58bf0af4afe48e88f93b",
+      "lines": 456,
+      "sha256": "8300f400c59d6385c3d75fc32da86389a05ec45f1b194fc47e7bb1685154625e",
       "syntax": "pass",
       "networkHandlers": [
         "ixCharacterAuthed",
@@ -9439,8 +9439,8 @@
     },
     {
       "path": "ixhl2rp/plugins/zz_legends_interface/sh_plugin.lua",
-      "lines": 14,
-      "sha256": "168a45c64e7564161f2c5fe63fafbe621fad40b30852363d63d49b4baa795388",
+      "lines": 15,
+      "sha256": "6a9b95facd1820d013c37dc031843202b5bd3388e6ba370b097b425e2d0987e2",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
