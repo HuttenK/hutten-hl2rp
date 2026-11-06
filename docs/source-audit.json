@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
   "files": 1107,
-  "lines": 163579,
+  "lines": 163480,
   "syntaxFailures": [],
   "entries": [
     {
@@ -9533,8 +9533,8 @@
     },
     {
       "path": "ixhl2rp/schema/factions/sh_citizen.lua",
-      "lines": 146,
-      "sha256": "15729c10fd6fb5d7ba53c545a03a1241e63ec9a91b330f2698b5702ac9c65a2f",
+      "lines": 47,
+      "sha256": "f20b55abde1ee80fca18e100dda9f60c28f1e808798a1c731f1d98063e1af01e",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []

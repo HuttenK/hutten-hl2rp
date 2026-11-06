@@ -196,17 +196,30 @@ module.exports = function(suite) {
  o:LoadCharacter(p.character);eq(next(o.armor),nil);eq(p.model,base);eq(p:GetBodygroup(2),0)
  `,classes);
 
- suite('Creation validates Templar face/eyes and ignores those settings for unrelated models',
- ['ixhl2rp/plugins/sd_creation.lua','ixhl2rp/plugins/templar_appearance.lua'],`
+ suite('Resident creation offers only the Templar for either gender, validates face and eyes, and rejects old SD choices',
+ ['ixhl2rp/schema/factions/sh_citizen.lua','helix/gamemode/game/character/appearance/sh_modelchoices.lua',
+  'ixhl2rp/plugins/!character/sh_plugin.lua','ixhl2rp/plugins/sd_creation.lua','ixhl2rp/plugins/templar_appearance.lua'],`
  local model='models/players/templar_archer_03.mdl'
- ix.faction.indices[1]={sdSkinCounts={[model]=12},GetModels=function() return {model,'models/other.mdl'} end}
+ ix.faction.indices[1]=FACTION
  local p={faction=1,gender=1,model=1}
+ local field=ix.char.vars.model
+ for gender=1,2 do
+  p.gender=gender;p.model=1
+  local choices=ix.BuildCharacterModelChoices(FACTION:GetModels({},gender))
+  eq(#choices,1);eq(choices[1].entry,model);eq(#choices[1].variants,1)
+  eq(field:OnValidate(1,p,{}),nil)
+  local adjusted={};field:OnAdjust({},p,1,adjusted);eq(adjusted.model,model)
+  for _,invalid in ipairs({2,'models/sd/citizens/citizen_male_01_hair1.mdl'}) do
+   p.model=invalid;eq(field:OnValidate(invalid,p,{}),false)
+  end
+ end
+ p.model=1
  eq(ix.char.vars.sdSkin:OnValidate(11,p,{}),11);eq(ix.char.vars.sdSkin:OnValidate(12,p,{}),false)
  local eyes=ix.char.vars.templarEyes
  eq(eyes:OnValidate(2,p,{}),2);eq(eyes:OnValidate(3,p,{}),false);eq(eyes:OnValidate(-1,p,{}),false)
  eq(eyes:OnValidate(0/0,p,{}),false);eq(eyes:OnValidate(1.5,p,{}),false);eq(eyes:OnValidate('1',p,{}),false)
  p.model=2;eq(eyes:OnValidate(2,p,{}),0)
- `,classes);
+ `,classes+`FACTION={index=1};function Color() return {} end;function Material(path) return path end`);
 
  const combat=source('ixhl2rp/plugins/!healthsystem/sv_combat.lua');
  const damage= combat.slice(combat.indexOf('local parents ='),combat.indexOf('local function ApplyStaminaDamage'));
