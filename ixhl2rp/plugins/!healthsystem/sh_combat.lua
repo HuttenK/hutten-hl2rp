@@ -1,5 +1,7 @@
 local PLUGIN = PLUGIN
 
+ix.weaponDamageMultiplier = 2
+
 do
 	local PLAYER = FindMetaTable("Player")
 

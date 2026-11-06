@@ -1,7 +1,7 @@
 ITEM.name = "Кольчуга Вольного копья"
 ITEM.description = "Практичная кольчуга с короткой туникой. В ней легче шагать по грязи и труднее убедить сборщика податей, что вы простой крестьянин."
-ITEM.model = "models/players/templar_archer_04.mdl"
-ITEM.replacement = ITEM.model
+ITEM.model = "models/armor_stand.mdl"
+ITEM.replacement = "models/players/templar_archer_04.mdl"
 ITEM.width = 2
 ITEM.height = 3
 ITEM.cost = 250

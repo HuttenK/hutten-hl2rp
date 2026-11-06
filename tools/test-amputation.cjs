@@ -133,12 +133,37 @@ module.exports=suite=>{
   eq(rolls,0);eq(wins,0)
  `);
  const combat=normalize(fs.readFileSync('ixhl2rp/plugins/!healthsystem/sv_combat.lua','utf8'));
- const combatHook=combat.slice(combat.indexOf('function PLUGIN:EntityTakeDamage('),combat.indexOf('\n\ndo\n',combat.indexOf('function PLUGIN:EntityTakeDamage(')));
+ const combatHook=combat.slice(combat.indexOf('local function IsWeaponDamage('),combat.indexOf('local hot_fix'))+
+  combat.slice(combat.indexOf('function PLUGIN:EntityTakeDamage('),combat.indexOf('\n\ndo\n',combat.indexOf('function PLUGIN:EntityTakeDamage(')));
+ suite('Weapons and their projectiles do double damage once, independent of the active slot; world and unarmed damage are separate',['ixhl2rp/plugins/!healthsystem/sh_combat.lua'],`
+  local hot_fix,mul_npc={},{}
+  function PLUGIN:GetMeleeDamageDef() end
+  ${combatHook}
+  local target={IsPlayer=function() return false end, IsNPC=function() return true end}
+  local source={valid=true,GetClass=function(s) return s.class end,IsWeapon=function(s) return s.weapon end}
+  local attacker={valid=true,IsPlayer=function() return true end}
+  local dmg={GetInflictor=function() return source end,GetAttacker=function() return attacker end,
+   GetDamage=function(s) return s.amount end,ScaleDamage=function(s,n) s.amount=s.amount*n end,IsDamageType=function() return false end}
+  for _,case in ipairs({
+   {'aoc_longsword',true,nil,20}, {'bl_lance_war',true,nil,20}, {'aoc_firedarrow',false,'aoc_firedbase',20},
+   {'aoc_thrownaxe',false,'aoc_firedbase',20}, {'aoc_thrownoilpot',false,nil,20}, {'bl_horse',false,nil,10},
+   {'env_fire',false,nil,10}, {'prop_physics',false,nil,10}, {'worldspawn',false,nil,10}
+  }) do
+   source.class,source.weapon,source.Base=case[1],case[2],case[3]
+   dmg.amount=10;PLUGIN:EntityTakeDamage(target,dmg);eq(dmg.amount,case[4])
+  end
+  source.weapon=true;source.IsFists=true;dmg.amount=10;PLUGIN:EntityTakeDamage(target,dmg);eq(dmg.amount,10)
+  source.IsFists=nil
+  local forwards=0
+  local proxy={ixPlayer={valid=true,TakeDamageInfo=function(_,d) forwards=forwards+1;PLUGIN:EntityTakeDamage(target,d) end},
+   IsNPC=function() return false end,IsPlayer=function() return false end}
+  dmg.amount=10;eq(PLUGIN:EntityTakeDamage(proxy,dmg),true);eq(forwards,1);eq(dmg.amount,20)
+ `);
  suite('Native health damage emits one resolved melee event after wounds and skips protected targets',
- [...files,'ixhl2rp/plugins/amputation/sv_melee.lua'],meleeSetup+`
+ [...files,'ixhl2rp/plugins/!healthsystem/sh_combat.lua','ixhl2rp/plugins/amputation/sv_melee.lua'],meleeSetup+`
   local hot_fix,mul_npc={},{}
   local wounds=0
-  local function ApplyDamageToPart() wounds=wounds+1;return true end
+  local function ApplyDamageToPart(_,_,info) eq(info.amount,40);wounds=wounds+1;return true end
   local function GetDamageClass() return 'slash' end
   local function SelectRandomPart() error('A resolved limb hit must not choose another limb') end
   DONT_BLEED=-1;DMG_CRUSH=1;DMG_POISON=16;DMG_BUCKSHOT=32;DMG_FALL=64;DMG_ACID=256
@@ -149,6 +174,7 @@ module.exports=suite=>{
   function surgeon:EntIndex() return 1 end;surgeon.weapon=blade
   function damage:GetDamageType() return self.kind end;function damage:GetAmmoType() return -1 end
   function damage:SetDamage(n) self.amount=n end;function damage:IsExplosionDamage() return false end
+  function damage:ScaleDamage(n) self.amount=self.amount*n end
   function blade:IsNPC() return false end
   function patient.health:GetConsciousness() return 1 end;function patient.health:GetPercent() return 1 end
   function patient.health:GetPartHealth() return 50 end

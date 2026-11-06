@@ -1,7 +1,7 @@
 ITEM.name = "Кольчуга Сумеречного дозора"
 ITEM.description = "Кольчужный доспех под длинной тёмной накидкой. Кольца держат удар, ткань скрывает пыль, а загадочный вид получается сам собой."
-ITEM.model = "models/players/templar_archer_06.mdl"
-ITEM.replacement = ITEM.model
+ITEM.model = "models/armor_stand.mdl"
+ITEM.replacement = "models/players/templar_archer_06.mdl"
 ITEM.width = 2
 ITEM.height = 3
 ITEM.cost = 280

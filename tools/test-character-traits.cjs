@@ -99,6 +99,41 @@ module.exports=suite=>{
  local V={};V.__index=V;V.__mul=function(v,n) return Vector(v.x*n,v.y*n,v.z*n) end
  function Vector(x,y,z) return setmetatable({x=x,y=y,z=z},V) end
  `);
+ for (const client of [false,true]) suite('Bannerlord saddle owns the rider hull and view; dismount restores current character height ('+(client?'client':'server')+')',
+ [catalog,'ixhl2rp/plugins/character_height/sh_height.lua'],`
+  local H=ix.CharacterHeight
+  function LocalPlayer() return p end
+  function p:LookupBone() return 1 end;function p:GetModel() return 'models/players/templar_archer_03.mdl' end
+  function p:GetModelScale() return self.scale or 1 end;function p:SetModelScale(v) self.scale=v end
+  function p:GetNW2Float(k,def) return self.nw or def end;function p:SetNW2Float(k,v) self.nw=v end
+  function p:SetIK() end;function p:GetNetVar() end
+  local writes=0
+  for _,method in ipairs({'SetHull','SetHullDuck','SetViewOffset','SetViewOffsetDucked'}) do
+   p[method]=function(self,a,b) assert(not self.horse,'height overwrote mounted dimensions');writes=writes+1 end
+  end
+  BLH={Riding={IsMounted=function(ply) return ply.horse~=nil end,
+   SyncHull=function(ply) ply.blhSavedHull=nil end}}
+  char.Genetic=function() return {height=char.height} end
+  local function transition(on)
+   p.horse=on and {} or nil
+   if CLIENT then hook.Run('EntityNetworkedVarChanged',p,'BLH_Horse');flush()
+   else hook.Run(on and 'BLH_Mounted' or 'BLH_Dismounted',p) end
+  end
+  for _,height in ipairs({130,207}) do
+   char.height=height;char.traits=height<150 and {dwarf=true} or {giant=true}
+   p.nw=height/180;H.Apply(p,true);near(p:GetModelScale(),height/180)
+   local before=writes
+   transition(true);eq(p:GetModelScale(),1)
+   H.Apply(p,true);eq(writes,before);eq(char.height,height)
+   -- The rider's trait/height may change before either a normal or forced exit.
+   char.height=height+1;if CLIENT then p.nw=char.height/180;p.blhSavedHull={} end
+   H.Apply(p);near(p.nw,char.height/180);eq(p:GetModelScale(),1)
+   transition(false);near(p:GetModelScale(),char.height/180);assert(writes>before);eq(p.blhSavedHull,nil)
+  end
+  BLH=nil;H.Apply(p,true);near(p:GetModelScale(),char.height/180)
+ `,setup+`SERVER=${!client};CLIENT=${client};concommand={Add=function() end}
+ local V={};V.__index=V;V.__mul=function(v,n) return Vector(v.x*n,v.y*n,v.z*n) end
+ function Vector(x,y,z) return setmetatable({x=x,y=y,z=z},V) end`);
  suite('Speech distortions preserve UTF-8, respect caps, and leave OOC, actions and other listeners untouched', [catalog,dir+'sh_speech.lua'],`
  local T=ix.Traits;local always=function() return 1 end
  char.traits={stuttering=true}

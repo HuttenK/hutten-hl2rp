@@ -256,7 +256,7 @@ local damage_to_diff = {
 		hediff = "blunt",
 		uniqueEffect = function(health, hit_group, info)
 			if math.random(1, 100) > 75 then
-				health:AddHediff("bruise", hit_group, {severity = info.amount * 0.25})
+				health:AddHediff("bruise", hit_group, {severity = info.amount * 0.25}, nil, info)
 			end
 		end
 	},
@@ -394,13 +394,13 @@ local function ApplyDamageToPart(health, hit_group, info)
 		if chance <= (armor_factor * item.armor.penetration[damage_class]) then
 			//health:AddHediff("bruise", hit_group, {severity = (ap_dmg * armor_density) * (2 - value)})
 
-			health:AddHediff("bruise", hit_group, {severity = (amount * armor_density) * (2 - value) * 0.7})
+			health:AddHediff("bruise", hit_group, {severity = (amount * armor_density) * (2 - value) * 0.7}, nil, info)
 		else
 			if !noPenetrateDamage[damage_class] then
 				ap_dmg = ap_dmg * 0.25
 
 				//health:AddHediff("bruise", hit_group, {severity = (ap_dmg * armor_density)})
-				health:AddHediff("bruise", hit_group, {severity = amount * 0.25 * armor_density * 0.7})
+				health:AddHediff("bruise", hit_group, {severity = amount * 0.25 * armor_density * 0.7}, nil, info)
 			else
 				ap_dmg = 0
 			end
@@ -423,7 +423,7 @@ local function ApplyDamageToPart(health, hit_group, info)
 		local hediff, mul = SelectDamageHediff(health, hit_group, info)
 
 		if hediff then
-			health:AddHediff(hediff, hit_group, {severity = amount * mul})
+			health:AddHediff(hediff, hit_group, {severity = amount * mul}, nil, info)
 		end
 		-- Only the actual penetrating injury rolls eye loss. Absorbed hits and
 		-- the outer recursive armor call must never roll a second time. Some
@@ -492,18 +492,11 @@ local function ApplyStaminaDamage(health, hit_group, info)
 	return showBlood
 end
 
-function PLUGIN:EvasionChance(client, isStanding, isBackstab)
-	local character = client:GetCharacter()
-
-	local staminaFactor = (0.5 + 0.5 * client:GetLocalVar("stm", 0) / character:GetMaxStamina())
-	local speedFactor = isStanding and 0 or 1 + math.Clamp(math.Remap(client:GetVelocity():LengthSqr(), 2500, 55225, 0, 0.75), 0, 0.75)
-
-	return 10 * staminaFactor * speedFactor
-end
-
--- A connected melee trace is not rerolled against a character skill.
-function PLUGIN:MeleeHitChance(client, isStanding, isBackstab)
- return 100
+local function IsWeaponDamage(inflictor)
+	if not IsValid(inflictor) then return false end
+	if inflictor:IsWeapon() then return not inflictor.IsFists and not inflictor.AOC_Hands end
+	local class = inflictor:GetClass()
+	return inflictor.Base == "aoc_firedbase" or class == "aoc_thrownoilpot" or class == "aoc_rockball" or class == "crossbow_bolt"
 end
 
 local hot_fix = {
@@ -587,18 +580,18 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 			target.ixPlayer:TakeDamageInfo(dmg)
 		end
 		
-		return
+		return true -- the real player has already taken this hit
 	end
 
 	-- Run after ragdoll forwarding and downed protection, before generic damage
 	-- classification (CPT uses crush/direct damage for bites and cardiac arrest).
 	local inflictor = dmg:GetInflictor()
 	local client = dmg:GetAttacker()
+	local isCrossbow = IsValid(inflictor) and inflictor.m_iDamage and target:IsPlayer()
+	if isCrossbow then dmg:SetDamage(inflictor.m_iDamage) end
+	if IsWeaponDamage(inflictor) then dmg:ScaleDamage(ix.weaponDamageMultiplier) end
 	local amount = dmg:GetDamage()
-
-
-	local isAttackingMelee
-	local isAttackingFists
+	local isAttackingFists = IsValid(inflictor) and inflictor.IsFists and IsValid(client) and client:IsPlayer()
 
 	local fix = hot_fix[inflictor:GetClass()]
 	if target:IsPlayer() and fix then
@@ -611,26 +604,6 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 		amount = amount * mul_npc[inflictor:GetClass()]
 	end
 	
-	if (target:IsPlayer() or target:IsNPC()) and IsValid(inflictor) then 
-		local isMelee = inflictor.IsMelee or (dmg:GetDamageType() == DMG_CLUB) or (dmg:GetDamageType() == DMG_SLASH)
-		local isFists = inflictor.IsFists
-
-		if IsValid(client) and client:IsPlayer() then
-			local character = client:GetCharacter()
-
-			if isFists then
-
-				isAttackingFists = true
-			elseif isMelee then
-
-				isAttackingMelee = true
-			else
-
-			end
-
-			dmg:SetDamage(amount)
-		end
-	end
 
 	if !target:IsPlayer() then 
 		return
@@ -641,13 +614,7 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 	end
 
 	
-	local isCrossbow
 	local showBlood = false
-
-	if inflictor and inflictor.m_iDamage then
-		isCrossbow = true
-		dmg:SetDamage(inflictor.m_iDamage)
-	end
 
 	target:SetBloodColor(DONT_BLEED)
 
@@ -663,7 +630,7 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 	local weapon = {}
 
 	if IsValid(client) and client:IsPlayer() then
-		weapon = client:GetActiveWeapon()
+		weapon = IsValid(inflictor) and inflictor:IsWeapon() and inflictor or client:GetActiveWeapon()
 	end
 	
 	if isCrossbow then
@@ -703,11 +670,11 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 	math.randomseed(seed)
 
 	local isEnergy = (ammoType == 1)
-	local isFists = weapon.IsFists
+	local isFists = isAttackingFists
 	local isBuckshot = (ammoType == 7) or damageType == DMG_BUCKSHOT or inflictor.IsBuckshot
-	local isSlash = damageType == DMG_SLASH or inflictor.IsSlash
+	local isSlash = dmg:IsDamageType(DMG_SLASH) or inflictor.IsSlash
 	local isFallDamage = damageType == DMG_FALL
-	local isClub = damageType == DMG_CLUB or inflictor.IsClub
+	local isClub = dmg:IsDamageType(DMG_CLUB) or inflictor.IsClub
 	local isAcid = damageType == DMG_ACID
 	local isExplosive = dmg:IsExplosionDamage()
 
@@ -716,57 +683,13 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 
 		showBlood = true
 	elseif isAttackingFists then
-		local isStanding = target:GetVelocity():LengthSqr() <= 100
-		local isBackstab = false
-
-		local vecAimTarget, vecAimAttacker = target:GetAimVector(), client:GetAimVector()
-		vecAimTarget.z = 0
-		vecAimAttacker.z = 0
-
-		if vecAimTarget:DotProduct(vecAimAttacker) > 0.25 then
-			isBackstab = true
-		end
-
-		local evasionChance = self:EvasionChance(target, isStanding, isBackstab)
-		local hitChance = self:MeleeHitChance(client, isStanding, isBackstab)
-		hitChance = hitChance - evasionChance
-
-		local isParried = false
-		if isRagdoll or (math.random(1, 100) < hitChance) then
-			if isBackstab or isRagdoll then
-				isParried = true
-			elseif !isParried then
-				local targetWeapon = target:GetActiveWeapon()
-				local isFists = IsValid(targetWeapon) and targetWeapon.IsFists or true
-
-				local parryChance = self:MeleeHitChance(target, isStanding, false)
-				parryChance = parryChance + evasionChance
-
-				isParried = math.random(1, 100) > parryChance
-			end
-		end
-		
-		if isParried then
-			local targetWeapon = target:GetActiveWeapon()
-			local isMelee = targetWeapon.IsMelee or (dmg:GetDamageType() == DMG_CLUB) or (dmg:GetDamageType() == DMG_SLASH)
-			local isFists = targetWeapon.IsFists
-
-			if isFists then
-
-			elseif isMelee then
-
-			end
-
-			showBlood = false
-		else
-			showBlood = ApplyStaminaDamage(health, hit_group, {
-				attacker = client,
-				target = target,
-				physDamage = amount,
-				staminaDamage = amount,
-				class = "fists"
-			})
-		end
+		showBlood = ApplyStaminaDamage(health, hit_group, {
+			attacker = client,
+			target = target,
+			physDamage = amount,
+			staminaDamage = amount,
+			class = "fists"
+		})
 		
 	elseif isExplosive then
 		local minDamage = 15
@@ -823,6 +746,7 @@ function PLUGIN:EntityTakeDamage(target, dmg, penetrate)
 			attacker = client,
 			weapon = weapon,
 			amount = amount,
+			meleeHit = (class == "slash" or class == "club") and IsValid(inflictor) and inflictor:IsWeapon(),
 			class = class
 		})
 	end

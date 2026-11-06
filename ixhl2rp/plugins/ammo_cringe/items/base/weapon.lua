@@ -370,15 +370,11 @@ if CLIENT then
 		return s
 	end
 
-	local function ScaleHitChanceByHandsDamage(character)
-		local leftHandDamage, rightHandDamage = character:GetLimbDamage(HITGROUP_LEFTARM, true), character:GetLimbDamage(HITGROUP_RIGHTARM, true)
-
-		if (leftHandDamage > 0 or rightHandDamage > 0) then
-			return (1 - ((leftHandDamage * 0.5) + (rightHandDamage * 0.5)))
-		end
-
-		return 1
-	end
+	local projectiles = {
+		aoc_longbow = "aoc_firedarrow", aoc_crossbow = "aoc_firedbolt",
+		aoc_axe_thrown = "aoc_thrownaxe", aoc_dagger_thrown = "aoc_throwndagger",
+		aoc_dart_thrown = "aoc_throwndart", aoc_spear_thrown = "aoc_thrownspear"
+	}
 
 	local penetration = L("weaponArmorPenetrationHeader")
 	local redClr = Color(200, 50, 50)
@@ -387,23 +383,25 @@ if CLIENT then
 			return
 		end
 
-		local weapon = weapons.GetStored(self.class)
+		local weapon = weapons.Get(self.class)
 		if weapon then
-			local character = LocalPlayer():GetCharacter()
 			local isMelee = weapon.PrimaryBash and (weapon.ClipSize or 0) <= 0
 			local primary = weapon.Primary or {}
 			local damage = weapon.DamageMax or primary.Damage or weapon.BashDamage or 0
-
-			if weapon.Num then
+			local multiplier = (weapon.IsFists or weapon.AOC_Hands) and 1 or (ix.weaponDamageMultiplier or 1)
+			if weapon.AOC_Base and not weapon.AOC_Melee then
+				-- The launcher has a placeholder damage of 1; the projectile owns the actual value.
+				damage = scripted_ents.GetMember(projectiles[self.class], "DamageAmount")
+			elseif weapon.Num then
 				damage = damage * weapon.Num
 			end
 
 			-- Melee weapons store their schema-controlled damage in Info.Damage
 			-- (the SWEP's own Primary.Damage is 0), so show that range instead.
 			if istable(self.Info) and istable(self.Info.Damage) then
-				StatRow("base", L("weaponStatDamage", self.Info.Damage[1]) .. " – " .. (self.Info.Damage[2] or self.Info.Damage[1]), color_white, tooltip, true)
-			else
-				StatRow("base", L("weaponStatDamage", damage), color_white, tooltip, true)
+				StatRow("base", L("weaponStatDamage", self.Info.Damage[1] * multiplier) .. " – " .. (self.Info.Damage[2] or self.Info.Damage[1]) * multiplier, color_white, tooltip, true)
+			elseif damage then
+				StatRow("base", L("weaponStatDamage", damage * multiplier), color_white, tooltip, true)
 			end
 
 			-- Melee weapons: show the real damage type (slash bleeds, club bruises).

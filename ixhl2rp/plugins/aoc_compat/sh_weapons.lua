@@ -9,6 +9,7 @@ end
 
 function A.Prepare(weapon)
  if not IsValid(weapon) or not weapon.AOC_Base then return end
+ A.PrepareSwing(weapon)
  A.PrepareStamina(weapon)
  if ix.Traits then ix.Traits.PrepareWeapon(weapon) end
  if weapon.ixAOCRevision == A.revision then return end
@@ -61,6 +62,7 @@ function A.Prepare(weapon)
    return think(self)
   end
  elseif weapon:GetClass() == "aoc_longbow" then
+  A.PrepareBow(weapon)
   local holster = weapon.Holster
   weapon.Holster = function(self, ...)
    if SERVER and Managed(self) and not self:GetLoaded() and self:Clip1() > 0 then

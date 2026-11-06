@@ -1,7 +1,7 @@
 ITEM.name = "Латы Белого обета"
 ITEM.description = "Светлый рыцарский доспех, достойный торжественной клятвы. Чистить его после дороги — отдельное испытание верности."
-ITEM.model = "models/players/templar_knight_01.mdl"
-ITEM.replacement = ITEM.model
+ITEM.model = "models/armor_stand.mdl"
+ITEM.replacement = "models/players/templar_knight_01.mdl"
 ITEM.capeBodygroup = 5
 ITEM.width = 2
 ITEM.height = 3

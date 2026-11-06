@@ -48,10 +48,16 @@ hook.Add("StartCommand", "ixMedicalTreatmentInput", function(client, command)
 end)
 
 if SERVER then
- hook.Add("OnHediffAdded", "ixMedicalFractures", function(health, diff, hitgroup)
+ hook.Add("OnHediffAdded", "ixMedicalFractures", function(health, diff, hitgroup, context)
+  if context and context.restoring then return end
   local part = health:GetParts(hitgroup)
   if diff.isInjury and not diff.isFracture and part and part.canFracture and
    health:GetPartHealth(part.id) <= health:GetMaxHealth(part.id) * .2 then
+   if context and context.meleeHit then
+    if context.fractureRolled then return end
+    context.fractureRolled = true
+    if math.random(100) > 10 then return end
+   end
    health:AddHediff("fracture", hitgroup, {severity=5})
   end
  end)

@@ -11,8 +11,13 @@ ix.Net:AddPlayerVar("stm", true, nil, ix.Net.Type.Float)
 ix.Net:AddPlayerVar("brth", false, nil, ix.Net.Type.Bool)
 ix.Net:AddPlayerVar("stmRegenAt", true, nil, ix.Net.Type.Float)
 
-local restDelay = 5
+local restDelay = 4
 local playerMeta = FindMetaTable("Player")
+
+local function bowDrain(client)
+	local weapon = client:GetActiveWeapon()
+	return IsValid(weapon) and weapon.ixBowDrain and weapon:GetLoaded() and weapon.ixBowDrain or 0
+end
 
 function playerMeta:DelayStaminaRecovery(actionDuration)
 	local deadline = CurTime() + math.max(0, actionDuration or 0) + restDelay
@@ -27,7 +32,7 @@ function PLUGIN:StartCommand(client, command)
 	-- Commands catch quick crouch taps between the 0.25-second stamina ticks.
 	-- Held sprint while moving remains exertion even after exhaustion stops it.
 	local active = command:KeyDown(IN_DUCK) or client:Crouching() or
-		(command:KeyDown(IN_SPEED) and client:GetVelocity():Length2DSqr() > 0)
+		(command:KeyDown(IN_SPEED) and client:GetVelocity():Length2DSqr() > 0) or bowDrain(client) > 0
 	if active then
 		client.ixStaminaExerting = true
 		client.ixStaminaRegenAt = math.max(client.ixStaminaRegenAt or 0, CurTime() + restDelay)
@@ -68,6 +73,8 @@ local function CalcStaminaChange(client)
 	end
 
 	offset = hook.Run("AdjustStaminaOffset", client, offset) or offset
+	local drawCost = bowDrain(client)
+	if drawCost > 0 then offset = math.min(offset, 0) - drawCost * 0.25 end
 	local regenAt = math.max(client.ixStaminaRegenAt or 0, client:GetLocalVar("stmRegenAt", 0))
 	if offset > 0 and CurTime() < regenAt then offset = 0 end
 

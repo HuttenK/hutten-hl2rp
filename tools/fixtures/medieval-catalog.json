@@ -276,7 +276,8 @@
   {
     "id": "med_armor_black",
     "name": "Латы Чёрного караула",
-    "model": "models/players/templar_knight_02.mdl",
+    "model": "models/armor_stand.mdl",
+    "replacement": "models/players/templar_knight_02.mdl",
     "kind": "armor",
     "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_armor_black.lua",
     "protection": "Тяжёлые латы: высокая защита торса, рук и ног; скорость передвижения снижена на 30%.",
@@ -285,7 +286,8 @@
   {
     "id": "med_armor_white",
     "name": "Латы Белого обета",
-    "model": "models/players/templar_knight_01.mdl",
+    "model": "models/armor_stand.mdl",
+    "replacement": "models/players/templar_knight_01.mdl",
     "kind": "armor",
     "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_armor_white.lua",
     "protection": "Тяжёлые латы: высокая защита торса, рук и ног; скорость передвижения снижена на 30%.",
@@ -294,7 +296,8 @@
   {
     "id": "med_mail_long",
     "name": "Кольчуга Сумеречного дозора",
-    "model": "models/players/templar_archer_06.mdl",
+    "model": "models/armor_stand.mdl",
+    "replacement": "models/players/templar_archer_06.mdl",
     "kind": "armor",
     "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_mail_long.lua",
     "protection": "Кольчуга: защита торса, частично рук и ног; скорость передвижения снижена на 15%.",
@@ -303,7 +306,8 @@
   {
     "id": "med_mail_short",
     "name": "Кольчуга Вольного копья",
-    "model": "models/players/templar_archer_04.mdl",
+    "model": "models/armor_stand.mdl",
+    "replacement": "models/players/templar_archer_04.mdl",
     "kind": "armor",
     "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_mail_short.lua",
     "protection": "Кольчуга: защита торса и рук, небольшое прикрытие ног; скорость передвижения снижена на 15%.",
@@ -312,7 +316,8 @@
   {
     "id": "med_tunic_black",
     "name": "Туника Чёрного тракта",
-    "model": "models/players/templar_archer_02.mdl",
+    "model": "models/armor_stand.mdl",
+    "replacement": "models/players/templar_archer_02.mdl",
     "kind": "armor",
     "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_tunic_black.lua",
     "protection": "Плотная ткань: небольшая защита прикрытых частей тела, без замедления.",

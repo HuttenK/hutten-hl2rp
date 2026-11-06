@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
-  "files": 1107,
-  "lines": 163455,
+  "files": 1109,
+  "lines": 163554,
   "syntaxFailures": [],
   "entries": [
     {
@@ -2245,8 +2245,8 @@
     },
     {
       "path": "helix/plugins/stamina/sh_plugin.lua",
-      "lines": 187,
-      "sha256": "3bd8b2cc2b74c85803242f915fbe93b2fdf0286b14f49806302258bcb2fa8584",
+      "lines": 194,
+      "sha256": "1bca535f1ae58f767153d4f45b5833e6cc407b691ed197ef81723b03a197c0a6",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
@@ -2757,8 +2757,8 @@
     },
     {
       "path": "ixhl2rp/plugins/!healthsystem/sh_combat.lua",
-      "lines": 26,
-      "sha256": "3f030a8a20c2ffe7255e48b5d424d809b7dc1948607ddcf73ff8ddc16046c399",
+      "lines": 29,
+      "sha256": "5a63c9676fa2eb2fbac51ccbe9132d6cee0fd1f48a7a68ac5b08c34c3760d988",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -2773,8 +2773,8 @@
     },
     {
       "path": "ixhl2rp/plugins/!healthsystem/sh_health.class.lua",
-      "lines": 869,
-      "sha256": "095bcec922d1f608d646e8e56cfc65a52ae5329e4e232f56d8ddbb4b838591c3",
+      "lines": 870,
+      "sha256": "2b7bbada18bb3c7ab8adf70682091f6796e10563239814b7d2c4910bf6d0faeb",
       "syntax": "pass",
       "networkHandlers": [
         "hediff.use",
@@ -2819,8 +2819,8 @@
     },
     {
       "path": "ixhl2rp/plugins/!healthsystem/sv_combat.lua",
-      "lines": 1067,
-      "sha256": "1877bdacbf2547406e06465688f502e8fc2b87d93824691bd5398478b0f90aa2",
+      "lines": 991,
+      "sha256": "130cd7f83fde815494fc937c0734a65c9955c1d34f1d75fdc1190487fd77763b",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
@@ -2830,8 +2830,6 @@
         "OnPlayerCorpseCreated",
         "PlayerUse",
         "ScalePlayerDamage",
-        "EvasionChance",
-        "MeleeHitChance",
         "GetMeleeDamageDef",
         "EntityTakeDamage"
       ]
@@ -2983,8 +2981,8 @@
     },
     {
       "path": "ixhl2rp/plugins/ammo_cringe/items/base/weapon.lua",
-      "lines": 459,
-      "sha256": "52c2b931075532992dbfc967befdcd6b7d0b7ef637b8cf3ab4afa659d6c8b041",
+      "lines": 457,
+      "sha256": "0c23ac094b6ee55830d5b9ce96079816641945ebc24407e1deab8283c09dfd8c",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -3492,6 +3490,14 @@
       "hooks": []
     },
     {
+      "path": "ixhl2rp/plugins/aoc_compat/sh_bow.lua",
+      "lines": 71,
+      "sha256": "d2bb50d6b04246ef5a82aa59acf1e60c27292488a74ebedde63fee8b69f8bf39",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
       "path": "ixhl2rp/plugins/aoc_compat/sh_content.lua",
       "lines": 129,
       "sha256": "24ce3a66b9d3bad1b96766f5151e640f1984743858b8c3cd872acd88c33a50fc",
@@ -3501,8 +3507,8 @@
     },
     {
       "path": "ixhl2rp/plugins/aoc_compat/sh_plugin.lua",
-      "lines": 77,
-      "sha256": "5fd8e8cab6ab9efb9bf50a112435d3a55f2637c912ec12490e501d868c037275",
+      "lines": 79,
+      "sha256": "53538205d465b3a084a1a04bb1d99181759c581a06ba5cc0afe3cc6ba74f4abb",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
@@ -3523,16 +3529,24 @@
     },
     {
       "path": "ixhl2rp/plugins/aoc_compat/sh_stamina.lua",
-      "lines": 59,
-      "sha256": "9b9d47107c366c1b2b8b0be7eb1ea5d8143afb639c6a5e30dc367ea321342586",
+      "lines": 62,
+      "sha256": "8a1ef76682f92ea3b7b79bbbf03322d23fea7157b0f526005797b1e8e9bfd110",
+      "syntax": "pass",
+      "networkHandlers": [],
+      "hooks": []
+    },
+    {
+      "path": "ixhl2rp/plugins/aoc_compat/sh_swing.lua",
+      "lines": 66,
+      "sha256": "cb5379718b5df8d3085a7dbde1380698732218629008328008129cff3abcc7bb",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
     },
     {
       "path": "ixhl2rp/plugins/aoc_compat/sh_weapons.lua",
-      "lines": 80,
-      "sha256": "1d9ea7dfaad4c738dcfe8bc119e5771fcc23c00954ef6a954cff50967277c982",
+      "lines": 82,
+      "sha256": "538369e3c32bf2a5f27cf61ec4b7ba9a499d3534614f64fe881f496a1cc1e8ba",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -3919,8 +3933,8 @@
     },
     {
       "path": "ixhl2rp/plugins/character_height/sh_height.lua",
-      "lines": 101,
-      "sha256": "14e79aa0593b3ef686dfb8cceca0e1b52d67bee2537000014cae217c9e7609da",
+      "lines": 117,
+      "sha256": "9141998194963b348daf0cbe68f48dc4b7a604c9bddc16d9fe6a6d1a08d38acb",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -5577,7 +5591,7 @@
     {
       "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_armor_black.lua",
       "lines": 22,
-      "sha256": "25c0d6607a12258b4bda6aefcad2a6a262270900b6f1e31962ae51ac1d4ea48d",
+      "sha256": "124549780b33152f91c5e9b8b71fa9725524bc9c8068bba216229abeccb7bdb9",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -5585,7 +5599,7 @@
     {
       "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_armor_white.lua",
       "lines": 22,
-      "sha256": "583bf1453c4073154471a1260b049bbca1af4a7d12c24684cba3f3b070ccc2d4",
+      "sha256": "7aa60a95408d10374ba1a008c141af887b51e0658866cfcc540e10da93b894f1",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -5593,7 +5607,7 @@
     {
       "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_mail_long.lua",
       "lines": 21,
-      "sha256": "e531cecc9a039475a835feeee199d532886d60dbb372c50d24b42c8975a97b4e",
+      "sha256": "255773ed6255ca3539a3b70ef9c8cb749c210d10333a02c81dbd2f894fe07707",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -5601,7 +5615,7 @@
     {
       "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_mail_short.lua",
       "lines": 21,
-      "sha256": "070ab70ae4495fa5fe14ecfc0d246a1cfad18f2820ca57b7a95c72bd16840688",
+      "sha256": "fc4aa9d27198f2cb3375773a01b1a6c25c709cfe17a733cc6cfe8074f105da4e",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -5609,7 +5623,7 @@
     {
       "path": "ixhl2rp/plugins/items_clothing/items/medieval_armor/med_tunic_black.lua",
       "lines": 22,
-      "sha256": "c7cdabe86a02bb8088affd8e2f39ee81fd3da92150224c336a7701d9f8c0752a",
+      "sha256": "568d90f4857b2908a5efcdfb4ffc45ab7cbf24efacfd639bc74f5f100586eba6",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -7302,8 +7316,8 @@
     },
     {
       "path": "ixhl2rp/plugins/medical/sh_treatment.lua",
-      "lines": 59,
-      "sha256": "a87e4d453dc18ceb618e9caa946399a813792d7dd51da5f773fa0105e99f7919",
+      "lines": 65,
+      "sha256": "ef287d2cd1c56582558ffd569483f0de421a0fd6f8c6e69ca0766be88781c12b",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []

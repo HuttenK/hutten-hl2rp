@@ -1,8 +1,8 @@
 module.exports=suite=>{
  const files=['helix/plugins/stamina/sh_plugin.lua','ixhl2rp/plugins/!healthsystem/sh_combat.lua',
   'ixhl2rp/plugins/character_traits/sh_catalog.lua','ixhl2rp/plugins/character_traits/sh_weapons.lua',
-  'ixhl2rp/plugins/character_traits/sh_plugin.lua','ixhl2rp/plugins/aoc_compat/sh_sounds.lua','ixhl2rp/plugins/aoc_compat/sh_stamina.lua',
-  'ixhl2rp/plugins/aoc_compat/sh_weapons.lua'];
+  'ixhl2rp/plugins/character_traits/sh_plugin.lua','ixhl2rp/plugins/aoc_compat/sh_sounds.lua','ixhl2rp/plugins/aoc_compat/sh_swing.lua','ixhl2rp/plugins/aoc_compat/sh_stamina.lua',
+  'ixhl2rp/plugins/aoc_compat/sh_bow.lua','ixhl2rp/plugins/aoc_compat/sh_weapons.lua'];
  const setup=`
  ix.AOC={revision=1};ix.meta.character={};ix.config.Add=function() end
  ix.Net={Type={}};function ix.Net:AddPlayerVar() end
@@ -17,6 +17,7 @@ module.exports=suite=>{
  local meta=FindMetaTable('Player')
  p=setmetatable({valid=true,stm=100,vars={},locals={},writes=0,deadlineWrites=0,events={}}, {__index=meta})
  function p:GetCharacter() return not self.noCharacter and character or nil end
+ function p:GetActiveWeapon() return self.weapon end
  function p:GetLocalVar(key,default)
   if key=='stm' then return self.stm end
   if self.locals[key]~=nil then return self.locals[key] end
@@ -89,7 +90,7 @@ module.exports=suite=>{
    eq(p.stm,before-cost);eq(p.writes,writes+1);eq(w.attack,kind);eq(w.slice,1);eq(w.sliceTime,clock)
    eq(w.animations[#w.animations],200+kind);eq(p.events[#p.events],100+kind)
    eq(w.idleAt,clock+2);eq(w.fallbacks,0);eq(#p.cries,kind)
-   near(p:GetLocalVar('stmRegenAt'),clock+7)
+   near(p:GetLocalVar('stmRegenAt'),clock+6)
    w:DoAttack(kind);eq(p.writes,writes+1) -- held fire/cooldown cannot charge again
   end
   clock=clock+3;local before=p.stm
@@ -108,7 +109,7 @@ module.exports=suite=>{
   char.traits={strong=true};w:DoAttack(1);eq(p.stm,92)
   near(w.Primary.Duration,1.3/1.08);near(w.Primary[1].Time,.3/1.08)
   near(w.idleAt,clock+2/1.08);near(p:GetViewModel().rate,1.08)
-  near(p:GetLocalVar('stmRegenAt'),clock+2/1.08+5)
+  near(p:GetLocalVar('stmRegenAt'),clock+2/1.08+4)
   eq(w.Primary.Drain,8);eq(w.Primary[1].Damage,30)
   clock=clock+3;w:DoAttack(1);eq(p.stm,84);near(w.Primary.Duration,1.3/1.08)
   char.traits={weak=true};clock=clock+3;local count=#w.animations
@@ -126,7 +127,7 @@ module.exports=suite=>{
   p.running=true;p.moving=true;moveCommand();job.fn();eq(p.stm,99)
   p:GetCharacter().traits={wheezing=true,clubfooted=true};p.stm=85;job.fn();near(p.stm,83.9)
   p.running=false;moveCommand();job.fn();near(p.stm,83.9)
-  clock=clock+5;job.fn();eq(p.stm,85)
+  clock=clock+4;job.fn();eq(p.stm,85)
   p:GetCharacter().traits={};p.stm=0
   hook.Add('AdjustStaminaRegeneration','debuff',function() return 3 end)
   job.fn();eq(p.stm,3)
@@ -141,8 +142,8 @@ module.exports=suite=>{
   clock=clock+3;p.stm=7;local count=#w.animations
   w:DoAttack(1);eq(#w.animations,count);eq(p.stm,7)
   PLUGIN.predictedStamina=0;p.stm=0
-  clock=started+6.99;PLUGIN:Think();eq(PLUGIN.predictedStamina,0)
-  clock=started+7
+  clock=started+5.99;PLUGIN:Think();eq(PLUGIN.predictedStamina,0)
+  clock=started+6
   for i=1,100 do clock=clock+FrameTime();PLUGIN:Think() end
   near(PLUGIN.predictedStamina,100);eq(p.writes,0)
   PLUGIN:OnLocalVarSet('stm',20);eq(PLUGIN.predictedStamina,20)
@@ -153,7 +154,7 @@ module.exports=suite=>{
   PLUGIN:OnLocalVarSet('stmRegenAt',0)
   PLUGIN:Think();eq(PLUGIN.predictedStamina,22);eq(p.ixStaminaExerting,nil)
  `,setup+`SERVER=false;CLIENT=true`);
- suite('Repeated swings deplete the pool; changing weapons and regeneration bonuses cannot bypass five seconds of rest',files,`
+ suite('Repeated swings deplete the pool; changing weapons and regeneration bonuses cannot bypass four seconds of rest',files,`
   PLUGIN:PostPlayerLoadout(p);local tick=timer.jobs.ixStamtest.fn
   local w=newMelee();ix.AOC.Prepare(w)
   for swing=1,5 do
@@ -177,7 +178,7 @@ module.exports=suite=>{
   eq(p.deadlineWrites,0) -- no per-command or per-tick network writes during a long sprint
   p.running=false;moveCommand();eq(p.deadlineWrites,1)
   -- Ordinary walking can continue throughout the rest period.
-  for i=1,19 do clock=clock+.25;moveCommand();tick();eq(p.stm,0) end
+  for i=1,15 do clock=clock+.25;moveCommand();tick();eq(p.stm,0) end
   eq(p.deadlineWrites,1)
   clock=clock+.25;moveCommand();tick();eq(p.stm,5)
   p.moving=false;p.crouching=true
@@ -185,18 +186,18 @@ module.exports=suite=>{
   p.crouching=false;p.ducked=true;moveCommand() -- still physically crouching after releasing CTRL
   eq(p.deadlineWrites,1)
   p.ducked=false;moveCommand();eq(p.deadlineWrites,2)
-  clock=clock+4.9;tick();eq(p.stm,5)
+  clock=clock+3.9;tick();eq(p.stm,5)
   clock=clock+.11;tick();eq(p.stm,10)
   -- A tap shorter than the stamina tick also restarts the cooldown.
   p.crouching=true;moveCommand();clock=clock+.01;p.crouching=false;moveCommand()
-  tick();eq(p.stm,10);clock=clock+4.99;tick();eq(p.stm,10)
+  tick();eq(p.stm,10);clock=clock+3.99;tick();eq(p.stm,10)
   clock=clock+.02;tick();eq(p.stm,15)
  `,setup);
  suite('Other stamina costs also delay natural recovery, without blocking explicit restoration or leaking into a new character',files,`
   PLUGIN:PostPlayerLoadout(p);local tick=timer.jobs.ixStamtest.fn
   p:ConsumeStamina(20);tick();eq(p.stm,80)
   p:RestoreStamina(5);eq(p.stm,85);tick();eq(p.stm,85)
-  clock=clock+4.99;tick();eq(p.stm,85)
+  clock=clock+3.99;tick();eq(p.stm,85)
   clock=clock+.02;tick();eq(p.stm,90)
   p:ConsumeStamina(10);p.ixStaminaExerting=true
   p:GetCharacter().data={stamina=50}
@@ -206,6 +207,40 @@ module.exports=suite=>{
   local writes=p.deadlineWrites;p.noclip=true;p.crouching=true;moveCommand()
   eq(p.deadlineWrites,writes);eq(p.ixStaminaExerting,nil)
   p.noclip=false;p.noCharacter=true;moveCommand();eq(p.ixStaminaExerting,nil)
+ `,setup);
+ suite('Longbow draw drains 15 per second until shot, cancellation or exhaustion, retaining an unspent arrow',files,`
+  IN_ATTACK=16;local held=true;local keys=p.KeyDown
+  function p:KeyDown(key) if key==IN_ATTACK then return held end;return keys(self,key) end
+  local w={valid=true,StaminaDrain=15,clip=1}
+  p.weapon=w
+  function w:GetOwner() return p end;function w:GetLoaded() return self.loaded end
+  function w:Clip1() return self.clip end;function w:Ammo1() return 0 end
+  function w:PrimaryAttack() if self.clip>0 then self.loaded=true;self.shootAt=clock+1 end end
+  function w:SecondaryAttack() self.loaded=false;self.shootAt=0 end
+  function w:Think() assert(not self.loaded,'native HEV branch ran') end
+  function w:GetShootTime() return self.shootAt end;function w:SetShootTime(t) self.shootAt=t end
+  function w:SetLoaded(b) self.loaded=b end;function w:SequenceDuration() return 1 end
+  function w:SetNextIdle() end;function w:SetNextPrimaryFire(t) self.nextFire=t end
+  function w:SendWeaponAnim() end;function w:EmitSound() end
+  function w:TakePrimaryAmmo(n) self.clip=self.clip-n end
+  local V={Angle=function() return 0 end};V.__index=V;V.__mul=function(a) return a end;V.__add=V.__mul
+  vector_up=setmetatable({},V);function p:GetAimVector() return vector_up end;function p:GetShootPos() return vector_up end
+  function Angle() return 0 end;function p:ViewPunch() end;function p:DoAttackEvent() end;function p:AOC_SetNextStamina() end
+  local arrows=0;ents={Create=function(id) eq(id,'aoc_firedarrow');arrows=arrows+1
+   local arrow={valid=true,GetPhysicsObject=function() return nil end};return setmetatable(arrow,{__index=function() return function() end end}) end}
+  ix.AOC.PrepareBow(w);ix.AOC.PrepareBow(w)
+  PLUGIN:PostPlayerLoadout(p);local tick=timer.jobs.ixStamtest.fn
+  local function steps(n) for i=1,n do clock=clock+.25;moveCommand();tick();w:Think() end end
+  w:PrimaryAttack();steps(4);eq(p.stm,85);eq(arrows,0)
+  w:SecondaryAttack();moveCommand();steps(15);eq(p.stm,85);eq(w.clip,1)
+  steps(1);eq(p.stm,90)
+  p.stm=7.5;w:PrimaryAttack();steps(2);eq(p.stm,0);eq(w.loaded,false);eq(w.clip,1);eq(arrows,0)
+  w:PrimaryAttack();eq(w.loaded,false)
+  p.stm=100;w:PrimaryAttack();steps(1);held=false;steps(2);eq(arrows,0)
+  steps(1);eq(arrows,1);eq(w.clip,0);eq(w.loaded,false);eq(p.stm,85)
+  steps(1);eq(arrows,1);eq(p.stm,85)
+  w.clip=1;held=true;w:PrimaryAttack();steps(1);local before=p.stm
+  p.weapon=nil;moveCommand();tick();eq(p.stm,before) -- removed/switched bow
  `,setup);
  suite('Attack cries randomly select all four clips and reach the attacker plus nearby listeners on one voice channel',files,`
   local w=newMelee();ix.AOC.Prepare(w)
@@ -226,4 +261,32 @@ module.exports=suite=>{
   eq(#downloads,4)
   for i=1,4 do eq(downloads[i],'sound/medieval/combat/scream_'..i..'.wav') end
  `,`ix.AOC={};downloads={};resource.AddFile=function(path) downloads[#downloads+1]=path end`);
+ suite('A late melee tick sweeps every due direction, confirms the crosshair once and stops at the first contact',files,`
+  local w=newMelee()
+  local a,b,c={p=0,y=-25},{p=2,y=-1},{p=0,y=15}
+  angle_zero={p=0,y=0}
+  w.Primary={{Angle=a,Start=0,End=60,Time=.40},{Angle=a,Start=0,End=60,Time=.41},
+   {Angle=b,Start=2,End=64,Time=.42},{Angle=c,Start=0,End=70,Time=.43},Range=70}
+  function w:GetSliceTime() return self.sliceTime end
+  function w:GetCurrentSlice() return self.slice end
+  function w:GetCurrentAttack() return self.attack end
+  function w:Think()
+   self.nativeTicks=(self.nativeTicks or 0)+1
+   if self.sliceTime>0 and clock-self.sliceTime>=self.Primary[self.slice].Time then error('overdue contact left for native Think') end
+  end
+  function w:Slice(_,_,s)
+   self.rays[#self.rays+1]=s.Angle
+   if s.Angle==angle_zero then eq(s.Start,0);eq(s.End,70) end
+   return s.Angle==self.contact
+  end
+  ix.AOC.Prepare(w);ix.AOC.Prepare(w)
+  local function start(contact) w.rays={};w.contact=contact;w.sliceTime=clock;w.attack=1;w.slice=1 end
+  start(angle_zero);clock=clock+.39;w:Think();eq(#w.rays,0)
+  clock=clock+.08;w:Think();eq(#w.rays,3);eq(w.rays[1],a);eq(w.rays[2],b);eq(w.rays[3],angle_zero)
+  eq(w.sliceTime,0);w:Think();eq(#w.rays,3)
+  start(a);clock=clock+.8;w:Think();eq(#w.rays,1);eq(w.slice,0) -- wall/block consumes the swing
+  start(nil);clock=clock+.8;w:Think();eq(#w.rays,4);eq(w.rays[4],c);eq(w.slice,0)
+  start(c);clock=clock+.405;w:Think();eq(w.slice,2)
+  clock=clock+.4;w:Think();eq(w.rays[#w.rays],c);eq(w.slice,0)
+ `,setup);
 };

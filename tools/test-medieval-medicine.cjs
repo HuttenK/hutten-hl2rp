@@ -62,6 +62,25 @@ module.exports=suite=>{
   eq(p.ixMedicalSession,nil);eq(item.inUse,nil);eq(M.activeSessions[p],nil)
  end
  `;
+ suite('Severe melee trauma rolls fracture once per hit, including merged bruises; loading saved injuries never rolls again',
+ [...files,'ixhl2rp/plugins/medical/sh_treatment.lua'],`
+  local rolls,fractures,number=0,0,100
+  math.random=function(n) eq(n,100);rolls=rolls+1;return number end
+  local function count(h)
+   local n=0;for _,d in h:GetHediffs() do if d.isFracture then n=n+1 end end;return n
+  end
+  for n=1,100 do
+   number=n;local h=fixture();local event={meleeHit=true}
+   h:AddHediff('bruise',4,{severity=2},nil,event);eq(event.fractureRolled,nil)
+   h:AddHediff('blunt',4,{severity=45},nil,event)
+   h:AddHediff('blunt',4,{severity=1},nil,event);eq(rolls,n)
+   fractures=fractures+count(h)
+  end
+  eq(fractures,10)
+  local h=fixture();function p:SteamID() return 'test' end
+  h:Load({health={{'cut',4,{severity=45}}}});eq(rolls,100);eq(count(h),0)
+  h:AddHediff('bruise',4,{severity=5});eq(count(h),1) -- ordinary non-melee injury
+ `,setup);
  suite('Four medieval remedies treat every native wound type without regenerating amputations',files,`
   fixture();local M=ix.Medicine;eq(table.Count(M.Catalog),4)
   eq(M.Catalog.bandage.model,'models/props_clutter/bar_rag.mdl');eq(M.Catalog.splint.model,'models/props_clutter/flute.mdl')

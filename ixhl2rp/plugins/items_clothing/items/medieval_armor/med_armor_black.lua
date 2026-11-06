@@ -1,7 +1,7 @@
 ITEM.name = "Латы Чёрного караула"
 ITEM.description = "Воронёные латы с суровым силуэтом. Их владелец выглядит так, будто знает пароль у каждых ворот, даже если просто ищет трактир."
-ITEM.model = "models/players/templar_knight_02.mdl"
-ITEM.replacement = ITEM.model
+ITEM.model = "models/armor_stand.mdl"
+ITEM.replacement = "models/players/templar_knight_02.mdl"
 ITEM.capeBodygroup = 5
 ITEM.width = 2
 ITEM.height = 3

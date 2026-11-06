@@ -45,6 +45,7 @@ function register(kind,base) {
  ITEM=fresh('${base}','${r.id}')
  ${source(r.path)}
  eq(ITEM.model,${JSON.stringify(r.model)})
+ ${r.replacement ? `eq(ITEM.replacement,${JSON.stringify(r.replacement)})` : ''}
  if ITEM.OnRegistered then ITEM:OnRegistered() end
  ix.Item.stored[ITEM.uniqueID]=ITEM
  ITEM=nil

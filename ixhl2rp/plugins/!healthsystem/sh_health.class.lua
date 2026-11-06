@@ -189,8 +189,9 @@ function HEALTH:Load(vars)
 			vars.health = {}
 		else
 			if savedHealth and #savedHealth > 0 then
+				local restore = {restoring = true}
 				for _, info in ipairs(savedHealth) do
-					self:AddHediff(info[1], info[2], info[3])
+					self:AddHediff(info[1], info[2], info[3], nil, restore)
 				end
 			end
 		end
@@ -784,7 +785,7 @@ function HEALTH:RemoveHediffByID(id)
 	end
 end
 
-function HEALTH:AddHediff(uniqueID, hitGroup, data, id)
+function HEALTH:AddHediff(uniqueID, hitGroup, data, id, context)
 	data = data or {}
 	local stored = isnumber(uniqueID) and ix.Hediffs:NetworkID(uniqueID) or ix.Hediffs:Get(uniqueID)
 
@@ -807,7 +808,7 @@ function HEALTH:AddHediff(uniqueID, hitGroup, data, id)
 				v:Send()
 			net.Send(self.character:GetPlayer())
 
-			if SERVER then hook.Run("OnHediffAdded", self, v, hitGroup) end
+			if SERVER then hook.Run("OnHediffAdded", self, v, hitGroup, context) end
 			return
 		end
 	elseif stored.max then
@@ -861,7 +862,7 @@ function HEALTH:AddHediff(uniqueID, hitGroup, data, id)
 			hediff:Send(data)
 		net.Send(self.character:GetPlayer())
 
-		hook.Run("OnHediffAdded", self, hediff, hitGroup)
+		hook.Run("OnHediffAdded", self, hediff, hitGroup, context)
 	end
 
 	return hediff

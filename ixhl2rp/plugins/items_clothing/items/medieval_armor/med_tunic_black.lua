@@ -1,7 +1,7 @@
 ITEM.name = "Туника Чёрного тракта"
 ITEM.description = "Плотная тёмная туника, усиленная подкладкой. Не заменит сталь, но примет на себя часть удара и дорожных невзгод. Наплечную накидку можно надеть или снять."
-ITEM.model = "models/players/templar_archer_02.mdl"
-ITEM.replacement = ITEM.model
+ITEM.model = "models/armor_stand.mdl"
+ITEM.replacement = "models/players/templar_archer_02.mdl"
 ITEM.cloakModel = "models/players/templar_archer_01.mdl"
 ITEM.width = 2
 ITEM.height = 3

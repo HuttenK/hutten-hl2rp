@@ -18,6 +18,9 @@ end
 
 function A.MeleeAttack(weapon, owner, kind)
  if not weapon:CanPrimaryAttack() then return end
+ -- PrimaryAttack can precede Think on a late tick. Finish any due contact
+ -- from the outgoing swing before replacing its networked cursor.
+ if weapon.ixAOCSwingPrepared then A.AdvanceSwing(weapon) end
  local data, event, animation
  if kind == AOC_ATTACK_SLASH then
   data, event, animation = weapon.Primary, PLAYERANIMEVENT_ATTACK_PRIMARY, ACT_VM_PRIMARYATTACK

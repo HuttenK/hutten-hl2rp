@@ -56,6 +56,8 @@ end
 
 function H.Apply(client, force)
  if not IsValid(client) or not client:IsPlayer() then return end
+ local riding = BLH and BLH.Riding
+ local mounted = riding and riding.IsMounted and riding.IsMounted(client) or false
  local height, scale
  if SERVER then
   height = H.SavedHeight(client)
@@ -64,14 +66,21 @@ function H.Apply(client, force)
  else
   scale = math.Clamp(client:GetNW2Float("ixCharacterScale", 1), 125 / H.BASE, 215 / H.BASE)
  end
+ -- Replicate the on-foot scale even in the saddle, so dismount can restore it immediately.
+ if mounted then scale = 1 end
  local model, state = client:GetModel(), H.states[client]
- local changed = not state or state.model ~= model or math.abs(state.scale - scale) > .00001
+ local scaleDiffers = math.abs(client:GetModelScale() - scale) > .00001
+ local changed = not state or state.model ~= model or state.mounted ~= mounted or math.abs(state.scale - scale) > .00001 or (mounted and scaleDiffers)
  if not force and not changed then return end
- H.states[client] = {model = model, scale = scale}
- if math.abs(client:GetModelScale() - scale) > .00001 then client:SetModelScale(scale, 0) end
+ H.states[client] = {model = model, scale = scale, mounted = mounted}
+ if scaleDiffers then client:SetModelScale(scale, 0) end
  -- SetModelScale disables foot IK; ordinary standing/walking still needs it.
  client:SetIK(true)
- if SERVER or client == LocalPlayer() then H.Dimensions(client, scale) end
+ if not mounted and (SERVER or client == LocalPlayer()) then
+  -- On the client the rider link can clear before the addon's next movement tick.
+  if CLIENT and client.blhSavedHull and riding and riding.SyncHull then riding.SyncHull(client) end
+  H.Dimensions(client, scale)
+ end
  hook.Run("ixCharacterHeightChanged", client, scale)
 end
 
@@ -81,6 +90,13 @@ end
 hook.Add("PostPlayerLoadout", "ixCharacterHeight", deferred)
 hook.Add("PlayerModelChanged", "ixCharacterHeight", deferred)
 hook.Add("PlayerSpawn", "ixCharacterHeight", deferred)
+hook.Add("BLH_Mounted", "ixCharacterHeight", function(client) H.Apply(client, true) end)
+hook.Add("BLH_Dismounted", "ixCharacterHeight", function(client) H.Apply(client, true) end)
+if CLIENT then
+ hook.Add("EntityNetworkedVarChanged", "ixCharacterHeightMount", function(entity, key)
+  if key == "BLH_Horse" and entity:IsPlayer() then deferred(entity) end
+ end)
+end
 hook.Add("prone.OnPlayerEntered", "ixCharacterHeight", function(client) H.Apply(client, true) end)
 hook.Add("prone.OnPlayerExitted", "ixCharacterHeight", function(client) H.Apply(client, true) end)
 timer.Create("ixCharacterHeight", .5, 0, function()
