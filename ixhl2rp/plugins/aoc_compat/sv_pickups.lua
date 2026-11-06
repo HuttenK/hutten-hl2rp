@@ -1,7 +1,7 @@
 local PLUGIN = PLUGIN
-local pickups = {aoc_itemarrow = {"arrows", 1}, aoc_itemquiver = {"arrows", 10},
- aoc_itemaxe = {"axes", 1}, aoc_itemdagger = {"daggers", 1},
- aoc_itemdart = {"darts", 1}, aoc_itemspear = {"spears", 1}}
+local arrowCounts = {aoc_itemarrow = 1, aoc_itemquiver = 10}
+local weapons = {aoc_itemaxe = "aoc_axe_thrown", aoc_itemdagger = "aoc_dagger_thrown",
+ aoc_itemdart = "aoc_dart_thrown", aoc_itemspear = "aoc_spear_thrown"}
 
 function PLUGIN:GetItemPhysicsBounds(entity, item)
  if not item or not item.isWeapon or not isstring(item.class) or
@@ -24,14 +24,18 @@ function PLUGIN:GetItemPhysicsBounds(entity, item)
 end
 
 function PLUGIN:PlayerCanPickupItem(client, entity)
- local data = pickups[entity:GetClass()]
- if not data then return end
+ local class = entity:GetClass()
+ local count, weapon = arrowCounts[class], weapons[class]
+ if not count and not weapon then return end
  if entity.Touched or not client:GetCharacter() or not client:Alive() or client:IsRestricted() or
   client:InVehicle() or not client:GetInventory("main") then return false end
  entity.Touched = true
  -- The addon otherwise grants unbacked reserve ammo (and sometimes a free
- -- SWEP). Recover real inventory stacks instead; full bags drop the stack.
- if ix.weaponInventory.ReturnAmmo(client, data[1], data[2]) then entity:Remove()
+ -- SWEP). Each pickup supplies either its arrows or one throwable.
+ local success
+ if weapon then success = ix.weaponInventory.GiveThrowable(client, weapon)
+ else success = ix.weaponInventory.ReturnAmmo(client, "arrows", count) end
+ if success then entity:Remove()
  else entity.Touched = false end
  return false
 end

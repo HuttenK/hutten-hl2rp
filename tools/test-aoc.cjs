@@ -187,34 +187,71 @@ module.exports=(suite)=>{
   end
   ix.AOC.Prepare(w)
  `;
- suite('AoC bow holster returns a loaded arrow as an inventory stack exactly once',integration,bow+`
+ suite('Repeated bow holsters refill the same quiver, including when the inventory is full',integration,bow+`
   w.loaded=true;eq(w:Holster(),false);eq(w:Clip1(),1);eq(p:GetAmmoCount(0),3)
+  p.full=true
   w.loaded=false;assert(w:Holster());eq(w:Clip1(),0);eq(p:GetAmmoCount(0),4)
-  assert(w:Holster());p:CalculateAmmo();eq(p:GetAmmoCount(0),4)
+  assert(w:Holster());p:CalculateAmmo();eq(p:GetAmmoCount(0),4);eq(item:GetValue(),4)
+  for i=1,12 do
+   p:SetAmmo(3,0);w:SetClip1(1);assert(w:Holster());eq(item:GetValue(),4)
+  end
+  eq(#inv:GetItems(),1);eq(#dropped,0)
   W.Release(p,a);eq(a:GetData('ammo'),0);eq(p:GetAmmoCount(0),4)
  `,actualSetup);
  suite('AoC bow return keeps overflow on ground and retains its arrow on allocation failure',integration,bow+`
-  p.full=true;assert(w:Holster());eq(#dropped,1);eq(dropped[1]:GetValue(),1);eq(p:GetAmmoCount(0),3)
+  item:SetData('stack',10);p:CalculateAmmo();p.full=true
+  assert(w:Holster());eq(#dropped,1);eq(dropped[1]:GetValue(),1);eq(p:GetAmmoCount(0),10)
   w:SetClip1(1);ix.Item.Instance=function() return nil end
   eq(w:Holster(),false);eq(w:Clip1(),1);eq(#dropped,1)
  `,actualSetup);
- suite('AoC last throw consumes its inventory charge and an empty weapon cannot throw or delete itself',integration,`
-  local W=ix.WeaponSlots;local reserve=ammoItem(1);p:AddItem(reserve)
-  local a=newItem(1);a.class='aoc_axe_thrown';a.weaponCategory='melee';a.data.ammo=-1
-  assert(W.Equip(p,a,3));local w=W.Live(p,a)
-  w.AOC_Base=true;w.Primary={Ammo='XBowBolt'};w.ActivityTranslate={}
-  function w:GetHoldType() return 'axethrown' end
-  function w:GetLoaded() return self.loaded end
-  function w:GetNextDraw() return 0 end
-  function w:CanPrimaryAttack() return true end
-  function w:TakePrimaryAmmo(n) p:SetAmmo(p:GetAmmoCount(0)-n,0) end
-  function w:Think() self:TakePrimaryAmmo(1);self.nextFire=clock+1 end
-  ix.AOC.Prepare(w);assert(w:CanPrimaryAttack());w:Think()
-  eq(p:GetAmmoCount(0),0);eq(inv:GetItems()[1],nil)
-  clock=clock+2;w:Think();eq(w.valid,true);eq(w:CanPrimaryAttack(),false)
-  p:CalculateAmmo();eq(p:GetAmmoCount(0),0)
-  w.loaded=true;eq(W.Busy(w),true);w.loaded=false;w.block=true
-  function w:GetBlock() return self.block end;eq(W.Busy(w),true)
+ suite('A crossbow loads one bolt immediately and unloads it into the same partial stack in a worn backpack',integration,`
+  local pile=ammoItem(6);local bag={GetItems=function() return {pile} end}
+  function p:GetBackpack() return {GetInventory=function() return bag end} end
+  local a=newItem(1);a.class='aoc_crossbow';a.data.ammo=0
+  assert(ix.WeaponSlots.Equip(p,a,1));local w=ix.WeaponSlots.Live(p,a)
+  w.AOC_Base=true;w.ActivityTranslate={};function w:GetHoldType() return 'crossbow' end
+  function w:Reload()
+   if self:Clip1()==0 and p:GetAmmoCount(0)>0 then p:SetAmmo(p:GetAmmoCount(0)-1,0);self:SetClip1(1) end
+  end
+  ix.AOC.Prepare(w);w:Reload();eq(pile:GetValue(),5);w:Reload();eq(pile:GetValue(),5)
+  ix.WeaponSlots.Release(p,a);eq(a:GetData('ammo'),1)
+  assert(ix.weaponInventory.ReturnAmmo(p,'XBowBolt',1));a:SetData('ammo',0)
+  eq(pile:GetValue(),6);eq(p:GetAmmoCount(0),6);eq(#dropped,0)
+  bag.GetItems=function() return {pile,pile} end
+  p:CalculateAmmo();eq(p:GetAmmoCount(0),6)
+ `,actualSetup);
+ suite('A failed overflow allocation leaves partially filled quivers intact',integration,`
+  local pile=ammoItem(9);p:AddItem(pile);ix.Item.Instance=function() return nil end
+  eq(ix.weaponInventory.ReturnAmmo(p,'XBowBolt',2),false)
+  eq(pile:GetValue(),9);eq(p:GetAmmoCount(0),9);eq(#dropped,0)
+ `,actualSetup);
+ suite('Every throwable uses its own inventory instance once, only after a successful release',integration,`
+  function GetConVarNumber() return 0 end
+  function p:KeyDown() return self.holding end
+  function p:DoAttackEvent() end;function p:AOC_SetNextStamina() end
+  for id,class in ipairs({'aoc_spear_thrown','aoc_axe_thrown','aoc_dagger_thrown','aoc_dart_thrown','aoc_oilpot','aoc_smokepot'}) do
+   local W=ix.WeaponSlots;local a=newItem(id);a.class=class;a.weaponCategory='sidearm';a.singleUse=true
+   local duplicate=newItem(100+id);duplicate.class=class
+   assert(W.Equip(p,a,3));local w=W.Live(p,a);p.selected=class
+   w.AOC_Base=true;w.ActivityTranslate={};local originalPrimary={Ammo='axes'};w.Primary=originalPrimary
+   function w:GetHoldType() return 'grenade' end
+   function w:GetLoaded() return self.loaded end;function w:SetLoaded(v) self.loaded=v end
+   function w:GetThrowTime() return self.release end;function w:SetThrowTime(t) self.release=t end
+   function w:GetNextIdle() return 0 end;function w:SendWeaponAnim() end;function w:EmitSound() end
+   function w:SetNextPrimaryFire(t) self.nextFire=t end;function w:SequenceDuration() return .4 end
+   function w:Throw() self.launches=(self.launches or 0)+1;return {valid=not self.fail} end
+   function w:Think() self.native=true end
+   local remove=a.Remove
+   function a:Remove(permanent) eq(permanent,true);remove(self) end
+   ix.AOC.Prepare(w);eq(w:Clip1(),-1);eq(p:GetAmmoCount(0),0);eq(w.Primary.Ammo,'none');eq(originalPrimary.Ammo,'axes')
+   w:Think();eq(w.native,nil);eq(w.valid,true)
+   w.loaded=true;w.release=clock+1;w:Think();eq(w.launches,nil)
+   clock=clock+2;p.holding=true;w:Think();eq(w.launches,nil);p.holding=false
+   w.fail=true;w:Think();eq(w.launches,1);eq(W.Item(p,3),a)
+   w.fail=false;w.loaded=true;w.release=clock;w:Think();eq(w.launches,2)
+   eq(w.valid,false);eq(W.Item(p,3),nil);eq(ix.Item.instances[id],nil);eq(ix.Item.instances[100+id],duplicate)
+   eq(#dropped,0);eq(p:GetAmmoCount(0),0)
+  end
  `,actualSetup);
  suite('Recovered AoC projectiles become inventory ammo without granting a second SWEP',integration.concat(prefix+'sv_pickups.lua'),`
   local entity={Touched=false}
@@ -230,4 +267,25 @@ module.exports=(suite)=>{
   eq(#p.weapons,0);eq(p:GetAmmoCount(0),1)
   PLUGIN:PlayerCanPickupItem(p,entity);eq(p:GetAmmoCount(0),1)
  `,actualSetup);
+ suite('Loose AoC weapons grant a single inventory item even on a repeated touch',integration.concat(prefix+'sv_pickups.lua'),`
+  function p:InVehicle() return false end
+  ix.Item.Get=function(_,id) return {singleUse=id=='aoc_spear_thrown'} end
+  local grants=0
+  ix.Item.Instance=function(_,id) eq(id,'aoc_spear_thrown');grants=grants+1;return {uniqueID=id} end
+  local entity={GetClass=function() return 'aoc_itemspear' end,Remove=function(s) s.removed=true end}
+  eq(PLUGIN:PlayerCanPickupItem(p,entity),false);eq(entity.removed,true);eq(grants,1)
+  PLUGIN:PlayerCanPickupItem(p,entity);eq(grants,1);eq(#p.weapons,0)
+ `,actualSetup);
+ suite('A legacy supply bundle unpacks one weapon at a time and survives a failed grant',
+ ['ixhl2rp/plugins/ammo_cringe/items/base/ammo.lua'],`
+  local pack=setmetatable({throwableClass='aoc_oilpot',ammoAmount=2,functions={},count=2,id=9,inventory_id=1},
+   {__index=ix.meta.ItemAmmo})
+  function pack:GetValue() return self.count end;function pack:SetData(k,v) eq(k,'stack');self.count=v end
+  function pack:Remove(permanent) eq(permanent,true);self.deleted=true end
+  pack:OnRegistered()
+  local grants=0;ix.weaponInventory={GiveThrowable=function(_,id) eq(id,'aoc_oilpot');if grants<0 then return false end;grants=grants+1;return true end}
+  pack.functions.unpack.OnRun(pack);eq(pack.count,1);eq(grants,1)
+  grants=-1;pack.functions.unpack.OnRun(pack);eq(pack.count,1);eq(pack.deleted,nil)
+  grants=0;pack.functions.unpack.OnRun(pack);eq(pack.deleted,true);eq(grants,1)
+ `, 'function implements() end');
 };

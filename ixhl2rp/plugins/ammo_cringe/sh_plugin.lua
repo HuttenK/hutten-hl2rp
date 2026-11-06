@@ -14,7 +14,7 @@ end
 local function Carried(client)
  local result = {}
  for _, weapon in ipairs(client:GetWeapons()) do
-  if IsValid(weapon) and weapon.ixItem and weapon.ixInventoryReady then
+  if IsValid(weapon) and weapon.ixItem and not weapon.ixItem.singleUse and weapon.ixInventoryReady then
    for _, id in ipairs({weapon:GetPrimaryAmmoType(), weapon:GetSecondaryAmmoType()}) do
     local name = id >= 0 and game.GetAmmoName(id)
     if name then result[name:lower()] = id end
@@ -39,7 +39,7 @@ function A.Settle(client)
    local current = client:GetAmmoCount(id)
    if current < tracked and carried[name] then
     local need = tracked - current
-    for _, item in pairs(inventory:GetItems()) do
+    for _, item in ipairs(A.CarriedItems(client, inventory)) do
      if need > 0 and isstring(item.ammo) and item.ammo:lower() == name then
       local count = Stack(item)
       local used = math.min(count, need)
@@ -71,7 +71,7 @@ function playerMeta:CalculateAmmo(ammoType)
  A.Settle(self)
  ammoType = isstring(ammoType) and ammoType:lower() or nil
  local totals = {}
- for _, item in pairs(inventory:GetItems()) do
+ for _, item in ipairs(A.CarriedItems(self, inventory)) do
   if isstring(item.ammo) then
    local name = item.ammo:lower()
    if not ammoType or ammoType == name then totals[name] = (totals[name] or 0) + Stack(item) end

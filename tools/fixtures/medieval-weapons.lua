@@ -43,8 +43,10 @@ function newItem(id)
  function item:Remove() self:OnRemoved();ix.Item.instances[self.id]=nil;for k,v in pairs(p.items) do if v==self then p.items[k]=nil end end end
  item.inventory_id=1;ix.Item.instances[id]=item;table.insert(p.items,item);return item
 end
+local ammoID=1000
 function ammoItem(n)
- local item={ammo='XBowBolt',data={stack=n}}
+ ammoID=ammoID+1
+ local item={id=ammoID,uniqueID='bolts',ammo='XBowBolt',data={stack=n}}
  function item:GetValue() return self.data.stack end
  function item:GetData(k,d) local v=self.data[k] if v==nil then return d end return v end
  function item:SetData(k,v) self.data[k]=v end

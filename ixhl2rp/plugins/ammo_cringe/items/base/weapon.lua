@@ -202,12 +202,15 @@ function Item:Init()
 					local definition = weapons.Get(item.class) or {}
 					ammo = definition.Ammo or (definition.Primary or {}).Ammo
 				end
-				if count > 0 and ix.weaponInventory.ReturnAmmo(item.player, ammo, count) then item:SetData(pair[1], 0) end
+				if count > 0 then
+					item:SetData(pair[1], 0)
+					if not ix.weaponInventory.ReturnAmmo(item.player, ammo, count) then item:SetData(pair[1], count) end
+				end
 			end
 			return false
 		end,
 		OnCanRun = function(item)
-			return not item:IsEquipped() and (item:GetData("ammo", 0) > 0 or item:GetData("ammo2", 0) > 0)
+			return not item.singleUse and not item:IsEquipped() and (item:GetData("ammo", 0) > 0 or item:GetData("ammo2", 0) > 0)
 		end
 	}
 

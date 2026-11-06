@@ -9,4 +9,4 @@ ITEM.width = 1
 ITEM.height = 1
 ITEM.contraband = false
 
-ITEM.description = ITEM.description .. " Запас для бросков хранится отдельно в разделе боеприпасов."
+ITEM.singleUse = true

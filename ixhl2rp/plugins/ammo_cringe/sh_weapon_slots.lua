@@ -247,8 +247,8 @@ local function give(client, item)
  local weapon = client:Give(item.class, true)
  if not IsValid(weapon) then return end
  weapon.ixItem = item
- weapon:SetClip1(item:GetData("ammo", 0))
- weapon:SetClip2(item:GetData("ammo2", 0))
+ weapon:SetClip1(item.singleUse and -1 or item:GetData("ammo", 0))
+ weapon:SetClip2(item.singleUse and -1 or item:GetData("ammo2", 0))
  weapon.ixInventoryReady = true
  if ix.AOC and ix.AOC.Prepare then ix.AOC.Prepare(weapon) end
  client:CalculateAmmo()

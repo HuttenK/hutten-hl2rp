@@ -33,6 +33,25 @@ end
 function ItemAmmo:OnRegistered()
 	self.stackable_legacy = true
 	self.max_stack = self.ammoAmount or 30
+	if self.throwableClass then
+		self.category = "item.category.weapon"
+		self.functions.unpack = {
+			name = "Достать одно оружие",
+			icon = "icon16/box.png",
+			OnCanRun = function(item)
+				local client = item.player or (CLIENT and LocalPlayer())
+				return IsValid(client) and item.inventory_id ~= nil and item:GetOwner() == client
+					and item:GetValue() > 0 and not ix.WeaponSlots.Pending(item)
+			end,
+			OnRun = function(item)
+				local left = item:GetValue() - 1
+				if ix.weaponInventory.GiveThrowable(item.player, item.throwableClass) then
+					if left == 0 then item:Remove(true) else item:SetData("stack", left) end
+				end
+				return false
+			end,
+		}
+	end
 end
 
 return ItemAmmo

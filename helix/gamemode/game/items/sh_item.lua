@@ -843,7 +843,7 @@ if SERVER then
 		targetItem:SetData("stack", newTargetValue)
 
 		if newItemValue <= 0 then
-			item:Remove()
+			item:Remove(true)
 		else
 			item:SetData("stack", newItemValue)
 		end
