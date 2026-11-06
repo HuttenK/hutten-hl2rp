@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
   "files": 1109,
-  "lines": 163554,
+  "lines": 163578,
   "syntaxFailures": [],
   "entries": [
     {
@@ -9266,8 +9266,8 @@
     },
     {
       "path": "ixhl2rp/plugins/templar_appearance.lua",
-      "lines": 71,
-      "sha256": "875a68ebce7938c630d43ad9787e82b0092af6a8351a4f241ed9f1898bf62410",
+      "lines": 95,
+      "sha256": "9be3ed672da5a1a2bb465d6d185fb8507bcc286819413173f142172b6e55d8aa",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
