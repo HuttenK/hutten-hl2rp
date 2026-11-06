@@ -149,9 +149,10 @@ ix.command.Add("CharSetModel", {
 	superAdminOnly = true,
 	arguments = {
 		ix.type.character,
-		ix.type.string
+		ix.type.text
 	},
 	OnRun = function(self, client, target, model)
+		if not util.IsValidModel(model) then return "@invalidArg", 2 end
 		target:SetModel(model)
 		target:GetPlayer():SetupHands()
 
@@ -164,9 +165,10 @@ ix.command.Add("CharSetModelOverride", {
 	superAdminOnly = true,
 	arguments = {
 		ix.type.character,
-		ix.type.string
+		ix.type.text
 	},
 	OnRun = function(self, client, target, model)
+		if not util.IsValidModel(model) then return "@invalidArg", 2 end
 		target:SetData("model_override", model)
 
 		target:GetPlayer().char_outfit:Update()

@@ -167,7 +167,7 @@ if SERVER then
 	end
 
 	function PLUGIN:PlayerModelChanged(client, model, oldmodel)
-		client.char_outfit:ModelChanged(model, oldmodel)
+		if client.char_outfit then client.char_outfit:ModelChanged(model, oldmodel) end
 	end
 
 	function PLUGIN:EntityRemoved(entity)

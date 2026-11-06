@@ -209,71 +209,31 @@ function PLUGIN:SetupMove(ply, mv, cmd)
 		return
 	end
 
-	if mv:KeyReleased(IN_SPEED) or mv:KeyDown(IN_SPEED) and velLength < .25 then
-		ply:SetRunFading(true)
-	end
-
 	if mv:KeyDown(IN_MOVELEFT) or mv:KeyDown(IN_MOVERIGHT) then
-		ply:SetRunFading(true)
 		mv:SetSideSpeed(mv:GetSideSpeed() * .35)
 	end
 
-
-
-	/*local running = mv:KeyDown(IN_SPEED)
-	local walking = mv:KeyDown(IN_FORWARD)
-
-	if running && walking then 
-		ply:SetNW2Int("Jumping_Combo", 0) 
-	end*/
-
-	//if ((mv:KeyDown(IN_BACK) || mv:KeyDown(IN_MOVELEFT) || mv:KeyDown(IN_MOVERIGHT)) && !mv:KeyDown(IN_FORWARD)) or ply.fracturedLegs then 
-
-		//ply:SprintDisable() 
-	//else 
-	//	ply:SprintEnable() 
-	//end
-
-	local forward = math.Clamp(mv:GetForwardSpeed(), -speedx, speedx)
-	local side =  math.Clamp(mv:GetSideSpeed(), -speedx, speedx)
-	local vel = Vector(forward, side, 0)
-	vel:Normalize()
-	
-	local ct = CurTime()
-
-	if mv:KeyDown(IN_SPEED) and velLength > .25 or ply:GetSprintMove() and !ply:GetRunFading() then
-		if !ply:GetSprintMove() then
-			ply:SetRunFading(false)
+	-- Prediction can miss a release edge. Only the current command can authorize acceleration.
+	if mv:KeyDown(IN_SPEED) and velLength > .25 then
+		local ct = CurTime()
+		if not ply:GetSprintMove() then
 			ply:SetSprintMove(true)
-
 			ply:SetSpeedDeltaStart(ct)
 			ply:SetSpeedDeltaEnd(ct + 10)
-			
 			ply:SetSprintSpeed(speedx)
 		end
 
 		local deltaEnd = ply:GetSpeedDeltaEnd()
 		local delta = 1 - math.Clamp((deltaEnd - ct) / math.max(deltaEnd - ply:GetSpeedDeltaStart(), 1), 0, 1)
-
 		local targetSpeed = Lerp(delta, ply:GetSprintSpeed(), ply.runSpeed)
 		ply:SetSprintSpeed(targetSpeed)
-
 		mv:SetMaxClientSpeed(targetSpeed)
 		mv:SetMaxSpeed(targetSpeed)
-	elseif ply:GetSprintMove() and ply:GetRunFading() then
-		local deltaEnd = ply:GetSpeedDeltaEnd()
-		local delta = 1 - math.Clamp((deltaEnd - ct) / math.max(deltaEnd - ply:GetSpeedDeltaStart(), 1), 0, 1)
-		
-		local targetSpeed = Lerp(delta, ply:GetSprintSpeed(), speedx)
-		ply:SetSprintSpeed(targetSpeed)
-		mv:SetMaxClientSpeed(targetSpeed)
-		mv:SetMaxSpeed(targetSpeed)
-
-		if delta >= 1 then
-			ply:SetRunFading(false)
-			ply:SetSprintMove(false)
-			ply:SetSprintSpeed(speedx)
-		end
+	elseif ply:GetSprintMove() then
+		ply:SetSprintMove(false)
+		ply:SetSprintSpeed(0)
+		mv:SetMaxClientSpeed(math.min(mv:GetMaxClientSpeed(), speedx))
+		mv:SetMaxSpeed(math.min(mv:GetMaxSpeed(), speedx))
 	end
 
 	mv:SetMaxClientSpeed(mv:GetMaxClientSpeed() * speedFactor)

@@ -119,6 +119,36 @@ module.exports = function(suite) {
  `,classes);
 
  const equipment=register('armor','ItemMedievalArmor')+'\n'+register('helmet','ItemMedievalHelmet')+'\n'+owners;
+ const commands=source('helix/gamemode/core/sh_commands.lua');
+ const modelCommands=commands.slice(commands.indexOf('ix.command.Add("CharSetModel",'),commands.indexOf('ix.command.Add("CharSetSkin",'));
+ suite('Model commands reject flag strings before changing character data and accept a mounted model with spaces',[],modelCommands+`
+  local mounted='models/test/guard uniform.mdl'
+  util.IsValidModel=function(path) return path==mounted end
+  local p={SetupHands=function() end,char_outfit={Update=function() end}}
+  local target={GetName=function() return 'Guard' end,GetPlayer=function() return p end,
+   SetModel=function(self,m) self.model=m end,SetData=function(self,k,v) self[k]=v end}
+  local client={NotifyLocalized=function() end,GetName=function() return 'Admin' end}
+  for name,field in pairs({CharSetModel='model',CharSetModelOverride='model_override'}) do
+   local cmd=ix.command[name];eq(cmd.arguments[2],ix.type.text)
+   eq(cmd:OnRun(client,target,'eptbG'),'@invalidArg');eq(target[field],nil)
+   cmd:OnRun(client,target,mounted);eq(target[field],mounted)
+  end
+ `,`ix.type={character=1,text=2};ix.command={Add=function(name,cmd) ix.command[name]=cmd end}`);
+ suite('A cold outfit restores the character base when equipping a helmet and removing plate',armorFiles,equipment+`
+  local p,o=owner(9,2);local base=p.character:GetModel()
+  local helm=instance('med_helmet_greathelm');helm.owner=p;helm.player=p
+  local plate=instance('med_armor_white');plate.owner=p;plate.player=p
+  o.character=nil;o.model=nil
+  -- The helmet is already in its equipment slot when Helix invokes OnEquipped.
+  function helm:IsEquipped() return true end
+  ix.Item.instances[1]=helm
+  p.inventories={{GetItemsID=function() return {1} end}}
+  helm:OnEquipped(p);eq(o.character,p.character);eq(o.loading,false);eq(p.model,base);eq(p:GetBodygroup(2),6)
+  plate:OnEquipped(p);eq(p.model,plate.replacement);eq(p:GetBodygroup(2),5)
+  o.model=nil
+  plate:OnUnequipped(p);eq(p.model,base);eq(p:GetBodygroup(2),6);eq(p.skin,9)
+  p.character=nil;o.model=nil;o:Update();eq(p.model,base)
+ `,classes);
  const helmetIDs="{'med_helmet_kettle','med_helmet_spangen','med_helmet_bascinet','med_helmet_greathelm'}";
  suite('Four helmets map all eight Templar models, survive full-body swaps in either equip order, and preserve faces',armorFiles,
  equipment+`

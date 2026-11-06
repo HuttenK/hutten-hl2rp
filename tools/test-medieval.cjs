@@ -5,9 +5,11 @@ const root=path.resolve(__dirname,'..');let passed=0;
 function suite(name,files,assertions,setup=''){
  const L=lauxlib.luaL_newstate();lualib.luaL_openlibs(L);
  const prelude=fs.readFileSync(path.join(__dirname,'fixtures/medieval.lua'),'utf8');
- const source=[prelude,setup,...files.map(f=>`do\n${normalize(fs.readFileSync(path.join(root,f),'utf8'))}\nend`),assertions].join('\n');
+ // Each included Lua file can return a class without returning from the test itself.
+ const source=[prelude,setup,...files.map(f=>`do (function()\n${normalize(fs.readFileSync(path.join(root,f),'utf8'))}\nend)() end`),assertions,'return "assertions complete"'].join('\n');
  const code=lauxlib.luaL_dostring(L,to_luastring(source));
  if(code!==lua.LUA_OK){fs.mkdirSync(path.join(root,'.runtime'),{recursive:true});fs.writeFileSync(path.join(root,'.runtime/failed-test.lua'),source);throw new Error(name+': '+to_jsstring(lua.lua_tostring(L,-1)));}
+ if(lua.lua_type(L,-1)!==lua.LUA_TSTRING || to_jsstring(lua.lua_tostring(L,-1))!=='assertions complete') throw new Error(name+': Lua returned before the assertions completed');
  passed++;console.log('PASS '+name);
 }
 const src=fs.readFileSync(path.join(root,'ixhl2rp/plugins/ammo_cringe/items/base/weapon.lua'),'utf8');

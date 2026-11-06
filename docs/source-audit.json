@@ -1,7 +1,7 @@
 {
   "note": "Automated inventory and normalized syntax scan; not a full semantic review or engine test.",
   "files": 1107,
-  "lines": 163480,
+  "lines": 163455,
   "syntaxFailures": [],
   "entries": [
     {
@@ -399,8 +399,8 @@
     },
     {
       "path": "helix/gamemode/core/libs/sh_anims.lua",
-      "lines": 582,
-      "sha256": "8e0615f874c04a02a786bb401ac6458040c4715971f97c25f403952dd6cb0f35",
+      "lines": 583,
+      "sha256": "d60f600cdc56dd19d96cb32102c9c0c1513eb577382d05c672e3a5217b84dc06",
       "syntax": "pass",
       "networkHandlers": [
         "ixSequenceSet",
@@ -712,8 +712,8 @@
     },
     {
       "path": "helix/gamemode/core/sh_commands.lua",
-      "lines": 848,
-      "sha256": "da604e0ed1c57b73ed5fd445dff69dabe99ee20af301f03b387dceb954b87a8f",
+      "lines": 850,
+      "sha256": "ee0e9c346cec3894922e179c2eded98df50d7aafe8caa366867ab67e0ebb1295",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": []
@@ -839,8 +839,8 @@
     },
     {
       "path": "helix/gamemode/game/character/appearance/sh_outfit.class.lua",
-      "lines": 780,
-      "sha256": "5a4203f920df26b325e8220203271bf4066c2917b48e51d2602c7102b7024cf5",
+      "lines": 792,
+      "sha256": "df28887677f4dda8becd185611b925881328e40513ad8fb669fa46536d832d8e",
       "syntax": "pass",
       "networkHandlers": [
         "appearance.update"
@@ -2797,8 +2797,8 @@
     },
     {
       "path": "ixhl2rp/plugins/!healthsystem/sh_movement.lua",
-      "lines": 281,
-      "sha256": "41da95cc588c88663f70513bed3aeff3d32344525199f09f9f37ced35682621a",
+      "lines": 241,
+      "sha256": "12de043dca6c4d48b16e692fb2227e251b9a6c00eebf39f5a426dffded22912e",
       "syntax": "pass",
       "networkHandlers": [],
       "hooks": [
@@ -6337,7 +6337,7 @@
     {
       "path": "ixhl2rp/plugins/items_clothing/sh_plugin.lua",
       "lines": 224,
-      "sha256": "4b41c89a74f64356f73a4b9421e97b6f5e43707bc278718100d00f0d8fbdeb02",
+      "sha256": "0ecfc03f3dd908864d2b94e3dc6312dff37e8e3300177ddad413fe3b54a9b9d6",
       "syntax": "pass",
       "networkHandlers": [
         "techdemo.ui"

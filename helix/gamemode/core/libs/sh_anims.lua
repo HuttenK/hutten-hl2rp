@@ -425,6 +425,7 @@ end
 -- @usage ix.anim.GetModelClass("models/police.mdl")
 -- > metrocop
 function ix.anim.GetModelClass(model, entity)
+	if not isstring(model) or model == "" then return "citizen_male" end
 	model = string.lower(model)
 	local class = translations[model]
 	if class then return class end

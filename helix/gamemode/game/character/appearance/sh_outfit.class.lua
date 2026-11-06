@@ -97,13 +97,11 @@ if SERVER then
 		-- бы от прошлого персонажа. Update со снятым displayIds сбрасывает их в 0/charGen.
 		self:Update()
 
-		if self.loading then
-			self.loading = false
-		end
+		self.loading = false
 	end
 
 	function Outfit:LoadCharacter(character)
-		if self.loading then
+		if self.loading and self.character == character then
 			return
 		end
 
@@ -114,6 +112,12 @@ if SERVER then
 		self.fullBodyBaseSkin = nil
 
 		timer.Simple(0, function()
+			if self.character ~= character then return end
+			if not IsValid(self.owner) or self.owner:GetCharacter() ~= character then
+				self.loading = false
+				self.prepareItems = nil
+				return
+			end
 			self:SetupItems()
 		end)
 	end
@@ -263,9 +267,17 @@ if SERVER then
 	end
 
 	function Outfit:Update()
+		local character = self.owner:GetCharacter()
+		if not character then return end
+		if character ~= self.character then
+			self:LoadCharacter(character)
+			return
+		end
+		local fallbackModel = self.model or character:GetModel()
+		if not isstring(fallbackModel) or not fallbackModel:lower():match("^models/.+%.mdl$") then return end
+		self.model = fallbackModel
 		-- CharGen() may not be implemented; guard against nil to prevent crash.
 		local charGen = self.character and self.character.CharGen and self.character:CharGen()
-		local fallbackModel = self.model
 
 		self.modelClass = Appearance:GetModelClass(fallbackModel)
 
